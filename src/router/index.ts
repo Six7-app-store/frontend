@@ -73,6 +73,33 @@ const router = createRouter({
       component: () => import('@/views/CallbackView.vue'),
       meta: { layout: "auth" },
     },
+    {
+      // Shown when a launched session expires. Deliberately not behind
+      // requiresAuth — by the time it is reached the session is gone.
+      path: "/lti/expired",
+      name: "lti.expired",
+      component: () => import('@/views/LtiSessionExpiredView.vue'),
+      meta: { layout: "auth" },
+    },
+    {
+      // Landing point of a Moodle LTI launch. Carries the session token
+      // the backend issued; the view stores it and cleans the URL.
+      path: "/lti/callback",
+      name: "lti.callback",
+      component: () => import('@/views/LtiCallbackView.vue'),
+      meta: { layout: "auth" },
+    },
+    {
+      // Where a refused launch lands: the Moodle identity is unknown
+      // and the address is taken, so the account has to be confirmed
+      // by a direct sign-in first. Deliberately not behind
+      // requiresAuth — being signed out is the normal case here, and
+      // the view sends the user to the login itself.
+      path: "/lti/link",
+      name: "lti.link",
+      component: () => import('@/views/LtiLinkView.vue'),
+      meta: { layout: "auth" },
+    },
 
     // APP LAYOUT
     {
@@ -214,7 +241,14 @@ router.beforeEach(async (to, _from, next) => {
     await new Promise(resolve => setTimeout(resolve, 100))
   }
 
-  if (!authStore.user && to.path !== '/callback' && to.path !== '/login') {
+  // The two callback routes finish their own sign-in and must not be
+  // pre-empted by a Keycloak initialize: for the LTI launch there is no
+  // Keycloak session to find, and initializing would redirect the user
+  // away from the token they just arrived with.
+  const isCallbackRoute =
+    to.path === '/callback' || to.path === '/lti/callback' || to.path === '/lti/expired'
+
+  if (!authStore.user && !isCallbackRoute && to.path !== '/login') {
     await authStore.initialize()
   }
 

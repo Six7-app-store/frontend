@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import { AuthService } from '@/services/auth.service'
 import { useKeycloak } from '@/composables/useKeycloak'
+import { useLtiSession } from '@/composables/useLtiSession'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { invalidateAll as invalidateOpenStackCache } from '@/composables/useOpenStackResourceCache'
 import type { User, UserRole } from '@/types'
 
 const keycloak = useKeycloak()
+const ltiSession = useLtiSession()
 
 // In-flight promises to dedupe concurrent calls. The router guard,
 // App mount, and view mounts can all trigger initialize/fetchMe at the
@@ -22,7 +24,14 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isAuthenticated: () => keycloak.isAuthenticated.value,
+    // Either sign-in path counts. A tab launched from Moodle has no
+    // Keycloak session at all and must not be sent to the login page.
+    isAuthenticated: () => ltiSession.isActive() || keycloak.isAuthenticated.value,
+
+    // Whether this tab is running as a Moodle-launched session. The
+    // difference matters wherever the Keycloak path would redirect:
+    // an LTI session cannot be renewed, only launched again.
+    isLtiSession: () => ltiSession.isActive(),
     
     userRole: (state): UserRole | null => state.user?.role || null,
     
@@ -42,6 +51,14 @@ export const useAuthStore = defineStore('auth', {
       initializePromise = (async () => {
         this.isLoading = true
         try {
+          // A launched session already has its token; running the
+          // Keycloak initialize here would look for an SSO session that
+          // does not exist and clear the authenticated state.
+          if (ltiSession.isActive()) {
+            await this.fetchMe().catch(() => {})
+            return
+          }
+
           await keycloak.initialize()
 
           if (keycloak.isAuthenticated.value) {
@@ -112,6 +129,8 @@ export const useAuthStore = defineStore('auth', {
 
     async logout() {
       AuthService.clearStoredUser()
+      const wasLtiSession = ltiSession.isActive()
+      ltiSession.clear()
       this.user = null
       this.error = null
       initializePromise = null
@@ -120,6 +139,11 @@ export const useAuthStore = defineStore('auth', {
       // Clear the OpenStack resource display cache — the next user has their own
       // credentials and a different project, so old resource lists must not persist.
       invalidateOpenStackCache()
+
+      // A launched session has no Keycloak session behind it; calling
+      // signoutRedirect() would bounce the user to a logout page for a
+      // session that was never established.
+      if (wasLtiSession) return
 
       try {
         await keycloak.logout()
