@@ -229,8 +229,17 @@ const onFilePick = (event: Event) => {
   input.value = ''
 }
 
+// Only follow ``next`` when it is an in-app path of a known route. Absolute or
+// protocol-relative URLs (``https://…``, ``//host``, ``/\host``) and unknown
+// paths are ignored, so the user simply stays on this page.
+const internalNextPath = (next: unknown): string | null => {
+  if (typeof next !== 'string' || !next.startsWith('/')) return null
+  if (next.startsWith('//') || next.startsWith('/\\')) return null
+  return router.resolve(next).matched.length > 0 ? next : null
+}
+
 const maybeReturnToWizard = () => {
-  const next = route.query.next as string | undefined
+  const next = internalNextPath(route.query.next)
   if (next) router.push(next)
 }
 </script>

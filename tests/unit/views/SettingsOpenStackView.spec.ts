@@ -14,12 +14,22 @@ vi.mock('vue-i18n', () => ({
     })
 }))
 
-// Router
+// Router: ``push`` ist ein Spy, ``resolve`` kommt von einem echten Router mit
+// einer kleinen Routentabelle (für die Prüfung des ``next``-Redirects).
 const mockPush = vi.fn()
+const routeState = vi.hoisted(() => ({ query: {} as Record<string, unknown> }))
 vi.mock('vue-router', () => ({
-    useRoute: () => ({ query: {} }),
-    useRouter: () => ({ push: mockPush })
+    useRoute: () => ({ query: routeState.query }),
+    useRouter: () => ({ push: mockPush, resolve: (to: string) => realRouter.resolve(to) })
 }))
+const { createRouter, createMemoryHistory } = await vi.importActual<typeof import('vue-router')>('vue-router')
+const realRouter = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+        { path: '/deployment/new/config', name: 'deployment.config', component: { template: '<div />' } },
+        { path: '/dashboard', name: 'dashboard', component: { template: '<div />' } },
+    ],
+})
 
 // Toasts
 const mockToastSuccess = vi.fn()
@@ -312,5 +322,60 @@ describe.skip('SettingsOpenStackView.vue', () => {
         // HIER KORRIGIERT: Type Casting als HTMLInputElement
         const urlInput = wrapper.find('input[type="url"]')
         expect((urlInput.element as HTMLInputElement).value).toBe('https://yaml.com')
+    })
+})
+
+// ---------------------------------------------------------
+// 3. Rücksprung über ``next`` nach dem Speichern
+// ---------------------------------------------------------
+
+describe('SettingsOpenStackView.vue — Rücksprung über next', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        routeState.query = {}
+        storeState = {
+            isLocked: false,
+            activeDeployments: 0,
+            loading: false,
+            hasCredential: false,
+            isValidated: false,
+            lastError: null,
+            error: null,
+            status: {}
+        }
+        mockSave.mockResolvedValue({})
+    })
+
+    const saveValidAppCredentials = async () => {
+        const wrapper = mount(SettingsOpenStackView, {
+            global: { stubs: { CredentialMissingBanner: true, 'i18n-t': true } }
+        })
+        await flushPromises()
+        await wrapper.find('input[type="url"]').setValue('https://test.com')
+        await wrapper.findAll('input[type="text"]')[1]!.setValue('my-app-id')
+        await wrapper.find('input[type="password"]').setValue('my-secret-key')
+        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.save'))!
+        await saveBtn.trigger('click')
+        await flushPromises()
+        expect(mockSave).toHaveBeenCalledTimes(1)
+    }
+
+    it('springt zu einem internen Pfad der App zurück', async () => {
+        routeState.query = { next: '/deployment/new/config' }
+        await saveValidAppCredentials()
+        expect(mockPush).toHaveBeenCalledWith('/deployment/new/config')
+    })
+
+    it.each([
+        ['protokoll-relative URL', '//evil.example'],
+        ['absolute URL', 'https://evil.example/login'],
+        ['Backslash-Trick', '/\\evil.example'],
+        ['javascript-URL', 'javascript:alert(1)'],
+        ['unbekannte Route', '/gibts-nicht'],
+        ['mehrfacher Parameter', ['/deployment/new/config', '//evil.example']],
+    ])('ignoriert next bei %s und bleibt auf der Seite', async (_label, next) => {
+        routeState.query = { next }
+        await saveValidAppCredentials()
+        expect(mockPush).not.toHaveBeenCalled()
     })
 })
