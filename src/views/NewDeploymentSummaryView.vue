@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
 import { useToast } from '@/composables/useToast'
+import { isMultiImagePackerLayout as detectMultiImagePackerLayout } from '@/services/deployment-variables.service'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import {
@@ -75,16 +76,9 @@ const groupModeDisplay = computed(() => {
 // back to ``apiDef.default``. Detection: ``draft.variables.packer`` is a
 // non-empty object whose every top-level element is itself an object (a
 // ``tkey`` bucket). A false positive would at worst render one skewed line.
-const isMultiImagePackerLayout = computed<boolean>(() => {
-  const pk = (deploymentStore.draft.variables as any)?.packer
-  if (!pk || typeof pk !== 'object' || Array.isArray(pk)) return false
-  const keys = Object.keys(pk)
-  if (keys.length === 0) return false
-  return keys.every((k) => {
-    const slot = pk[k]
-    return slot && typeof slot === 'object' && !Array.isArray(slot)
-  })
-})
+const isMultiImagePackerLayout = computed<boolean>(() =>
+  detectMultiImagePackerLayout(deploymentStore.draft.variables)
+)
 
 const _resolvePackerValue = (apiDef: AppVariable): any => {
   const currentVars = deploymentStore.draft.variables as any

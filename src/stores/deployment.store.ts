@@ -4,6 +4,7 @@ import { useAppStore } from './app.store'
 import { useAuthStore } from './auth.store'
 import { runRequest, type RequestContext } from './_request'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
+import { isMultiImagePackerLayout as detectMultiImagePackerLayout } from '@/services/deployment-variables.service'
 
 import type {
   Deployment,
@@ -225,19 +226,12 @@ export const useDeploymentStore = defineStore('deployment', {
         // Detect multi-image Packer layout: such apps store Packer values nested
         // under ``draft.variables.packer[<template_key>][<name>]`` rather than
         // flat under ``draft.variables[<name>]``. Reading only flat would leave
-        // ``val`` undefined for those variables. Same detection/resolution as in
-        // ``NewDeploymentSummaryView``.
+        // ``val`` undefined for those variables. Same detection as in
+        // ``NewDeploymentSummaryView`` (``detectMultiImagePackerLayout``); the
+        // value resolution below differs on purpose (packer-only, no default).
         const draftVars = this.draft.variables as Record<string, any>
         const packerContainer = draftVars.packer
-        const isMultiImagePackerLayout =
-          packerContainer
-          && typeof packerContainer === 'object'
-          && !Array.isArray(packerContainer)
-          && Object.keys(packerContainer).length > 0
-          && Object.keys(packerContainer).every((k) => {
-            const slot = packerContainer[k]
-            return slot && typeof slot === 'object' && !Array.isArray(slot)
-          })
+        const isMultiImagePackerLayout = detectMultiImagePackerLayout(draftVars)
 
         const resolveValue = (def: AppVariable): any => {
           if (def.source === 'packer' && isMultiImagePackerLayout) {

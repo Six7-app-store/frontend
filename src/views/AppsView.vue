@@ -11,10 +11,10 @@ import { useRouter } from 'vue-router'
 import { appApi } from '@/api/app.api'
 import { useI18n } from 'vue-i18n'
 import {
-  Layers, Server, Box, Database, Terminal,
-  Globe, LayoutTemplate, Shield, Inbox, Plus, Lock
+  Globe, Inbox, Plus, Lock
 } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import { iconForAppName } from '@/services/app-presentation.service'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AppVersionApproval } from '@/types'
 
@@ -36,17 +36,7 @@ const filteredApps = computed(() => {
   return apps.value.filter(a => !a.is_private)
 })
 
-const getIconForApp = (app: any) => {
-  const name = (app.name || '').toLowerCase()
-  if (name.includes('node')) return Server
-  if (name.includes('vue') || name.includes('front')) return LayoutTemplate
-  if (name.includes('react')) return Globe
-  if (name.includes('python') || name.includes('jupyter') || name.includes('fastapi')) return Box
-  if (name.includes('postgres') || name.includes('sql') || name.includes('data')) return Database
-  if (name.includes('docker') || name.includes('container')) return Terminal
-  if (name.includes('security') || name.includes('pen')) return Shield
-  return Layers
-}
+const getIconForApp = (app: any) => iconForAppName(app.name)
 
 const isOwnApp = (app: any) => String(app.userId) === String(authStore.userId)
 

@@ -7,8 +7,8 @@ import { useToast } from '@/composables/useToast'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import { useI18n } from 'vue-i18n'
 import {
-  Layers, Server, Box, Database, Terminal,
-  Globe, LayoutTemplate, Shield, ArrowLeft, GitBranch,
+  Layers,
+  Globe, ArrowLeft, GitBranch,
   Trash2, AlertCircle, Clock, Send, ShoppingBag, Lock, Undo2,
   Pencil, Image as ImageIcon,
 } from 'lucide-vue-next'
@@ -16,7 +16,9 @@ import { useDeploymentStore } from '@/stores/deployment.store'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRole } from '@/composables/useRole'
-import { formatDate, MAX_IMAGE_BYTES } from '@/utils/format'
+import { formatDate } from '@/utils/format'
+import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
+import { iconForAppName } from '@/services/app-presentation.service'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
@@ -149,17 +151,7 @@ const hasVersionInfo = computed(() => {
 // ----------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------
-const getIconForApp = (appName: string) => {
-  const name = (appName || '').toLowerCase()
-  if (name.includes('node')) return Server
-  if (name.includes('vue') || name.includes('front')) return LayoutTemplate
-  if (name.includes('react')) return Globe
-  if (name.includes('python') || name.includes('jupyter') || name.includes('fastapi')) return Box
-  if (name.includes('postgres') || name.includes('sql') || name.includes('data')) return Database
-  if (name.includes('docker') || name.includes('container')) return Terminal
-  if (name.includes('security') || name.includes('pen')) return Shield
-  return Layers
-}
+const getIconForApp = (appName: string) => iconForAppName(appName)
 
 // ----------------------------------------------------------------
 // API calls
@@ -291,12 +283,13 @@ const closeEditModal = () => {
 const triggerEditFileInput = () => editFileInputRef.value?.click()
 
 const processEditFile = (file: File) => {
-  if (!file.type.startsWith('image/')) {
+  const problem = validateImageFile(file)
+  if (problem === 'not_image') {
     toast.error(t('AppsDetailView.toasts.onlyImages'))
     return
   }
-  if (file.size > MAX_IMAGE_BYTES) {
-    toast.error(t('AppsDetailView.toasts.imageTooLarge', { size: Math.round(MAX_IMAGE_BYTES / 1024 / 1024) }))
+  if (problem === 'too_large') {
+    toast.error(t('AppsDetailView.toasts.imageTooLarge', { size: MAX_IMAGE_MB }))
     return
   }
   editImage.value = file
@@ -329,14 +322,7 @@ const editImageFile = computed<File | null>(() =>
   editImage.value instanceof File ? editImage.value : null
 )
 
-const fileToDataUrl = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
-}
+const fileToDataUrl = async (file: File): Promise<string> => (await readFileAsDataUrl(file)) ?? ''
 
 const submitEdit = async () => {
   if (!app.value) return
