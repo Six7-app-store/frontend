@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { ref } from 'vue'
 
 import CourseDetailView from '@/views/CourseDetailView.vue'
+import de from '@/i18n/locales/de'
 
 // ---------------------------------------------------------
 // 1. Mocks & Setup
@@ -13,6 +14,10 @@ vi.mock('vue-router', () => ({
     useRouter: () => ({ push: mockPush }),
     useRoute: () => ({ params: { id: 'c-123' } })
 }))
+
+// Echtes vue-i18n nur für die ``<i18n-t>``-Komponente im Template; ``useI18n``
+// bleibt unten gemockt.
+const { createI18n } = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
 
 // i18n Mock (unterstützt Variablen)
 vi.mock('vue-i18n', () => ({
@@ -103,6 +108,7 @@ describe('CourseDetailView.vue', () => {
     const mountComponent = () => {
         return mount(CourseDetailView, {
             global: {
+                plugins: [createI18n({ legacy: false, locale: 'de', messages: { de } })],
                 mocks: {
                     $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
                 },
@@ -293,5 +299,20 @@ describe('CourseDetailView.vue', () => {
 
         // Prüfen, ob das Modal geschlossen wurde
         expect(wrapper.find('.modal').exists()).toBe(false)
+    })
+
+    it('rendert den Benutzernamen im Löschen-Modal als Text, nicht als HTML', async () => {
+        const evilName = '<img src=x onerror="alert(1)">'
+        mockCurrentMembers = [{ userId: 'u-98', username: evilName, role: 'student' }]
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        await wrapper.find('button[title="CourseDetailView.removeMemberTitle"]').trigger('click')
+        await flushPromises()
+
+        const modal = wrapper.find('.modal')
+        expect(modal.find('img').exists()).toBe(false)
+        expect(modal.find('strong').text()).toBe(evilName)
     })
 })

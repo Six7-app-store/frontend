@@ -30,9 +30,15 @@ defineEmits<{
         : $t('DeploymentDetailView.confirmResumeTitle') }}
     </template>
     <template #body>
-      <p class="text-gray-700" v-html="action === 'pause'
-        ? $t('DeploymentDetailView.confirmPauseMessage', { name: deploymentName })
-        : $t('DeploymentDetailView.confirmResumeMessage', { name: deploymentName })"></p>
+      <i18n-t
+        :keypath="action === 'pause'
+          ? 'DeploymentDetailView.confirmPauseMessage'
+          : 'DeploymentDetailView.confirmResumeMessage'"
+        tag="p"
+        class="text-gray-700"
+      >
+        <template #name><strong>{{ deploymentName }}</strong></template>
+      </i18n-t>
     </template>
     <template #footer>
       <div class="flex justify-end gap-3">

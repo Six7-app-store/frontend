@@ -251,6 +251,7 @@ describe.skip('DeploymentDetailView.vue', () => {
         },
         stubs: {
           RouterLink: true,
+          'i18n-t': true,
           BaseButton: { template: '<button><slot /></button>' },
           Modal: {
             props: ['show'],
@@ -373,6 +374,7 @@ describe('DeploymentDetailView.vue — member self-access', () => {
         },
         stubs: {
           RouterLink: true,
+          'i18n-t': true,
           BaseButton: { template: '<button><slot /></button>' },
           Modal: {
             props: ['show'],

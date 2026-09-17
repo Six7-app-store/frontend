@@ -722,7 +722,9 @@ onMounted(async () => {
       <template #title>{{ $t('AppsDetailView.confirmDeleteTitle') }}</template>
       <template #body>
         <div class="space-y-3">
-          <p class="text-gray-700" v-html="$t('AppsDetailView.confirmDeleteMessage', { name: app.name })"></p>
+          <i18n-t keypath="AppsDetailView.confirmDeleteMessage" tag="p" class="text-gray-700">
+            <template #name><strong>{{ app.name }}</strong></template>
+          </i18n-t>
         </div>
       </template>
       <template #footer>

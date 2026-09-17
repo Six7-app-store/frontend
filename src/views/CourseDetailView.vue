@@ -452,7 +452,9 @@ const roleClass = (role: string | undefined) => {
 
       <template #body>
         <div class="space-y-3">
-          <p class="text-gray-700" v-html="$t('CourseDetailView.removeModal.confirmPrompt', { username: memberToRemove?.username })"></p>
+          <i18n-t keypath="CourseDetailView.removeModal.confirmPrompt" tag="p" class="text-gray-700">
+            <template #username><strong>{{ memberToRemove?.username }}</strong></template>
+          </i18n-t>
           <p class="text-sm text-gray-500">
             {{ $t('CourseDetailView.removeModal.warning') }}
           </p>

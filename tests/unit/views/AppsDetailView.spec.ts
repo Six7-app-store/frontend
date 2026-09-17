@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 
 import AppsDetailView from '@/views/AppsDetailView.vue'
+import de from '@/i18n/locales/de'
 
 // ---------------------------------------------------------
 // 1. Mocks & Setup
@@ -15,6 +16,10 @@ vi.mock('vue-router', () => ({
     useRouter: () => ({ push: mockPush, back: mockBack }),
     useRoute: () => ({ params: { id: 'app-123' } })
 }))
+
+// Echtes vue-i18n nur für die ``<i18n-t>``-Komponente im Template; ``useI18n``
+// bleibt unten gemockt.
+const { createI18n } = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
 
 // i18n
 vi.mock('vue-i18n', () => ({
@@ -86,12 +91,13 @@ describe('AppsDetailView.vue', () => {
     const mountComponent = () => {
         return mount(AppsDetailView, {
             global: {
+                plugins: [createI18n({ legacy: false, locale: 'de', messages: { de } })],
                 mocks: { $t: (msg: string) => msg },
                 stubs: {
                     BaseButton: { template: '<button><slot /></button>' },
                     Modal: {
                         props: ['show'],
-                        template: '<div v-if="$props.show" class="modal"><slot name="title" /><slot /><slot name="footer" /></div>'
+                        template: '<div v-if="$props.show" class="modal"><slot name="title" /><slot /><slot name="body" /><slot name="footer" /></div>'
                     },
                     RouterLink: true,
                     MarkdownRenderer: {
@@ -183,6 +189,23 @@ describe('AppsDetailView.vue', () => {
         const modal = wrapper.find('.modal')
         expect(modal.exists()).toBe(true)
         expect(modal.text()).toContain('AppsDetailView.confirmDeleteTitle')
+    })
+
+    it('rendert den App-Namen im Lösch-Modal als Text, nicht als HTML', async () => {
+        const evilName = '<img src=x onerror="alert(1)">'
+        ;(appApi.getById as any).mockResolvedValue({
+            data: { id: 'app-123', name: evilName, description: '', userId: 'user-1', versions: [] }
+        })
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        const deleteButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteApp'))!
+        await deleteButton.trigger('click')
+        await nextTick()
+
+        const modal = wrapper.find('.modal')
+        expect(modal.find('img').exists()).toBe(false)
+        expect(modal.find('strong').text()).toBe(evilName)
     })
 
     it('löscht die App erfolgreich nach Bestätigung im Modal', async () => {

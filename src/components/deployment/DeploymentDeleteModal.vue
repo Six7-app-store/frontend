@@ -24,7 +24,9 @@ defineEmits<{
       {{ $t('DeploymentDetailView.confirmDeleteTitle') }}
     </template>
     <template #body>
-      <p class="text-gray-700" v-html="$t('DeploymentDetailView.confirmDeleteMessage', { name: deploymentName })"></p>
+      <i18n-t keypath="DeploymentDetailView.confirmDeleteMessage" tag="p" class="text-gray-700">
+        <template #name><strong>{{ deploymentName }}</strong></template>
+      </i18n-t>
     </template>
     <template #footer>
       <div class="flex justify-end gap-3">
