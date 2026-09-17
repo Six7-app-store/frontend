@@ -104,12 +104,6 @@ watch(groupCount, (newCount, oldCount) => {
 
   if (typeof oldCount === 'number' && oldCount > newCount) {
     const assignments = store.draft.assignments as string[][]
-    const removedStudents: string[] = []
-    for (let i = newCount; i < oldCount; i++) {
-      if (assignments[i] && Array.isArray(assignments[i])) {
-        removedStudents.push(...(assignments[i] ?? []))
-      }
-    }
     assignments.length = newCount
     // Also remove the names for removed teams.
     groupNames.value.length = newCount
@@ -223,13 +217,6 @@ const decrement = () => {
     const oldCount = store.draft.groupCount
     const newCount = oldCount - 1
     const assignments = store.draft.assignments as string[][]
-    const removedStudents: string[] = []
-    for (let i = newCount; i < oldCount; i++) {
-      const currentGroup = assignments[i]
-      if (currentGroup && Array.isArray(currentGroup)) {
-        removedStudents.push(...currentGroup)
-      }
-    }
     assignments.length = newCount
     store.draft.groupCount = newCount
   }

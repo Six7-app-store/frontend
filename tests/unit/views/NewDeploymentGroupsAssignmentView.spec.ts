@@ -190,6 +190,23 @@ describe('NewDeploymentTeamsView.vue', () => {
     expect(store.draft.groupCount).toBe(2)
   })
 
+  it('moves the students of a removed group back to the unassigned pool', async () => {
+    const wrapper = createWrapper({
+      studentIds: ['u1', 'u2', 'u3'],
+      assignments: [['u1'], ['u2'], ['u3']],
+      groupCount: 3
+    })
+    await flushPromises()
+    const store = useDeploymentStore()
+
+    const minusBtn = wrapper.findAll('button').find(b => b.html().includes('lucide-minus'))
+    await minusBtn?.trigger('click')
+
+    expect(store.draft.groupCount).toBe(2)
+    expect(store.draft.assignments).toEqual([['u1'], ['u2']])
+    expect(wrapper.text()).not.toContain('deployment.assignment.allAssigned')
+  })
+
   it('removes a student from a group when clicking the X button', async () => {
     // Vorab zugewiesener Zustand
     const wrapper = createWrapper({
