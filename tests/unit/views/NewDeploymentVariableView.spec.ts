@@ -182,6 +182,23 @@ describe('NewDeploymentVariableView.vue', () => {
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployment.summary' })
   })
 
+  it('treats an untouched number variable without default as unchanged', async () => {
+    const mockVars = [
+      { name: 'port', source: 'terraform', type: 'number', required: false },
+      { name: 'host', source: 'terraform', type: 'string', required: false, default: 'localhost' }
+    ]
+
+    const wrapper = createWrapper({}, mockVars)
+    await flushPromises()
+
+    const deploymentStore = useDeploymentStore()
+    const nextBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.actions.next'))
+    await nextBtn?.trigger('click')
+
+    expect(deploymentStore.draft.userInputVar).toBe(JSON.stringify({}))
+    expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployment.summary' })
+  })
+
   it('navigates back to the teams step when the back button is clicked', async () => {
     const wrapper = createWrapper()
     await flushPromises()

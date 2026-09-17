@@ -267,6 +267,9 @@ const normalizeValue = (val: any, type: string) => {
   if (val === null || val === undefined) {
     if (isList(type)) return []
     if (isBool(type)) return false
+    // Numbers: same value as an empty input below, so an untouched number
+    // variable without a default doesn't count as changed.
+    if (isNumber(type)) return null
     return ""
   }
 
