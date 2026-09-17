@@ -3,7 +3,7 @@ import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
-import { getErrorStatus, getErrorStatusText, hasErrorResponse } from '@/utils/http-error'
+import { getErrorDetailMessage, getErrorStatus, getErrorStatusText, hasErrorResponse } from '@/utils/http-error'
 import { appApi } from '@/api/app.api'
 import { useI18n } from 'vue-i18n' // <-- i18n Import hinzugefügt
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
@@ -146,8 +146,12 @@ const handleSubmit = async () => {
 
     if (hasErrorResponse(error)) {
       const status = getErrorStatus(error)
-      if (status === 403 || status === 400 || status === 422) {
+      if (status === 403) {
         toast.error(t('AppsCreateView.messages.noAccess'))
+      } else if (status === 400 || status === 422) {
+        // Validation error, not a permission problem: show the backend's own
+        // message when it sent one.
+        toast.error(getErrorDetailMessage(error) || t('AppsCreateView.messages.validationError'))
       } else {
         toast.error(t('AppsCreateView.messages.serverError', { statusText: getErrorStatusText(error) || 'Unknown' }))
       }

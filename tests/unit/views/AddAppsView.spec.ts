@@ -220,4 +220,26 @@ describe('AddAppsView.vue', () => {
 
         expect(mockToastError).toHaveBeenCalledWith('AppsCreateView.messages.noAccess')
     })
+
+    it.each([
+        [400, undefined, 'AppsCreateView.messages.validationError'],
+        [422, undefined, 'AppsCreateView.messages.validationError'],
+        [422, 'Name ist bereits vergeben.', 'Name ist bereits vergeben.'],
+    ])('meldet %s als Eingabefehler, nicht als fehlende Berechtigung', async (status, detail, expected) => {
+        ;(appApi.create as any).mockRejectedValue({
+            response: { status, data: detail === undefined ? {} : { detail } }
+        })
+
+        const wrapper = mountComponent()
+        const textInputs = wrapper.findAll('input[type="text"]')
+
+        await textInputs[0]!.setValue('Super App')
+        await textInputs[1]!.setValue('https://github.com/user/repo')
+
+        const buttons = wrapper.findAll('button')
+        await buttons[buttons.length - 1]!.trigger('click')
+        await flushPromises()
+
+        expect(mockToastError).toHaveBeenCalledWith(expected)
+    })
 })

@@ -403,6 +403,7 @@ export default {
       invalidUrl: "This does not look like a valid Git URL (e.g., https://github.com/user/repo).",
       success: "App successfully created!",
       noAccess: "Invalid URL or no access to the repository. Please check permissions.",
+      validationError: "The data could not be saved. Please check your input.",
       serverError: "Server Error: {statusText}",
       networkError: "Error creating the app. (Network error)"
     }
