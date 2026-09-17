@@ -83,8 +83,10 @@ const selectedStudents = computed(() => {
 // Cache for students per course (lazy loading).
 const courseStudentsCache = ref(new Map<string, any[]>())
 
-// Helper: return all student IDs of a course (lazy loading).
-async function getStudentIdsForCourse(courseId: string): Promise<string[]> {
+// Helper: return all student IDs of a course (lazy loading). Returns ``null``
+// when the list could not be loaded, so callers can tell a failed request from
+// a course without students.
+async function getStudentIdsForCourse(courseId: string): Promise<string[] | null> {
   // Check the cache.
   if (courseStudentsCache.value.has(courseId)) {
     const students = courseStudentsCache.value.get(courseId)!
@@ -100,10 +102,10 @@ async function getStudentIdsForCourse(courseId: string): Promise<string[]> {
     cacheStudents(students)
     return students.map((s: any) => s.keycloak_id)
   } catch (err) {
-    // Deliberately silent: an unloadable course contributes no students
-    // (the caller then shows its "no users found" hint).
+    // Deliberately silent here: the caller decides what to show (the count
+    // stays at 0, a click reports the failed load).
     console.error(`Failed to load students for course ${courseId}:`, err)
-    return []
+    return null
   }
 }
 
@@ -157,6 +159,10 @@ function isCourseSelected(courseId: string) {
 // Course checkbox toggle: select/deselect all students of the course.
 const toggleCourse = async (courseId: string) => {
   const studentIds = await getStudentIdsForCourse(courseId)
+  if (studentIds === null) {
+    toast.error(t('CourseDetailView.toasts.loadUsersError'))
+    return
+  }
   if (studentIds.length === 0) {
     toast.warning(t('CourseDetailView.addModal.noUsersFound'))
     return

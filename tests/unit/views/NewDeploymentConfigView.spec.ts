@@ -274,6 +274,23 @@ describe('DeploymentConfig.vue', () => {
     vi.useRealTimers()
   })
 
+  it.each([
+    ['Ladefehler', () => vi.mocked(courseApi.getById).mockRejectedValue(new Error('offline')), 'error', 'CourseDetailView.toasts.loadUsersError'],
+    ['leerer Kurs', () => vi.mocked(courseApi.getById).mockResolvedValue({ data: { users: [] } } as any), 'warning', 'CourseDetailView.addModal.noUsersFound'],
+  ])('meldet beim Kursklick %s passend', async (_label, arrange, type, key) => {
+    arrange()
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    await wrapper.find('[data-testid="course-c1"]').trigger('click')
+    await flushPromises()
+
+    const expectedSpy = type === 'error' ? toastErrorMock : toastWarningMock
+    const otherSpy = type === 'error' ? toastWarningMock : toastErrorMock
+    expect(expectedSpy).toHaveBeenCalledWith(key)
+    expect(otherSpy).not.toHaveBeenCalled()
+  })
+
   it('removes only its own search-error toast, never all toasts', async () => {
     vi.useFakeTimers()
     const wrapper = createWrapper()
