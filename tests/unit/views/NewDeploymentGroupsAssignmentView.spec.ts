@@ -154,6 +154,21 @@ describe('NewDeploymentTeamsView.vue', () => {
     expect(store.draft.assignments[0]).toEqual(['u1', 'u2']) // Beide im ersten Array
   })
 
+  it.each([
+    ['einen eigenen Namen behält', 'Team Rot', 'Team Rot'],
+    ['einen Standardnamen ersetzt', 'Team 2', 'Team 1'],
+    ['einen leeren Namen ersetzt', '   ', 'Team 1'],
+  ])('"One Group" %s', async (_label, given, expected) => {
+    const wrapper = createWrapper({ groupNames: [given, 'Team 2'] })
+    await flushPromises()
+    const store = useDeploymentStore()
+
+    const oneGroupBtn = wrapper.findAll('button').find(b => b.text() === 'deployment.groups.one')
+    await oneGroupBtn?.trigger('click')
+
+    expect(store.draft.groupNames).toEqual([expected])
+  })
+
   it('assigns one student per group when "Each User" mode is selected', async () => {
     const wrapper = createWrapper()
     await flushPromises()

@@ -79,6 +79,17 @@ function ensureDefaultGroupNames() {
   }
 }
 
+// True for an empty name and for the generated default names ("Team #n"),
+// so switching the mode never overwrites a name the user typed.
+function isDefaultGroupName(name: string | undefined) {
+  if (!name || name.trim() === '') return true
+  const count = Math.max(groupNames.value.length, 1)
+  for (let i = 0; i < count; i++) {
+    if (name === t('deployment.assignment.vmDefaultName', { index: i + 1 })) return true
+  }
+  return false
+}
+
 const ensureAssignmentArrays = () => {
   const assignments = store.draft.assignments as string[][]
   for (let i = 0; i < store.draft.groupCount; i++) {
@@ -182,9 +193,8 @@ const setOneGroup = () => {
   assignments[0] = [...store.draft.studentIds]
   
   // Keep the existing name or set a default.
-  const defaultName = t('deployment.assignment.vmDefaultName', { index: 1 })
-  if (!groupNames.value[0] || groupNames.value[0].trim() === '' || groupNames.value[0].startsWith('Team')) {
-    groupNames.value[0] = defaultName
+  if (isDefaultGroupName(groupNames.value[0])) {
+    groupNames.value[0] = t('deployment.assignment.vmDefaultName', { index: 1 })
   }
   groupNames.value.length = 1
 }
