@@ -21,6 +21,19 @@ import { extractErrorMessage } from '@/utils/http-error'
 import { prettyJson, highlightJson } from '@/utils/json-display'
 import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
 import { copyText } from '@/utils/clipboard'
+import {
+    phaseLabel,
+    resolvePhaseStepCount,
+    resolvePhaseStepLabel,
+    resolveCurrentPhaseIndex,
+    estimatePhaseIndexFromPercent,
+} from '@/services/deployment-phases.service'
+import {
+    isLiveTaskStatus,
+    sortTasksNewestFirst,
+    findActiveTask,
+    selectHistoryTasks,
+} from '@/services/deployment-tasks.service'
 
 import { Eye, EyeOff } from 'lucide-vue-next'
 
@@ -477,9 +490,7 @@ onMounted(async () => {
         // Owner view: seed the top outputs from the latest task so the
         // page can render the summary before the first SSE event arrives.
         if (tasks.value && tasks.value.length > 0) {
-            const sortedTasks = [...tasks.value].sort((a, b) =>
-                b.created_at.localeCompare(a.created_at)
-            )
+            const sortedTasks = sortTasksNewestFirst(tasks.value)
 
             const latestTask = sortedTasks[0]
 
@@ -564,21 +575,16 @@ const {
     stop: stopStream,
 } = useDeploymentStream(deploymentIdRef)
 
-const activeTask = computed<Task | null>(() => {
-    if (!tasks.value.length) return null
-    // The "active" task is the one we still expect events from.
-    // Fall back to the latest task by created_at if all are terminal —
-    // its progress columns may still be useful for context.
-    const sorted = [...tasks.value].sort((a, b) => b.created_at.localeCompare(a.created_at))
-    return sorted.find((t) => t.status === 'pending' || t.status === 'running') ?? sorted[0] ?? null
-})
+// The "active" task is the one we still expect events from, falling
+// back to the newest task (see ``findActiveTask``).
+const activeTask = computed<Task | null>(() => findActiveTask(tasks.value))
 
 const isStreamRelevant = computed(() => {
     // Members never get the live stream — backend would 403 the SSE
     // endpoint anyway, the gate here just keeps the UI from poking
     // at it. Owners see the stream while there's an active task.
     if (!isOwnerView.value) return false
-    return activeTask.value?.status === 'pending' || activeTask.value?.status === 'running'
+    return isLiveTaskStatus(activeTask.value?.status)
 })
 
 // True while the deployment (or its active task) is still moving. The
@@ -603,178 +609,32 @@ const isDeploymentBusy = computed(() => {
 // Tasks that aren't the currently running one. Shown as the history
 // list below the active-task card so the running task isn't rendered
 // twice (once in the live block, once in the static list).
-const historyTasks = computed<Task[]>(() => {
-    const active = activeTask.value
-    const list = [...tasks.value].sort((a, b) => b.created_at.localeCompare(a.created_at))
-    if (!active || !isStreamRelevant.value) return list
-    return list.filter((t) => t.taskId !== active.taskId)
-})
+const historyTasks = computed<Task[]>(() =>
+    selectHistoryTasks(tasks.value, activeTask.value, isStreamRelevant.value)
+)
 
-// Phase stepper — N dots based on the live ``totalPhases`` reported by the
-// worker. Phase names live in the worker (different sets for deploy/destroy),
-// so the frontend stays task-type-agnostic for the dot count. Label tables for
-// the deploy/destroy presets render meaningful labels under each dot when the
-// totals match a known shape; an unknown count falls back to numbered labels.
-//
-// Default to a conservative 11-dot view before the first event arrives so the
-// layout doesn't jump when the worker reports its real phase count.
-const DEFAULT_PHASE_COUNT = 11
+// Phase stepper — N dots based on the live ``totalPhases`` reported by
+// the worker, labelled from the worker's ``phase_names`` or the static
+// per-task-type tables. The phase tables and label precedence live in
+// ``services/deployment-phases.service``.
+const phaseStepCount = computed<number>(() => resolvePhaseStepCount(streamTotalPhases.value))
 
-const PHASE_LABELS_DEPLOY_FULL = [
-    'STARTING',
-    'OPENSTACK_SETUP',
-    'GIT_CLONE',
-    'CREDS_MATERIALISE',
-    'PACKER_INIT',
-    'PACKER_VALIDATE',
-    'PACKER_BUILD',
-    'TERRAFORM_INIT',
-    'TERRAFORM_PLAN',
-    'TERRAFORM_APPLY',
-    'OUTPUTS_AND_CLEANUP',
-] as const
+const phaseStepLabel = (idx: number): string =>
+    resolvePhaseStepLabel(idx, {
+        phaseNames: streamPhaseNames.value,
+        activeTaskType: activeTask.value?.type,
+        totalPhases: streamTotalPhases.value,
+    })
 
-const PHASE_LABELS_DEPLOY_NO_PACKER = [
-    'STARTING',
-    'OPENSTACK_SETUP',
-    'GIT_CLONE',
-    'CREDS_MATERIALISE',
-    'TERRAFORM_INIT',
-    'TERRAFORM_PLAN',
-    'TERRAFORM_APPLY',
-    'OUTPUTS_AND_CLEANUP',
-] as const
-
-const PHASE_LABELS_DESTROY = [
-    'STARTING',
-    'OPENSTACK_SETUP',
-    'GIT_CLONE',
-    'CREDS_MATERIALISE',
-    'TERRAFORM_INIT',
-    'TERRAFORM_DESTROY',
-    'CLEANUP',
-] as const
-
-// Pause/Resume share the destroy preamble (clone + clouds + tf init to allow a
-// state-pull) but their hot phase is a CLI-driven server stop/start, not a
-// terraform destroy. Same length as ``PHASE_LABELS_DESTROY`` (7), so tables are
-// picked by task type first and only fall back to length-matching when the type
-// is unknown (e.g. live-stream attached before tasks were loaded).
-const PHASE_LABELS_PAUSE = [
-    'STARTING',
-    'OPENSTACK_SETUP',
-    'GIT_CLONE',
-    'CREDS_MATERIALISE',
-    'TERRAFORM_INIT',
-    'SERVER_STOP',
-    'CLEANUP',
-] as const
-
-const PHASE_LABELS_RESUME = [
-    'STARTING',
-    'OPENSTACK_SETUP',
-    'GIT_CLONE',
-    'CREDS_MATERIALISE',
-    'TERRAFORM_INIT',
-    'SERVER_START',
-    'CLEANUP',
-] as const
-
-// Per-VM redeploy reuses the destroy preamble (clone, clouds.yaml,
-// init) and then runs ``terraform apply -replace=… -target=…`` for
-// the single targeted resource. Phase shape mirrors
-// ``worker/app/tasks.py:_PHASES_REDEPLOY``.
-const PHASE_LABELS_REDEPLOY = [
-    'STARTING',
-    'OPENSTACK_SETUP',
-    'GIT_CLONE',
-    'CREDS_MATERIALISE',
-    'TERRAFORM_INIT',
-    'TERRAFORM_APPLY',
-    'CLEANUP',
-] as const
-
-// Stepper labels: the worker sends the full phase sequence as ``phase_names``
-// with every progress event — the authoritative source, since multi-image
-// deploys have a dynamic sequence whose template keys the frontend can't guess.
-// Before the first progress event, we fall back to the static tables below,
-// which cover the fixed shapes (single-image deploy / destroy / pause / resume
-// / redeploy); multi-image slots show generic numbers until ``phase_names`` lands.
-
-const phaseStepCount = computed<number>(() => {
-    return streamTotalPhases.value > 0 ? streamTotalPhases.value : DEFAULT_PHASE_COUNT
-})
-
-// Return the label for a given 0-based index. Order of precedence:
-//   1. ``streamPhaseNames`` — authoritative, ships from the worker on
-//      every progress event for every real task (deploy / destroy /
-//      pause / resume / redeploy). Contains the exact phase names
-//      including ``:<template_key>`` suffixes for multi-image builds.
-//   2. Static table picked by ``activeTask.type`` — used in the brief
-//      window between page-load and the first progress event, and
-//      always for legacy Single-Image-Deploy where the worker's
-//      sequence is byte-identical to ``PHASE_LABELS_DEPLOY_FULL``.
-//   3. Numeric slot index — empty-slot guard so the stepper height
-//      doesn't collapse during the loading flicker.
-const phaseStepLabel = (idx: number): string => {
-    // 1. Worker-authoritative list.
-    const fromStream = streamPhaseNames.value
-    if (Array.isArray(fromStream) && idx >= 0 && idx < fromStream.length) {
-        return phaseLabel(fromStream[idx])
-    }
-
-    // 2. Static fallback by active task type. Used until the first
-    //    progress event lands.
-    let table: readonly string[] | null = null
-    const activeType = activeTask.value?.type
-    if (activeType === 'pause') {
-        table = PHASE_LABELS_PAUSE
-    } else if (activeType === 'resume') {
-        table = PHASE_LABELS_RESUME
-    } else if (activeType === 'destroy') {
-        table = PHASE_LABELS_DESTROY
-    } else if (activeType === 'redeploy') {
-        table = PHASE_LABELS_REDEPLOY
-    } else if (activeType === 'deploy') {
-        // Without the worker's ``phase_names`` we can't tell legacy
-        // (11) apart from multi-image (14, 17, ...). The total is
-        // already known from the stream though, so pick the matching
-        // table when it fits exactly — otherwise leave ``table = null``
-        // and let the loop fall through to numeric slot indices.
-        // Once the first progress event arrives, ``phase_names`` takes
-        // over and the predicted slots are replaced with real labels.
-        if (streamTotalPhases.value === PHASE_LABELS_DEPLOY_NO_PACKER.length) {
-            table = PHASE_LABELS_DEPLOY_NO_PACKER
-        } else if (streamTotalPhases.value === PHASE_LABELS_DEPLOY_FULL.length) {
-            table = PHASE_LABELS_DEPLOY_FULL
-        }
-    }
-    // Length-based last resort (no active task type known yet).
-    if (!table) {
-        const total = streamTotalPhases.value
-        if (total === PHASE_LABELS_DEPLOY_FULL.length) table = PHASE_LABELS_DEPLOY_FULL
-        else if (total === PHASE_LABELS_DEPLOY_NO_PACKER.length) table = PHASE_LABELS_DEPLOY_NO_PACKER
-        else if (total === PHASE_LABELS_DESTROY.length) table = PHASE_LABELS_DESTROY
-    }
-    if (table && idx >= 0 && idx < table.length) {
-        return phaseLabel(table[idx])
-    }
-    // 3. Numeric placeholder so the slot has a non-empty label.
-    return String(idx + 1)
-}
-
-// 0-based index of the active dot. Prefer the worker's authoritative
-// ``phase_index`` (1-based) from the SSE payload — only fall back to
-// rounding ``progress_pct`` if no progress event has arrived yet.
-const currentPhaseIndex = computed<number>(() => {
-    if (streamCurrentPhaseIndex.value !== null && streamCurrentPhaseIndex.value > 0) {
-        return streamCurrentPhaseIndex.value - 1
-    }
-    if (streamProgress.value === null) return -1
-    const total = phaseStepCount.value
-    const pct = Math.max(0, Math.min(100, streamProgress.value))
-    return Math.max(0, Math.min(total - 1, Math.round((pct / 100) * total) - 1))
-})
+// 0-based index of the active dot (worker ``phase_index`` first,
+// ``progress_pct`` as fallback).
+const currentPhaseIndex = computed<number>(() =>
+    resolveCurrentPhaseIndex({
+        phaseIndex: streamCurrentPhaseIndex.value,
+        progress: streamProgress.value,
+        stepCount: phaseStepCount.value,
+    })
+)
 
 // Initialise progress bar + stepper from whatever the DB has on the
 // latest task — covers the gap between page load and the first SSE
@@ -791,7 +651,7 @@ watch(
     activeTask,
     (task) => {
         if (!task) return
-        const live = task.status === 'pending' || task.status === 'running'
+        const live = isLiveTaskStatus(task.status)
         if (!live) return
         if (task.progress_pct != null && streamProgress.value === null) {
             streamProgress.value = task.progress_pct
@@ -800,12 +660,11 @@ watch(
             streamCurrentPhase.value = task.current_phase
             // Approximate the phase index from the persisted percent so the
             // stepper renders meaningfully before the first SSE progress event
-            // lands, mirroring the worker's own round(idx/total*100) math.
+            // lands (see ``estimatePhaseIndexFromPercent``).
             if (task.progress_pct != null && streamCurrentPhaseIndex.value === null) {
-                const total = streamTotalPhases.value || DEFAULT_PHASE_COUNT
-                streamCurrentPhaseIndex.value = Math.max(
-                    1,
-                    Math.min(total, Math.round((task.progress_pct / 100) * total)),
+                streamCurrentPhaseIndex.value = estimatePhaseIndexFromPercent(
+                    task.progress_pct,
+                    streamTotalPhases.value,
                 )
             }
         }
@@ -885,8 +744,7 @@ watch(streamConnectionState, async (state) => {
     // look at the newest task. The toast is kept separate from the logs panel
     // to give a clear "the lifecycle pass failed but the deployment is still up"
     // hint without pulling raw exception text into the toast.
-    const sortedTasks = [...(tasks.value || [])]
-        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+    const sortedTasks = sortTasksNewestFirst(tasks.value || [])
     const newestTask = sortedTasks[0]
     const failedKind = (newestTask?.type === 'pause' || newestTask?.type === 'resume')
         && newestTask.status === 'failed'
@@ -939,28 +797,6 @@ const copyToClipboard = async (text: string, key: string) => {
     } catch (err) {
         console.error('Copy failed:', err)
     }
-}
-
-// Pretty phase label for the progress bar header. Keeps the enum
-// naming convention from the worker (UPPER_SNAKE_CASE) but renders
-// it human-friendly. Defensive: anything that isn't a non-empty
-// string falls back to an empty label so the template never sees a
-// non-string slip through (e.g. the brief moment an unwrapped ref
-// produced the original ``phase.split is not a function`` crash).
-const phaseLabel = (phase: unknown): string => {
-    if (typeof phase !== 'string' || !phase) return ''
-    // Worker-emitted multi-image phases carry the template key as a ``:<key>``
-    // suffix (e.g. ``PACKER_BUILD:database``). Split the suffix off, title-case
-    // the base name, and append the sub-key as ``[<key>]`` so the stepper reads
-    // ``Packer Build [database]`` instead of ``Packer Build:database``.
-    const colonIdx = phase.indexOf(':')
-    const base = colonIdx === -1 ? phase : phase.slice(0, colonIdx)
-    const subKey = colonIdx === -1 ? '' : phase.slice(colonIdx + 1).trim()
-    const formattedBase = base
-        .split('_')
-        .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
-        .join(' ')
-    return subKey ? `${formattedBase} [${subKey}]` : formattedBase
 }
 
 // Count of log entries inside ``selectedTask.logs`` for the badge in
