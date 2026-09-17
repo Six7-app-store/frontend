@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { CircleArrowLeft, Loader2, Users, Settings, Terminal, ChevronDown, Trash2, GitBranch, User, Calendar, Clock, Package, AlertCircle, CheckCircle, XCircle, StopCircle, Flame, Copy, Check, Send, PauseCircle, PlayCircle, RefreshCw, Server, Network, Shield } from 'lucide-vue-next'
+import { CircleArrowLeft, Loader2, Users, Settings, Terminal, ChevronDown, Trash2, GitBranch, User, Calendar, Package, AlertCircle, Copy, Check, Send, PauseCircle, PlayCircle, RefreshCw, Server, Network, Shield } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -41,6 +41,19 @@ import {
     type UserAccount,
 } from '@/services/deployment-outputs.service'
 import { matchTeamAccounts, sshCommandFor, userUrlFor } from '@/services/deployment-account-matching.service'
+import {
+    DELETE_DISABLED_REASON,
+    canDeleteDeployment,
+    canPauseDeployment,
+    canResumeDeployment,
+    pauseResumeActionFor,
+    isDeploymentBusy as isBusy,
+    isDeploymentGone,
+    resolveStreamEndOutcome,
+    type PauseResumeAction,
+} from '@/services/deployment-lifecycle.service'
+import { parseDeploymentGroups, parseDeploymentVariables, cleanVariableValue } from '@/services/deployment-input.service'
+import { getStatusStyles } from '@/utils/deployment-status-styles'
 
 import { Eye, EyeOff } from 'lucide-vue-next'
 
@@ -223,61 +236,18 @@ const executeRedeploy = async (address: string) => {
     }
 }
 
-// Lifecycle action gating — the action bar exposes Delete plus a
-// dynamic Pause/Resume button. The backend picks the right Delete
-// behaviour (terraform destroy + soft-delete vs. straight soft-delete)
-// based on status, so the frontend just surfaces availability.
-// Mirrors backend/app/services/lifecycle.py:
-//   * success                 → Delete (dispatches Destroy), Pause
-//   * paused                  → Delete (dispatches Destroy), Resume
-//   * pause_failed            → Delete, Pause-Retry, Resume
-//   * resume_failed           → Delete, Resume-Retry, Pause
-//   * failed                  → Delete (Destroy or soft-delete)
-//   * cancelled               → Delete (soft-delete)
-//   * pending / running / destroying / pausing / resuming → 409, all disabled
-//
-// Members can never act on lifecycle; the action-bar hides the
-// buttons entirely for them rather than rendering permanently-disabled
-// controls.
-const DELETE_STATUSES = [
-  'success', 'failed', 'cancelled', 'paused', 'pause_failed', 'resume_failed',
-]
+// Lifecycle action gating — the status matrix lives in
+// ``services/deployment-lifecycle.service``. Members can never act on
+// lifecycle, so every action is additionally gated on ``isOwnerView``.
+const canDelete = computed(() => isOwnerView.value && canDeleteDeployment(deployment.value?.status))
 
-const canDelete = computed(() => {
-    if (!isOwnerView.value) return false
-    return DELETE_STATUSES.includes(deployment.value?.status ?? '')
-})
+const deleteDisabledReason = computed(() => canDelete.value ? '' : DELETE_DISABLED_REASON)
 
-const deleteDisabledReason = computed(() => {
-    if (canDelete.value) return ''
-    return `Delete available when status is ${DELETE_STATUSES.join(', ')}`
-})
-
-// One Pause/Resume button — what it does depends on status. Most
-// common case: ``success`` → Pause; ``paused`` → Resume. Failure
-// states (pause_failed / resume_failed) also expose a retry that
-// matches what just broke. Anything else hides it entirely.
-const canPause = computed(() => {
-    if (!isOwnerView.value) return false
-    const s = deployment.value?.status
-    return s === 'success' || s === 'pause_failed' || s === 'resume_failed'
-})
-const canResume = computed(() => {
-    if (!isOwnerView.value) return false
-    const s = deployment.value?.status
-    return s === 'paused' || s === 'pause_failed' || s === 'resume_failed'
-})
+// One Pause/Resume button — what it does depends on status.
+const canPause = computed(() => isOwnerView.value && canPauseDeployment(deployment.value?.status))
+const canResume = computed(() => isOwnerView.value && canResumeDeployment(deployment.value?.status))
 const canPauseOrResume = computed(() => canPause.value || canResume.value)
-const pauseResumeAction = computed<'pause' | 'resume' | null>(() => {
-    // Prefer the action that matches the steady-state semantic of
-    // the current status: from ``success`` we pause, from ``paused``
-    // we resume. From the failure states we pick the retry that
-    // matches what just broke.
-    const s = deployment.value?.status
-    if (s === 'success' || s === 'pause_failed') return 'pause'
-    if (s === 'paused' || s === 'resume_failed') return 'resume'
-    return null
-})
+const pauseResumeAction = computed<PauseResumeAction | null>(() => pauseResumeActionFor(deployment.value?.status))
 
 const showDeleteModal = ref(false)
 // Per-VM redeploy confirmation. Mirrors the Delete-modal pattern, but
@@ -394,24 +364,13 @@ const isStreamRelevant = computed(() => {
     return isLiveTaskStatus(activeTask.value?.status)
 })
 
-// True while the deployment (or its active task) is still moving. The
-// resend-access button reads this to stay disabled until the run is
-// terminal — otherwise an operator could mail credentials before the
-// VMs/services they point at are reachable.
-const isDeploymentBusy = computed(() => {
-    const dStatus = deployment.value?.status
-    if (dStatus === 'pending' || dStatus === 'running') return true
-    const tStatus = activeTask.value?.status
-    if (tStatus === 'pending' || tStatus === 'running') return true
-    // Members never load the task list (tasks.value stays empty, so
-    // activeTask is null), but a redeploy/pause/resume can still be in
-    // flight while the deployment row reads "success". Fall back to the
-    // latest_task status from the detail response, which is populated
-    // regardless of role, so the member's resend button stays disabled
-    // until the run is terminal.
-    const latestStatus = deployment.value?.latest_task?.status
-    return latestStatus === 'pending' || latestStatus === 'running'
-})
+// True while the deployment (or its active task) is still moving; keeps
+// the resend-access button disabled until the run is terminal.
+const isDeploymentBusy = computed(() => isBusy({
+    deploymentStatus: deployment.value?.status,
+    activeTaskStatus: activeTask.value?.status,
+    latestTaskStatus: deployment.value?.latest_task?.status,
+}))
 
 // Tasks that aren't the currently running one. Shown as the history
 // list below the active-task card so the running task isn't rendered
@@ -521,13 +480,18 @@ watch(streamConnectionState, async (state) => {
     await deploymentStore.fetchDeploymentById(deploymentId)
     await loadTasks()
 
-    // The deployment row only disappears when destroy actually succeeded (the
-    // celery listener auto-soft-deletes on ``task-succeeded`` of a DESTROY task).
-    // A failed destroy leaves the row so the user can read the logs.
-    const gone = !deploymentStore.currentDeployment
-        || deploymentStore.currentDeployment.deploymentId !== deploymentId
+    // Decide what happened (see ``resolveStreamEndOutcome``): a gone row
+    // means the destroy succeeded, a remaining row after a destroy means
+    // it failed, otherwise a failed pause/resume gets its own toast.
+    const outcome = resolveStreamEndOutcome({
+        gone: isDeploymentGone(deploymentStore.currentDeployment, deploymentId),
+        wasDestroy,
+        newestTask: sortTasksNewestFirst(tasks.value || [])[0],
+        lastActiveType,
+        lastActiveStatus,
+    })
 
-    if (gone) {
+    if (outcome === 'gone') {
         // Soft-deleted upstream — the destroy ran clean.
         toastStore.addToast({
             type: 'success',
@@ -539,7 +503,7 @@ watch(streamConnectionState, async (state) => {
 
     // Destroy attempted but the row still exists → it failed. Show a clear
     // error toast and leave the user on the detail page to inspect the logs.
-    if (wasDestroy) {
+    if (outcome === 'destroy_failed') {
         toastStore.addToast({
             type: 'error',
             message: t('DeploymentDetailView.deleteFailedAsyncToast'),
@@ -547,29 +511,15 @@ watch(streamConnectionState, async (state) => {
         return
     }
 
-    // Pause/Resume failed asynchronously. ``activeTask`` is no longer set, so
-    // look at the newest task. The toast is kept separate from the logs panel
-    // to give a clear "the lifecycle pass failed but the deployment is still up"
-    // hint without pulling raw exception text into the toast.
-    const sortedTasks = sortTasksNewestFirst(tasks.value || [])
-    const newestTask = sortedTasks[0]
-    const failedKind = (newestTask?.type === 'pause' || newestTask?.type === 'resume')
-        && newestTask.status === 'failed'
-        ? newestTask.type
-        : null
-    // Belt-and-braces: even if loadTasks() raced, the snapshot from
-    // before the await should still tell us what was active.
-    const fallbackKind = (lastActiveType === 'pause' || lastActiveType === 'resume')
-        && lastActiveStatus === 'failed'
-        ? lastActiveType
-        : null
-    const kind = failedKind || fallbackKind
-    if (kind === 'pause') {
+    // Pause/Resume failed asynchronously. The toast is kept separate from the
+    // logs panel to give a clear "the lifecycle pass failed but the deployment
+    // is still up" hint without pulling raw exception text into the toast.
+    if (outcome === 'pause_failed') {
         toastStore.addToast({
             type: 'error',
             message: t('DeploymentDetailView.pauseFailedAsyncToast'),
         })
-    } else if (kind === 'resume') {
+    } else if (outcome === 'resume_failed') {
         toastStore.addToast({
             type: 'error',
             message: t('DeploymentDetailView.resumeFailedAsyncToast'),
@@ -616,123 +566,6 @@ const deploymentTimestamp = computed(() => {
     return deployment.value?.created_at ? formatDate(deployment.value.created_at) : '-'
 })
 
-const getStatusStyles = (status?: string) => {
-    switch (status) {
-        case 'success':
-            return {
-                label: 'DeploymentsView.deploymentSuccessful',
-                dotClass: 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-green-100 text-green-800 border-green-300',
-                icon: CheckCircle
-            }
-        case 'running':
-            return {
-                label: 'DeploymentsView.deploymentRunning',
-                dotClass: 'bg-blue-500 animate-pulse shadow-[0_0_12px_rgba(59,130,246,0.6)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-blue-100 text-blue-800 border-blue-300',
-                icon: Loader2
-            }
-        case 'pending':
-            return {
-                label: 'DeploymentsView.deploymentPending',
-                dotClass: 'bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.4)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                icon: Clock
-            }
-        case 'failed':
-            return {
-                label: 'DeploymentsView.deploymentFailed',
-                dotClass: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-red-100 text-red-800 border-red-300',
-                icon: XCircle
-            }
-        case 'destroying':
-            return {
-                label: 'DeploymentsView.deploymentDestroying',
-                dotClass: 'bg-orange-500 animate-pulse shadow-[0_0_12px_rgba(249,115,22,0.6)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-orange-100 text-orange-700 border-orange-300',
-                icon: Loader2
-            }
-        case 'cancelled':
-            return {
-                label: 'DeploymentsView.deploymentCancelled',
-                dotClass: 'bg-gray-400',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-gray-100 text-gray-700 border-gray-300',
-                icon: StopCircle
-            }
-        case 'destroyed':
-            return {
-                label: 'DeploymentsView.deploymentDestroyed',
-                dotClass: 'bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.4)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-orange-100 text-orange-800 border-orange-300',
-                icon: Flame
-            }
-        case 'pausing':
-            return {
-                // ``pausing``/``resuming`` borrow the orange "in flight"
-                // palette from destroying — the user reads "something
-                // active is happening" at a glance, distinct from the
-                // calm green of success.
-                label: 'DeploymentsView.deploymentPausing',
-                dotClass: 'bg-amber-500 animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.6)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-amber-100 text-amber-800 border-amber-300',
-                icon: Loader2
-            }
-        case 'paused':
-            return {
-                label: 'DeploymentsView.deploymentPaused',
-                dotClass: 'bg-slate-400 shadow-[0_0_10px_rgba(148,163,184,0.4)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-slate-100 text-slate-700 border-slate-300',
-                icon: PauseCircle
-            }
-        case 'resuming':
-            return {
-                label: 'DeploymentsView.deploymentResuming',
-                dotClass: 'bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.6)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                icon: Loader2
-            }
-        case 'pause_failed':
-            // The deployment itself is unaffected — only the
-            // pause-pass tripped. Use the warning palette so the
-            // user reads "needs attention" rather than the harsher
-            // red of a deploy-failed.
-            return {
-                label: 'DeploymentsView.deploymentPauseFailed',
-                dotClass: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
-                icon: AlertCircle
-            }
-        case 'resume_failed':
-            return {
-                label: 'DeploymentsView.deploymentResumeFailed',
-                dotClass: 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]',
-                textClass: 'text-gray-900',
-                badgeClass: 'bg-amber-100 text-amber-900 border-amber-300',
-                icon: AlertCircle
-            }
-        default:
-            return {
-                label: 'DeploymentsView.noStatus',
-                dotClass: 'bg-gray-300',
-                textClass: 'text-gray-400',
-                badgeClass: 'bg-gray-100 text-gray-800 border-gray-300',
-                icon: AlertCircle
-            }
-    }
-}
-
 const selectedGroup = ref<number | null>(null)
 
 const selectGroup = (groupIndex: number) => {
@@ -743,52 +576,16 @@ const deselectGroup = () => {
     selectedGroup.value = null
 }
 
-const groups = computed(() => {
-    if (!deployment.value?.userInputVar) return []
-
-    try {
-        const data = typeof deployment.value.userInputVar === 'string'
-            ? JSON.parse(deployment.value.userInputVar)
-            : deployment.value.userInputVar
-        const groupNames = data.groupNames || []
-        const assignments = data.assignments || {}
-
-        return Object.keys(assignments).map((groupIndex, idx) => ({
-            index: parseInt(groupIndex),
-            name: groupNames[idx] || `Gruppe ${parseInt(groupIndex) + 1}`,
-            students: assignments[groupIndex] || []
-        }))
-    } catch (e) {
-        console.error('Error parsing userInputVar:', e)
-        return []
-    }
-})
+// Groups and variables from the persisted wizard input
+// (see ``services/deployment-input.service``).
+const groups = computed(() => parseDeploymentGroups(deployment.value?.userInputVar))
 
 const currentGroup = computed(() => {
     if (selectedGroup.value === null) return null
     return groups.value[selectedGroup.value] ?? null
 })
 
-const deploymentVariables = computed(() => {
-    if (!deployment.value?.userInputVar) return {}
-
-    try {
-        const data = typeof deployment.value.userInputVar === 'string'
-            ? JSON.parse(deployment.value.userInputVar)
-            : deployment.value.userInputVar
-        return data.variables || {}
-    } catch (e) {
-        console.error('Error parsing userInputVar:', e)
-        return {}
-    }
-})
-
-const cleanVariableValue = (value?: string) => {
-    const str = String(value ?? '')
-    let cleaned = str.split('#')[0]?.trim() ?? ''
-    cleaned = cleaned.replace(/["']/g, '')
-    return cleaned.trim() || '-'
-}
+const deploymentVariables = computed(() => parseDeploymentVariables(deployment.value?.userInputVar))
 
 // ``logs`` can be either a backend-formatted ``Task failed: ...`` string
 // (the failure shape this splitter cares about) or a structured
