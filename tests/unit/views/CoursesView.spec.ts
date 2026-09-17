@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 
 import CoursesView from '@/views/CoursesView.vue'
+import de from '@/i18n/locales/de'
 
 // ---------------------------------------------------------
 // 1. Mocks & Setup
@@ -20,6 +21,10 @@ vi.mock('vue-i18n', () => ({
         t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
     })
 }))
+
+// Echtes vue-i18n nur für die ``<i18n-t>``-Komponente im Template; ``useI18n``
+// bleibt oben gemockt.
+const { createI18n } = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
 
 // Toast
 const mockToastError = vi.fn()
@@ -92,6 +97,7 @@ describe('CoursesView.vue', () => {
     const mountComponent = () => {
         return mount(CoursesView, {
             global: {
+                plugins: [createI18n({ legacy: false, locale: 'de', messages: { de } })],
                 // HIER KORRIGIERT: Beachtet jetzt Variablen im Template!
                 mocks: {
                     $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
@@ -260,5 +266,21 @@ describe('CoursesView.vue', () => {
         expect(mockDeleteCourse).toHaveBeenCalledWith('c-77')
         expect(mockToastSuccess).toHaveBeenCalledWith('CoursesView.toasts.deleteSuccess')
         expect((wrapper.vm as any).courseToDelete).toBeNull()
+    })
+
+    it('rendert den Kursnamen im Löschen-Modal als Text, nicht als HTML', async () => {
+        const evilName = '<img src=x onerror="alert(1)">'
+        mockCourses = [{ courseId: 'c-66', name: evilName }]
+        ;(courseApi.listMembers as any).mockResolvedValue({ data: [] })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        await wrapper.find('button[title="CoursesView.deleteTitle"]').trigger('click')
+        await nextTick()
+
+        const modal = wrapper.find('.modal')
+        expect(modal.find('img').exists()).toBe(false)
+        expect(modal.find('strong').text()).toBe(evilName)
     })
 })

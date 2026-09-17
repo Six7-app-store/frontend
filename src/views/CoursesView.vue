@@ -231,7 +231,9 @@ const goToDetail = (courseId: string) => {
 
       <template #body>
         <div class="space-y-3">
-          <p class="text-gray-700" v-html="$t('CoursesView.deleteModal.confirmPrompt', { name: courseToDelete?.name })"></p>
+          <i18n-t keypath="CoursesView.deleteModal.confirmPrompt" tag="p" class="text-gray-700">
+            <template #name><strong>{{ courseToDelete?.name }}</strong></template>
+          </i18n-t>
           <p class="text-sm text-gray-500">
             {{ $t('CoursesView.deleteModal.warning') }}
           </p>

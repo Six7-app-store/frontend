@@ -82,7 +82,7 @@ export default {
     },
     deleteModal: {
       title: "Kurs löschen",
-      confirmPrompt: "Soll der Kurs <strong>{name}</strong> wirklich gelöscht werden?",
+      confirmPrompt: "Soll der Kurs {name} wirklich gelöscht werden?",
       warning: "Mitgliedschaften werden entfernt, die Benutzer-Konten bleiben bestehen.",
       cancel: "Abbrechen",
       deleting: "Lösche...",
