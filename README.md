@@ -69,6 +69,21 @@ src/
 
 **api/ ↔ stores/** — spiegeln sich paarweise: zu jeder Ressource gibt es ein `*.api.ts` (macht nur die reinen Aufrufe ans Backend) und meist einen `*.store.ts` (hält die Daten im Speicher und bietet Aktionen darauf an, die wiederum die Aufrufe nutzen). Beispiele: `deployment`, `app`, `course`, `team`, `user`, `credentials`.
 
+## Fehlerbehandlung
+
+Damit fehlgeschlagene Backend-Aufrufe überall gleich behandelt werden, gilt im Frontend eine feste Konvention:
+
+1. **API-Layer (`api/`) fängt keine Fehler ab.** Einzige Ausnahme ist `api/axios.ts`: Dort werden global abgelaufene Logins (401) und fehlende Rechte (403) behandelt.
+2. **Fehler werden nur über `utils/http-error.ts` ausgelesen**, nie direkt über `err.response`: `getErrorStatus`, `getErrorStatusText`, `hasErrorResponse`, `getErrorDetail`, `getErrorReason` sowie `extractErrorMessage` für einen lesbaren Text.
+3. **Stores** setzen Lade- und Fehlerzustand über `runRequest` aus `stores/_request.ts`, wo das Muster passt (Lade-Flag an, Fehler leeren, Fallback-Text, optional weiterwerfen). Abweichungen (z.B. 404 = „gelöscht“ in `deployment.store`) sind ausgeschrieben und kommentiert.
+4. **Views, Komponenten und Composables sind die Stelle, an der Nutzer:innen etwas sehen.** Jeder `catch` macht genau eines davon:
+   - **Rückmeldung geben**: Toast über `useToast()` oder eine Fehlermeldung direkt im Formular/Bereich,
+   - **weiterwerfen**, damit der Aufrufer entscheidet,
+   - **bewusst still bleiben**: dann mit `console.error`/`console.warn` und einem Kommentar, *warum* keine Rückmeldung nötig ist.
+
+   Leere `catch {}` oder `.catch(() => null)` ohne Kommentar gibt es nicht; Toasts werden nicht direkt über den Toast-Store erzeugt.
+5. **Status- oder Reason-Codes → Text** (z.B. 412 „Credentials fehlen“, `smtp_disabled`) werden dort übersetzt, wo die zugehörige Logik liegt (Service bzw. Composable), nicht verstreut in Templates.
+
 ## Mehr
 
 - Architektur und projektübergreifende Doku: [.github-Repo](https://github.com/six7-click-n-deploy/.github)
