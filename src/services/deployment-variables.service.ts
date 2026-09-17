@@ -2,6 +2,17 @@
  * Helpers for the deployment wizard's variable values (``draft.variables``).
  * Pure functions — no Vue, no I/O.
  */
+import type { AppVariable } from '@/types'
+
+/**
+ * Scope of a variable: ``varScope`` wins, ``osScope`` (from an
+ * ``@openstack:<type>:<scope>`` marker) is the fallback, ``all`` the default.
+ * Scoped variables hold one value per slot (team or member), so the wizard
+ * step and the summary must agree on this rule.
+ */
+export function effectiveVariableScope(variable: AppVariable): 'all' | 'team' | 'user' {
+  return (variable.varScope || variable.osScope || 'all') as 'all' | 'team' | 'user'
+}
 
 /**
  * Multi-image Packer layout: such apps store Packer values nested under

@@ -80,7 +80,9 @@ describe('NewDeploymentSummaryView.vue', () => {
             groupNames: ['Team Alpha'],
             variables: {
               'region': 'eu-central-1',
-              'instance_type': 't2.micro'
+              'instance_type': 't2.micro',
+              // Scoped through ``osScope`` only: one value per team.
+              'net': { 'Team Alpha': 'net-1' }
             },
             fileUploads: {
               'ssh_key': {
@@ -97,7 +99,8 @@ describe('NewDeploymentSummaryView.vue', () => {
     appStore.fetchAppVariables = vi.fn().mockResolvedValue([
       { name: 'region', source: 'packer', default: 'us-east' },
       { name: 'instance_type', source: 'terraform', default: 't2.small' },
-      { name: 'ssh_key', source: 'terraform', osType: 'file', osScope: 'user' }
+      { name: 'ssh_key', source: 'terraform', osType: 'file', osScope: 'user' },
+      { name: 'net', source: 'terraform', osType: 'network', osScope: 'team' }
     ])
 
     const deploymentStore = useDeploymentStore()
@@ -148,6 +151,14 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(wrapper.text()).toContain('t2.micro') // Terraform-Wert
     expect(wrapper.text()).toContain('id_rsa.pub') // Datei-Upload
     expect(wrapper.text()).toContain('1 KB') // Formatierte Dateigröße
+  })
+
+  it('renders a variable scoped through osScope per slot', async () => {
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Team Alpha: OS-Name-net-1')
+    expect(wrapper.text()).not.toContain('[object Object]')
   })
 
   it('navigates back to variables step when Back or Edit button is clicked', async () => {

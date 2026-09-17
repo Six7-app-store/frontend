@@ -9,6 +9,7 @@ import { useToast } from '@/composables/useToast'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import VariableInput from '@/components/VariableInput.vue'
 import ScopeBadge from '@/components/ui/ScopeBadge.vue'
+import { effectiveVariableScope } from '@/services/deployment-variables.service'
 import {
   ArrowRight,
   ArrowLeft,
@@ -49,9 +50,7 @@ const isList = (type: string) => type.toLowerCase().startsWith('list') || type.t
 const isFileVar = (v: AppVariable): boolean => v.osType === 'file'
 
 // True when the variable has a per-variable scope other than ``all``.
-const effectiveScope = (v: AppVariable): 'all' | 'team' | 'user' => {
-  return (v.varScope || v.osScope || 'all') as 'all' | 'team' | 'user'
-}
+const effectiveScope = effectiveVariableScope
 const isScoped = (v: AppVariable): boolean => effectiveScope(v) !== 'all'
 
 /** Slot keys for a scoped variable. */

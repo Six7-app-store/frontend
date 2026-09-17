@@ -7,7 +7,10 @@ import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
 import { useToast } from '@/composables/useToast'
-import { isMultiImagePackerLayout as detectMultiImagePackerLayout } from '@/services/deployment-variables.service'
+import {
+  effectiveVariableScope,
+  isMultiImagePackerLayout as detectMultiImagePackerLayout,
+} from '@/services/deployment-variables.service'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import {
@@ -234,11 +237,11 @@ const fileVarSummaries = computed(() => {
  * - Plain variables: format the raw value.
  */
 function toSummaryEntry(def: AppVariable, val: any): {label: string, value: string, raw?: string} {
-  // Scoped variables (``varScope = team|user``) arrive as a map
+  // Scoped variables (``varScope``/``osScope`` = team|user) arrive as a map
   // (slotKey → value). Render as ``"slotKey: value"`` lines so the
   // summary makes the per-recipient configuration obvious — same
   // detail level the wizard step shows.
-  if ((def.varScope === 'team' || def.varScope === 'user') && def.osType !== 'file') {
+  if (effectiveVariableScope(def) !== 'all' && def.osType !== 'file') {
     if (!val || typeof val !== 'object' || Array.isArray(val)) {
       return { label: def.name, value: '-' }
     }
