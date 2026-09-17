@@ -17,6 +17,17 @@ export default defineConfig({
         'src/main.ts',
         'src/**/*.d.ts',
       ],
+      // Ratsche gegen Degradation: `vitest --run --coverage` schlägt fehl,
+      // wenn die Abdeckung unter diese Werte fällt. Bewusst niedrig
+      // angesetzt, damit das Gate beim Einbau nicht sofort rot ist — nach
+      // dem ersten echten Coverage-Lauf auf knapp unter den Ist-Wert
+      // hochziehen und nie wieder senken.
+      thresholds: {
+        statements: 30,
+        branches: 30,
+        functions: 30,
+        lines: 30,
+      },
     },
   },
   resolve: {

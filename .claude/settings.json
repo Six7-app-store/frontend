@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "docker ps >/dev/null 2>&1 || exit 0; docker exec frontend-dev sh -lc 'cd /app && npx vue-tsc -b' >/dev/null 2>&1 || printf '%s' '{\"decision\":\"block\",\"reason\":\"Typecheck schlaegt fehl. Ausfuehren und beheben: docker exec frontend-dev sh -lc \\\"cd /app && npx vue-tsc -b\\\"\"}'; exit 0",
+            "timeout": 180,
+            "statusMessage": "Typecheck-Gate"
+          }
+        ]
+      }
+    ]
+  }
+}
