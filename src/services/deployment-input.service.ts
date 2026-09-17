@@ -28,9 +28,11 @@ export function parseDeploymentGroups(userInputVar: UserInputVar): DeploymentGro
     const groupNames = data.groupNames || []
     const assignments = data.assignments || {}
 
-    return Object.keys(assignments).map((groupIndex, idx) => ({
+    // The assignment key is the group's index into ``groupNames``; keys may
+    // have gaps, so the position in ``assignments`` is not used.
+    return Object.keys(assignments).map((groupIndex) => ({
       index: parseInt(groupIndex),
-      name: groupNames[idx] || `Gruppe ${parseInt(groupIndex) + 1}`,
+      name: groupNames[parseInt(groupIndex)] || `Gruppe ${parseInt(groupIndex) + 1}`,
       students: assignments[groupIndex] || []
     }))
   } catch (e) {

@@ -26,9 +26,13 @@ describe('parseDeploymentGroups', () => {
     expect(parseDeploymentGroups(input)).toEqual(expected)
   })
 
-  it('names groups by position, not by assignment key', () => {
+  it('names groups by their assignment key, not by position', () => {
     expect(parseDeploymentGroups({ groupNames: ['First'], assignments: { 3: [] } })).toEqual([
-      { index: 3, name: 'First', students: [] },
+      { index: 3, name: 'Gruppe 4', students: [] },
+    ])
+    expect(parseDeploymentGroups({ groupNames: ['A', 'B', 'C'], assignments: { 0: ['s1'], 2: ['s3'] } })).toEqual([
+      { index: 0, name: 'A', students: ['s1'] },
+      { index: 2, name: 'C', students: ['s3'] },
     ])
   })
 

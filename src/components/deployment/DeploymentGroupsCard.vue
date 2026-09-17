@@ -12,6 +12,7 @@ const props = defineProps<{
   groups: DeploymentGroup[]
 }>()
 
+// Assignment key (``DeploymentGroup.index``) of the opened group.
 const selectedGroup = ref<number | null>(null)
 
 const selectGroup = (groupIndex: number) => {
@@ -24,7 +25,7 @@ const deselectGroup = () => {
 
 const currentGroup = computed(() => {
   if (selectedGroup.value === null) return null
-  return props.groups[selectedGroup.value] ?? null
+  return props.groups.find((group) => group.index === selectedGroup.value) ?? null
 })
 </script>
 
