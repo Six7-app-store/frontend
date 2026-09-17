@@ -141,6 +141,8 @@ onMounted(async () => {
     ...unassignedStudents.value
   ]))
   
+  // Draft student IDs are Keycloak IDs (the cache is keyed by them); the
+  // backend ``userId`` of a user is a different ID.
   const missingIds: string[] = []
   for (const id of allIds) {
     const cached = studentCache[id]
@@ -149,7 +151,7 @@ onMounted(async () => {
       let found = null
       for (const key in studentCache) {
         const s = studentCache[key]
-        if (s && s.userId === id && (s.firstName || s.lastName || s.username || s.email)) {
+        if (s && s.keycloak_id === id && (s.firstName || s.lastName || s.username || s.email)) {
           found = s
           break
         }
@@ -167,9 +169,10 @@ onMounted(async () => {
     // A user that can't be loaded is skipped silently: the placeholder cache
     // entry set above keeps the assignment UI usable.
     const results = await Promise.all(missingIds.map(id => userApi.getById(id).then(res => res.data).catch(() => null)))
-    results.forEach((user) => {
+    // Cache under the requested ID — that's the key the template looks up.
+    results.forEach((user, i) => {
       if (user && user.userId) {
-        setStudentCache(user.userId, user)
+        setStudentCache(missingIds[i]!, user)
       }
     })
     await nextTick()

@@ -51,14 +51,15 @@ describe('NewDeploymentTeamsView.vue', () => {
     } as any)
   })
 
-  function createWrapper(customDraftState = {}) {
+  function createWrapper(customDraftState = {}, extraCacheEntries: Array<[string, any]> = []) {
     const pinia = createTestingPinia({
       createSpy: vi.fn,
       initialState: {
         deployment: {
           studentCache: new Map([
             ['u1', { userId: 'u1', firstName: 'John', lastName: 'Doe' }],
-            ['u2', { userId: 'u2', firstName: 'Jane', lastName: 'Smith' }]
+            ['u2', { userId: 'u2', firstName: 'Jane', lastName: 'Smith' }],
+            ...extraCacheEntries
           ]),
           draft: {
             studentIds: ['u1', 'u2'],
@@ -97,6 +98,29 @@ describe('NewDeploymentTeamsView.vue', () => {
     await flushPromises()
 
     expect(routerReplaceMock).toHaveBeenCalledWith({ name: 'deployment.config' })
+  })
+
+  it('shows the name of a student loaded by Keycloak ID (backend userId differs)', async () => {
+    vi.mocked(userApi.getById).mockResolvedValue({
+      data: { userId: 'u-db-3', keycloak_id: 'kc-3', firstName: 'Kira', lastName: 'Keycloak' }
+    } as any)
+    const wrapper = createWrapper({ studentIds: ['u1', 'kc-3'] })
+    await flushPromises()
+
+    expect(userApi.getById).toHaveBeenCalledWith('kc-3')
+    expect(wrapper.text()).toContain('Kira Keycloak')
+    expect(wrapper.text()).not.toContain('kc-3')
+  })
+
+  it('finds a cached student stored under another key by its Keycloak ID', async () => {
+    const wrapper = createWrapper(
+      { studentIds: ['u1', 'kc-9'] },
+      [['u-db-9', { userId: 'u-db-9', keycloak_id: 'kc-9', firstName: 'Cached', lastName: 'Person' }]]
+    )
+    await flushPromises()
+
+    expect(userApi.getById).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Cached Person')
   })
 
   it('renders correctly with unassigned students', async () => {
