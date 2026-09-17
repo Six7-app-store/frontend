@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { inject, provide, ref, type InjectionKey } from 'vue'
 import { copyText } from '@/utils/clipboard'
 
 /**
@@ -36,4 +36,27 @@ export function useCopyToClipboard(resetMs = 1500) {
     copiedKey,
     copyToClipboard,
   }
+}
+
+export type CopyToClipboard = ReturnType<typeof useCopyToClipboard>
+
+const copyToClipboardKey: InjectionKey<CopyToClipboard> = Symbol('copyToClipboard')
+
+/**
+ * Create the page-wide instance and make it available to descendant
+ * components (see :func:`injectCopyToClipboard`).
+ */
+export function provideCopyToClipboard(resetMs?: number): CopyToClipboard {
+  const instance = useCopyToClipboard(resetMs)
+  provide(copyToClipboardKey, instance)
+  return instance
+}
+
+/**
+ * Use the instance provided by an ancestor so all copy buttons of a page
+ * share one "just copied" state; falls back to a local instance when
+ * nothing was provided.
+ */
+export function injectCopyToClipboard(): CopyToClipboard {
+  return inject(copyToClipboardKey, () => useCopyToClipboard(), true)
 }

@@ -3,7 +3,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 const copyText = vi.hoisted(() => vi.fn())
 vi.mock('@/utils/clipboard', () => ({ copyText }))
 
-import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
+import { defineComponent, h } from 'vue'
+import { mount } from '@vue/test-utils'
+import {
+  injectCopyToClipboard,
+  provideCopyToClipboard,
+  useCopyToClipboard,
+  type CopyToClipboard,
+} from '@/composables/useCopyToClipboard'
 
 describe('useCopyToClipboard', () => {
   beforeEach(() => {
@@ -70,5 +77,49 @@ describe('useCopyToClipboard', () => {
     vi.advanceTimersByTime(100)
 
     expect(copiedKey.value).toBeNull()
+  })
+})
+
+describe('provideCopyToClipboard / injectCopyToClipboard', () => {
+  beforeEach(() => {
+    copyText.mockReset().mockResolvedValue(undefined)
+  })
+
+  it('shares one instance between the provider and its descendants', async () => {
+    let provided!: CopyToClipboard
+    const injected: CopyToClipboard[] = []
+    const Child = defineComponent({
+      setup() {
+        injected.push(injectCopyToClipboard())
+        return () => null
+      },
+    })
+    mount(defineComponent({
+      setup() {
+        provided = provideCopyToClipboard()
+        return () => [h(Child), h(Child)]
+      },
+    }))
+
+    await injected[0]!.copyToClipboard('x', 'from-first-child')
+
+    expect(injected[0]).toBe(provided)
+    expect(injected[1]).toBe(provided)
+    expect(provided.copiedKey.value).toBe('from-first-child')
+    expect(injected[1]!.copiedKey.value).toBe('from-first-child')
+  })
+
+  it('falls back to a local instance without a provider', async () => {
+    let local!: CopyToClipboard
+    mount(defineComponent({
+      setup() {
+        local = injectCopyToClipboard()
+        return () => null
+      },
+    }))
+
+    await local.copyToClipboard('x', 'key')
+
+    expect(local.copiedKey.value).toBe('key')
   })
 })
