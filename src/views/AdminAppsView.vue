@@ -103,6 +103,7 @@ const loadApprovals = async (appId: string) => {
     submissionCountMap.value[appId] = res.data.length
     pendingCountMap.value[appId] = res.data.filter(a => a.status === 'pending').length
   } catch {
+    // Treat unloadable approvals as none; the row stays usable.
     approvalsMap.value[appId] = []
   } finally {
     loadingMap.value[appId] = false

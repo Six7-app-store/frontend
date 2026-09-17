@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { getErrorStatus, getErrorStatusText, hasErrorResponse } from '@/utils/http-error'
 import { appApi } from '@/api/app.api'
 import { useI18n } from 'vue-i18n' // <-- i18n Import hinzugefügt
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
@@ -146,11 +147,12 @@ const handleSubmit = async () => {
   } catch (error: any) {
     console.error('API Error:', error)
 
-    if (error.response) {
-      if (error.response.status === 403 || error.response.status === 400 || error.response.status === 422) {
+    if (hasErrorResponse(error)) {
+      const status = getErrorStatus(error)
+      if (status === 403 || status === 400 || status === 422) {
         toast.error(t('AppsCreateView.messages.noAccess'))
       } else {
-        toast.error(t('AppsCreateView.messages.serverError', { statusText: error.response.statusText || 'Unknown' }))
+        toast.error(t('AppsCreateView.messages.serverError', { statusText: getErrorStatusText(error) || 'Unknown' }))
       }
     } else {
       toast.error(t('AppsCreateView.messages.networkError'))

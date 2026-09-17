@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { appApi } from '@/api/app.api'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import { useI18n } from 'vue-i18n'
 import {
   Layers, Server, Box, Database, Terminal,
@@ -185,6 +186,7 @@ const fetchApprovals = async () => {
     const res = await appApi.listVersionApprovals(appId.value)
     approvals.value = res.data
   } catch {
+    // Without approvals the version list just shows no approval state.
     approvals.value = []
   }
 }
@@ -217,11 +219,11 @@ const confirmSubmit = async () => {
     showSubmitModal.value = false
     await fetchApprovals()
   } catch (err: any) {
-    const s = err?.response?.status
+    const s = getErrorStatus(err)
     if (s === 409) {
       toast.warning(t('AppsDetailView.toasts.submitDuplicate'))
     } else if (s === 422) {
-      const detail = err?.response?.data?.detail
+      const detail = getErrorDetail(err) as any
       if (detail?.marker_errors?.length) {
         submitMarkerErrors.value = detail.marker_errors
       } else {
@@ -387,7 +389,7 @@ const confirmDelete = async () => {
     showDeleteModal.value = false
     router.push({ name: 'apps' })
   } catch (error: any) {
-    const detail = error?.response?.data?.detail
+    const detail = getErrorDetail(error) as any
     const reason = typeof detail === 'object' ? detail?.message || detail?.reason : detail
     toast.error(`${t('AppsDetailView.deleteErrorToast')}${reason ? ': ' + reason : ''}`)
   } finally {

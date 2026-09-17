@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest'
 
-import { extractErrorMessage, getErrorDetail, getErrorReason, getErrorStatus } from '@/utils/http-error'
+import {
+  extractErrorMessage,
+  getErrorDetail,
+  getErrorReason,
+  getErrorStatus,
+  getErrorStatusText,
+  hasErrorResponse,
+} from '@/utils/http-error'
 
 describe('extractErrorMessage', () => {
   it('returns a string detail verbatim', () => {
@@ -54,7 +61,16 @@ describe('error accessors', () => {
     expect(getErrorReason(axiosLike(400, { message: 'm' }))).toBeUndefined()
   })
 
+  it('tells server answers from network errors and reads the status text', () => {
+    expect(hasErrorResponse({ response: { status: 500, statusText: 'Internal Server Error' } })).toBe(true)
+    expect(getErrorStatusText({ response: { status: 500, statusText: 'Internal Server Error' } })).toBe('Internal Server Error')
+    expect(hasErrorResponse({ message: 'Network Error' })).toBe(false)
+    expect(getErrorStatusText({ message: 'Network Error' })).toBeUndefined()
+  })
+
   it.each([null, undefined, 'boom', 42, new Error('x')])('tolerates non-axios values (%s)', (value) => {
+    expect(hasErrorResponse(value)).toBe(false)
+    expect(getErrorStatusText(value)).toBeUndefined()
     expect(getErrorStatus(value)).toBeUndefined()
     expect(getErrorDetail(value)).toBeUndefined()
     expect(getErrorReason(value)).toBeUndefined()

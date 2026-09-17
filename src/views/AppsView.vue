@@ -70,6 +70,7 @@ const fetchApps = async () => {
           const res = await appApi.listVersionApprovals(app.appId)
           approvalsMap.value[app.appId] = res.data
         } catch {
+          // Without approvals the card just shows no approval badge.
           approvalsMap.value[app.appId] = []
         }
       })

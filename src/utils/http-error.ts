@@ -9,8 +9,9 @@
  * drills into ``.reason`` / ``.message`` when present and falls back to
  * ``err.message`` so a toast is always readable.
  *
- * The accessors (:func:`getErrorStatus`, :func:`getErrorDetail`,
- * :func:`getErrorReason`) return the raw values unchanged. Callers use
+ * The accessors (:func:`hasErrorResponse`, :func:`getErrorStatus`,
+ * :func:`getErrorStatusText`, :func:`getErrorDetail`, :func:`getErrorReason`)
+ * return the raw values unchanged. Callers use
  * them instead of reaching into ``err.response`` directly, so every
  * error-handling site reads errors the same way (see the "Fehlerbehandlung"
  * section in the frontend README).
@@ -20,6 +21,7 @@ interface HttpErrorLike {
   message?: string
   response?: {
     status?: number
+    statusText?: string
     data?: { detail?: unknown }
   }
 }
@@ -27,9 +29,19 @@ interface HttpErrorLike {
 const asHttpError = (err: unknown): HttpErrorLike | undefined =>
   err !== null && typeof err === 'object' ? (err as HttpErrorLike) : undefined
 
+/** True when the server answered at all (``err.response`` is set) — false for network errors. */
+export function hasErrorResponse(err: unknown): boolean {
+  return !!asHttpError(err)?.response
+}
+
 /** HTTP status of a failed request (``err.response.status``), if any. */
 export function getErrorStatus(err: unknown): number | undefined {
   return asHttpError(err)?.response?.status
+}
+
+/** HTTP status text of a failed request (``err.response.statusText``), if any. */
+export function getErrorStatusText(err: unknown): string | undefined {
+  return asHttpError(err)?.response?.statusText
 }
 
 /** Raw ``detail`` of the backend error body — a string, an object or ``undefined``. */
