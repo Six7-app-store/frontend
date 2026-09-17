@@ -1,6 +1,7 @@
 <script lang="ts" setup>
-import { CircleArrowLeft, Loader2, Users, Settings, Terminal, ChevronDown, Trash2, GitBranch, User, Calendar, Package, AlertCircle, Copy, Check, Send, PauseCircle, PlayCircle, RefreshCw, Server, Network, Shield } from 'lucide-vue-next'
-import BaseButton from '@/components/ui/BaseButton.vue'
+import { CircleArrowLeft, Loader2, Users, Settings, Terminal, ChevronDown, User, AlertCircle, Copy, Check, Send, RefreshCw, Server, Network, Shield } from 'lucide-vue-next'
+import DeploymentDetailHeader from '@/components/deployment/DeploymentDetailHeader.vue'
+import DeploymentOverviewCards from '@/components/deployment/DeploymentOverviewCards.vue'
 import DeploymentDeleteModal from '@/components/deployment/DeploymentDeleteModal.vue'
 import DeploymentRedeployModal from '@/components/deployment/DeploymentRedeployModal.vue'
 import DeploymentPauseResumeModal from '@/components/deployment/DeploymentPauseResumeModal.vue'
@@ -11,7 +12,6 @@ import { ref, computed, onMounted } from 'vue'
 import type { Task } from '@/types'
 import InfrastructureVmCard from '@/components/InfrastructureVmCard.vue'
 import InfrastructureVmDrawer from '@/components/InfrastructureVmDrawer.vue'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { formatDateTime } from '@/utils/format'
 import { prettyJson, highlightJson } from '@/utils/json-display'
 import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
@@ -203,10 +203,6 @@ const { copiedKey, copyToClipboard } = useCopyToClipboard()
 const logEntryCount = computed<number | null>(() => countLogEntries(selectedTask.value?.logs))
 
 
-const deploymentTimestamp = computed(() => {
-    return deployment.value?.created_at ? formatDate(deployment.value.created_at) : '-'
-})
-
 const selectedGroup = ref<number | null>(null)
 
 const selectGroup = (groupIndex: number) => {
@@ -263,173 +259,20 @@ const formatDate = formatDateTime
             <div class="flex-1 min-w-0 space-y-6">
 
         <!-- Header with back button and status badge -->
-        <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-                <RouterLink :to="{ name: 'deployments.list' }">
-                    <button
-                        class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition">
-                        <CircleArrowLeft :size="24" class="text-gray-700" />
-                    </button>
-                </RouterLink>
-
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">{{ deployment.name }}</h1>
-                    <p class="text-sm text-gray-500 mt-1">Deployment Details</p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-3">
-                    <component :is="getStatusStyles(deployment.status).icon" :size="20" :class="deployment.status === 'success' ? 'text-green-600' :
-                        deployment.status === 'failed' ? 'text-red-600' :
-                            deployment.status === 'running' ? 'text-blue-600' : 'text-yellow-600'" />
-                    <span
-                        class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold border capitalize"
-                        :class="getStatusStyles(deployment.status).badgeClass">
-                        {{ $t(getStatusStyles(deployment.status).label) }}
-                    </span>
-                </div>
-
-                <!-- Pause / Resume button. One slot, two states, visible only
-                     when the lifecycle matrix permits the action right now. -->
-                <BaseButton
-                    v-if="canPauseOrResume"
-                    @click="!pauseResumeBusy && (showPauseResumeModal = true)"
-                    :disabled="pauseResumeBusy"
-                    :title="pauseResumeAction === 'pause'
-                        ? $t('DeploymentDetailView.pauseTooltip')
-                        : $t('DeploymentDetailView.resumeTooltip')"
-                    class="flex items-center gap-2 px-4 py-2"
-                    :variant="pauseResumeAction === 'pause' ? 'yellow' : 'green'">
-                    <PauseCircle v-if="pauseResumeAction === 'pause'" :size="18" />
-                    <PlayCircle v-else :size="18" />
-                    <span class="font-medium">
-                        {{ pauseResumeAction === 'pause'
-                            ? $t('DeploymentDetailView.deploymentPause')
-                            : $t('DeploymentDetailView.deploymentResume') }}
-                    </span>
-                </BaseButton>
-
-                <!-- Single Delete button. The backend decides whether this
-                     triggers a destroy task or a straight soft-delete based on
-                     status. Hidden entirely for members. -->
-                <BaseButton v-if="isOwnerView" @click="canDelete && (showDeleteModal = true)" :disabled="!canDelete"
-                    :title="deleteDisabledReason" class="flex items-center gap-2 px-4 py-2" variant="red">
-                    <Trash2 :size="18" />
-                    <span class="font-medium">{{ $t('DeploymentDetailView.deploymentDelete') }}</span>
-                </BaseButton>
-            </div>
-        </div>
+        <DeploymentDetailHeader
+            :deployment="deployment"
+            :is-owner-view="isOwnerView"
+            :can-delete="canDelete"
+            :delete-disabled-reason="deleteDisabledReason"
+            :can-pause-or-resume="canPauseOrResume"
+            :pause-resume-action="pauseResumeAction"
+            :pause-resume-busy="pauseResumeBusy"
+            @delete="showDeleteModal = true"
+            @pause-resume="showPauseResumeModal = true"
+        />
 
         <!-- Main info grid with 3 cards -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <!-- Deployment info card -->
-            <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Package :size="20" class="text-primary" />
-                    Deployment Info
-                </h2>
-                <div class="space-y-4">
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">
-                            {{ $t('DeploymentsView.deploymentName') }}
-                        </div>
-                        <div class="text-sm font-medium text-gray-900">{{ deployment.name }}</div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release Tag</div>
-                        <div class="text-sm">
-                            <span
-                                class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300">
-                                <GitBranch :size="12" class="mr-1" />
-                                {{ deployment.releaseTag }}
-                            </span>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">
-                            {{ $t('DeploymentDetailView.deploymentCreated') }}
-                        </div>
-                        <div class="text-sm font-medium text-gray-700 flex items-center gap-1">
-                            <Calendar :size="14" />
-                            {{ deploymentTimestamp }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- App info card -->
-            <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Package :size="20" class="text-emerald-600" />
-                    {{ $t('DeploymentsView.deploymentApp') }}
-                </h2>
-                <div class="space-y-4" v-if="deployment.app">
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App Name</div>
-                        <div class="text-sm font-medium text-gray-900">{{ deployment.app.name }}</div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{
-                            $t('DeploymentDetailView.deploymentDescription') }}</div>
-                        <MarkdownRenderer
-                            v-if="deployment.app.description && deployment.app.description.trim()"
-                            :source="deployment.app.description"
-                            variant="compact"
-                            :clamp="3"
-                            :expandable="true"
-                            class="text-sm"
-                        />
-                        <div v-else class="text-sm text-gray-500 italic">No description</div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git Repository</div>
-                        <a :href="deployment.app.git_link ?? undefined" target="_blank"
-                            class="text-sm text-blue-600 hover:text-blue-800 underline break-all">
-                            {{ deployment.app.git_link }}
-                        </a>
-                    </div>
-                </div>
-                <div v-else class="text-sm text-gray-500">No app information available</div>
-            </div>
-
-            <!-- User info card -->
-            <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <User :size="20" class="text-blue-600" />
-                    {{ $t('DeploymentDetailView.deploymentOwner') }}
-                </h2>
-                <div class="space-y-4" v-if="deployment.user">
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{
-                            $t('DeploymentDetailView.deploymentUserName') }}</div>
-                        <div class="text-sm font-medium text-gray-900 flex items-center gap-2">
-                            <div
-                                class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] text-primary font-bold">
-                                {{ deployment.user.username.substring(0, 2).toUpperCase() }}
-                            </div>
-                            {{ deployment.user.username }}
-                        </div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</div>
-                        <div class="text-sm text-gray-700">{{ deployment.user.email }}</div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{
-                            $t('DeploymentDetailView.deploymentUserRole') }}</div>
-                        <div class="text-sm">
-                            <span
-                                class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-300 capitalize">
-                                {{ deployment.user.role }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div v-else class="text-sm text-gray-500">No user information available</div>
-            </div>
-        </div>
+        <DeploymentOverviewCards :deployment="deployment" />
 
         <!-- Groups section -->
         <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm" v-if="groups.length > 0">
