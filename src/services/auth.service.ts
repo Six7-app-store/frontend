@@ -25,6 +25,7 @@ export class AuthService {
     try {
       return JSON.parse(userStr) as User
     } catch {
+      // Corrupt stored user: treat as "no stored user"; ``fetchMe`` reloads it.
       return null
     }
   }

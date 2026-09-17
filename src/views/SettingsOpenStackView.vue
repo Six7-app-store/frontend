@@ -13,7 +13,7 @@ import {
   Upload,
 } from 'lucide-vue-next'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 import { parseCloudsYaml, CloudsYamlError } from '@/utils/clouds-yaml'
 import type {
@@ -23,7 +23,7 @@ import type {
 
 const route = useRoute()
 const router = useRouter()
-const toast = useToastStore()
+const toast = useToast()
 const credStore = useOpenStackCredentialsStore()
 const { t } = useI18n()
 

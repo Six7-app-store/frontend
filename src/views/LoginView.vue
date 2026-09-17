@@ -16,6 +16,7 @@ const loginWithKeycloak = async () => {
   try {
     await authStore.login(returnUrl)
   } catch (err: any) {
+    // The user simply stays on the login page and can retry; only log it.
     console.error('Login redirect failed:', err)
   }
 }

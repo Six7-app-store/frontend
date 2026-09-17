@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { Cpu, HardDrive, Network } from 'lucide-vue-next'
 import { quotasApi } from '@/api/quotas.api'
+import { getErrorStatus } from '@/utils/http-error'
 import type { QuotaOverview } from '@/types/quota'
 
 // ----------------------------------------------------------------
@@ -21,6 +22,7 @@ function readCachedQuotas(): QuotaOverview | null {
     if (!raw) return null
     return JSON.parse(raw) as QuotaOverview
   } catch {
+    // Unreadable cache entry: behave as if nothing was cached.
     return null
   }
 }
@@ -124,7 +126,7 @@ export const useQuotas = () => {
       quotas.value = response.data
       writeCachedQuotas(response.data)
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 412) {
+      if (axios.isAxiosError(err) && getErrorStatus(err) === 412) {
         needsCredentials.value = true
         // Drop the cache: credentials are gone, the old numbers don't apply
         quotas.value = null

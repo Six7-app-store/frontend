@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useDeploymentStore } from '@/stores/deployment.store'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
 import i18n from '@/i18n'
 import CoursesView from "@/views/CoursesView.vue";
 import CourseDetailView from "@/views/CourseDetailView.vue";
@@ -238,7 +238,7 @@ router.beforeEach(async (to, _from, next) => {
       try {
         const tr = i18n.global.t
         const required = requiresRole.map((r) => tr(`roleLabels.${r}`)).join(', ')
-        useToastStore().error(tr('router.forbidden', { roles: required }))
+        useToast().error(tr('router.forbidden', { roles: required }))
       } catch {
         // Toast/i18n not available (e.g. very early boot) — hard fallback so
         // the redirect still happens.

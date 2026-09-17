@@ -47,6 +47,7 @@ import {
   X,
 } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import {
   openstackResourcesApi,
   type OsResourceType,
@@ -345,6 +346,8 @@ async function load(opts: { forceRefresh?: boolean } = {}) {
       try {
         await openstackResourcesApi.refresh(props.osType)
       } catch (err) {
+        // Best effort: the list load below still runs and reports its own
+        // error if the backend is really unavailable.
         console.warn('[OsPicker] refresh failed:', err)
       }
       invalidateDisplayCache(props.osType)
@@ -357,8 +360,8 @@ async function load(opts: { forceRefresh?: boolean } = {}) {
       primeDisplayCache(props.osType, res.data || [])
     }
   } catch (err: any) {
-    const status = err?.response?.status
-    const detail = err?.response?.data?.detail
+    const status = getErrorStatus(err)
+    const detail = getErrorDetail(err) as any
     if (status === 412 && detail?.reason === 'openstack_credentials_missing') {
       errorReason.value = 'credentials_missing'
     } else if (status === 502 || detail?.reason === 'openstack_unavailable' ||
