@@ -18,6 +18,9 @@ import InfrastructureVmDrawer from '@/components/InfrastructureVmDrawer.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { formatDateTime } from '@/utils/format'
 import { extractErrorMessage } from '@/utils/http-error'
+import { prettyJson, highlightJson } from '@/utils/json-display'
+import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
+import { copyText } from '@/utils/clipboard'
 
 import { Eye, EyeOff } from 'lucide-vue-next'
 
@@ -270,51 +273,9 @@ function extractTeamVms(): Record<string, { url?: string; floating_ip?: string; 
     return vms && typeof vms === 'object' ? vms : myTeamVms.value
 }
 
-// Counts the resources in the state for the header sub-headline.
-const tfResourcesCount = computed(() => {
-    const state = selectedTask.value?.tf_state
-    if (!state) return 0
-
-    try {
-        const parsed = typeof state === 'string' ? JSON.parse(state) : state
-        return parsed?.resources?.length || 0
-    } catch {
-        return 0
-    }
-})
-
-// Lightweight, safe syntax highlighting for JSON.
-const highlightJson = (jsonString: string): string => {
-    if (!jsonString) return ''
-
-    let safeStr = jsonString
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-
-    return safeStr.replace(
-        /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
-        (match) => {
-            let cls = 'text-amber-400'
-
-            if (/^"/.test(match)) {
-                if (/:$/.test(match)) {
-                    cls = 'text-blue-500 font-medium' // keys
-                } else {
-                    cls = 'text-emerald-500' // string values
-                }
-            } else if (/true|false/.test(match)) {
-                cls = 'text-purple-500 font-bold' // booleans
-            } else if (/null/.test(match)) {
-                cls = 'text-gray-500 italic' // null
-            } else {
-                cls = 'text-cyan-500' // numbers
-            }
-
-            return `<span class="${cls}">${match}</span>`
-        }
-    )
-}
+// Counts the resources in the selected task's state for the header
+// sub-headline (``countTfResources`` in ``utils/task-logs``).
+const tfResourcesCount = computed(() => countTfResources(selectedTask.value?.tf_state))
 
 // Owner-view vs member-view — mirrors backend/app/utils/permissions.py
 // ``is_deployment_owner_view``. Drives every gated UI element on
@@ -955,55 +916,6 @@ onBeforeUnmount(() => {
     stopStream()
 })
 
-// Pretty phase label for the progress bar header. Keeps the enum
-// naming convention from the worker (UPPER_SNAKE_CASE) but renders
-// it human-friendly. Defensive: anything that isn't a non-empty
-// string falls back to an empty label so the template never sees a
-// non-string slip through (e.g. the brief moment an unwrapped ref
-// produced the original ``phase.split is not a function`` crash).
-// Pretty-print arbitrary JSON-ish values for the terraform state /
-// outputs / raw-logs blocks. The backend persists these as TEXT
-// columns, so they arrive as either:
-//
-//  * a JSON string (terraform state pulled from the pg backend, or the
-//    JSON-stringified outputs map),
-//  * a real object/array (when the API layer has already parsed it),
-//  * a plain non-JSON string (a stack trace, a single error line),
-//  * null / undefined when the worker had nothing to record.
-//
-// The helper unifies those into a 2-space-indented JSON dump when the
-// payload parses, and falls back to the raw text otherwise so we never
-// clobber a non-JSON string by trying to parse it.
-const prettyJson = (value: unknown): string => {
-    if (value === null || value === undefined) return ''
-    if (typeof value === 'object') {
-        try {
-            return JSON.stringify(value, null, 2)
-        } catch {
-            return String(value)
-        }
-    }
-    if (typeof value === 'string') {
-        const trimmed = value.trim()
-        // Cheap pre-check: only attempt JSON.parse on strings that look
-        // like JSON. Saves a try/catch round-trip for ordinary log
-        // text and avoids accidentally parsing a bare number or "null"
-        // string into something the consumer didn't expect.
-        if (
-            (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-            (trimmed.startsWith('[') && trimmed.endsWith(']'))
-        ) {
-            try {
-                return JSON.stringify(JSON.parse(trimmed), null, 2)
-            } catch {
-                return value
-            }
-        }
-        return value
-    }
-    return String(value)
-}
-
 // Copy-to-clipboard state. Each "card" (logs/state/outputs) tags its
 // copy button with a unique key; the key of whichever was last
 // successfully copied is stored here for ~1.5s so we can flip its
@@ -1015,22 +927,9 @@ let copyResetTimer: number | null = null
 const copyToClipboard = async (text: string, key: string) => {
     if (!text) return
     try {
-        // Modern ``navigator.clipboard`` requires a secure context
-        // (https or localhost). Falls back to the legacy
-        // ``execCommand('copy')`` so the button still works behind
-        // plain http on the dev box.
-        if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text)
-        } else {
-            const ta = document.createElement('textarea')
-            ta.value = text
-            ta.style.position = 'fixed'
-            ta.style.opacity = '0'
-            document.body.appendChild(ta)
-            ta.select()
-            document.execCommand('copy')
-            document.body.removeChild(ta)
-        }
+        // ``copyText`` falls back to ``execCommand('copy')`` outside a
+        // secure context (see ``utils/clipboard``).
+        await copyText(text)
         copiedKey.value = key
         if (copyResetTimer !== null) window.clearTimeout(copyResetTimer)
         copyResetTimer = window.setTimeout(() => {
@@ -1042,6 +941,12 @@ const copyToClipboard = async (text: string, key: string) => {
     }
 }
 
+// Pretty phase label for the progress bar header. Keeps the enum
+// naming convention from the worker (UPPER_SNAKE_CASE) but renders
+// it human-friendly. Defensive: anything that isn't a non-empty
+// string falls back to an empty label so the template never sees a
+// non-string slip through (e.g. the brief moment an unwrapped ref
+// produced the original ``phase.split is not a function`` crash).
 const phaseLabel = (phase: unknown): string => {
     if (typeof phase !== 'string' || !phase) return ''
     // Worker-emitted multi-image phases carry the template key as a ``:<key>``
@@ -1059,44 +964,9 @@ const phaseLabel = (phase: unknown): string => {
 }
 
 // Count of log entries inside ``selectedTask.logs`` for the badge in
-// the Logs card header. Logs arrive in three flavours:
-//
-//  * an object ``{logs: [...], error?: ...}`` — the Failure payload
-//    serialised by the worker on a failed deploy
-//  * a plain array on the success path (the success result is just
-//    ``logs: list[dict]``)
-//  * a JSON string when the API serialises one of the above as text
-//
-// The computed handles all three so the "N entries" pill stays
-// accurate regardless of the wire shape; returns null when the count
-// can't be determined (e.g. logs is a non-JSON string), in which case
-// the badge is hidden.
-const logEntryCount = computed<number | null>(() => {
-    const raw = selectedTask.value?.logs
-    if (raw == null) return null
-    let value: unknown = raw
-    if (typeof value === 'string') {
-        const trimmed = value.trim()
-        if (
-            (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-            (trimmed.startsWith('[') && trimmed.endsWith(']'))
-        ) {
-            try {
-                value = JSON.parse(trimmed)
-            } catch {
-                return null
-            }
-        } else {
-            return null
-        }
-    }
-    if (Array.isArray(value)) return value.length
-    if (value && typeof value === 'object') {
-        const inner = (value as Record<string, unknown>).logs
-        if (Array.isArray(inner)) return inner.length
-    }
-    return null
-})
+// the Logs card header; ``null`` hides the badge. The wire shapes are
+// documented on ``countLogEntries`` in ``utils/task-logs``.
+const logEntryCount = computed<number | null>(() => countLogEntries(selectedTask.value?.logs))
 
 
 const deploymentTimestamp = computed(() => {
@@ -1275,50 +1145,6 @@ const cleanVariableValue = (value?: string) => {
     let cleaned = str.split('#')[0]?.trim() ?? ''
     cleaned = cleaned.replace(/["']/g, '')
     return cleaned.trim() || '-'
-}
-
-/**
- * Split a task-logs string into a friendly headline + a collapsible
- * technical-details body. The backend's ``celery_event_listener.py``
- * emits Celery-infrastructure failures (``NotRegistered``,
- * ``WorkerLostError``, …) in a stable two-section format separated
- * by ``--- Technische Details ---``; we honour that boundary so the
- * raw stack trace stays available but isn't shoved into the user's
- * face by default.
- *
- * Returns ``{headline, details, isFailure}`` — ``isFailure`` lets
- * the template pick the destructive palette without re-doing the
- * regex on render.
- */
-const FAILURE_DETAIL_DIVIDER = '--- Technische Details ---'
-
-const splitTaskLogs = (raw: string | Record<string, unknown> | null | undefined) => {
-    if (!raw) return { headline: '', details: '', isFailure: false }
-    const text = String(raw)
-    // Backend "infra" failure with the explicit divider — we get a
-    // one-line headline and a raw block underneath.
-    const dividerIdx = text.indexOf(FAILURE_DETAIL_DIVIDER)
-    if (dividerIdx >= 0) {
-        return {
-            headline: text.slice(0, dividerIdx).trim(),
-            details: text.slice(dividerIdx + FAILURE_DETAIL_DIVIDER.length).trim(),
-            isFailure: true,
-        }
-    }
-    // Fallback: the legacy ``Task failed: ...\n<traceback>`` shape.
-    // Take the first line as headline if the body is multi-line.
-    if (text.startsWith('Task failed:')) {
-        const newlineIdx = text.indexOf('\n')
-        if (newlineIdx > 0) {
-            return {
-                headline: text.slice(0, newlineIdx).trim(),
-                details: text.slice(newlineIdx + 1).trim(),
-                isFailure: true,
-            }
-        }
-        return { headline: text.trim(), details: '', isFailure: true }
-    }
-    return { headline: '', details: '', isFailure: false }
 }
 
 // ``logs`` can be either a backend-formatted ``Task failed: ...`` string
