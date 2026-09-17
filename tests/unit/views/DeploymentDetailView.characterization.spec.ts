@@ -271,11 +271,9 @@ let pinia: Pinia
 
 // Drain pending promise chains. A single ``flushPromises`` proved to be
 // timing-sensitive for the longer async handlers (reload after lifecycle
-// actions, stream-ended handler), so flush several rounds. Five rounds still
-// left the mount chain (fetch → tasks → outputs → resources) unfinished under
-// load, which made the toast assertions flaky.
+// actions, stream-ended handler), so flush a few rounds.
 const settle = async () => {
-  for (let i = 0; i < 15; i++) await flushPromises()
+  for (let i = 0; i < 5; i++) await flushPromises()
 }
 
 const mountView = () =>
@@ -300,7 +298,11 @@ const lastButton = (row: ReturnType<typeof memberRow>) => {
   return buttons[buttons.length - 1]!
 }
 
-const toasts = () => useToastStore().toasts.map(({ type, message }) => ({ type, message }))
+// Always read the store of THIS test's pinia. A toast's auto-dismiss timer
+// from an earlier test fires a store action of the earlier pinia, and running
+// an action makes that pinia the active one again — a plain ``useToastStore()``
+// would then read the wrong (empty) store.
+const toasts = () => useToastStore(pinia).toasts.map(({ type, message }) => ({ type, message }))
 
 const memberRow = (wrapper: VueWrapper, username: string) =>
   wrapper
@@ -387,7 +389,7 @@ describe('DeploymentDetailView — Laden', () => {
   })
 
   it('zeigt kein anderes, noch im Store liegendes Deployment an', async () => {
-    useDeploymentStore().currentDeployment = makeDeployment({ deploymentId: 'dep-other', name: 'Anderes Deployment' })
+    useDeploymentStore(pinia).currentDeployment = makeDeployment({ deploymentId: 'dep-other', name: 'Anderes Deployment' })
     h.deploymentApi.getById.mockReturnValue(new Promise(() => {}))
     const wrapper = mountView()
     await settle()
