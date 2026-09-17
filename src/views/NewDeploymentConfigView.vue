@@ -266,6 +266,16 @@ async function loadAllStudents() {
 
 // Search with debouncing.
 let searchTimer: number | undefined
+// Id of the toast the last failed search produced. Only this one is dismissed
+// when the next search runs — ``toast.clear()`` would also drop unrelated
+// toasts (e.g. the missing-credentials warning).
+let searchErrorToastId: string | null = null
+const dismissSearchError = () => {
+  if (searchErrorToastId !== null) {
+    toast.remove(searchErrorToastId)
+    searchErrorToastId = null
+  }
+}
 watch(studentSearchQuery, (val) => {
   if (searchTimer) window.clearTimeout(searchTimer)
   searchTimer = window.setTimeout(async () => {
@@ -274,13 +284,13 @@ watch(studentSearchQuery, (val) => {
     // Empty query: show the initial list (no extra API call).
     if (!q) {
       students.value = allStudents.value
-      toast.clear()
+      dismissSearchError()
       return
     }
 
     // Query too short: keep the current list (no flicker).
     if (q.length < 2) {
-      toast.clear()
+      dismissSearchError()
       return
     }
 
@@ -288,14 +298,14 @@ watch(studentSearchQuery, (val) => {
     try {
       loadingStudents.value = true
       const res = await userApi.search(q, 50)
-      toast.clear()
+      dismissSearchError()
       students.value = res.data || []
       cacheStudents(students.value) // Cache new students (keyed by keycloak_id)
     } catch (err) {
       console.error('User search error:', err)
       const e: any = err
       const msg = getErrorDetail(e) || e?.message || t('CourseDetailView.toasts.loadUsersError')
-      toast.error(msg)
+      searchErrorToastId = toast.error(msg)
     } finally {
       loadingStudents.value = false
     }

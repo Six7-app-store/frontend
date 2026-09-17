@@ -51,6 +51,9 @@ vi.mock('@/api/user.api', () => ({
 describe('DeploymentConfig.vue', () => {
   let routerPushMock: any
   let toastWarningMock: any
+  let toastErrorMock: any
+  let toastClearMock: any
+  let toastRemoveMock: any
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -58,10 +61,14 @@ describe('DeploymentConfig.vue', () => {
     vi.mocked(useRouter).mockReturnValue({ push: routerPushMock } as any)
     
     toastWarningMock = vi.fn()
+    toastErrorMock = vi.fn(() => 'toast-search-error')
+    toastClearMock = vi.fn()
+    toastRemoveMock = vi.fn()
     vi.mocked(useToast).mockReturnValue({
       warning: toastWarningMock,
-      error: vi.fn(),
-      clear: vi.fn(),
+      error: toastErrorMock,
+      clear: toastClearMock,
+      remove: toastRemoveMock,
       success: vi.fn()
     } as any)
 
@@ -264,6 +271,34 @@ describe('DeploymentConfig.vue', () => {
     expect(store.draft.studentIds).toContain('u1')
 
     // 7. Timer wieder auf Normalbetrieb stellen (wichtig für andere Tests!)
+    vi.useRealTimers()
+  })
+
+  it('removes only its own search-error toast, never all toasts', async () => {
+    vi.useFakeTimers()
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const studentsTabBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.config.studentsLabel'))
+    await studentsTabBtn?.trigger('click')
+    await wrapper.vm.$nextTick()
+    const searchInput = wrapper.find('[data-testid="student-search"]')
+
+    // First search fails → error toast.
+    vi.mocked(userApi.search).mockRejectedValueOnce(new Error('offline'))
+    await searchInput.setValue('Jo')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+    expect(toastErrorMock).toHaveBeenCalledTimes(1)
+
+    // Second search succeeds → only the previous search error is removed.
+    vi.mocked(userApi.search).mockResolvedValue({ data: [] } as any)
+    await searchInput.setValue('John')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    expect(toastRemoveMock).toHaveBeenCalledWith('toast-search-error')
+    expect(toastClearMock).not.toHaveBeenCalled()
     vi.useRealTimers()
   })
 

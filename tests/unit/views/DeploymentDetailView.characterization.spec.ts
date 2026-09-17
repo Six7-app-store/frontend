@@ -271,9 +271,11 @@ let pinia: Pinia
 
 // Drain pending promise chains. A single ``flushPromises`` proved to be
 // timing-sensitive for the longer async handlers (reload after lifecycle
-// actions, stream-ended handler), so flush a few rounds.
+// actions, stream-ended handler), so flush several rounds. Five rounds still
+// left the mount chain (fetch → tasks → outputs → resources) unfinished under
+// load, which made the toast assertions flaky.
 const settle = async () => {
-  for (let i = 0; i < 5; i++) await flushPromises()
+  for (let i = 0; i < 15; i++) await flushPromises()
 }
 
 const mountView = () =>
