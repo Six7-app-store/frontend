@@ -1,6 +1,6 @@
 import { computed, ref, type Ref } from 'vue'
 import { taskApi } from '@/api/task.api'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
 import { findActiveTask, sortTasksNewestFirst } from '@/services/deployment-tasks.service'
 import type { Task } from '@/types'
 
@@ -12,7 +12,7 @@ import type { Task } from '@/types'
  * Tasks are owner-only; for members every loader is a no-op.
  */
 export function useDeploymentTasks(deploymentId: string, isOwnerView: Ref<boolean>) {
-  const toastStore = useToastStore()
+  const toast = useToast()
 
   const tasks = ref<Task[]>([])
   const loadingTasks = ref(false)
@@ -41,6 +41,8 @@ export function useDeploymentTasks(deploymentId: string, isOwnerView: Ref<boolea
       const { data } = await taskApi.listByDeployment(deploymentId)
       tasks.value = data
     } catch (err) {
+      // Deliberately silent: the previous list stays visible and the
+      // next refresh (stream end, lifecycle action) retries.
       console.error('Error loading tasks:', err)
     } finally {
       loadingTasks.value = false
@@ -62,6 +64,8 @@ export function useDeploymentTasks(deploymentId: string, isOwnerView: Ref<boolea
           const { data } = await taskApi.getById(latestTask.taskId)
           latestTaskOutputs.value = data
         } catch (err) {
+          // Deliberately silent: without outputs the Teams card just shows
+          // no credentials; the rest of the page is unaffected.
           console.error('Error seeding top outputs:', err)
         }
       }
@@ -75,10 +79,7 @@ export function useDeploymentTasks(deploymentId: string, isOwnerView: Ref<boolea
       selectedTask.value = data
     } catch (err) {
       console.error('Error loading task details:', err)
-      toastStore.addToast({
-        type: 'error',
-        message: 'Failed to load task details'
-      })
+      toast.error('Failed to load task details')
     } finally {
       loadingTaskDetail.value = false
     }

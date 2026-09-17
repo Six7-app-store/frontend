@@ -28,6 +28,8 @@ export function useCopyToClipboard(resetMs = 1500) {
         copyResetTimer = null
       }, resetMs)
     } catch (err) {
+      // Deliberately silent: the button just doesn't flip to "copied",
+      // which already tells the user it didn't work.
       console.error('Copy failed:', err)
     }
   }

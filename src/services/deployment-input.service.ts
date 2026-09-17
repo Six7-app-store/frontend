@@ -34,6 +34,7 @@ export function parseDeploymentGroups(userInputVar: UserInputVar): DeploymentGro
       students: assignments[groupIndex] || []
     }))
   } catch (e) {
+    // Malformed wizard input: render the section as empty instead of failing.
     console.error('Error parsing userInputVar:', e)
     return []
   }
@@ -46,6 +47,7 @@ export function parseDeploymentVariables(userInputVar: UserInputVar): Record<str
     const data = parseUserInputVar(userInputVar)
     return data.variables || {}
   } catch (e) {
+    // Malformed wizard input: render the section as empty instead of failing.
     console.error('Error parsing userInputVar:', e)
     return {}
   }

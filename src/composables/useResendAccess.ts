@@ -1,7 +1,8 @@
 import { computed, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { deploymentApi } from '@/api/deployment.api'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
+import { getErrorReason, getErrorStatus } from '@/utils/http-error'
 import { isDeploymentBusy as isBusy } from '@/services/deployment-lifecycle.service'
 import type { DeploymentWithRelations, Task } from '@/types'
 
@@ -21,7 +22,7 @@ export interface ResendAccessOptions {
 export function useResendAccess(options: ResendAccessOptions) {
   const { deploymentId, deployment, activeTask } = options
   const { t } = useI18n()
-  const toastStore = useToastStore()
+  const toast = useToast()
 
   // True while the deployment (or its active task) is still moving; keeps
   // the resend-access button disabled until the run is terminal.
@@ -42,10 +43,7 @@ export function useResendAccess(options: ResendAccessOptions) {
     try {
       await deploymentApi.resendAccess(deploymentId, teamId, userId)
       resendState.value = { ...resendState.value, [userId]: 'sent' }
-      toastStore.addToast({
-        type: 'success',
-        message: t('DeploymentDetailView.resendAccessSuccess'),
-      })
+      toast.success(t('DeploymentDetailView.resendAccessSuccess'))
       window.setTimeout(() => {
         const next = { ...resendState.value }
         delete next[userId]
@@ -68,17 +66,19 @@ export function useResendAccess(options: ResendAccessOptions) {
       //   * everything else: stays in the existing failure path
       //     so SMTP-rejected-the-recipient, transient errors, and
       //     unknown reasons all get the verbose toast.
-      const reason = err?.response?.data?.detail?.reason || err?.message || 'unknown'
-      const isSmtpDisabled = err?.response?.status === 503 && reason === 'smtp_disabled'
-      const isDeploymentBusyErr = err?.response?.status === 409 && reason === 'deployment_busy'
-      toastStore.addToast({
-        type: (isSmtpDisabled || isDeploymentBusyErr) ? 'warning' : 'error',
-        message: isSmtpDisabled
-          ? t('DeploymentDetailView.resendAccessSmtpDisabled')
-          : isDeploymentBusyErr
-            ? t('DeploymentDetailView.resendAccessDeploymentBusy')
-            : `${t('DeploymentDetailView.resendAccessError')}: ${reason}`,
-      })
+      const reason = getErrorReason(err) || err?.message || 'unknown'
+      const isSmtpDisabled = getErrorStatus(err) === 503 && reason === 'smtp_disabled'
+      const isDeploymentBusyErr = getErrorStatus(err) === 409 && reason === 'deployment_busy'
+      const message = isSmtpDisabled
+        ? t('DeploymentDetailView.resendAccessSmtpDisabled')
+        : isDeploymentBusyErr
+          ? t('DeploymentDetailView.resendAccessDeploymentBusy')
+          : `${t('DeploymentDetailView.resendAccessError')}: ${reason}`
+      if (isSmtpDisabled || isDeploymentBusyErr) {
+        toast.warning(message)
+      } else {
+        toast.error(message)
+      }
       window.setTimeout(() => {
         const next = { ...resendState.value }
         delete next[userId]

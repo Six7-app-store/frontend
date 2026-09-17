@@ -2,7 +2,7 @@ import { computed, ref, watch, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
 import type { ConnectionState } from '@/composables/useDeploymentStream'
 import {
   DELETE_DISABLED_REASON,
@@ -43,7 +43,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
   const { t } = useI18n()
   const router = useRouter()
   const deploymentStore = useDeploymentStore()
-  const toastStore = useToastStore()
+  const toast = useToast()
 
   // Lifecycle action gating — the status matrix lives in
   // ``services/deployment-lifecycle.service``. Members can never act on
@@ -95,10 +95,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
 
     if (outcome === 'gone') {
       // Soft-deleted upstream — the destroy ran clean.
-      toastStore.addToast({
-        type: 'success',
-        message: t('DeploymentDetailView.deleteSuccessToast'),
-      })
+      toast.success(t('DeploymentDetailView.deleteSuccessToast'))
       router.push({ name: 'deployments.list' })
       return
     }
@@ -106,10 +103,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     // Destroy attempted but the row still exists → it failed. Show a clear
     // error toast and leave the user on the detail page to inspect the logs.
     if (outcome === 'destroy_failed') {
-      toastStore.addToast({
-        type: 'error',
-        message: t('DeploymentDetailView.deleteFailedAsyncToast'),
-      })
+      toast.error(t('DeploymentDetailView.deleteFailedAsyncToast'))
       return
     }
 
@@ -117,15 +111,9 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     // logs panel to give a clear "the lifecycle pass failed but the deployment
     // is still up" hint without pulling raw exception text into the toast.
     if (outcome === 'pause_failed') {
-      toastStore.addToast({
-        type: 'error',
-        message: t('DeploymentDetailView.pauseFailedAsyncToast'),
-      })
+      toast.error(t('DeploymentDetailView.pauseFailedAsyncToast'))
     } else if (outcome === 'resume_failed') {
-      toastStore.addToast({
-        type: 'error',
-        message: t('DeploymentDetailView.resumeFailedAsyncToast'),
-      })
+      toast.error(t('DeploymentDetailView.resumeFailedAsyncToast'))
     }
   })
 
@@ -145,26 +133,17 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
         // Destroy task dispatched. Reload deployment + tasks so
         // ``activeTask`` flips to the new DESTROY row and the
         // live-progress card swaps in.
-        toastStore.addToast({
-          type: 'info',
-          message: t('DeploymentDetailView.deleteStartedToast'),
-        })
+        toast.info(t('DeploymentDetailView.deleteStartedToast'))
         await deploymentStore.fetchDeploymentById(deploymentId)
         await loadTasks()
       } else {
         // 204: nothing to destroy, soft-delete completed
         // synchronously. Row is gone — back to the list.
-        toastStore.addToast({
-          type: 'success',
-          message: t('DeploymentDetailView.deleteSuccessToast'),
-        })
+        toast.success(t('DeploymentDetailView.deleteSuccessToast'))
         router.push({ name: 'deployments.list' })
       }
-    } catch (err: any) {
-      toastStore.addToast({
-        type: 'error',
-        message: `${t('DeploymentDetailView.deleteErrorToast')}: ` + extractErrorMessage(err),
-      })
+    } catch (err) {
+      toast.error(`${t('DeploymentDetailView.deleteErrorToast')}: ` + extractErrorMessage(err))
     } finally {
       showDeleteModal.value = false
     }
@@ -187,23 +166,17 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
         ? deploymentStore.pauseDeployment(deploymentId)
         : deploymentStore.resumeDeployment(deploymentId)
       await call
-      toastStore.addToast({
-        type: 'info',
-        message: action === 'pause'
+      toast.info(action === 'pause'
           ? t('DeploymentDetailView.pauseStartedToast')
-          : t('DeploymentDetailView.resumeStartedToast'),
-      })
+          : t('DeploymentDetailView.resumeStartedToast'))
       await deploymentStore.fetchDeploymentById(deploymentId)
       await loadTasks()
-    } catch (err: any) {
-      toastStore.addToast({
-        type: 'error',
-        message: (action === 'pause'
+    } catch (err) {
+      toast.error((action === 'pause'
           ? t('DeploymentDetailView.pauseErrorToast')
           : t('DeploymentDetailView.resumeErrorToast'))
           + ': '
-          + extractErrorMessage(err),
-      })
+          + extractErrorMessage(err))
     } finally {
       pauseResumeBusy.value = false
       showPauseResumeModal.value = false

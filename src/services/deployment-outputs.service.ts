@@ -70,6 +70,7 @@ export function extractUserAccounts(
 
   const result = parseRawOutputs(rawOutputs)
   if ('error' in result) {
+    // Malformed outputs: fall back like for missing outputs, just log it.
     console.error('Failed to parse raw outputs data:', result.error)
     return fallback
   }

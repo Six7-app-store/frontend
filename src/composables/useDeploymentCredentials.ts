@@ -55,6 +55,8 @@ export function useDeploymentCredentials(
       myAccounts.value = (data.user_accounts ?? null) as Record<string, UserAccount> | null
       myTeamVms.value = data.team_vms ?? null
     } catch (err) {
+      // Deliberately silent: a member without (loadable) credentials simply
+      // sees no access pills — the page itself still works.
       console.error('Error loading own access credentials:', err)
     }
   }

@@ -1,7 +1,8 @@
 import { computed, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { deploymentApi } from '@/api/deployment.api'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
+import { getErrorReason, getErrorStatus } from '@/utils/http-error'
 import type { DeploymentResource } from '@/types'
 
 export interface DeploymentResourcesOptions {
@@ -29,7 +30,7 @@ export interface DeploymentResourcesOptions {
 export function useDeploymentResources(options: DeploymentResourcesOptions) {
   const { deploymentId, isOwnerView, onRedeployStarted } = options
   const { t } = useI18n()
-  const toastStore = useToastStore()
+  const toast = useToast()
 
   const resources = ref<DeploymentResource[]>([])
   const resourcesLoading = ref(false)
@@ -57,7 +58,7 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       const response = await deploymentApi.listResources(deploymentId, { refresh })
       resources.value = response.data.resources
     } catch (err: any) {
-      const status = err?.response?.status
+      const status = getErrorStatus(err)
       if (status === 412) {
         resourcesError.value = t('vm.resourcesErrors.missingCredentials')
       } else if (status === 502) {
@@ -112,7 +113,7 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
     redeployInFlight.value.add(address)
     try {
       await deploymentApi.redeployResource(deploymentId, address)
-      toastStore.success(`Redeploy gestartet für ${address}`)
+      toast.success(`Redeploy gestartet für ${address}`)
       // Refresh the task list right away so the freshly-dispatched
       // REDEPLOY row shows up as the new ``activeTask``. That in
       // turn flips ``isStreamRelevant`` to true → the SSE stream
@@ -123,16 +124,15 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       await onRedeployStarted()
     } catch (err: any) {
       redeployInFlight.value.delete(address)
-      const detail = err?.response?.data?.detail
-      const reason = detail?.reason
+      const reason = getErrorReason(err)
       if (reason === 'non_redeployable_resource_type') {
-        toastStore.error('Nur Compute-Instanzen können einzeln redeployed werden.')
+        toast.error('Nur Compute-Instanzen können einzeln redeployed werden.')
       } else if (reason === 'resource_not_in_state') {
-        toastStore.error('Diese Resource ist nicht mehr im aktuellen State.')
-      } else if (err?.response?.status === 409) {
-        toastStore.error('Es läuft bereits eine Lifecycle-Aktion für dieses Deployment.')
+        toast.error('Diese Resource ist nicht mehr im aktuellen State.')
+      } else if (getErrorStatus(err) === 409) {
+        toast.error('Es läuft bereits eine Lifecycle-Aktion für dieses Deployment.')
       } else {
-        toastStore.error(err?.message || 'Redeploy fehlgeschlagen.')
+        toast.error(err?.message || 'Redeploy fehlgeschlagen.')
       }
     }
   }
