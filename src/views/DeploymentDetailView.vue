@@ -2,11 +2,11 @@
 import { CircleArrowLeft, Loader2, Users, Settings, Terminal, ChevronDown, Trash2, GitBranch, User, Calendar, Package, AlertCircle, Copy, Check, Send, PauseCircle, PlayCircle, RefreshCw, Server, Network, Shield } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useToastStore } from '@/stores/toast.store'
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { deploymentApi } from '@/api/deployment.api'
 import type { Task } from '@/types'
@@ -14,7 +14,6 @@ import InfrastructureVmCard from '@/components/InfrastructureVmCard.vue'
 import InfrastructureVmDrawer from '@/components/InfrastructureVmDrawer.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { formatDateTime } from '@/utils/format'
-import { extractErrorMessage } from '@/utils/http-error'
 import { prettyJson, highlightJson } from '@/utils/json-display'
 import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
@@ -23,20 +22,11 @@ import { useDeploymentTasks } from '@/composables/useDeploymentTasks'
 import { useDeploymentLiveStream } from '@/composables/useDeploymentLiveStream'
 import { useDeploymentCredentials } from '@/composables/useDeploymentCredentials'
 import { useDeploymentResources } from '@/composables/useDeploymentResources'
+import { useDeploymentLifecycle } from '@/composables/useDeploymentLifecycle'
 import { phaseLabel } from '@/services/deployment-phases.service'
-import { sortTasksNewestFirst, selectHistoryTasks } from '@/services/deployment-tasks.service'
+import { selectHistoryTasks } from '@/services/deployment-tasks.service'
 import { sshCommandFor, userUrlFor } from '@/services/deployment-account-matching.service'
-import {
-    DELETE_DISABLED_REASON,
-    canDeleteDeployment,
-    canPauseDeployment,
-    canResumeDeployment,
-    pauseResumeActionFor,
-    isDeploymentBusy as isBusy,
-    isDeploymentGone,
-    resolveStreamEndOutcome,
-    type PauseResumeAction,
-} from '@/services/deployment-lifecycle.service'
+import { isDeploymentBusy as isBusy } from '@/services/deployment-lifecycle.service'
 import { parseDeploymentGroups, parseDeploymentVariables, cleanVariableValue } from '@/services/deployment-input.service'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
 
@@ -50,7 +40,6 @@ const togglePasswordVisibility = (key: string | number) => {
 }
 
 const route = useRoute()
-const router = useRouter()
 const deploymentStore = useDeploymentStore()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
@@ -114,23 +103,6 @@ const {
     isOwnerView,
     onRedeployStarted: loadTasks,
 })
-
-// Lifecycle action gating — the status matrix lives in
-// ``services/deployment-lifecycle.service``. Members can never act on
-// lifecycle, so every action is additionally gated on ``isOwnerView``.
-const canDelete = computed(() => isOwnerView.value && canDeleteDeployment(deployment.value?.status))
-
-const deleteDisabledReason = computed(() => canDelete.value ? '' : DELETE_DISABLED_REASON)
-
-// One Pause/Resume button — what it does depends on status.
-const canPause = computed(() => isOwnerView.value && canPauseDeployment(deployment.value?.status))
-const canResume = computed(() => isOwnerView.value && canResumeDeployment(deployment.value?.status))
-const canPauseOrResume = computed(() => canPause.value || canResume.value)
-const pauseResumeAction = computed<PauseResumeAction | null>(() => pauseResumeActionFor(deployment.value?.status))
-
-const showDeleteModal = ref(false)
-const showPauseResumeModal = ref(false)
-const pauseResumeBusy = ref(false)
 
 onMounted(async () => {
     await deploymentStore.fetchDeploymentById(deploymentId)
@@ -208,71 +180,28 @@ const historyTasks = computed<Task[]>(() =>
     selectHistoryTasks(tasks.value, activeTask.value, isStreamRelevant.value)
 )
 
-// When the SSE stream ends (terminal lifecycle event), reload the deployment +
-// tasks so the view switches from the live progress bar to the static render.
-//
-// Special case: a successful destroy auto-soft-deletes the deployment, so the
-// row disappears. Detected either via the last active task being a terminal
-// DESTROY, or via the refetch returning no current deployment (the store
-// swallows the 404 into ``state.error``, so we check ``currentDeployment``).
-watch(streamConnectionState, async (state) => {
-    if (state !== 'ended') return
-
-    const wasDestroy = activeTask.value?.type === 'destroy'
-    // Snapshot the active task BEFORE the refetch so we can decide
-    // whether to fire a pause/resume failure toast even when the
-    // refresh races and clears the live state.
-    const lastActiveType = activeTask.value?.type
-    const lastActiveStatus = activeTask.value?.status
-
-    await deploymentStore.fetchDeploymentById(deploymentId)
-    await loadTasks()
-
-    // Decide what happened (see ``resolveStreamEndOutcome``): a gone row
-    // means the destroy succeeded, a remaining row after a destroy means
-    // it failed, otherwise a failed pause/resume gets its own toast.
-    const outcome = resolveStreamEndOutcome({
-        gone: isDeploymentGone(deploymentStore.currentDeployment, deploymentId),
-        wasDestroy,
-        newestTask: sortTasksNewestFirst(tasks.value || [])[0],
-        lastActiveType,
-        lastActiveStatus,
-    })
-
-    if (outcome === 'gone') {
-        // Soft-deleted upstream — the destroy ran clean.
-        toastStore.addToast({
-            type: 'success',
-            message: t('DeploymentDetailView.deleteSuccessToast'),
-        })
-        router.push({ name: 'deployments.list' })
-        return
-    }
-
-    // Destroy attempted but the row still exists → it failed. Show a clear
-    // error toast and leave the user on the detail page to inspect the logs.
-    if (outcome === 'destroy_failed') {
-        toastStore.addToast({
-            type: 'error',
-            message: t('DeploymentDetailView.deleteFailedAsyncToast'),
-        })
-        return
-    }
-
-    // Pause/Resume failed asynchronously. The toast is kept separate from the
-    // logs panel to give a clear "the lifecycle pass failed but the deployment
-    // is still up" hint without pulling raw exception text into the toast.
-    if (outcome === 'pause_failed') {
-        toastStore.addToast({
-            type: 'error',
-            message: t('DeploymentDetailView.pauseFailedAsyncToast'),
-        })
-    } else if (outcome === 'resume_failed') {
-        toastStore.addToast({
-            type: 'error',
-            message: t('DeploymentDetailView.resumeFailedAsyncToast'),
-        })
-    }
+// Delete + Pause/Resume (availability, modals, handlers) and the reaction
+// once a lifecycle stream has ended (see ``useDeploymentLifecycle``).
+// Called after ``useDeploymentLiveStream`` so the stream-ended watcher
+// registers after the stream's own watchers.
+const {
+    canDelete,
+    deleteDisabledReason,
+    canPauseOrResume,
+    pauseResumeAction,
+    showDeleteModal,
+    showPauseResumeModal,
+    pauseResumeBusy,
+    confirmDelete,
+    confirmPauseResume,
+} = useDeploymentLifecycle({
+    deploymentId,
+    deployment,
+    isOwnerView,
+    tasks,
+    activeTask,
+    connectionState: streamConnectionState,
+    loadTasks,
 })
 
 // Copy-to-clipboard state, shared page-wide: only one button can be the
@@ -320,87 +249,6 @@ const taskLogsSplit = computed(() => {
   return splitTaskLogs(typeof raw === 'string' ? raw : null)
 })
 const showTaskLogsTrace = ref(false)
-
-// Unified delete handler. The backend's DELETE endpoint returns 202
-// when it dispatched a destroy task (live progress to follow) or 204
-// when it soft-deleted directly (no resources to clean up). Branch
-// on response.status so the UX matches what's actually happening:
-//   * 202 → stay on the page, refresh tasks so the live stream
-//     attaches to the new DESTROY task; the streamConnectionState
-//     watcher routes back to the list when the task completes.
-//   * 204 → leave immediately with a success toast.
-const confirmDelete = async () => {
-    if (!deploymentId) return
-    try {
-        const response = await deploymentStore.deleteDeployment(deploymentId)
-        if (response?.status === 202) {
-            // Destroy task dispatched. Reload deployment + tasks so
-            // ``activeTask`` flips to the new DESTROY row and the
-            // live-progress card swaps in.
-            toastStore.addToast({
-                type: 'info',
-                message: t('DeploymentDetailView.deleteStartedToast'),
-            })
-            await deploymentStore.fetchDeploymentById(deploymentId)
-            await loadTasks()
-        } else {
-            // 204: nothing to destroy, soft-delete completed
-            // synchronously. Row is gone — back to the list.
-            toastStore.addToast({
-                type: 'success',
-                message: t('DeploymentDetailView.deleteSuccessToast'),
-            })
-            router.push({ name: 'deployments.list' })
-        }
-    } catch (err: any) {
-        toastStore.addToast({
-            type: 'error',
-            message: `${t('DeploymentDetailView.deleteErrorToast')}: ` + extractErrorMessage(err),
-        })
-    } finally {
-        showDeleteModal.value = false
-    }
-}
-
-// Pause / resume handler — same wiring as ``confirmDelete``: the
-// backend returns 202 with a ``task_id`` when it dispatched the
-// worker, so we just reload the deployment + tasks and the existing
-// SSE stream / activeTask plumbing takes over from there. The button
-// itself is hidden while ``pausing``/``resuming`` so the user can't
-// double-click; ``pauseResumeBusy`` debounces the in-flight HTTP call
-// in case the click lands faster than the deployment status refresh.
-const confirmPauseResume = async () => {
-    if (!deploymentId || pauseResumeBusy.value) return
-    const action = pauseResumeAction.value
-    if (!action) return
-    pauseResumeBusy.value = true
-    try {
-        const call = action === 'pause'
-            ? deploymentStore.pauseDeployment(deploymentId)
-            : deploymentStore.resumeDeployment(deploymentId)
-        await call
-        toastStore.addToast({
-            type: 'info',
-            message: action === 'pause'
-                ? t('DeploymentDetailView.pauseStartedToast')
-                : t('DeploymentDetailView.resumeStartedToast'),
-        })
-        await deploymentStore.fetchDeploymentById(deploymentId)
-        await loadTasks()
-    } catch (err: any) {
-        toastStore.addToast({
-            type: 'error',
-            message: (action === 'pause'
-                ? t('DeploymentDetailView.pauseErrorToast')
-                : t('DeploymentDetailView.resumeErrorToast'))
-                + ': '
-                + extractErrorMessage(err),
-        })
-    } finally {
-        pauseResumeBusy.value = false
-        showPauseResumeModal.value = false
-    }
-}
 
 // Per-user resend-access state. Map ``userId → 'sending' | 'sent' | 'error'``
 // so the button can show inline feedback on the row that was clicked
