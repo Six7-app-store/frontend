@@ -379,3 +379,56 @@ describe('SettingsOpenStackView.vue — Rücksprung über next', () => {
         expect(mockPush).not.toHaveBeenCalled()
     })
 })
+
+// ---------------------------------------------------------
+// 4. Speichern: Formularzustand nach fehlgeschlagener Validierung
+// ---------------------------------------------------------
+
+describe('SettingsOpenStackView.vue — Speichern', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        routeState.query = {}
+        storeState = {
+            isLocked: false,
+            activeDeployments: 0,
+            loading: false,
+            hasCredential: false,
+            isValidated: false,
+            lastError: null,
+            error: null,
+            status: {}
+        }
+        mockSave.mockResolvedValue({})
+    })
+
+    const fillAndSave = async () => {
+        const wrapper = mount(SettingsOpenStackView, {
+            global: { stubs: { CredentialMissingBanner: true, 'i18n-t': true } }
+        })
+        await flushPromises()
+        await wrapper.find('input[type="url"]').setValue('https://test.com')
+        await wrapper.findAll('input[type="text"]')[1]!.setValue('my-app-id')
+        await wrapper.find('input[type="password"]').setValue('my-secret-key')
+        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.save'))!
+        await saveBtn.trigger('click')
+        await flushPromises()
+        return wrapper
+    }
+
+    it('behält das Secret, wenn die Validierung nach dem Speichern fehlschlägt', async () => {
+        storeState.lastError = 'Auth failed'
+
+        const wrapper = await fillAndSave()
+
+        expect(mockSave).toHaveBeenCalledTimes(1)
+        expect(mockToastWarning).toHaveBeenCalled()
+        expect((wrapper.find('input[type="password"]').element as HTMLInputElement).value).toBe('my-secret-key')
+    })
+
+    it('leert das Secret nach erfolgreichem Speichern', async () => {
+        const wrapper = await fillAndSave()
+
+        expect(mockToastSuccess).toHaveBeenCalled()
+        expect((wrapper.find('input[type="password"]').element as HTMLInputElement).value).toBe('')
+    })
+})

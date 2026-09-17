@@ -121,11 +121,13 @@ const handleSave = async () => {
   try {
     await credStore.save(payload)
     if (credStore.lastError) {
+      // Keep the secret in the form: the credentials were stored but don't
+      // work, so the user will most likely correct and save them again.
       toast.warning(t('SettingsOpenStackView.errors.validationFailedSaved', { error: credStore.lastError }))
-    } else {
-      toast.success(t('SettingsOpenStackView.toasts.saveSuccess'))
-      maybeReturnToWizard()
+      return
     }
+    toast.success(t('SettingsOpenStackView.toasts.saveSuccess'))
+    maybeReturnToWizard()
     formApp.secret = ''
     formPwd.secret = ''
   } catch {
