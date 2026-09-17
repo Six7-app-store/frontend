@@ -1,7 +1,9 @@
 <script lang="ts" setup>
 import { CircleArrowLeft, Loader2, Users, Settings, Terminal, ChevronDown, Trash2, GitBranch, User, Calendar, Package, AlertCircle, Copy, Check, Send, PauseCircle, PlayCircle, RefreshCw, Server, Network, Shield } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import Modal from '@/components/ui/Modal.vue'
+import DeploymentDeleteModal from '@/components/deployment/DeploymentDeleteModal.vue'
+import DeploymentRedeployModal from '@/components/deployment/DeploymentRedeployModal.vue'
+import DeploymentPauseResumeModal from '@/components/deployment/DeploymentPauseResumeModal.vue'
 import { useRoute } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -1211,24 +1213,12 @@ const formatDate = formatDateTime
         </div>
 
         <!-- Delete Confirmation Modal -->
-        <Modal :show="showDeleteModal" @close="showDeleteModal = false">
-            <template #title>
-                {{ $t('DeploymentDetailView.confirmDeleteTitle') }}
-            </template>
-            <template #body>
-                <p class="text-gray-700" v-html="$t('DeploymentDetailView.confirmDeleteMessage', { name: deployment.name })"></p>
-            </template>
-            <template #footer>
-                <div class="flex justify-end gap-3">
-                    <BaseButton variant="ghost" @click="showDeleteModal = false">
-                        {{ $t('DeploymentDetailView.cancelButton') }}
-                    </BaseButton>
-                    <BaseButton variant="red" @click="confirmDelete">
-                        {{ $t('DeploymentDetailView.confirmButton') }}
-                    </BaseButton>
-                </div>
-            </template>
-        </Modal>
+        <DeploymentDeleteModal
+            :show="showDeleteModal"
+            :deployment-name="deployment.name"
+            @close="showDeleteModal = false"
+            @confirm="confirmDelete"
+        />
 
         <!-- Redeploy Confirmation Modal — same shape as Delete: a
              yellow Cancel and a red Confirm. We surface the VM
@@ -1236,64 +1226,25 @@ const formatDate = formatDateTime
              instance they're about to recreate. The Modal is the
              single source of truth; we never fall back to
              ``window.confirm``. -->
-        <Modal :show="showRedeployModal" @close="showRedeployModal = false">
-            <template #title>
-                VM neu erstellen?
-            </template>
-            <template #body>
-                <div class="space-y-3">
-                    <p class="text-gray-700">
-                        Diese VM wird zerstört und identisch neu erstellt.
-                        Andere VMs in diesem Deployment bleiben unangetastet.
-                    </p>
-                    <p v-if="redeployTargetAddress" class="text-xs font-mono text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-all">
-                        {{ redeployTargetAddress }}
-                    </p>
-                </div>
-            </template>
-            <template #footer>
-                <div class="flex justify-end gap-3">
-                    <BaseButton variant="ghost" @click="showRedeployModal = false">
-                        {{ $t('DeploymentDetailView.cancelButton') }}
-                    </BaseButton>
-                    <BaseButton variant="red" @click="confirmRedeploy">
-                        Redeploy
-                    </BaseButton>
-                </div>
-            </template>
-        </Modal>
+        <DeploymentRedeployModal
+            :show="showRedeployModal"
+            :address="redeployTargetAddress"
+            @close="showRedeployModal = false"
+            @confirm="confirmRedeploy"
+        />
 
         <!-- Pause / Resume confirm. Same pattern as Delete: a tiny
              modal that asks the user to confirm before we POST. The
              title/body switch on ``pauseResumeAction`` so we don't
              render two near-identical modals. -->
-        <Modal :show="showPauseResumeModal" @close="showPauseResumeModal = false">
-            <template #title>
-                {{ pauseResumeAction === 'pause'
-                    ? $t('DeploymentDetailView.confirmPauseTitle')
-                    : $t('DeploymentDetailView.confirmResumeTitle') }}
-            </template>
-            <template #body>
-                <p class="text-gray-700" v-html="pauseResumeAction === 'pause'
-                    ? $t('DeploymentDetailView.confirmPauseMessage', { name: deployment.name })
-                    : $t('DeploymentDetailView.confirmResumeMessage', { name: deployment.name })"></p>
-            </template>
-            <template #footer>
-                <div class="flex justify-end gap-3">
-                    <BaseButton variant="ghost" @click="showPauseResumeModal = false">
-                        {{ $t('DeploymentDetailView.cancelButton') }}
-                    </BaseButton>
-                    <BaseButton
-                        :variant="pauseResumeAction === 'pause' ? 'yellow' : 'green'"
-                        @click="confirmPauseResume"
-                        :disabled="pauseResumeBusy">
-                        {{ pauseResumeAction === 'pause'
-                            ? $t('DeploymentDetailView.deploymentPause')
-                            : $t('DeploymentDetailView.deploymentResume') }}
-                    </BaseButton>
-                </div>
-            </template>
-        </Modal>
+        <DeploymentPauseResumeModal
+            :show="showPauseResumeModal"
+            :action="pauseResumeAction"
+            :deployment-name="deployment.name"
+            :busy="pauseResumeBusy"
+            @close="showPauseResumeModal = false"
+            @confirm="confirmPauseResume"
+        />
     </div>
 
     <!-- Loading State -->
