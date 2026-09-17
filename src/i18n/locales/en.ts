@@ -264,6 +264,8 @@ export default {
     deploymentResumeFailed: "resume failed",
   },
   DeploymentDetailView: {
+    loadError: "Deployment could not be loaded.",
+    backToList: "Back to deployments",
     deploymentCreated: "Created on",
     deploymentCreatedBy: "Created by",
     deploymentDelete: "Delete",

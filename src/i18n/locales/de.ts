@@ -263,6 +263,8 @@ export default {
     deploymentCreatedAt: "Erstellt am",
   },
   DeploymentDetailView: {
+    loadError: "Deployment konnte nicht geladen werden.",
+    backToList: "Zurück zur Deployment-Übersicht",
     deploymentCreated: "Erstellt am",
     deploymentCreatedBy: "Erstellt von",
     deploymentDelete: "Löschen",

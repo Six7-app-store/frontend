@@ -1,9 +1,10 @@
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { Loader2 } from 'lucide-vue-next'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAuthStore } from '@/stores/auth.store'
+import { ROUTE_NAMES } from '@/router/route-names'
 import type { Task } from '@/types'
 import InfrastructureVmDrawer from '@/components/InfrastructureVmDrawer.vue'
 import DeploymentDetailHeader from '@/components/deployment/DeploymentDetailHeader.vue'
@@ -34,7 +35,16 @@ const authStore = useAuthStore()
 
 const deploymentId = route.params.id as string
 
-const deployment = computed(() => deploymentStore.currentDeployment)
+// Only the deployment of this page: the store may still hold the one of a
+// previously opened detail page until this page's fetch has finished.
+const deployment = computed(() => {
+    const current = deploymentStore.currentDeployment
+    return current?.deploymentId === deploymentId ? current : null
+})
+
+// True when the initial load found no deployment (not found, server or
+// network error); the page then shows an error instead of the spinner.
+const loadFailed = ref(false)
 
 // Owner-view vs member-view — gates tasks/logs, lifecycle actions, the
 // live stream and other members' resend buttons (see ``useDeploymentOwnerView``).
@@ -89,6 +99,10 @@ const {
 
 onMounted(async () => {
     await deploymentStore.fetchDeploymentById(deploymentId)
+    if (!deployment.value) {
+        loadFailed.value = true
+        return
+    }
     await loadTasks() // Loads the history into tasks.value
 
     if (isOwnerView.value) {
@@ -358,6 +372,14 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             @close="showPauseResumeModal = false"
             @confirm="confirmPauseResume"
         />
+    </div>
+
+    <!-- Load error: the deployment could not be loaded -->
+    <div v-else-if="loadFailed" class="flex flex-col items-center justify-center py-20 gap-3 text-center">
+        <p class="text-gray-600">{{ $t('DeploymentDetailView.loadError') }}</p>
+        <RouterLink :to="{ name: ROUTE_NAMES.deploymentsList }" class="text-sm font-medium text-primary hover:underline">
+            {{ $t('DeploymentDetailView.backToList') }}
+        </RouterLink>
     </div>
 
     <!-- Loading State -->

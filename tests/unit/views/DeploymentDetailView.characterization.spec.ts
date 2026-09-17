@@ -365,24 +365,33 @@ describe('DeploymentDetailView — Laden', () => {
     expect(wrapper.find('div.flex.items-center.justify-center.py-20').exists()).toBe(true)
   })
 
-  it('bleibt bei einem 5xx-Ladefehler dauerhaft beim Spinner (kein Fehlerzustand)', async () => {
-    h.deploymentApi.getById.mockRejectedValue(httpError(500, 'boom'))
+  it.each([
+    ['5xx', httpError(500, 'boom')],
+    ['Netzwerkfehler', httpError(undefined, undefined, 'Network Error')],
+    ['404', httpError(404, 'not found')],
+  ])('zeigt bei einem Ladefehler (%s) statt des Spinners einen Fehler mit Link zur Liste', async (_label, err) => {
+    h.deploymentApi.getById.mockRejectedValue(err)
     const wrapper = await mountLoaded()
 
     expect(wrapper.find('h1').exists()).toBe(false)
-    expect(wrapper.find('.animate-spin').exists()).toBe(true)
-    expect(useDeploymentStore().error).toBe('boom')
-    expect(toasts()).toEqual([])
-    // Staff → owner view → tasks are still requested.
-    expect(h.taskApi.listByDeployment).toHaveBeenCalledWith('dep-1')
+    expect(wrapper.find('.animate-spin').exists()).toBe(false)
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.loadError'))
+    const link = wrapper.findComponent(RouterLinkStub)
+    expect(link.props('to')).toEqual({ name: 'deployments.list' })
+    expect(link.text()).toBe(t('DeploymentDetailView.backToList'))
+    // Nothing else is loaded for a deployment that isn't there.
+    expect(h.taskApi.listByDeployment).not.toHaveBeenCalled()
+    expect(h.deploymentApi.listResources).not.toHaveBeenCalled()
   })
 
-  it('bleibt bei 404 ebenfalls beim Spinner', async () => {
-    h.deploymentApi.getById.mockRejectedValue(httpError(404, 'not found'))
-    const wrapper = await mountLoaded()
+  it('zeigt kein anderes, noch im Store liegendes Deployment an', async () => {
+    useDeploymentStore().currentDeployment = makeDeployment({ deploymentId: 'dep-other', name: 'Anderes Deployment' })
+    h.deploymentApi.getById.mockReturnValue(new Promise(() => {}))
+    const wrapper = mountView()
+    await settle()
 
-    expect(wrapper.find('h1').exists()).toBe(false)
-    expect(useDeploymentStore().error).toBeNull()
+    expect(wrapper.text()).not.toContain('Anderes Deployment')
+    expect(wrapper.find('.animate-spin').exists()).toBe(true)
   })
 })
 
