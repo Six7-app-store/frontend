@@ -6,11 +6,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useToastStore } from '@/stores/toast.store'
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { deploymentApi } from '@/api/deployment.api'
 import type { Task, DeploymentResource } from '@/types'
-import { useDeploymentStream } from '@/composables/useDeploymentStream'
 import InfrastructureVmCard from '@/components/InfrastructureVmCard.vue'
 import InfrastructureVmDrawer from '@/components/InfrastructureVmDrawer.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -21,18 +20,9 @@ import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-l
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useDeploymentOwnerView } from '@/composables/useDeploymentOwnerView'
 import { useDeploymentTasks } from '@/composables/useDeploymentTasks'
-import {
-    phaseLabel,
-    resolvePhaseStepCount,
-    resolvePhaseStepLabel,
-    resolveCurrentPhaseIndex,
-    estimatePhaseIndexFromPercent,
-} from '@/services/deployment-phases.service'
-import {
-    isLiveTaskStatus,
-    sortTasksNewestFirst,
-    selectHistoryTasks,
-} from '@/services/deployment-tasks.service'
+import { useDeploymentLiveStream } from '@/composables/useDeploymentLiveStream'
+import { phaseLabel } from '@/services/deployment-phases.service'
+import { sortTasksNewestFirst, selectHistoryTasks } from '@/services/deployment-tasks.service'
 import {
     extractUserAccounts,
     extractTeamVms,
@@ -289,36 +279,41 @@ onMounted(async () => {
 // LIVE STREAM (progress bar + log tail)
 // ----------------------------------------------------------------
 //
-// We attach the SSE stream once we know the deployment ID and keep it
-// open until the task reaches a terminal state. The composable
-// auto-reconnects on transient errors and exposes ``connectionState``
-// for a small status badge.
+// Stream wiring, DB seed and stepper values live in
+// ``useDeploymentLiveStream``.
 //
 // Refs are destructured out of the composable so Vue's template
 // auto-unwrap recognises them as top-level setup bindings — without
 // destructuring, ``stream.currentPhase`` in the template would be the
 // ref *object*, not the string, and downstream calls like
 // ``phase.split(...)`` would crash.
-const deploymentIdRef = computed(() => deploymentId)
 const {
     progress: streamProgress,
     currentPhase: streamCurrentPhase,
     currentPhaseIndex: streamCurrentPhaseIndex,
-    totalPhases: streamTotalPhases,
-    phaseNames: streamPhaseNames,
     liveLogs: streamLiveLogs,
     totalLogCount: streamTotalLogCount,
     connectionState: streamConnectionState,
-    start: startStream,
-    stop: stopStream,
-} = useDeploymentStream(deploymentIdRef)
-
-const isStreamRelevant = computed(() => {
-    // Members never get the live stream — backend would 403 the SSE
-    // endpoint anyway, the gate here just keeps the UI from poking
-    // at it. Owners see the stream while there's an active task.
-    if (!isOwnerView.value) return false
-    return isLiveTaskStatus(activeTask.value?.status)
+    isStreamRelevant,
+    phaseStepCount,
+    phaseStepLabel,
+    activeStepIndex: currentPhaseIndex,
+} = useDeploymentLiveStream({
+    deploymentId,
+    isOwnerView,
+    activeTask,
+    onStreamFinished: () => {
+        // Refresh the task list once on completion so the final
+        // logs/outputs land in the static rendering below.
+        loadTasks()
+        // A redeploy task that just finished produces a new TF
+        // state — reload the resource list so the redrawn card
+        // reflects post-apply lifecycle. We also clear the
+        // in-flight set; whichever address was waiting on this
+        // task is now in the freshly-fetched list.
+        redeployInFlight.value.clear()
+        loadResources()
+    },
 })
 
 // True while the deployment (or its active task) is still moving; keeps
@@ -334,87 +329,6 @@ const isDeploymentBusy = computed(() => isBusy({
 // twice (once in the live block, once in the static list).
 const historyTasks = computed<Task[]>(() =>
     selectHistoryTasks(tasks.value, activeTask.value, isStreamRelevant.value)
-)
-
-// Phase stepper — N dots based on the live ``totalPhases`` reported by
-// the worker, labelled from the worker's ``phase_names`` or the static
-// per-task-type tables. The phase tables and label precedence live in
-// ``services/deployment-phases.service``.
-const phaseStepCount = computed<number>(() => resolvePhaseStepCount(streamTotalPhases.value))
-
-const phaseStepLabel = (idx: number): string =>
-    resolvePhaseStepLabel(idx, {
-        phaseNames: streamPhaseNames.value,
-        activeTaskType: activeTask.value?.type,
-        totalPhases: streamTotalPhases.value,
-    })
-
-// 0-based index of the active dot (worker ``phase_index`` first,
-// ``progress_pct`` as fallback).
-const currentPhaseIndex = computed<number>(() =>
-    resolveCurrentPhaseIndex({
-        phaseIndex: streamCurrentPhaseIndex.value,
-        progress: streamProgress.value,
-        stepCount: phaseStepCount.value,
-    })
-)
-
-// Initialise progress bar + stepper from whatever the DB has on the
-// latest task — covers the gap between page load and the first SSE
-// event. Important when the user opens the detail view *mid-deploy*:
-// without a seed they'd see the loader card until the next worker
-// progress event, which can be 30s+ during long phases like
-// ``terraform apply``.
-//
-// Only seed from a *live* task. The persisted progress columns of a
-// finished deploy would otherwise paint the stepper at 100% / phase
-// "OUTPUTS_AND_CLEANUP" right after the user clicks delete, before
-// the new destroy task's first progress event arrives.
-watch(
-    activeTask,
-    (task) => {
-        if (!task) return
-        const live = isLiveTaskStatus(task.status)
-        if (!live) return
-        if (task.progress_pct != null && streamProgress.value === null) {
-            streamProgress.value = task.progress_pct
-        }
-        if (task.current_phase && streamCurrentPhase.value === null) {
-            streamCurrentPhase.value = task.current_phase
-            // Approximate the phase index from the persisted percent so the
-            // stepper renders meaningfully before the first SSE progress event
-            // lands (see ``estimatePhaseIndexFromPercent``).
-            if (task.progress_pct != null && streamCurrentPhaseIndex.value === null) {
-                streamCurrentPhaseIndex.value = estimatePhaseIndexFromPercent(
-                    task.progress_pct,
-                    streamTotalPhases.value,
-                )
-            }
-        }
-    },
-    { immediate: true },
-)
-
-watch(
-    isStreamRelevant,
-    (relevant, wasRelevant) => {
-        if (relevant && !wasRelevant) {
-            startStream()
-        } else if (!relevant && wasRelevant) {
-            stopStream()
-            // Refresh the task list once on completion so the final
-            // logs/outputs land in the static rendering below.
-            loadTasks()
-            // A redeploy task that just finished produces a new TF
-            // state — reload the resource list so the redrawn card
-            // reflects post-apply lifecycle. We also clear the
-            // in-flight set; whichever address was waiting on this
-            // task is now in the freshly-fetched list.
-            redeployInFlight.value.clear()
-            loadResources()
-        }
-    },
-    { immediate: true },
 )
 
 // When the SSE stream ends (terminal lifecycle event), reload the deployment +
@@ -482,10 +396,6 @@ watch(streamConnectionState, async (state) => {
             message: t('DeploymentDetailView.resumeFailedAsyncToast'),
         })
     }
-})
-
-onBeforeUnmount(() => {
-    stopStream()
 })
 
 // Copy-to-clipboard state, shared page-wide: only one button can be the
