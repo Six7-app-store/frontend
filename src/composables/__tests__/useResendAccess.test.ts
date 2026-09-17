@@ -22,7 +22,7 @@ const setup = () => {
   const activeTask = ref<Task | null>(null)
   const i18n = createI18n({ legacy: false, locale: 'de', messages: { de } })
   let api!: ReturnType<typeof useResendAccess>
-  mount(defineComponent({
+  const wrapper = mount(defineComponent({
     setup() {
       api = useResendAccess({ deploymentId: 'dep-1', deployment, activeTask })
       return () => null
@@ -30,7 +30,7 @@ const setup = () => {
   }), { global: { plugins: [pinia, i18n] } })
   const toasts = () => useToastStore().toasts.map(({ type, message }) => ({ type, message }))
   const t = (key: string) => i18n.global.t(key)
-  return { api, deployment, activeTask, toasts, t }
+  return { api, deployment, activeTask, toasts, t, wrapper }
 }
 
 describe('useResendAccess', () => {
@@ -91,6 +91,20 @@ describe('useResendAccess', () => {
     expect(api.resendState.value).toEqual({ 'u-1': 'error' })
     vi.advanceTimersByTime(1)
     expect(api.resendState.value).toEqual({})
+  })
+
+  it.each([
+    ['success', () => deploymentApi.resendAccess.mockResolvedValue({})],
+    ['error', () => deploymentApi.resendAccess.mockRejectedValue(httpError(500, 'boom'))],
+  ])('clears its reset timer on unmount (%s)', async (_label, arrange) => {
+    arrange()
+    const { api, wrapper } = setup()
+    await api.resendAccess('team-a', 'u-1')
+
+    // One timer is the toast's own auto-dismiss, the other the reset timer.
+    const before = vi.getTimerCount()
+    wrapper.unmount()
+    expect(vi.getTimerCount()).toBe(before - 1)
   })
 
   it('keeps the state of other users', async () => {

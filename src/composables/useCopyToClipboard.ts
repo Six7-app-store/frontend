@@ -1,4 +1,4 @@
-import { inject, provide, ref, type InjectionKey } from 'vue'
+import { getCurrentScope, inject, onScopeDispose, provide, ref, type InjectionKey } from 'vue'
 import { copyText } from '@/utils/clipboard'
 
 /**
@@ -14,6 +14,14 @@ import { copyText } from '@/utils/clipboard'
 export function useCopyToClipboard(resetMs = 1500) {
   const copiedKey = ref<string | null>(null)
   let copyResetTimer: number | null = null
+
+  // Clear a pending reset when the owning component (or scope) goes away.
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      if (copyResetTimer !== null) window.clearTimeout(copyResetTimer)
+      copyResetTimer = null
+    })
+  }
 
   const copyToClipboard = async (text: string, key: string) => {
     if (!text) return

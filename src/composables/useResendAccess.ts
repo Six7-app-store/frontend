@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, onScopeDispose, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { deploymentApi } from '@/api/deployment.api'
 import { useToast } from '@/composables/useToast'
@@ -38,17 +38,29 @@ export function useResendAccess(options: ResendAccessOptions) {
   // auto-clears after 2s so the user can resend again.
   const resendState = ref<Record<string, ResendState>>({})
 
+  // Pending reset timers, cleared when the owning component unmounts.
+  const resetTimers = new Set<number>()
+  const resetStateLater = (userId: string, delayMs: number) => {
+    const timer = window.setTimeout(() => {
+      resetTimers.delete(timer)
+      const next = { ...resendState.value }
+      delete next[userId]
+      resendState.value = next
+    }, delayMs)
+    resetTimers.add(timer)
+  }
+  onScopeDispose(() => {
+    resetTimers.forEach((timer) => window.clearTimeout(timer))
+    resetTimers.clear()
+  })
+
   const resendAccess = async (teamId: string, userId: string) => {
     resendState.value = { ...resendState.value, [userId]: 'sending' }
     try {
       await deploymentApi.resendAccess(deploymentId, teamId, userId)
       resendState.value = { ...resendState.value, [userId]: 'sent' }
       toast.success(t('DeploymentDetailView.resendAccessSuccess'))
-      window.setTimeout(() => {
-        const next = { ...resendState.value }
-        delete next[userId]
-        resendState.value = next
-      }, 2000)
+      resetStateLater(userId, 2000)
     } catch (err: any) {
       resendState.value = { ...resendState.value, [userId]: 'error' }
       // Backend returns ``{detail: {reason: '...'}}``; surface the
@@ -79,11 +91,7 @@ export function useResendAccess(options: ResendAccessOptions) {
       } else {
         toast.error(message)
       }
-      window.setTimeout(() => {
-        const next = { ...resendState.value }
-        delete next[userId]
-        resendState.value = next
-      }, 3000)
+      resetStateLater(userId, 3000)
     }
   }
 

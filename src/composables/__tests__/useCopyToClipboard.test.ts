@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 const copyText = vi.hoisted(() => vi.fn())
 vi.mock('@/utils/clipboard', () => ({ copyText }))
 
-import { defineComponent, h } from 'vue'
+import { defineComponent, effectScope, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import {
   injectCopyToClipboard,
@@ -33,6 +33,17 @@ describe('useCopyToClipboard', () => {
     expect(copiedKey.value).toBe('ssh-anna')
     vi.advanceTimersByTime(1)
     expect(copiedKey.value).toBeNull()
+  })
+
+  it('clears the reset timer when its scope is disposed', async () => {
+    const scope = effectScope()
+    const { copyToClipboard } = scope.run(() => useCopyToClipboard())!
+
+    await copyToClipboard('x', 'key')
+    expect(vi.getTimerCount()).toBe(1)
+
+    scope.stop()
+    expect(vi.getTimerCount()).toBe(0)
   })
 
   it('keeps only the last copied key and restarts the delay', async () => {
