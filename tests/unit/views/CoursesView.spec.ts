@@ -257,6 +257,19 @@ describe('CoursesView.vue', () => {
         expect(mockToastError).toHaveBeenCalledWith('Backend Error')
     })
 
+    it('zeigt den eigenen Text statt [object Object], wenn detail ein Objekt ist', async () => {
+        mockCreateCourse.mockRejectedValue({ response: { data: { detail: { reason: 'course_exists' } } } })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        ;(wrapper.vm as any).formData.name = 'Fail Kurs'
+        ;(wrapper.vm as any).saveCourse()
+        await flushPromises()
+
+        expect(mockToastError).toHaveBeenCalledWith('CoursesView.toasts.createError')
+    })
+
     // --- 5. Löschen (Modal & API) ---
 
     it('öffnet das Löschen-Modal und löscht den Kurs erfolgreich', async () => {

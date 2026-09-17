@@ -49,6 +49,27 @@ export function getErrorDetail(err: unknown): unknown {
   return asHttpError(err)?.response?.data?.detail
 }
 
+/**
+ * Readable backend message of a failed request, or ``undefined`` when the
+ * backend didn't send one. That is the case for a structured ``detail``
+ * without a ``message`` (e.g. ``{reason, limit_bytes}``) and for FastAPI's
+ * validation arrays — interpolating those into a toast produced
+ * ``[object Object]``. Callers fall back to their own (localized) text.
+ *
+ * ``detail.reason`` is deliberately not used here: it is a machine code, and
+ * the caller's own message reads better. Sites that want the code use
+ * :func:`getErrorReason`.
+ */
+export function getErrorDetailMessage(err: unknown): string | undefined {
+  const detail = getErrorDetail(err)
+  if (typeof detail === 'string') return detail.trim() || undefined
+  if (detail && typeof detail === 'object' && !Array.isArray(detail)) {
+    const message = (detail as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim() !== '') return message
+  }
+  return undefined
+}
+
 /** ``detail.reason`` of a structured backend error; ``undefined`` for string/missing detail. */
 export function getErrorReason(err: unknown): string | undefined {
   const detail = getErrorDetail(err)

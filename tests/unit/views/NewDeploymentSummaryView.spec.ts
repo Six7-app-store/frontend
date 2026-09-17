@@ -153,6 +153,19 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(wrapper.text()).toContain('1 KB') // Formatierte Dateigröße
   })
 
+  it('meldet einen Objekt-detail beim Laden der Nutzer als eigenen Text', async () => {
+    vi.mocked(userApi.list).mockRejectedValue({ response: { data: { detail: { reason: 'forbidden' } } } })
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const toastStore = useToastStore()
+    const deployBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.actions.deploy'))
+    await deployBtn?.trigger('click')
+    await flushPromises()
+
+    expect(toastStore.error).toHaveBeenCalledWith('deployment.summary.fetchUsersError', undefined)
+  })
+
   it('renders a variable scoped through osScope per slot', async () => {
     const wrapper = createWrapper()
     await flushPromises()

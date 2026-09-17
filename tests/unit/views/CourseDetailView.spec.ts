@@ -301,6 +301,22 @@ describe('CourseDetailView.vue', () => {
         expect(wrapper.find('.modal').exists()).toBe(false)
     })
 
+    it('zeigt beim Entfernen den eigenen Text statt [object Object], wenn detail ein Objekt ist', async () => {
+        mockCurrentMembers = [{ userId: 'u-99', username: 'BadUser', role: 'student' }]
+        mockRemoveMember.mockRejectedValue({ response: { data: { detail: { reason: 'last_teacher' } } } })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        await wrapper.find('button[title="CourseDetailView.removeMemberTitle"]').trigger('click')
+        await flushPromises()
+        const confirmBtn = wrapper.findAll('.modal button').find(b => b.text().includes('CourseDetailView.removeModal.remove'))!
+        await confirmBtn.trigger('click')
+        await flushPromises()
+
+        expect(mockToastError).toHaveBeenCalledWith('CourseDetailView.toasts.removeError')
+    })
+
     it('rendert den Benutzernamen im Löschen-Modal als Text, nicht als HTML', async () => {
         const evilName = '<img src=x onerror="alert(1)">'
         mockCurrentMembers = [{ userId: 'u-98', username: evilName, role: 'student' }]

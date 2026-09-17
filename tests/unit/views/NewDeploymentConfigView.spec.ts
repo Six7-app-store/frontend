@@ -291,6 +291,24 @@ describe('DeploymentConfig.vue', () => {
     expect(otherSpy).not.toHaveBeenCalled()
   })
 
+  it('meldet einen Suchfehler mit Objekt-detail als eigenen Text', async () => {
+    vi.useFakeTimers()
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const studentsTabBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.config.studentsLabel'))
+    await studentsTabBtn?.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    vi.mocked(userApi.search).mockRejectedValue({ response: { data: { detail: { reason: 'search_failed' } } } })
+    await wrapper.find('[data-testid="student-search"]').setValue('Jo')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    expect(toastErrorMock).toHaveBeenCalledWith('CourseDetailView.toasts.loadUsersError')
+    vi.useRealTimers()
+  })
+
   it('removes only its own search-error toast, never all toasts', async () => {
     vi.useFakeTimers()
     const wrapper = createWrapper()

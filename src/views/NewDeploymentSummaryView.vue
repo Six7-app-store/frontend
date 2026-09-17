@@ -11,7 +11,7 @@ import {
   effectiveVariableScope,
   isMultiImagePackerLayout as detectMultiImagePackerLayout,
 } from '@/services/deployment-variables.service'
-import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
+import { getErrorDetail, getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import {
   BarChart3,
@@ -469,7 +469,7 @@ const handleDeploy = async () => {
       const res = await userApi.list()
       backendUsers = res.data || []
     } catch (err: any) {
-      const detail = getErrorDetail(err) || err?.message || t('deployment.summary.fetchUsersError')
+      const detail = getErrorDetailMessage(err) || err?.message || t('deployment.summary.fetchUsersError')
       toast.error(detail)
       return
     }

@@ -16,7 +16,7 @@ import {
 import { courseApi } from '@/api/course.api'
 import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
-import { getErrorDetail } from '@/utils/http-error'
+import { getErrorDetailMessage } from '@/utils/http-error'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 
@@ -310,7 +310,7 @@ watch(studentSearchQuery, (val) => {
     } catch (err) {
       console.error('User search error:', err)
       const e: any = err
-      const msg = getErrorDetail(e) || e?.message || t('CourseDetailView.toasts.loadUsersError')
+      const msg = getErrorDetailMessage(e) || e?.message || t('CourseDetailView.toasts.loadUsersError')
       searchErrorToastId = toast.error(msg)
     } finally {
       loadingStudents.value = false

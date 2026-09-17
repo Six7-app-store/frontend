@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest'
 import {
   extractErrorMessage,
   getErrorDetail,
+  getErrorDetailMessage,
   getErrorReason,
   getErrorStatus,
   getErrorStatusText,
@@ -74,5 +75,35 @@ describe('error accessors', () => {
     expect(getErrorStatus(value)).toBeUndefined()
     expect(getErrorDetail(value)).toBeUndefined()
     expect(getErrorReason(value)).toBeUndefined()
+  })
+})
+
+describe('getErrorDetailMessage', () => {
+  const axiosLike = (detail: unknown) => ({ response: { status: 400, data: { detail } } })
+
+  it('returns a string detail verbatim', () => {
+    expect(getErrorDetailMessage(axiosLike('Kurs existiert bereits'))).toBe('Kurs existiert bereits')
+  })
+
+  it('returns detail.message of a structured detail', () => {
+    expect(getErrorDetailMessage(axiosLike({ reason: 'openstack_unavailable', message: 'OpenStack antwortet nicht' })))
+      .toBe('OpenStack antwortet nicht')
+  })
+
+  it.each([
+    [{ reason: 'file_too_large', limit_bytes: 10 }],
+    [[{ loc: ['body', 'name'], msg: 'field required' }]],
+    [{}],
+    [''],
+    ['   '],
+    [undefined],
+    [null],
+  ])('returns undefined for %j so the caller can use its own message', (detail) => {
+    expect(getErrorDetailMessage(axiosLike(detail))).toBeUndefined()
+  })
+
+  it('tolerates non-axios values', () => {
+    expect(getErrorDetailMessage(new Error('boom'))).toBeUndefined()
+    expect(getErrorDetailMessage(undefined)).toBeUndefined()
   })
 })

@@ -6,7 +6,7 @@ import { GraduationCap, ArrowLeft, UserMinus, UserPlus, Search, X, Loader2, Edit
 import { useCourseStore } from '@/stores/course.store'
 import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
-import { getErrorDetail } from '@/utils/http-error'
+import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
 import { roleLabelKey } from '@/i18n/role-labels'
 import { useI18n } from 'vue-i18n' // <-- i18n importieren
@@ -181,7 +181,7 @@ const submitAddMembers = async () => {
     }
     closeAddModal()
   } catch (err: any) {
-    toast.error((getErrorDetail(err) as string | undefined) || t('CourseDetailView.toasts.addError'))
+    toast.error(getErrorDetailMessage(err) || t('CourseDetailView.toasts.addError'))
   } finally {
     isAddingMembers.value = false
   }
@@ -211,7 +211,7 @@ const confirmRemoveMember = async () => {
     showRemoveModal.value = false
     memberToRemove.value = null
   } catch (err: any) {
-    toast.error((getErrorDetail(err) as string | undefined) || t('CourseDetailView.toasts.removeError'))
+    toast.error(getErrorDetailMessage(err) || t('CourseDetailView.toasts.removeError'))
   } finally {
     removingId.value = null
   }

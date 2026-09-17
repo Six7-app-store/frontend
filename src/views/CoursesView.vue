@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { GraduationCap, Trash2, Plus, Users } from 'lucide-vue-next'
 import { useCourseStore } from '@/stores/course.store'
 import { useToast } from '@/composables/useToast'
-import { getErrorDetail } from '@/utils/http-error'
+import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
 import { courseApi } from '@/api/course.api'
 import { useI18n } from 'vue-i18n' // <-- i18n importiert
@@ -82,7 +82,7 @@ const saveCourse = async () => {
       router.push({ name: ROUTE_NAMES.coursesDetail, params: { id: created.courseId } })
     }
   } catch (error: any) {
-    toast.error((getErrorDetail(error) as string | undefined) || t('CoursesView.toasts.createError'))
+    toast.error(getErrorDetailMessage(error) || t('CoursesView.toasts.createError'))
   }
 }
 
@@ -108,7 +108,7 @@ const confirmDelete = async () => {
     showDeleteModal.value = false
     courseToDelete.value = null
   } catch (error: any) {
-    toast.error((getErrorDetail(error) as string | undefined) || t('CoursesView.toasts.deleteError'))
+    toast.error(getErrorDetailMessage(error) || t('CoursesView.toasts.deleteError'))
   } finally {
     isDeleting.value = false
   }
