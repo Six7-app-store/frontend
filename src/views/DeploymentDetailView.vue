@@ -5,11 +5,9 @@ import Modal from '@/components/ui/Modal.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { useRole } from '@/composables/useRole'
 import { useToastStore } from '@/stores/toast.store'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { taskApi } from '@/api/task.api'
 import { deploymentApi } from '@/api/deployment.api'
 import type { Task, DeploymentResource } from '@/types'
 import { useDeploymentStream } from '@/composables/useDeploymentStream'
@@ -21,6 +19,8 @@ import { extractErrorMessage } from '@/utils/http-error'
 import { prettyJson, highlightJson } from '@/utils/json-display'
 import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
 import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
+import { useDeploymentOwnerView } from '@/composables/useDeploymentOwnerView'
+import { useDeploymentTasks } from '@/composables/useDeploymentTasks'
 import {
     phaseLabel,
     resolvePhaseStepCount,
@@ -31,7 +31,6 @@ import {
 import {
     isLiveTaskStatus,
     sortTasksNewestFirst,
-    findActiveTask,
     selectHistoryTasks,
 } from '@/services/deployment-tasks.service'
 import {
@@ -68,13 +67,8 @@ const route = useRoute()
 const router = useRouter()
 const deploymentStore = useDeploymentStore()
 const authStore = useAuthStore()
-const { isStaff } = useRole()
 const toastStore = useToastStore()
 const { t } = useI18n()
-const tasks = ref<Task[]>([])
-const loadingTasks = ref(false)
-const selectedTask = ref<Task | null>(null)
-const latestTaskOutputs = ref<Task | null>(null)
 // Member self-access: a non-owner (student) can't read the owner-only
 // task outputs, so we fetch just their own credentials from the
 // dedicated ``/my-access`` endpoint into this map. It mirrors the raw
@@ -82,13 +76,30 @@ const latestTaskOutputs = ref<Task | null>(null)
 // to it and the existing account-matching pipeline works unchanged.
 const myAccounts = ref<Record<string, UserAccount> | null>(null)
 const myTeamVms = ref<Record<string, TeamVm> | null>(null)
-// Always returns the currently active data task for the UI blocks.
-const activeDataTask = computed(() => selectedTask.value || latestTaskOutputs.value)
-const loadingTaskDetail = ref(false)
 
 const deploymentId = route.params.id as string
 
 const deployment = computed(() => deploymentStore.currentDeployment)
+
+// Owner-view vs member-view — gates tasks/logs, lifecycle actions, the
+// live stream and other members' resend buttons (see ``useDeploymentOwnerView``).
+const { isOwnerView } = useDeploymentOwnerView(deployment)
+
+// Task list, active task, opened task detail and the newest task's
+// outputs (see ``useDeploymentTasks``).
+const {
+    tasks,
+    loadingTasks,
+    activeTask,
+    selectedTask,
+    loadingTaskDetail,
+    activeDataTask,
+    loadTasks,
+    loadLatestTaskOutputs,
+    selectTask,
+    deselectTask,
+} = useDeploymentTasks(deploymentId, isOwnerView)
+
 // Credentials and team VMs of the active data task; members fall back to
 // their own ``/my-access`` data (see ``services/deployment-outputs.service``).
 const typedUserAccounts = computed<Record<string, UserAccount> | null>(() =>
@@ -109,22 +120,6 @@ const enrichedTeams = computed(() => {
 // Counts the resources in the selected task's state for the header
 // sub-headline (``countTfResources`` in ``utils/task-logs``).
 const tfResourcesCount = computed(() => countTfResources(selectedTask.value?.tf_state))
-
-// Owner-view vs member-view — mirrors backend/app/utils/permissions.py
-// ``is_deployment_owner_view``. Drives every gated UI element on
-// this page: tasks/logs sections, terraform-state/outputs blocks,
-// the Delete button, the SSE live-stream connection, and the
-// resend-credentials buttons of *other* members in the same team.
-//
-// We trust the backend on the source-of-truth side (it returns 403
-// or filters data when the caller isn't owner-view); this computed
-// just hides the affordances so the user doesn't see buttons that
-// would 403 on click.
-const isOwnerView = computed(() => {
-    if (isStaff.value) return true
-    const ownerId = deployment.value?.userId
-    return !!ownerId && String(ownerId) === String(authStore.userId)
-})
 
 // ----------------------------------------------------------------
 // INFRASTRUCTURE TAB — Stage-1 list + Stage-2 drawer + redeploy
@@ -266,21 +261,7 @@ onMounted(async () => {
     if (isOwnerView.value) {
         // Owner view: seed the top outputs from the latest task so the
         // page can render the summary before the first SSE event arrives.
-        if (tasks.value && tasks.value.length > 0) {
-            const sortedTasks = sortTasksNewestFirst(tasks.value)
-
-            const latestTask = sortedTasks[0]
-
-            if (latestTask) {
-                // Fetch the details straight from the API into latestTaskOutputs.
-                try {
-                    const { data } = await taskApi.getById(latestTask.taskId)
-                    latestTaskOutputs.value = data
-                } catch (err) {
-                    console.error('Error seeding top outputs:', err)
-                }
-            }
-        }
+        await loadLatestTaskOutputs()
     } else {
         // Member view: the owner-only task outputs are off-limits, so
         // fetch just this member's own credentials from ``/my-access``.
@@ -303,26 +284,6 @@ onMounted(async () => {
     // its other panels while it's in flight.
     loadResources()
 })
-
-const loadTasks = async () => {
-    // Members can't read tasks (backend returns 403 for the
-    // owner-only endpoint). Skip the call entirely so the network
-    // tab stays clean and the UI doesn't briefly flicker a loader
-    // for data we'll never receive.
-    if (!isOwnerView.value) {
-        tasks.value = []
-        return
-    }
-    loadingTasks.value = true
-    try {
-        const { data } = await taskApi.listByDeployment(deploymentId)
-        tasks.value = data
-    } catch (err) {
-        console.error('Error loading tasks:', err)
-    } finally {
-        loadingTasks.value = false
-    }
-}
 
 // ----------------------------------------------------------------
 // LIVE STREAM (progress bar + log tail)
@@ -351,10 +312,6 @@ const {
     start: startStream,
     stop: stopStream,
 } = useDeploymentStream(deploymentIdRef)
-
-// The "active" task is the one we still expect events from, falling
-// back to the newest task (see ``findActiveTask``).
-const activeTask = computed<Task | null>(() => findActiveTask(tasks.value))
 
 const isStreamRelevant = computed(() => {
     // Members never get the live stream — backend would 403 the SSE
@@ -729,25 +686,6 @@ const resendAccess = async (teamId: string, userId: string) => {
 
 const formatDate = formatDateTime
 
-const selectTask = async (task: Task) => {
-    loadingTaskDetail.value = true
-    try {
-        const { data } = await taskApi.getById(task.taskId)
-        selectedTask.value = data
-    } catch (err) {
-        console.error('Error loading task details:', err)
-        toastStore.addToast({
-            type: 'error',
-            message: 'Failed to load task details'
-        })
-    } finally {
-        loadingTaskDetail.value = false
-    }
-}
-
-const deselectTask = () => {
-    selectedTask.value = null
-}
 </script>
 
 
