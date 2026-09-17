@@ -110,23 +110,39 @@ async function getStudentIdsForCourse(courseId: string): Promise<string[]> {
 // Loading states for courses.
 const loadingCourseStudents = ref(new Set<string>())
 
-// Helper: return the student count per course (lazy loading).
+// At most this many course member lists are fetched at the same time. The
+// course list can hold up to 200 entries, and firing all of them at once
+// hammers the backend.
+const MAX_PARALLEL_COURSE_LOADS = 5
+
+// Helper: return the student count per course (read-only; the lists are
+// loaded by ``loadCourseStudentCounts`` after the course list arrives).
 function getStudentCountForCourse(courseId: string) {
-  if (courseStudentsCache.value.has(courseId)) {
-    return courseStudentsCache.value.get(courseId)!.length
-  }
-  // Load lazily if not loaded.
-  if (!loadingCourseStudents.value.has(courseId)) {
-    loadingCourseStudents.value.add(courseId)
-    getStudentIdsForCourse(courseId).then(() => {
+  return courseStudentsCache.value.get(courseId)?.length ?? 0
+}
+
+// Load the member list of every course that isn't cached yet, at most
+// ``MAX_PARALLEL_COURSE_LOADS`` at a time. Called once after the courses are
+// there — never from the render, which used to start one request per
+// rendered course.
+async function loadCourseStudentCounts() {
+  const queue = courses.value
+    .map((course: any) => course.courseId as string)
+    .filter((courseId) => courseId && !courseStudentsCache.value.has(courseId))
+  queue.forEach((courseId) => loadingCourseStudents.value.add(courseId))
+
+  const worker = async () => {
+    while (queue.length > 0) {
+      const courseId = queue.shift()!
+      // ``getStudentIdsForCourse`` handles its own errors; the marker is
+      // cleared either way.
+      await getStudentIdsForCourse(courseId)
       loadingCourseStudents.value.delete(courseId)
-    }).catch(() => {
-      // ``getStudentIdsForCourse`` handles its own errors; this only makes
-      // sure the loading marker is cleared in any case.
-      loadingCourseStudents.value.delete(courseId)
-    })
+    }
   }
-  return 0 // placeholder while loading
+  await Promise.all(
+    Array.from({ length: Math.min(MAX_PARALLEL_COURSE_LOADS, queue.length) }, worker)
+  )
 }
 
 // Course checkbox: checked when all students of the course are selected.
@@ -291,6 +307,7 @@ onMounted(async () => {
   // Ensure cred state is fresh; banner branch shows when missing
   if (!credStore.status) await credStore.fetch()
   await loadCourses()
+  loadCourseStudentCounts()
   await loadAllStudents()
 })
 </script>

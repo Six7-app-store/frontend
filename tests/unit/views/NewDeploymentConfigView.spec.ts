@@ -133,6 +133,45 @@ describe('DeploymentConfig.vue', () => {
     expect(wrapper.text()).toContain('Web Dev')
   })
 
+  it('loads the student counts once, outside the render, with limited parallelism', async () => {
+    const courses = Array.from({ length: 12 }, (_, i) => ({ courseId: `c${i}`, name: `Kurs ${i}` }))
+    vi.mocked(courseApi.list).mockResolvedValue({ data: courses } as any)
+
+    let inFlight = 0
+    let maxInFlight = 0
+    const resolvers: Array<() => void> = []
+    vi.mocked(courseApi.getById).mockImplementation((courseId: string) => {
+      inFlight++
+      maxInFlight = Math.max(maxInFlight, inFlight)
+      return new Promise((resolve) => {
+        resolvers.push(() => {
+          inFlight--
+          resolve({ data: { users: [{ keycloak_id: `${courseId}-s1` }] } } as any)
+        })
+      })
+    }) as any
+
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    expect(maxInFlight).toBeLessThanOrEqual(5)
+
+    // Resolve everything that is queued, round by round.
+    while (resolvers.length > 0) {
+      resolvers.splice(0).forEach((resolve) => resolve())
+      await flushPromises()
+    }
+
+    expect(courseApi.getById).toHaveBeenCalledTimes(12)
+    expect(maxInFlight).toBeLessThanOrEqual(5)
+    expect(wrapper.text()).toContain('DeploymentDetailView.deploymentStudentCount')
+
+    // Re-rendering must not trigger further requests.
+    await wrapper.vm.$forceUpdate()
+    await flushPromises()
+    expect(courseApi.getById).toHaveBeenCalledTimes(12)
+  })
+
   it('shows missing credential banner and hides form if credentials are missing', async () => {
     const wrapper = createWrapper({ isResolved: true, hasCredential: false })
     await flushPromises()
