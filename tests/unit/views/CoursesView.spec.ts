@@ -63,11 +63,13 @@ const mockCreateCourse = vi.fn()
 const mockDeleteCourse = vi.fn()
 let mockCourses: any[] = []
 let mockIsLoading = false
+let mockStoreError: string | null = null
 
 vi.mock('@/stores/course.store', () => ({
     useCourseStore: () => ({
         get courses() { return mockCourses },
         get isLoading() { return mockIsLoading },
+        get error() { return mockStoreError },
         fetchCourses: mockFetchCourses,
         createCourse: mockCreateCourse,
         deleteCourse: mockDeleteCourse
@@ -86,6 +88,7 @@ describe('CoursesView.vue', () => {
         // Standard-Zustand für Tests zurücksetzen
         mockCourses = []
         mockIsLoading = false
+        mockStoreError = null
         mockCan.createCourse.value = true
         mockCan.editCourse.value = true
         mockCan.deleteCourse.value = true
@@ -144,6 +147,18 @@ describe('CoursesView.vue', () => {
     })
 
     // --- 2. Daten anzeigen & Mitglieder laden ---
+
+    it('zeigt einen Fehler-Toast, wenn der Store beim Laden einen Fehler meldet', async () => {
+        // ``fetchCourses`` wirft nicht (rethrow: false), sondern hinterlegt den
+        // Fehler nur im Store.
+        mockStoreError = 'Failed to fetch courses'
+
+        mountComponent()
+        await flushPromises()
+
+        expect(mockToastError).toHaveBeenCalledWith('CoursesView.toasts.loadError')
+        expect(courseApi.listMembers).not.toHaveBeenCalled()
+    })
 
     it('rendert Kurse und holt die Mitgliederanzahl', async () => {
         mockCourses = [

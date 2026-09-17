@@ -52,6 +52,12 @@ const fetchMemberCounts = async () => {
 onMounted(async () => {
   try {
     await courseStore.fetchCourses()
+    // ``fetchCourses`` swallows the error (``rethrow: false``) and only records
+    // it in the store, so the toast has to check the store state.
+    if (courseStore.error) {
+      toast.error(t('CoursesView.toasts.loadError'))
+      return
+    }
     if (isStaff.value) {
       await fetchMemberCounts()
     }
