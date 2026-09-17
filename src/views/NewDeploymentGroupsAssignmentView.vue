@@ -163,6 +163,8 @@ onMounted(async () => {
   }
   
   if (missingIds.length > 0) {
+    // A user that can't be loaded is skipped silently: the placeholder cache
+    // entry set above keeps the assignment UI usable.
     const results = await Promise.all(missingIds.map(id => userApi.getById(id).then(res => res.data).catch(() => null)))
     results.forEach((user) => {
       if (user && user.userId) {

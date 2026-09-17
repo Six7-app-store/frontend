@@ -188,10 +188,7 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(deploymentStore.resetDraft).toHaveBeenCalled()
     
     // Erfolgs-Toast gesendet?
-    expect(toastStore.addToast).toHaveBeenCalledWith({
-      message: 'deployment.summary.submitSuccess',
-      type: 'success'
-    })
+    expect(toastStore.success).toHaveBeenCalledWith('deployment.summary.submitSuccess', undefined)
 
     // Routing zur Liste
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployments.list' })
@@ -223,10 +220,7 @@ describe('NewDeploymentSummaryView.vue', () => {
     await flushPromises()
 
     // Prüft ob der Error-Formatter korrekt gearbeitet hat
-    expect(toastStore.addToast).toHaveBeenCalledWith({
-      message: 'deployment.summary.errors.fileTooLarge', // Der i18n Key, den die Methode zurückgibt
-      type: 'error'
-    })
+    expect(toastStore.error).toHaveBeenCalledWith('deployment.summary.errors.fileTooLarge', undefined) // Der i18n Key, den die Methode zurückgibt
     
     // Da es fehlgeschlagen ist, sollte nicht weitergeleitet werden
     expect(routerPushMock).not.toHaveBeenCalledWith({ name: 'deployments.list' })

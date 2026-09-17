@@ -15,6 +15,7 @@ import {
 import { courseApi } from '@/api/course.api'
 import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetail } from '@/utils/http-error'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 
@@ -98,6 +99,8 @@ async function getStudentIdsForCourse(courseId: string): Promise<string[]> {
     cacheStudents(students)
     return students.map((s: any) => s.keycloak_id)
   } catch (err) {
+    // Deliberately silent: an unloadable course contributes no students
+    // (the caller then shows its "no users found" hint).
     console.error(`Failed to load students for course ${courseId}:`, err)
     return []
   }
@@ -117,6 +120,8 @@ function getStudentCountForCourse(courseId: string) {
     getStudentIdsForCourse(courseId).then(() => {
       loadingCourseStudents.value.delete(courseId)
     }).catch(() => {
+      // ``getStudentIdsForCourse`` handles its own errors; this only makes
+      // sure the loading marker is cleared in any case.
       loadingCourseStudents.value.delete(courseId)
     })
   }
@@ -272,7 +277,7 @@ watch(studentSearchQuery, (val) => {
     } catch (err) {
       console.error('User search error:', err)
       const e: any = err
-      const msg = e?.response?.data?.detail || e?.message || t('CourseDetailView.toasts.loadUsersError')
+      const msg = getErrorDetail(e) || e?.message || t('CourseDetailView.toasts.loadUsersError')
       toast.error(msg)
     } finally {
       loadingStudents.value = false

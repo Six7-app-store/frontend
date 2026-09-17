@@ -5,7 +5,8 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
+import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import {
   BarChart3,
@@ -33,7 +34,7 @@ const { t } = useI18n()
 const router = useRouter()
 const deploymentStore = useDeploymentStore()
 const appStore = useAppStore()
-const toastStore = useToastStore()
+const toast = useToast()
 
 // State
 const isLoadingVariables = ref(false)
@@ -148,7 +149,7 @@ const terraformVars = computed(() => {
  * previous "stringify the detail object" code produced).
  */
 function _formatSubmitError(err: any): string {
-  const detail = err?.response?.data?.detail
+  const detail = getErrorDetail(err) as any
   const fallback = (typeof detail === 'string' ? detail : null)
     ?? err?.message
     ?? t('deployment.summary.submitError')
@@ -408,10 +409,7 @@ const fetchAndSyncVariables = async () => {
         userOverrides = JSON.parse(rawUserInput)
       } catch (e) {
         console.warn('Invalid JSON in userInputVar', e)
-        toastStore.addToast({
-          message: t('deployment.summary.invalidJson'),
-          type: 'error',
-        })
+        toast.error(t('deployment.summary.invalidJson'))
       }
     }
 
@@ -439,12 +437,9 @@ const fetchAndSyncVariables = async () => {
   } catch (error: any) {
     console.error(error)
     let msg = t('deployment.summary.fetchVarsError')
-    if (error.response?.status === 500) msg = t('deployment.summary.fetchVarsError500')
+    if (getErrorStatus(error) === 500) msg = t('deployment.summary.fetchVarsError500')
     
-    toastStore.addToast({ 
-        message: msg, 
-        type: 'error' 
-    })
+    toast.error(msg)
   } finally {
     isLoadingVariables.value = false
   }
@@ -476,8 +471,8 @@ const handleDeploy = async () => {
       const res = await userApi.list()
       backendUsers = res.data || []
     } catch (err: any) {
-      const detail = err?.response?.data?.detail || err?.message || t('deployment.summary.fetchUsersError')
-      toastStore.addToast({ message: detail, type: 'error' })
+      const detail = getErrorDetail(err) || err?.message || t('deployment.summary.fetchUsersError')
+      toast.error(detail)
       return
     }
 
@@ -519,14 +514,14 @@ const handleDeploy = async () => {
       // actual_bytes, ...}}`` for size/extension/encoding violations (413/422).
       // Branch on ``reason`` and format a localized message with the size numbers.
       const message = _formatSubmitError(err)
-      toastStore.addToast({ message, type: 'error' })
+      toast.error(message)
       return
     }
 
     if (deployment?.deploymentId) {
       // Created successfully → reset the draft so the next wizard run starts clean.
       deploymentStore.resetDraft()
-      toastStore.addToast({ message: t('deployment.summary.submitSuccess'), type: 'success' })
+      toast.success(t('deployment.summary.submitSuccess'))
       await router.push({ name: 'deployments.list' })
     }
   } finally {
