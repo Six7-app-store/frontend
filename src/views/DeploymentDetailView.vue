@@ -20,7 +20,7 @@ import { formatDateTime } from '@/utils/format'
 import { extractErrorMessage } from '@/utils/http-error'
 import { prettyJson, highlightJson } from '@/utils/json-display'
 import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
-import { copyText } from '@/utils/clipboard'
+import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import {
     phaseLabel,
     resolvePhaseStepCount,
@@ -531,30 +531,9 @@ onBeforeUnmount(() => {
     stopStream()
 })
 
-// Copy-to-clipboard state. Each "card" (logs/state/outputs) tags its
-// copy button with a unique key; the key of whichever was last
-// successfully copied is stored here for ~1.5s so we can flip its
-// icon to a check as feedback. Multiple cards can share the same state
-// because only one can be the "just copied" target at a time.
-const copiedKey = ref<string | null>(null)
-let copyResetTimer: number | null = null
-
-const copyToClipboard = async (text: string, key: string) => {
-    if (!text) return
-    try {
-        // ``copyText`` falls back to ``execCommand('copy')`` outside a
-        // secure context (see ``utils/clipboard``).
-        await copyText(text)
-        copiedKey.value = key
-        if (copyResetTimer !== null) window.clearTimeout(copyResetTimer)
-        copyResetTimer = window.setTimeout(() => {
-            copiedKey.value = null
-            copyResetTimer = null
-        }, 1500)
-    } catch (err) {
-        console.error('Copy failed:', err)
-    }
-}
+// Copy-to-clipboard state, shared page-wide: only one button can be the
+// "just copied" target at a time (see ``useCopyToClipboard``).
+const { copiedKey, copyToClipboard } = useCopyToClipboard()
 
 // Count of log entries inside ``selectedTask.logs`` for the badge in
 // the Logs card header; ``null`` hides the badge. The wire shapes are
