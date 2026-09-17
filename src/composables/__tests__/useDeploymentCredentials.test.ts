@@ -21,7 +21,7 @@ describe('useDeploymentCredentials', () => {
     deploymentApi.getMyAccess.mockReset()
   })
 
-  it('matches accounts from the active data task outputs', () => {
+  it('matches accounts from the newest task outputs', () => {
     const task = ref({
       outputs: {
         user_accounts: { value: { 'Team A-anna': account } },

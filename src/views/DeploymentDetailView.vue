@@ -58,6 +58,7 @@ const {
     activeTask,
     selectedTask,
     loadingTaskDetail,
+    latestTaskOutputs,
     activeDataTask,
     loadTasks,
     loadLatestTaskOutputs,
@@ -66,9 +67,9 @@ const {
 } = useDeploymentTasks(deploymentId, isOwnerView)
 
 // Teams with each member's access credentials: owners read them from the
-// active data task's outputs, members from ``/my-access``
+// newest task's outputs, members from ``/my-access``
 // (see ``useDeploymentCredentials``).
-const { enrichedTeams, loadMyAccess } = useDeploymentCredentials(deploymentId, deployment, activeDataTask)
+const { enrichedTeams, loadMyAccess } = useDeploymentCredentials(deploymentId, deployment, latestTaskOutputs)
 
 // ----------------------------------------------------------------
 // INFRASTRUCTURE TAB — Stage-1 list + Stage-2 drawer + redeploy

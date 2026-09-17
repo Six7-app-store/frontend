@@ -7,15 +7,16 @@ import type { DeploymentWithRelations, Task } from '@/types'
 /**
  * Access credentials for the Teams card of the deployment detail page.
  *
- * Owners read ``user_accounts`` / ``team_vms`` from the active data task's
- * terraform outputs; members load their own entry via ``/my-access``
+ * Owners read ``user_accounts`` / ``team_vms`` from the newest task's
+ * terraform outputs (not from a task opened in the history, which may have
+ * none or outdated ones); members load their own entry via ``/my-access``
  * (:func:`loadMyAccess`). ``enrichedTeams`` combines both with the
  * deployment's teams (see ``services/deployment-account-matching.service``).
  */
 export function useDeploymentCredentials(
   deploymentId: string,
   deployment: Ref<DeploymentWithRelations | null>,
-  activeDataTask: Ref<Task | null>,
+  latestTaskOutputs: Ref<Task | null>,
 ) {
   // Member self-access: a non-owner (student) can't read the owner-only
   // task outputs, so we fetch just their own credentials from the
@@ -25,13 +26,13 @@ export function useDeploymentCredentials(
   const myAccounts = ref<Record<string, UserAccount> | null>(null)
   const myTeamVms = ref<Record<string, TeamVm> | null>(null)
 
-  // Credentials and team VMs of the active data task; members fall back to
+  // Credentials and team VMs of the newest task; members fall back to
   // their own ``/my-access`` data (see ``services/deployment-outputs.service``).
   const typedUserAccounts = computed<Record<string, UserAccount> | null>(() =>
-    extractUserAccounts(activeDataTask.value?.outputs, myAccounts.value)
+    extractUserAccounts(latestTaskOutputs.value?.outputs, myAccounts.value)
   )
   const teamVms = computed<Record<string, TeamVm> | null>(() =>
-    extractTeamVms(activeDataTask.value?.outputs, myTeamVms.value)
+    extractTeamVms(latestTaskOutputs.value?.outputs, myTeamVms.value)
   )
 
   // Teams with ``team.vm`` and each member's matched ``account`` for the

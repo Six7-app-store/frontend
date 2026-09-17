@@ -686,11 +686,12 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     await settle()
     expect(wrapper.find('.text-red-700 .font-medium').text()).toBe('Task failed: terraform exploded')
     expect(wrapper.text()).not.toContain('Traceback')
-    // The selected task drives the data blocks: it has neither tf_state nor
-    // outputs, so the state block disappears and — as a side effect — the
-    // Teams card loses the credentials that came from the latest task.
+    // The selected task drives the task detail: it has no tf_state, so the
+    // state block disappears. The Teams card keeps the credentials of the
+    // latest task.
     expect(wrapper.text()).not.toContain(t('DeploymentDetailView.terraformState'))
-    expect(memberRow(wrapper, 'anna').text()).not.toContain('SSH:')
+    expect(memberRow(wrapper, 'anna').text()).toContain('SSH:ssh anna@10.0.0.5')
+    expect(memberRow(wrapper, 'anna').text()).toContain('PW:••••••••')
 
     await buttonWithText(wrapper, 'Technische Details anzeigen')!.trigger('click')
     expect(wrapper.text()).toContain('Traceback (most recent call last):')
