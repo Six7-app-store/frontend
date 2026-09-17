@@ -5,6 +5,7 @@ import { GraduationCap, ArrowLeft, UserMinus, UserPlus, Search, X, Loader2, Edit
 import { useCourseStore } from '@/stores/course.store'
 import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetail } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
 import { roleLabelKey } from '@/i18n/role-labels'
 import { useI18n } from 'vue-i18n' // <-- i18n importieren
@@ -122,6 +123,7 @@ watch(searchQuery, (q) => {
       const { data } = await userApi.search(query, 10)
       searchResults.value = data
     } catch {
+      // A failed search just shows no results; the user can retype.
       searchResults.value = []
     } finally {
       isSearching.value = false
@@ -178,7 +180,7 @@ const submitAddMembers = async () => {
     }
     closeAddModal()
   } catch (err: any) {
-    toast.error(err?.response?.data?.detail || t('CourseDetailView.toasts.addError'))
+    toast.error((getErrorDetail(err) as string | undefined) || t('CourseDetailView.toasts.addError'))
   } finally {
     isAddingMembers.value = false
   }
@@ -208,7 +210,7 @@ const confirmRemoveMember = async () => {
     showRemoveModal.value = false
     memberToRemove.value = null
   } catch (err: any) {
-    toast.error(err?.response?.data?.detail || t('CourseDetailView.toasts.removeError'))
+    toast.error((getErrorDetail(err) as string | undefined) || t('CourseDetailView.toasts.removeError'))
   } finally {
     removingId.value = null
   }
