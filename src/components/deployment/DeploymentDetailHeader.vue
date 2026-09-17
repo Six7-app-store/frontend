@@ -9,6 +9,7 @@
 import { CircleArrowLeft, PauseCircle, PlayCircle, Trash2 } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
+import { ROUTE_NAMES } from '@/router/route-names'
 import type { PauseResumeAction } from '@/services/deployment-lifecycle.service'
 import type { DeploymentWithRelations } from '@/types'
 
@@ -31,7 +32,7 @@ defineEmits<{
 <template>
   <div class="flex items-center justify-between">
     <div class="flex items-center gap-4">
-      <RouterLink :to="{ name: 'deployments.list' }">
+      <RouterLink :to="{ name: ROUTE_NAMES.deploymentsList }">
         <button
           class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100 transition">
           <CircleArrowLeft :size="24" class="text-gray-700" />

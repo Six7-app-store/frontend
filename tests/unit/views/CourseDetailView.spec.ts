@@ -140,7 +140,7 @@ describe('CourseDetailView.vue', () => {
         await flushPromises()
 
         expect(mockToastError).toHaveBeenCalledWith('CourseDetailView.toasts.loadError')
-        expect(mockPush).toHaveBeenCalledWith({ path: '/courses' })
+        expect(mockPush).toHaveBeenCalledWith({ name: 'courses' })
     })
 
     // --- 2. Inline-Editing (Kursnamen bearbeiten) ---

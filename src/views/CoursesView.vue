@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { GraduationCap, Trash2, Plus, Users } from 'lucide-vue-next'
@@ -72,7 +73,7 @@ const saveCourse = async () => {
 
     // Navigate to the detail page right after creation.
     if (created?.courseId) {
-      router.push(`/courses/${created.courseId}`)
+      router.push({ name: ROUTE_NAMES.coursesDetail, params: { id: created.courseId } })
     }
   } catch (error: any) {
     toast.error((getErrorDetail(error) as string | undefined) || t('CoursesView.toasts.createError'))
@@ -108,7 +109,7 @@ const confirmDelete = async () => {
 }
 
 const goToDetail = (courseId: string) => {
-  router.push({ path: `/courses/${courseId}` })
+  router.push({ name: ROUTE_NAMES.coursesDetail, params: { id: courseId } })
 }
 </script>
 

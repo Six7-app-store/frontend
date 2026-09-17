@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -296,7 +297,7 @@ const normalizeValue = (val: any, type: string) => {
 // --- Data Loading ---
 onMounted(async () => {
   if (!deploymentStore.draft.appId) {
-    router.replace('/apps')
+    router.replace({ name: ROUTE_NAMES.apps })
     return
   }
 
@@ -532,7 +533,7 @@ const handleNext = () => {
 
     deploymentStore.draft.userInputVar = JSON.stringify(changedValues) as any
     deploymentStore.draft.variables = allValues
-    router.push({ name: 'deployment.summary' })
+    router.push({ name: ROUTE_NAMES.deploymentSummary })
   } catch (e) {
     console.error(e)
     toast.error(t('deployment.variables.saveError'))
@@ -540,7 +541,7 @@ const handleNext = () => {
 }
 
 const handleBack = () => {
-  router.push({ name: 'deployment.teams' })
+  router.push({ name: ROUTE_NAMES.deploymentTeams })
 }
 
 // ----------------------------------------------------------------

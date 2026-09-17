@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { userApi } from '@/api/user.api'
 import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -452,7 +453,7 @@ onMounted(() => {
 // --- Actions ---
 const handleCustomize = () => {
   // Navigate to the variables page.
-  router.push({ name: 'deployment.variables' })
+  router.push({ name: ROUTE_NAMES.deploymentVariables })
 }
 
 const handleDeploy = async () => {
@@ -522,7 +523,7 @@ const handleDeploy = async () => {
       // Created successfully → reset the draft so the next wizard run starts clean.
       deploymentStore.resetDraft()
       toast.success(t('deployment.summary.submitSuccess'))
-      await router.push({ name: 'deployments.list' })
+      await router.push({ name: ROUTE_NAMES.deploymentsList })
     }
   } finally {
     isSubmitting.value = false
@@ -531,7 +532,7 @@ const handleDeploy = async () => {
 
 const handleBack = () => {
     // Back leads to the variables page (step 3).
-    router.push({ name: 'deployment.variables' })
+    router.push({ name: ROUTE_NAMES.deploymentVariables })
 }
 </script>
 

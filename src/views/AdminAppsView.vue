@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
@@ -304,7 +305,7 @@ onMounted(loadAll)
 
           <!-- Link to app detail -->
           <RouterLink
-            :to="{ name: 'apps.detail', params: { id: app.appId } }"
+            :to="{ name: ROUTE_NAMES.appsDetail, params: { id: app.appId } }"
             class="text-gray-400 hover:text-primary transition-colors p-1 rounded"
             :title="$t('AdminAppsView.goToApp')"
             @click.stop

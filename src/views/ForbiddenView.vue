@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { useRouter } from 'vue-router'
 import { ShieldAlert } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
@@ -13,7 +14,7 @@ const router = useRouter()
 const { t } = useI18n()
 
 const goHome = () => {
-  router.replace('/dashboard')
+  router.replace({ name: ROUTE_NAMES.dashboard })
 }
 </script>
 

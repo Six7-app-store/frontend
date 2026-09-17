@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
@@ -14,14 +15,14 @@ onMounted(async () => {
     const returnUrl = await authStore.handleCallback()
     
     // Redirect to original destination or dashboard
-    router.push(returnUrl || '/dashboard')
+    router.push(returnUrl || { name: ROUTE_NAMES.dashboard })
   } catch (err: any) {
     console.error('Callback error:', err)
     error.value = err.message || 'Authentication failed'
     
     // Redirect to login after short delay
     setTimeout(() => {
-      router.push('/login')
+      router.push({ name: ROUTE_NAMES.login })
     }, 3000)
   }
 })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GraduationCap, ArrowLeft, UserMinus, UserPlus, Search, X, Loader2, Edit2, Check, X as CloseIcon, Info } from 'lucide-vue-next'
@@ -83,7 +84,7 @@ const loadCourse = async () => {
     }
   } catch {
     toast.error(t('CourseDetailView.toasts.loadError'))
-    router.push({ path: '/courses' })
+    router.push({ name: ROUTE_NAMES.courses })
   }
 }
 
@@ -238,7 +239,7 @@ const roleClass = (role: string | undefined) => {
 <template>
   <div class="p-6 max-w-5xl mx-auto">
     <button
-        @click="router.push('/courses')"
+        @click="router.push({ name: ROUTE_NAMES.courses })"
         class="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-4 text-sm"
     >
       <ArrowLeft :size="16" />

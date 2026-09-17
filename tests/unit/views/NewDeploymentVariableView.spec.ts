@@ -113,7 +113,7 @@ describe('NewDeploymentVariableView.vue', () => {
     createWrapper({ appId: null })
     await flushPromises()
 
-    expect(routerReplaceMock).toHaveBeenCalledWith('/apps')
+    expect(routerReplaceMock).toHaveBeenCalledWith({ name: 'apps' })
   })
 
   it('fetches variables and groups them into packer and terraform sections', async () => {

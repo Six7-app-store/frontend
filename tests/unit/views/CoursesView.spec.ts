@@ -170,7 +170,7 @@ describe('CoursesView.vue', () => {
         const card = wrapper.find('.stub-card')
         await card.trigger('click')
 
-        expect(mockPush).toHaveBeenCalledWith({ path: '/courses/c-99' })
+        expect(mockPush).toHaveBeenCalledWith({ name: 'courses.detail', params: { id: 'c-99' } })
     })
 
     // --- 3. Rechteverwaltung (Permissions) ---
@@ -220,7 +220,7 @@ describe('CoursesView.vue', () => {
 
         expect(mockCreateCourse).toHaveBeenCalledWith({ name: 'Mein neuer Kurs' })
         expect(mockToastSuccess).toHaveBeenCalledWith('CoursesView.toasts.createSuccess')
-        expect(mockPush).toHaveBeenCalledWith('/courses/new-c-1')
+        expect(mockPush).toHaveBeenCalledWith({ name: 'courses.detail', params: { id: 'new-c-1' } })
     })
 
     it('zeigt einen Fehler an, wenn das Erstellen fehlschlägt', async () => {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { appApi } from '@/api/app.api'
@@ -174,6 +175,7 @@ const fetchAppDetails = async () => {
     }
   } catch {
     toast.error(t('AppsDetailView.toasts.loadError'))
+    // NOTE: 'apps.index' is not a defined route (known bug, deliberately kept as-is).
     if (!app.value) router.push({ name: 'apps.index' })
   } finally {
     isLoading.value = false
@@ -200,7 +202,7 @@ const handleDeploy = () => {
   deploymentStore.draft.appId = app.value.appId || app.value.id
   deploymentStore.draft.releaseTag = selectedVersion.value
   toast.success(t('AppsDetailView.toasts.preparingConfig', { name: app.value.name }))
-  router.push({ name: 'deployment.config' })
+  router.push({ name: ROUTE_NAMES.deploymentConfig })
 }
 
 const openSubmitModal = (versionTag: string) => {
@@ -387,7 +389,7 @@ const confirmDelete = async () => {
     await appApi.delete(safeId)
     toast.success(t('AppsDetailView.deleteSuccessToast'))
     showDeleteModal.value = false
-    router.push({ name: 'apps' })
+    router.push({ name: ROUTE_NAMES.apps })
   } catch (error: any) {
     const detail = getErrorDetail(error) as any
     const reason = typeof detail === 'object' ? detail?.message || detail?.reason : detail
@@ -596,7 +598,7 @@ onMounted(async () => {
             {{ $t('AppsDetailView.deployButton') }}
           </button>
           <p v-if="credStore.isResolved && !credStore.hasCredential" class="mt-2 text-sm text-amber-700">
-            <router-link to="/user/openstack" class="underline font-medium">{{ $t('AppsDetailView.missingCredsLink') }}</router-link>
+            <router-link :to="{ name: ROUTE_NAMES.userOpenStack }" class="underline font-medium">{{ $t('AppsDetailView.missingCredsLink') }}</router-link>
             {{ $t('AppsDetailView.missingCredsText') }}
           </p>
         </div>

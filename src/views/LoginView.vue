@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { LogIn } from 'lucide-vue-next'
@@ -9,7 +10,7 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 // Get return URL from query params
-const returnUrl = (route.query.returnUrl as string) || '/dashboard'
+const returnUrl = (route.query.returnUrl as string) || router.resolve({ name: ROUTE_NAMES.dashboard }).fullPath
 
 // Redirect to Keycloak login
 const loginWithKeycloak = async () => {

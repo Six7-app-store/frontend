@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -203,15 +204,15 @@ const handleNext = () => {
     toast.warning(t('deployment.errors.missingStudents'))
     return
   }
-  router.push({ name: 'deployment.teams' })
+  router.push({ name: ROUTE_NAMES.deploymentTeams })
 }
 
 const handleBack = () => {
   const appId = store.draft.appId
   if (appId) {
-    router.push({ name: 'apps.detail', params: { id: appId } })
+    router.push({ name: ROUTE_NAMES.appsDetail, params: { id: appId } })
   } else {
-    router.push('/apps')
+    router.push({ name: ROUTE_NAMES.apps })
   }
 }
 
@@ -314,8 +315,8 @@ onMounted(async () => {
         :title="t('AppsDetailView.missingCredsTitle')"
         :message="t('AppsDetailView.missingCredsText')"
         :cta="t('AppsDetailView.missingCredsLink')"
-        ctaTo="/user/openstack"
-        next="/deployment/new/config"
+        :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
+        :next="{ name: ROUTE_NAMES.deploymentConfig }"
         class="mb-6"
       />
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted, computed } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Card from '@/components/ui/Card.vue'
@@ -85,7 +86,7 @@ const fetchApps = async () => {
 }
 
 const handleDeploy = (app: any) => {
-  router.push({ name: 'apps.detail', params: { id: app.id || app._id || app.appId } })
+  router.push({ name: ROUTE_NAMES.appsDetail, params: { id: app.id || app._id || app.appId } })
 }
 
 onMounted(() => {
@@ -124,7 +125,7 @@ onMounted(() => {
           </button>
         </div>
 
-        <RouterLink :to="{ name: 'apps.create' }">
+        <RouterLink :to="{ name: ROUTE_NAMES.appsCreate }">
           <BaseButton class="flex items-center gap-2">
             <Plus :size="16" />
             {{ $t('AppsView.addApp') }}
@@ -141,7 +142,7 @@ onMounted(() => {
       :loading-message="$t('AppsView.loading')"
     >
       <template #empty-action>
-        <RouterLink v-if="visibilityFilter === 'all'" :to="{ name: 'apps.create' }">
+        <RouterLink v-if="visibilityFilter === 'all'" :to="{ name: ROUTE_NAMES.appsCreate }">
           <BaseButton class="flex items-center gap-2">
             <Plus :size="16" />
             {{ $t('AppsView.addApp') }}

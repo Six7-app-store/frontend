@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted, watch, reactive, nextTick } from 'vue'
 import { userApi } from '@/api/user.api'
 import { useI18n } from 'vue-i18n'
@@ -118,7 +119,7 @@ watch(groupCount, (newCount, oldCount) => {
 // --- Lifecycle ---
 onMounted(async () => {
   if (!store.draft.studentIds || store.draft.studentIds.length === 0) {
-    router.replace({ name: 'deployment.config' })
+    router.replace({ name: ROUTE_NAMES.deploymentConfig })
     return
   }
   if (!store.draft.groupCount || store.draft.groupCount < 1) {
@@ -353,8 +354,8 @@ const clearAllAssignments = () => {
   }
 }
 
-const handleNext = () => router.push({ name: 'deployment.variables' }) 
-const handleBack = () => router.push({ name: 'deployment.config' })
+const handleNext = () => router.push({ name: ROUTE_NAMES.deploymentVariables })
+const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
 </script>
 
 <template>

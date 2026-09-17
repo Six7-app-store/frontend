@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import { ROUTE_NAMES } from '@/router/route-names'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useToast } from '@/composables/useToast'
 import type { ConnectionState } from '@/composables/useDeploymentStream'
@@ -96,7 +97,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     if (outcome === 'gone') {
       // Soft-deleted upstream — the destroy ran clean.
       toast.success(t('DeploymentDetailView.deleteSuccessToast'))
-      router.push({ name: 'deployments.list' })
+      router.push({ name: ROUTE_NAMES.deploymentsList })
       return
     }
 
@@ -140,7 +141,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
         // 204: nothing to destroy, soft-delete completed
         // synchronously. Row is gone — back to the list.
         toast.success(t('DeploymentDetailView.deleteSuccessToast'))
-        router.push({ name: 'deployments.list' })
+        router.push({ name: ROUTE_NAMES.deploymentsList })
       }
     } catch (err) {
       toast.error(`${t('DeploymentDetailView.deleteErrorToast')}: ` + extractErrorMessage(err))

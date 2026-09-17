@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { User, Mail, Shield, Calendar, Cloud, ChevronRight, BookOpen, Contact, Key } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth.store'
 import { computed } from 'vue'
@@ -143,7 +144,7 @@ const createdDate = computed(() => {
           <h2 class="text-lg font-semibold text-gray-900">{{ t('UserView.settings.title') }}</h2>
         </div>
         <router-link
-          to="/user/openstack"
+          :to="{ name: ROUTE_NAMES.userOpenStack }"
           class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
         >
           <div class="flex items-center gap-4">

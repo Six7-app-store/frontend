@@ -56,7 +56,7 @@ describe('UserView.vue', () => {
                     Badge: { template: '<span class="badge"><slot /></span>' },
                     RouterLink: {
                         props: ['to'],
-                        template: '<a :href="to" class="router-link-stub"><slot /></a>'
+                        template: '<a :href="typeof to === \'string\' ? to : to.name" class="router-link-stub"><slot /></a>'
                     }
                 }
             }
@@ -152,6 +152,6 @@ describe('UserView.vue', () => {
 
         const link = wrapper.find('a.router-link-stub')
         expect(link.exists()).toBe(true)
-        expect(link.attributes('href')).toBe('/user/openstack')
+        expect(link.attributes('href')).toBe('user.openstack')
     })
 })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted, reactive, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -254,7 +255,7 @@ const maybeReturnToWizard = () => {
       :title="t('SettingsOpenStackView.lockBanner.title')"
       :message="t('SettingsOpenStackView.lockBanner.message', { count: credStore.activeDeployments })"
       :cta="t('SettingsOpenStackView.lockBanner.cta')"
-      ctaTo="/deployments"
+      :ctaTo="{ name: ROUTE_NAMES.deploymentsList }"
       class="mb-6"
     />
 

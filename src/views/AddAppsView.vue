@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
@@ -142,7 +143,7 @@ const handleSubmit = async () => {
     })
 
     toast.success(t('AppsCreateView.messages.success'))
-    router.push({ name: 'apps' })
+    router.push({ name: ROUTE_NAMES.apps })
 
   } catch (error: any) {
     console.error('API Error:', error)

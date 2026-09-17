@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
@@ -9,7 +10,7 @@ import { useDashboard } from '@/composables/useDashboard'
 import { useQuotas } from '@/composables/useQuotas'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useAuthStore } from '@/stores/auth.store'
-import { useRole } from '@/composables/useRole'
+import { useRouteAccess } from '@/composables/useRouteAccess'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 
 const { stats, fetchStats } = useDashboard()
@@ -17,7 +18,7 @@ const { formattedQuotas, loading: quotasLoading, needsCredentials, hasCachedQuot
 const credStore = useOpenStackCredentialsStore()
 const authStore = useAuthStore()
 const { t } = useI18n()
-const { isStaff } = useRole()
+const { canAccess } = useRouteAccess()
 
 const firstName = computed(() => {
   const name = authStore.user?.username || ''
@@ -48,7 +49,7 @@ onMounted(() => {
       :title="t('banners.credentialsMissing.title')"
       :message="t('banners.credentialsMissing.message')"
       :cta="t('banners.credentialsMissing.cta')"
-      ctaTo="/user/openstack"
+      :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
     />
     <CredentialMissingBanner
       v-else-if="credStore.isResolved && credStore.lastError"
@@ -56,7 +57,7 @@ onMounted(() => {
       :title="t('banners.credentialsInvalid.title')"
       :message="credStore.lastError"
       :cta="t('banners.credentialsInvalid.cta')"
-      ctaTo="/user/openstack"
+      :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
     />
 
     <!-- Hero banner -->
@@ -67,7 +68,7 @@ onMounted(() => {
         <p class="text-white/60 text-sm">{{ $t('DashboardView.subtitle') }}</p>
       </div>
       <RouterLink
-        :to="{ name: 'apps' }"
+        :to="{ name: ROUTE_NAMES.apps }"
         class="hero-cta group"
       >
         <Rocket :size="16" class="group-hover:translate-x-0.5 transition-transform" />
@@ -77,7 +78,7 @@ onMounted(() => {
 
     <!-- KPI row -->
     <div class="kpi-row">
-      <RouterLink :to="{ name: 'deployments.list' }" class="kpi-item group">
+      <RouterLink :to="{ name: ROUTE_NAMES.deploymentsList }" class="kpi-item group">
         <div class="kpi-icon-wrap" style="background:rgba(49,113,83,0.10)">
           <BarChart3 :size="16" class="text-primary" />
         </div>
@@ -90,7 +91,7 @@ onMounted(() => {
 
       <div class="kpi-divider" />
 
-      <RouterLink to="/apps" class="kpi-item group">
+      <RouterLink :to="{ name: ROUTE_NAMES.apps }" class="kpi-item group">
         <div class="kpi-icon-wrap" style="background:rgba(228,140,42,0.10)">
           <Layers :size="16" class="text-accentYellow" />
         </div>
@@ -103,10 +104,10 @@ onMounted(() => {
 
       <!-- Courses tile: students have no courses access (staff-only route),
            so hide the tile via RoleGate instead of 404 on click. -->
-      <template v-if="isStaff">
+      <template v-if="canAccess({ name: ROUTE_NAMES.courses })">
       <div class="kpi-divider" />
 
-      <RouterLink to="/courses" class="kpi-item group">
+      <RouterLink :to="{ name: ROUTE_NAMES.courses }" class="kpi-item group">
         <div class="kpi-icon-wrap" style="background:rgba(59,130,246,0.08)">
           <GraduationCap :size="16" class="text-blue-500" />
         </div>
@@ -175,7 +176,7 @@ onMounted(() => {
         <p class="text-sm font-medium text-gray-700">{{ t('DashboardView.noCredentialsTitle') }}</p>
         <p class="text-xs text-gray-400 mt-1 mb-4">{{ t('DashboardView.noCredentialsHint') }}</p>
         <RouterLink
-          to="/user/openstack"
+          :to="{ name: ROUTE_NAMES.userOpenStack }"
           class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primaryDark transition-colors"
         >
           {{ t('DashboardView.setUpNow') }} <ArrowRight :size="12" />
