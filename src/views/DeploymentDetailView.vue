@@ -21,15 +21,10 @@ import { useCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useDeploymentOwnerView } from '@/composables/useDeploymentOwnerView'
 import { useDeploymentTasks } from '@/composables/useDeploymentTasks'
 import { useDeploymentLiveStream } from '@/composables/useDeploymentLiveStream'
+import { useDeploymentCredentials } from '@/composables/useDeploymentCredentials'
 import { phaseLabel } from '@/services/deployment-phases.service'
 import { sortTasksNewestFirst, selectHistoryTasks } from '@/services/deployment-tasks.service'
-import {
-    extractUserAccounts,
-    extractTeamVms,
-    type TeamVm,
-    type UserAccount,
-} from '@/services/deployment-outputs.service'
-import { matchTeamAccounts, sshCommandFor, userUrlFor } from '@/services/deployment-account-matching.service'
+import { sshCommandFor, userUrlFor } from '@/services/deployment-account-matching.service'
 import {
     DELETE_DISABLED_REASON,
     canDeleteDeployment,
@@ -59,13 +54,6 @@ const deploymentStore = useDeploymentStore()
 const authStore = useAuthStore()
 const toastStore = useToastStore()
 const { t } = useI18n()
-// Member self-access: a non-owner (student) can't read the owner-only
-// task outputs, so we fetch just their own credentials from the
-// dedicated ``/my-access`` endpoint into this map. It mirrors the raw
-// ``user_accounts.value`` shape so ``typedUserAccounts`` can fall back
-// to it and the existing account-matching pipeline works unchanged.
-const myAccounts = ref<Record<string, UserAccount> | null>(null)
-const myTeamVms = ref<Record<string, TeamVm> | null>(null)
 
 const deploymentId = route.params.id as string
 
@@ -90,22 +78,10 @@ const {
     deselectTask,
 } = useDeploymentTasks(deploymentId, isOwnerView)
 
-// Credentials and team VMs of the active data task; members fall back to
-// their own ``/my-access`` data (see ``services/deployment-outputs.service``).
-const typedUserAccounts = computed<Record<string, UserAccount> | null>(() =>
-    extractUserAccounts(activeDataTask.value?.outputs, myAccounts.value)
-)
-const teamVms = computed<Record<string, TeamVm> | null>(() =>
-    extractTeamVms(activeDataTask.value?.outputs, myTeamVms.value)
-)
-
-// Teams with ``team.vm`` and each member's matched ``account`` for the
-// Teams card (see ``services/deployment-account-matching.service``).
-const enrichedTeams = computed(() => {
-    const currentDeployment = deployment.value
-    if (!currentDeployment?.teams) return []
-    return matchTeamAccounts(currentDeployment.teams, typedUserAccounts.value, teamVms.value)
-})
+// Teams with each member's access credentials: owners read them from the
+// active data task's outputs, members from ``/my-access``
+// (see ``useDeploymentCredentials``).
+const { enrichedTeams, loadMyAccess } = useDeploymentCredentials(deploymentId, deployment, activeDataTask)
 
 // Counts the resources in the selected task's state for the header
 // sub-headline (``countTfResources`` in ``utils/task-logs``).
@@ -255,18 +231,7 @@ onMounted(async () => {
     } else {
         // Member view: the owner-only task outputs are off-limits, so
         // fetch just this member's own credentials from ``/my-access``.
-        // ``typedUserAccounts`` / ``extractTeamVms`` fall back to these,
-        // and the Teams-card credential block renders as for the owner.
-        try {
-            const { data } = await deploymentApi.getMyAccess(deploymentId)
-            // The API type marks fields optional; the local UserAccount
-            // interface is stricter but structurally compatible at the
-            // point of use, so cast the map through unknown.
-            myAccounts.value = (data.user_accounts ?? null) as Record<string, UserAccount> | null
-            myTeamVms.value = data.team_vms ?? null
-        } catch (err) {
-            console.error('Error loading own access credentials:', err)
-        }
+        await loadMyAccess()
     }
 
     // Fire the resource load in parallel — it's a separate roundtrip
