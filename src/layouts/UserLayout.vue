@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ArrowLeft, User } from 'lucide-vue-next'
+import { ROUTE_NAMES } from '@/router/route-names'
 </script>
 
 <template>
@@ -12,7 +13,7 @@ import { ArrowLeft, User } from 'lucide-vue-next'
     >
       <div class="flex items-center gap-4">
         <RouterLink
-          to="/dashboard"
+          :to="{ name: ROUTE_NAMES.dashboard }"
           class="hover:text-accentYellow transition flex items-center gap-2"
         >
           <ArrowLeft :size="20" />

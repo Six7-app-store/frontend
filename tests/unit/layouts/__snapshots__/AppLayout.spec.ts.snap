@@ -1,0 +1,1504 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AppLayout routing-derived UI > matches the recorded title, background and navigation (admin) 1`] = `
+{
+  "/": {
+    "links": [
+      {
+        "active": true,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": true,
+    "title": "Dashboard",
+  },
+  "/admin/apps": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": true,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Freigaben",
+  },
+  "/apps": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": true,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/apps/app-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/apps/app-1/unknown": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/apps/create": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/courses": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": true,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Kurse",
+  },
+  "/courses/c-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Kurse",
+  },
+  "/dashboard": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": true,
+    "title": "Dashboard",
+  },
+  "/deployment/new/config": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/deployments": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": true,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Deployments",
+  },
+  "/deployments/dep-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": true,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Deployments",
+  },
+  "/does-not-exist": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/forbidden": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/help": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": true,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Hilfe",
+  },
+  "/user": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/admin/apps",
+        "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+}
+`;
+
+exports[`AppLayout routing-derived UI > matches the recorded title, background and navigation (student) 1`] = `
+{
+  "/": {
+    "links": [
+      {
+        "active": true,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": true,
+    "title": "Dashboard",
+  },
+  "/admin/apps": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Freigaben",
+  },
+  "/apps": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": true,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/apps/app-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/apps/app-1/unknown": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/apps/create": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/courses": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Kurse",
+  },
+  "/courses/c-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Kurse",
+  },
+  "/dashboard": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": true,
+    "title": "Dashboard",
+  },
+  "/deployment/new/config": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/deployments": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": true,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Deployments",
+  },
+  "/deployments/dep-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": true,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Deployments",
+  },
+  "/does-not-exist": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/forbidden": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/help": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": true,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Hilfe",
+  },
+  "/user": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+}
+`;
+
+exports[`AppLayout routing-derived UI > matches the recorded title, background and navigation (teacher) 1`] = `
+{
+  "/": {
+    "links": [
+      {
+        "active": true,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": true,
+    "title": "Dashboard",
+  },
+  "/admin/apps": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Freigaben",
+  },
+  "/apps": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": true,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/apps/app-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/apps/app-1/unknown": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/apps/create": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Apps",
+  },
+  "/courses": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": true,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Kurse",
+  },
+  "/courses/c-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Kurse",
+  },
+  "/dashboard": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": true,
+    "title": "Dashboard",
+  },
+  "/deployment/new/config": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/deployments": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": true,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Deployments",
+  },
+  "/deployments/dep-1": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": true,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Deployments",
+  },
+  "/does-not-exist": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/forbidden": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+  "/help": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": true,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "Hilfe",
+  },
+  "/user": {
+    "links": [
+      {
+        "active": false,
+        "href": "/",
+        "text": "Dashboard",
+      },
+      {
+        "active": false,
+        "href": "/deployments",
+        "text": "Deployments",
+      },
+      {
+        "active": false,
+        "href": "/apps",
+        "text": "Apps",
+      },
+      {
+        "active": false,
+        "href": "/courses",
+        "text": "Kurse",
+      },
+      {
+        "active": false,
+        "href": "/help",
+        "text": "Hilfe",
+      },
+    ],
+    "mesh": false,
+    "title": "",
+  },
+}
+`;
