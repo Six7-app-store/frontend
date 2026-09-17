@@ -167,8 +167,7 @@ const fetchAppDetails = async () => {
     }
   } catch {
     toast.error(t('AppsDetailView.toasts.loadError'))
-    // NOTE: 'apps.index' is not a defined route (known bug, deliberately kept as-is).
-    if (!app.value) router.push({ name: 'apps.index' })
+    if (!app.value) router.push({ name: ROUTE_NAMES.apps })
   } finally {
     isLoading.value = false
   }

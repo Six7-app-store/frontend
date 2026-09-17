@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 
 import AppsDetailView from '@/views/AppsDetailView.vue'
+import { ROUTE_NAMES } from '@/router/route-names'
 import de from '@/i18n/locales/de'
 
 // ---------------------------------------------------------
@@ -127,7 +128,7 @@ describe('AppsDetailView.vue', () => {
         await flushPromises()
 
         expect(mockToastError).toHaveBeenCalledWith('AppsDetailView.toasts.loadError')
-        expect(mockPush).toHaveBeenCalledWith({ name: 'apps.index' })
+        expect(mockPush).toHaveBeenCalledWith({ name: ROUTE_NAMES.apps })
     })
 
     it('wählt automatisch die erste Version aus, wenn Versionen vorhanden sind', async () => {
