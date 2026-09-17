@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 import { credentialsApi } from '@/api/credentials.api'
+import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import type {
   OpenStackCredentialFromYaml,
   OpenStackCredentialResponse,
@@ -15,9 +16,11 @@ interface State {
 
 const LOCKED_REASON = 'openstack_credentials_locked'
 
+// Only axios errors carry a backend ``detail``; anything else (e.g. a bug
+// in the request code) falls back to the generic message.
 function extractError(err: unknown, fallback: string): string {
   if (axios.isAxiosError(err)) {
-    const detail = err.response?.data?.detail
+    const detail = getErrorDetail(err)
     if (typeof detail === 'string') return detail
     if (detail && typeof detail === 'object') {
       const reason = (detail as { reason?: string }).reason
@@ -33,8 +36,8 @@ function extractError(err: unknown, fallback: string): string {
 
 function isLockedError(err: unknown): boolean {
   if (!axios.isAxiosError(err)) return false
-  if (err.response?.status !== 409) return false
-  const detail = err.response.data?.detail
+  if (getErrorStatus(err) !== 409) return false
+  const detail = getErrorDetail(err)
   return !!(detail && typeof detail === 'object' && (detail as { reason?: string }).reason === LOCKED_REASON)
 }
 

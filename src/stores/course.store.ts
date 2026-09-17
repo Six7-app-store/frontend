@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { courseApi } from '@/api/course.api'
 import type { Course, CourseWithUsers, CourseCreate, CourseUpdate, User } from '@/types'
 import { runRequest } from './_request'
+import { getErrorDetail } from '@/utils/http-error'
 
 export const useCourseStore = defineStore('course', {
   state: () => ({
@@ -83,13 +84,17 @@ export const useCourseStore = defineStore('course', {
     // --------------------------------------------------------------
     // MEMBERS
     // --------------------------------------------------------------
+    // Unlike the actions above, member mutations deliberately don't use
+    // ``runRequest``: they neither toggle ``isLoading`` (the course page
+    // stays interactive) nor clear a previous error — they only record
+    // the failure and re-throw for the caller's toast.
     async fetchMembers(courseId: string) {
       try {
         const { data } = await courseApi.listMembers(courseId)
         this.currentMembers = data
         return data
-      } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to fetch members'
+      } catch (err) {
+        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to fetch members'
         throw err
       }
     },
@@ -99,8 +104,8 @@ export const useCourseStore = defineStore('course', {
         const { data } = await courseApi.addMembers(courseId, userIds)
         this.currentMembers = data
         return data
-      } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to add members'
+      } catch (err) {
+        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to add members'
         throw err
       }
     },
@@ -109,8 +114,8 @@ export const useCourseStore = defineStore('course', {
       try {
         await courseApi.removeMember(courseId, userId)
         this.currentMembers = this.currentMembers.filter((u) => u.userId !== userId)
-      } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to remove member'
+      } catch (err) {
+        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to remove member'
         throw err
       }
     },
