@@ -301,6 +301,24 @@ describe('CourseDetailView.vue', () => {
         expect(wrapper.find('.modal').exists()).toBe(false)
     })
 
+    it.each([
+        ['admin', ['bg-purple-100', 'text-purple-700']],
+        ['teacher', ['bg-blue-100', 'text-blue-700']],
+        ['student', ['bg-green-100', 'text-green-700']],
+        ['irgendwas', ['bg-gray-100', 'text-gray-700']],
+    ])('färbt die Rolle %s wie die zentrale Rollenzuordnung', async (role, expectedClasses) => {
+        mockCurrentMembers = [{ userId: 'u-1', username: 'TestUser', role }]
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        const pill = wrapper.findAll('span').find(s => s.text() === `roleLabels.${role === 'irgendwas' ? 'unknown' : role}`)!
+        expect(pill.exists()).toBe(true)
+        for (const cls of expectedClasses) {
+            expect(pill.classes()).toContain(cls)
+        }
+    })
+
     it('zeigt beim Entfernen den eigenen Text statt [object Object], wenn detail ein Objekt ist', async () => {
         mockCurrentMembers = [{ userId: 'u-99', username: 'BadUser', role: 'student' }]
         mockRemoveMember.mockRejectedValue({ response: { data: { detail: { reason: 'last_teacher' } } } })

@@ -8,7 +8,8 @@ import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
-import { roleLabelKey } from '@/i18n/role-labels'
+import { roleBadgeVariant, roleLabelKey } from '@/i18n/role-labels'
+import { badgeVariantClasses } from '@/components/ui/badge-variants'
 import { useI18n } from 'vue-i18n' // <-- i18n importieren
 import Card from '@/components/ui/Card.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -227,13 +228,9 @@ const roleLabel = (role: string | undefined) => {
   return t(roleLabelKey(role))
 }
 
-const roleClass = (role: string | undefined) => {
-  switch (role) {
-    case 'admin': return 'bg-red-50 text-red-700'
-    case 'teacher': return 'bg-purple-50 text-purple-700'
-    default: return 'bg-blue-50 text-blue-700'
-  }
-}
+// Colours come from the central role mapping (``roleBadgeVariant``), the pill
+// keeps its compact shape here.
+const roleClass = (role: string | undefined) => badgeVariantClasses(roleBadgeVariant(role))
 </script>
 
 <template>
