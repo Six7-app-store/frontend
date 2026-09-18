@@ -245,7 +245,7 @@ async function loadCourses() {
   try {
     const res = await courseApi.list(0, 200)
     courses.value = res.data || []
-  } catch (err) {
+  } catch {
     coursesError.value = t('CoursesView.toasts.loadError')
     toast.error(coursesError.value)
   } finally {
@@ -262,7 +262,7 @@ async function loadAllStudents() {
     allStudents.value = res.data || []
     students.value = allStudents.value
     cacheStudents(allStudents.value)
-  } catch (err) {
+  } catch {
     studentsError.value = t('CourseDetailView.toasts.loadUsersError')
     toast.error(studentsError.value)
   } finally {

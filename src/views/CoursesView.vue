@@ -61,7 +61,7 @@ onMounted(async () => {
     if (isStaff.value) {
       await fetchMemberCounts()
     }
-  } catch (error) {
+  } catch {
     toast.error(t('CoursesView.toasts.loadError'))
   }
 })

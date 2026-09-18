@@ -21,7 +21,7 @@ make dev-logs-frontend      # Frontend-Logs verfolgen
 make shell-frontend         # interaktive Shell im Container
 ```
 
-Type-Check, Tests und Build werden im Frontend-Container ausgeführt — `make shell-frontend` öffnet eine Shell, in der `npx vue-tsc -b --noEmit` (Type-Check, wie in der CI), `npm test` (Unit-Tests mit Vitest), `npm run test:coverage` und `npm run build` zur Verfügung stehen. Ein eigenes Lint-Script (ESLint) gibt es derzeit nicht.
+Lint, Type-Check, Tests und Build werden im Frontend-Container ausgeführt — `make shell-frontend` öffnet eine Shell, in der `npm run lint` (ESLint, Flat Config in `eslint.config.js`), `npx vue-tsc -b --noEmit` (Type-Check, wie in der CI), `npm test` (Unit-Tests mit Vitest), `npm run test:coverage` und `npm run build` zur Verfügung stehen. ESLint prüft echte Fehler (ungenutzter Code, kaputte Template-Syntax, falsche Vue-Nutzung), aber keine Formatierung — Prettier ist bewusst nicht eingebunden. In der CI läuft ESLint derzeit nicht.
 
 ## Technologie-Stack
 

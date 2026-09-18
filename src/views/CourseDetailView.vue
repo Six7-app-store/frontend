@@ -54,7 +54,7 @@ const saveName = async () => {
     await courseStore.updateCourse(courseId.value, { name: editNameValue.value })
     toast.success(t('CourseDetailView.toasts.nameUpdated'))
     isEditingName.value = false
-  } catch (err) {
+  } catch {
     toast.error(t('CourseDetailView.toasts.nameUpdateError'))
   }
 }

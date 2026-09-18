@@ -221,7 +221,7 @@ export const useDeploymentStore = defineStore('deployment', {
       }))
 
       // userInputVar: { packer: {...}, terraform: {...} }
-      let userInputVarObj: any = { packer: {}, terraform: {} }
+      const userInputVarObj: any = { packer: {}, terraform: {} }
       if (this.draft.variables && typeof this.draft.variables === 'object') {
         // Detect multi-image Packer layout: such apps store Packer values nested
         // under ``draft.variables.packer[<template_key>][<name>]`` rather than

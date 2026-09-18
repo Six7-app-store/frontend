@@ -54,7 +54,7 @@ export function prettyJson(value: unknown): string {
 export function highlightJson(jsonString: string): string {
   if (!jsonString) return ''
 
-  let safeStr = jsonString
+  const safeStr = jsonString
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
