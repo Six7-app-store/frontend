@@ -261,6 +261,23 @@ export default {
     deploymentPauseFailed: "Pause fehlgeschlagen",
     deploymentResumeFailed: "Fortsetzen fehlgeschlagen",
     deploymentCreatedAt: "Erstellt am",
+
+    // --- Studentenansicht -------------------------------------------
+    // Dieselbe Seite, andere Sprache: Studierende legen nichts an, sie
+    // bekommen eine Umgebung zugewiesen. Sie interessiert nur, ob sie
+    // läuft und wie sie hineinkommen — Release-Tag, Task-Status und
+    // Terraform-Vokabular sind Dozentensache.
+    titleStudent: "Meine Umgebungen",
+    subtitleStudent: "Umgebungen, die dir zugewiesen wurden",
+    emptyStudent: "Dir wurde noch keine Umgebung zugewiesen.",
+    emptyStudentHint: "Deine Dozentin oder dein Dozent richtet sie für dich ein.",
+    // Drei Zustände statt zwölf. "Nicht verfügbar" deckt alles ab,
+    // woran eine studierende Person nichts ändern kann.
+    studentReady: "Bereit",
+    studentPreparing: "Wird vorbereitet",
+    studentUnavailable: "Nicht verfügbar",
+    studentUnavailableHint: "Wende dich an deine Dozentin oder deinen Dozenten.",
+    studentOpenAccess: "Zugangsdaten ansehen",
   },
   DeploymentDetailView: {
     deploymentCreated: "Erstellt am",

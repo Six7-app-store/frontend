@@ -8,6 +8,7 @@ import {
   GitBranch,
   Box,
   Clock,
+  ArrowRight,
 } from 'lucide-vue-next'
 
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -16,10 +17,17 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
+import { useRole } from '@/composables/useRole'
 import { formatDateTime } from '@/utils/format'
 
 const deploymentStore = useDeploymentStore()
 const appStore = useAppStore()
+
+// One page, two audiences. Staff see the deployments they created and
+// can start a new one; students see the environments they were picked
+// into and cannot create anything (the backend rejects the create with
+// ``role_required``). Everything role-dependent below reads from here.
+const { isStaff, isStudent } = useRole()
 
 onMounted(async () => {
   deploymentStore.fetchDeployments()
@@ -56,6 +64,44 @@ const sortedDeployments = computed(() =>
   })
 )
 
+/**
+ * Collapse the twelve lifecycle states into the three a student can act
+ * on. The full set — destroying, pause_failed, resume_failed and the
+ * rest — describes work only staff can do anything about; showing it to
+ * a student produces support requests, not insight.
+ *
+ *   ready       → the environment is up, credentials are retrievable
+ *   preparing   → something is in flight (including "no task yet")
+ *   unavailable → everything else, staff has to look at it
+ */
+type StudentState = 'ready' | 'preparing' | 'unavailable'
+
+const studentState = (status: string | null | undefined): StudentState => {
+  if (status === 'success') return 'ready'
+  // ``null`` means the deployment row exists but no task has been
+  // recorded yet — dispatch in flight, which is "preparing", not broken.
+  if (!status || status === 'pending' || status === 'running' || status === 'resuming') {
+    return 'preparing'
+  }
+  return 'unavailable'
+}
+
+const studentStateLabel = (status: string | null | undefined) =>
+  ({
+    ready: 'DeploymentsView.studentReady',
+    preparing: 'DeploymentsView.studentPreparing',
+    unavailable: 'DeploymentsView.studentUnavailable',
+  })[studentState(status)]
+
+// Deliberately no red. A student did not break anything, so an alarm
+// colour would only make them think they did.
+const studentStateColor = (status: string | null | undefined) =>
+  ({
+    ready: 'bg-green-100 text-green-800 border-green-300',
+    preparing: 'bg-blue-100 text-blue-800 border-blue-300',
+    unavailable: 'bg-slate-100 text-slate-700 border-slate-300',
+  })[studentState(status)]
+
 // Status pills. Color semantics: orange = destroy, amber = lifecycle-pending,
 // slate = paused.
 const getStatusColor = (status: string) => {
@@ -80,9 +126,16 @@ const getStatusColor = (status: string) => {
 
 <template>
   <div class="p-6">
-    <PageHeader :title="$t('DeploymentsView.title')" :subtitle="$t('DeploymentsView.subtitle')">
+    <!-- "Meine Umgebungen" for students: they were assigned one, they did
+         not deploy it, and "Deployment" is not a word they need. -->
+    <PageHeader
+      :title="isStudent ? $t('DeploymentsView.titleStudent') : $t('DeploymentsView.title')"
+      :subtitle="isStudent ? $t('DeploymentsView.subtitleStudent') : $t('DeploymentsView.subtitle')"
+    >
       <template #actions>
-        <RouterLink :to="{ name: 'apps' }">
+        <!-- Staff only. A student clicking this would walk into the wizard
+             and hit a 403 on the final POST. -->
+        <RouterLink v-if="isStaff" :to="{ name: 'apps' }">
           <BaseButton class="flex items-center gap-2">
             <Plus :size="16" />
             {{ $t('DeploymentsView.newDeployment') }}
@@ -95,15 +148,22 @@ const getStatusColor = (status: string) => {
       :is-loading="deploymentStore.isLoading && deploymentStore.deployments.length === 0"
       :is-empty="!deploymentStore.isLoading && deploymentStore.deployments.length === 0"
       :icon="Inbox"
-      :empty-message="$t('DeploymentsView.deploymentsMissingMessage')"
+      :empty-message="isStudent
+        ? $t('DeploymentsView.emptyStudent')
+        : $t('DeploymentsView.deploymentsMissingMessage')"
     >
       <template #empty-action>
-        <RouterLink :to="{ name: 'apps' }">
+        <RouterLink v-if="isStaff" :to="{ name: 'apps' }">
           <BaseButton class="flex items-center gap-2">
             <Plus :size="16" />
             {{ $t('DeploymentsView.newDeployment') }}
           </BaseButton>
         </RouterLink>
+        <!-- No button for students — there is nothing for them to do
+             here. Name who acts next instead of leaving a dead end. -->
+        <p v-else class="text-sm text-gray-500">
+          {{ $t('DeploymentsView.emptyStudentHint') }}
+        </p>
       </template>
 
       <!-- Card grid, one card per deployment (name, app name, status pill,
@@ -131,7 +191,19 @@ const getStatusColor = (status: string) => {
                   </p>
                 </div>
               </div>
+              <!-- Students get three states, staff get the raw lifecycle. -->
               <span
+                v-if="isStudent"
+                class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border whitespace-nowrap"
+                :class="studentStateColor(deployment.status)"
+                :title="studentState(deployment.status) === 'unavailable'
+                  ? $t('DeploymentsView.studentUnavailableHint')
+                  : undefined"
+              >
+                {{ $t(studentStateLabel(deployment.status)) }}
+              </span>
+              <span
+                v-else
                 class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border capitalize whitespace-nowrap"
                 :class="getStatusColor(deployment.status)"
               >
@@ -139,7 +211,32 @@ const getStatusColor = (status: string) => {
               </span>
             </div>
 
-            <div class="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <!-- Student footer: the one question they have is "how do I
+                 get in". Release tag and creation date answer a question
+                 only the person who built it asks. -->
+            <div
+              v-if="isStudent"
+              class="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between text-xs"
+            >
+              <span
+                v-if="studentState(deployment.status) === 'unavailable'"
+                class="text-gray-500"
+              >
+                {{ $t('DeploymentsView.studentUnavailableHint') }}
+              </span>
+              <span
+                v-else
+                class="inline-flex items-center gap-1 font-medium text-primary"
+              >
+                {{ $t('DeploymentsView.studentOpenAccess') }}
+                <ArrowRight :size="12" />
+              </span>
+            </div>
+
+            <div
+              v-else
+              class="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500"
+            >
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100 font-mono">
                 <GitBranch :size="11" />
                 {{ deployment.releaseTag }}
