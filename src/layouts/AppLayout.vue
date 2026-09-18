@@ -55,6 +55,13 @@ const changeLocale = (lang: string) => {
   localStorage.setItem('locale', lang)
 }
 
+// Which item is highlighted: the section a route belongs to, taken from its
+// ``meta.titleKey`` (the same key the item is labelled with). ``RouterLink``'s
+// own active class only covers the link target and its child routes, so
+// "Dashboard" was inactive under ``/dashboard`` and "Apps"/"Kurse" on their
+// detail pages.
+const isNavItemActive = (item: { label: string }) => route.meta.titleKey === item.label
+
 // Visibility follows the route's ``meta.requiresRole`` (``useRouteAccess``).
 const navItems = computed(() => [
   { to: { name: ROUTE_NAMES.home }, label: 'nav.dashboard', icon: LayoutDashboard },
@@ -100,8 +107,8 @@ const navItems = computed(() => [
           :key="item.label"
           :to="item.to"
           class="nav-link group"
-          :class="sidebarCollapsed ? 'nav-link-collapsed' : ''"
-          active-class="nav-link-active"
+          :class="[sidebarCollapsed ? 'nav-link-collapsed' : '', isNavItemActive(item) ? 'nav-link-active' : '']"
+          active-class=""
         >
           <span class="nav-indicator" />
           <component :is="item.icon" :size="21" class="flex-shrink-0 opacity-70 group-[.nav-link-active]:opacity-100" />

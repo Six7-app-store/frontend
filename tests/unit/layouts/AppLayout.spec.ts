@@ -72,4 +72,33 @@ describe('AppLayout routing-derived UI', () => {
     }
     expect(table).toMatchSnapshot()
   })
+
+  // The active item follows the section a route belongs to, not just the exact
+  // link target — detail and create pages belong to their section as well.
+  it.each([
+    ['/', 'Dashboard'],
+    ['/dashboard', 'Dashboard'],
+    ['/apps', 'Apps'],
+    ['/apps/create', 'Apps'],
+    ['/apps/app-1', 'Apps'],
+    ['/courses', 'Kurse'],
+    ['/courses/c-1', 'Kurse'],
+    ['/deployments', 'Deployments'],
+    ['/deployments/dep-1', 'Deployments'],
+    ['/admin/apps', 'Freigaben'],
+    ['/help', 'Hilfe'],
+  ])('markiert unter %s den Menüpunkt %s als aktiv', async (path, label) => {
+    const { links } = await render(path, 'admin')
+
+    expect(links.filter((link) => link.active).map((link) => link.text)).toEqual([label])
+  })
+
+  it.each(['/does-not-exist', '/deployment/new/config', '/forbidden'])(
+    'markiert unter %s keinen Menüpunkt als aktiv',
+    async (path) => {
+      const { links } = await render(path, 'admin')
+
+      expect(links.filter((link) => link.active)).toEqual([])
+    },
+  )
 })
