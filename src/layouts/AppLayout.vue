@@ -25,7 +25,7 @@ import logo from '@/assets/Six7-white-withoutBackground.png'
 const { locale, t } = useI18n()
 const authStore = useAuthStore()
 const { logout } = useAuth()
-const { isAdmin, isStaff } = useRole()
+const { isAdmin, isStaff, isStudent } = useRole()
 const route = useRoute()
 
 const userName = computed(() => authStore.user?.username || 'User')
@@ -48,7 +48,9 @@ const pageTitle = computed(() => {
   const path = route.path as string
 
   if (name === 'dashboard' || name === 'home' || path === '/') return t('nav.dashboard')
-  if (name?.startsWith('deployments') || path.startsWith('/deployments')) return t('nav.deployments')
+  if (name?.startsWith('deployments') || path.startsWith('/deployments')) {
+    return t(isStudent.value ? 'nav.environments' : 'nav.deployments')
+  }
   if (name?.startsWith('apps') || path.startsWith('/apps')) return t('nav.apps')
   if (name === 'courses' || path === '/courses' || path.startsWith('/courses')) return t('nav.courses')
   if (name === 'help' || path === '/help') return t('nav.help')
@@ -64,7 +66,11 @@ const changeLocale = (lang: string) => {
 
 const navItems = computed(() => [
   { to: '/', label: 'nav.dashboard', icon: LayoutDashboard },
-  { to: { name: 'deployments.list' }, label: 'nav.deployments', icon: BarChart3 },
+  {
+    to: { name: 'deployments.list' },
+    label: isStudent.value ? 'nav.environments' : 'nav.deployments',
+    icon: BarChart3,
+  },
   { to: '/apps', label: 'nav.apps', icon: Layers },
   { to: '/courses', label: 'nav.courses', icon: GraduationCap, visible: isStaff.value },
   { to: '/admin/apps', label: 'nav.approvals', icon: ShieldCheck, visible: isAdmin.value },

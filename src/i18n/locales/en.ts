@@ -22,6 +22,9 @@ export default {
   nav: {
     dashboard: "Dashboard",
     deployments: "Deployments",
+    // Students never create one — for them the section is named
+    // after what they find there, not the act that produced it.
+    environments: "Environments",
     courses: "Courses",
     apps: "Apps",
     help: "Help",

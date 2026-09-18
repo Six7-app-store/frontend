@@ -22,6 +22,10 @@ export default {
   nav: {
     dashboard: "Dashboard",
     deployments: "Deployments",
+    // Studierende legen nichts an — fuer sie heisst der Bereich nach
+    // dem, was sie dort finden, nicht nach dem Vorgang, der ihn
+    // erzeugt hat.
+    environments: "Umgebungen",
     courses: "Kurse",
     apps: "Apps",
     help: "Hilfe",
