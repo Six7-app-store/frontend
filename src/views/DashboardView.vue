@@ -14,7 +14,16 @@ import { useRouteAccess } from '@/composables/useRouteAccess'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 
 const { stats, fetchStats } = useDashboard()
-const { formattedQuotas, loading: quotasLoading, needsCredentials, hasCachedQuotas, fetchQuotas, getColorClass } = useQuotas()
+const {
+  formattedQuotas,
+  loading: quotasLoading,
+  needsCredentials,
+  hasCachedQuotas,
+  fetchQuotas,
+  getColorClass,
+  getTextColorClass,
+  isQuotaCritical,
+} = useQuotas()
 const credStore = useOpenStackCredentialsStore()
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -150,7 +159,7 @@ onMounted(() => {
             </div>
             <span
               class="text-xs font-semibold tabular-nums"
-              :class="quota.percentage >= 80 ? 'text-red-500' : quota.percentage >= 60 ? 'text-amber-500' : 'text-gray-600'"
+              :class="getTextColorClass(quota.percentage)"
             >
               {{ quota.used }}/{{ quota.limit }}{{ quota.unit }}
             </span>
@@ -164,7 +173,7 @@ onMounted(() => {
           </div>
           <div class="flex items-center justify-between mt-1.5">
             <p class="text-xs text-gray-400">{{ t('DashboardView.quotaUsed', { percentage: quota.percentage }) }}</p>
-            <AlertCircle v-if="quota.percentage >= 80" :size="11" class="text-red-400" />
+            <AlertCircle v-if="isQuotaCritical(quota.percentage)" :size="11" class="text-red-400" />
           </div>
         </div>
       </div>
