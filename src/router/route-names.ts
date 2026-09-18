@@ -8,6 +8,10 @@
 export const ROUTE_NAMES = {
   login: 'login',
   callback: 'callback',
+  ltiExpired: 'lti.expired',
+  ltiCallback: 'lti.callback',
+  ltiLink: 'lti.link',
+  ltiMapCourse: 'lti.mapCourse',
   home: 'home',
   dashboard: 'dashboard',
   courses: 'courses',

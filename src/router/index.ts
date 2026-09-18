@@ -80,6 +80,47 @@ export const routes: RouteRecordRaw[] = [
 
   // APP LAYOUT
   {
+    // Shown when a launched session expires. Deliberately not behind
+    // requiresAuth — by the time it is reached the session is gone.
+    path: "/lti/expired",
+    name: ROUTE_NAMES.ltiExpired,
+    component: () => import('@/views/LtiSessionExpiredView.vue'),
+    meta: { layout: "auth" },
+  },
+  {
+    // Landing point of a Moodle LTI launch. Carries the session token
+    // the backend issued; the view stores it and cleans the URL.
+    path: "/lti/callback",
+    name: ROUTE_NAMES.ltiCallback,
+    component: () => import('@/views/LtiCallbackView.vue'),
+    meta: { layout: "auth" },
+  },
+  {
+    // Where a refused launch lands: the Moodle identity is unknown
+    // and the address is taken, so the account has to be confirmed
+    // by a direct sign-in first. Deliberately not behind requiresAuth —
+    // being signed out is the normal case here, and the view sends the
+    // user to the login itself.
+    path: "/lti/link",
+    name: ROUTE_NAMES.ltiLink,
+    component: () => import('@/views/LtiLinkView.vue'),
+    meta: { layout: "auth" },
+  },
+  {
+    // Where a lecturer's launch from an unmapped Moodle course lands.
+    // Behind requiresAuth, unlike its siblings: it is reached from a
+    // finished launch, so the session already exists — and only staff
+    // may map a Moodle course onto a Studiengruppe.
+    path: "/lti/kurs-zuordnen",
+    name: ROUTE_NAMES.ltiMapCourse,
+    component: () => import('@/views/LtiCourseMapView.vue'),
+    meta: {
+      layout: "auth",
+      requiresAuth: true,
+      requiresRole: ['teacher', 'admin'] as UserRole[],
+    },
+  },
+  {
     path: "/",
     name: ROUTE_NAMES.home,
     component: DashboardView,
@@ -236,7 +277,14 @@ router.beforeEach(async (to, _from, next) => {
     await new Promise(resolve => setTimeout(resolve, 100))
   }
 
-  if (!authStore.user && to.path !== '/callback' && to.path !== '/login') {
+  // The two callback routes finish their own sign-in and must not be
+  // pre-empted by a Keycloak initialize: for the LTI launch there is no
+  // Keycloak session to find, and initializing would redirect the user
+  // away from the token they just arrived with.
+  const isCallbackRoute =
+    to.path === '/callback' || to.path === '/lti/callback' || to.path === '/lti/expired'
+
+  if (!authStore.user && !isCallbackRoute && to.path !== '/login') {
     await authStore.initialize()
   }
 
