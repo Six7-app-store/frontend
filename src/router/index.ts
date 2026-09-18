@@ -100,6 +100,20 @@ const router = createRouter({
       component: () => import('@/views/LtiLinkView.vue'),
       meta: { layout: "auth" },
     },
+    {
+      // Where a lecturer's launch from an unmapped Moodle course lands.
+      // Behind requiresAuth, unlike its siblings: it is reached from a
+      // finished launch, so the session already exists — and only staff
+      // may map a Moodle course onto a Studiengruppe.
+      path: "/lti/kurs-zuordnen",
+      name: "lti.mapCourse",
+      component: () => import('@/views/LtiCourseMapView.vue'),
+      meta: {
+        layout: "auth",
+        requiresAuth: true,
+        requiresRole: ['teacher', 'admin'] as UserRole[],
+      },
+    },
 
     // APP LAYOUT
     {
