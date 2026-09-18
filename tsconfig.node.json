@@ -4,6 +4,9 @@
     "composite": true,
     "noEmit": false,
     "emitDeclarationOnly": true,
+    // Without an outDir the declarations land next to the config files, i.e.
+    // as vite.config.d.ts / vitest.config.d.ts in the repo root.
+    "outDir": "./node_modules/.tmp/types-node",
     "target": "ES2023",
     "lib": ["ES2023"],
     "module": "ESNext",

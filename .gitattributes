@@ -1,0 +1,3 @@
+# Snapshot files are written by vitest with LF; without this they show up as
+# modified on Windows checkouts (autocrlf) after every test run.
+*.snap text eol=lf
