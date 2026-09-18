@@ -213,6 +213,14 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/views/ForbiddenView.vue'),
     meta: { requiresAuth: true, layout: 'app' },
   },
+  // Catch-all: keep it last. Without it an unknown URL matched nothing and
+  // rendered an empty page inside the app layout.
+  {
+    path: '/:pathMatch(.*)*',
+    name: ROUTE_NAMES.notFound,
+    component: () => import('@/views/NotFoundView.vue'),
+    meta: { requiresAuth: true, layout: 'app' },
+  },
 ]
 
 const router = createRouter({

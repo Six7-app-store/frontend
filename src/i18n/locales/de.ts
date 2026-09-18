@@ -763,6 +763,12 @@ export default {
     forbidden: 'Zugriff verweigert — diese Seite ist nur für: {roles}'
   },
 
+  NotFoundView: {
+    title: 'Seite nicht gefunden',
+    description: 'Diese Adresse gibt es nicht. Vielleicht wurde der Inhalt entfernt oder der Link ist veraltet.',
+    backToDashboard: 'Zurück zum Dashboard'
+  },
+
   ForbiddenView: {
     title: 'Zugriff verweigert',
     description: 'Für diese Seite fehlt die erforderliche Rolle. Falls Sie meinen, das ist ein Fehler, wenden Sie sich an Ihre/n Administrator/in.',

@@ -761,6 +761,12 @@ export default {
     forbidden: 'Access denied — this page requires: {roles}'
   },
 
+  NotFoundView: {
+    title: 'Page not found',
+    description: 'This address does not exist. The content may have been removed or the link is outdated.',
+    backToDashboard: 'Back to dashboard'
+  },
+
   ForbiddenView: {
     title: 'Access denied',
     description: 'You don\'t have the required role for this page. If you think this is a mistake, please contact your administrator.',

@@ -28,6 +28,8 @@ const realRouter = createRouter({
     routes: [
         { path: '/deployment/new/config', name: 'deployment.config', component: { template: '<div />' } },
         { path: '/dashboard', name: 'dashboard', component: { template: '<div />' } },
+        // Wie in der echten Routentabelle: Catch-all für unbekannte URLs.
+        { path: '/:pathMatch(.*)*', name: 'not-found', component: { template: '<div />' } },
     ],
 })
 
