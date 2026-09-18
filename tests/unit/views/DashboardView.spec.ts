@@ -1,30 +1,31 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
+import { h } from 'vue'
+
 import DashboardView from '@/views/DashboardView.vue'
 
 // ---------------------------------------------------------
 // 1. Mocks & Setup
 // ---------------------------------------------------------
 
-// i18n Mock
 vi.mock('vue-i18n', () => ({
   useI18n: () => ({
-    t: (key: string) => key
+    t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
   })
 }))
 
-// Lucide Icons stubben (verhindert Render-Fehler)
-vi.mock('lucide-vue-next', () => ({
-  BarChart3: { template: '<span />' },
-  Layers: { template: '<span />' },
-  GraduationCap: { template: '<span />' },
-  ArrowRight: { template: '<span />' }
-}))
-
-// Modifizierbare Store- & Composable-Zustände
 let mockUser: any = { username: 'john' }
-let mockCredStatus = false
+let mockCredStatus: any = null
+let mockCredResolved = true
+let mockHasCredential = true
+let mockCredLastError: string | null = null
+
 let mockQuotasLoading = false
+let mockHasCachedQuotas = true
+let mockNeedsCredentials = false
+let mockQuotas: any[] = []
+
+let mockCanAccessCourses = true
 
 const mockFetchStats = vi.fn()
 const mockFetchQuotas = vi.fn()
@@ -39,46 +40,67 @@ vi.mock('@/stores/auth.store', () => ({
 vi.mock('@/stores/openstack-credentials.store', () => ({
   useOpenStackCredentialsStore: () => ({
     get status() { return mockCredStatus },
+    get isResolved() { return mockCredResolved },
+    get hasCredential() { return mockHasCredential },
+    get lastError() { return mockCredLastError },
     fetch: mockFetchCredentials
   })
 }))
 
 vi.mock('@/composables/useDashboard', () => ({
   useDashboard: () => ({
-    stats: {},
+    stats: { deployments: 3, apps: 5, courses: 2 },
     fetchStats: mockFetchStats
   })
 }))
 
 vi.mock('@/composables/useQuotas', () => ({
   useQuotas: () => ({
-    formattedQuotas: [],
+    get formattedQuotas() { return mockQuotas },
     get loading() { return mockQuotasLoading },
-    needsCredentials: false,
-    hasCachedQuotas: true,
+    get needsCredentials() { return mockNeedsCredentials },
+    get hasCachedQuotas() { return mockHasCachedQuotas },
     fetchQuotas: mockFetchQuotas,
-    getColorClass: vi.fn()
+    getColorClass: (percentage: number) => percentage >= 90 ? 'bg-red-500' : 'bg-green-500'
   })
 }))
+
+vi.mock('@/composables/useRouteAccess', () => ({
+  useRouteAccess: () => ({ canAccess: () => mockCanAccessCourses })
+}))
+
+const quota = (overrides: Record<string, any> = {}) => ({
+  icon: () => h('span'),
+  label: 'vCPUs',
+  used: 4,
+  limit: 8,
+  percentage: 50,
+  unit: '',
+  ...overrides
+})
 
 // ---------------------------------------------------------
 // 2. Die Tests
 // ---------------------------------------------------------
 
-// TODO: Tests gegen die neue View-Struktur neu schreiben (main hat
-// Dashboard umgebaut: Recent-Activity entfernt, Layout neu, useRole
-// als Tile-Gate, i18n-Subtitle). Bis dahin geskippt.
-describe.skip('DashboardView.vue', () => {
+describe('DashboardView.vue', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    
-    // Standard-Zustände vor jedem Test zurücksetzen
-    mockUser = { username: 'john' }
-    mockCredStatus = false
-    mockQuotasLoading = false
 
-    // Systemzeit einfrieren (Standard: Nachmittag)
+    mockUser = { username: 'john' }
+    mockCredStatus = { has_credential: true }
+    mockCredResolved = true
+    mockHasCredential = true
+    mockCredLastError = null
+
+    mockQuotasLoading = false
+    mockHasCachedQuotas = true
+    mockNeedsCredentials = false
+    mockQuotas = [quota()]
+
+    mockCanAccessCourses = true
+
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 5, 7, 14, 0, 0))
   })
@@ -87,16 +109,18 @@ describe.skip('DashboardView.vue', () => {
     vi.useRealTimers()
   })
 
-  // Zentrale Mount-Funktion im Stil deiner Kollegen
-const mountComponent = () => {
+  const mountComponent = () => {
     return mount(DashboardView, {
       global: {
         mocks: {
           $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
         },
         stubs: {
-          RouterLink: true,
-          CredentialMissingBanner: { template: '<div class="stub-banner" />' }
+          RouterLink: RouterLinkStub,
+          CredentialMissingBanner: {
+            props: ['variant', 'title', 'message'],
+            template: '<div class="stub-banner" :data-variant="variant">{{ message }}</div>'
+          }
         }
       }
     })
@@ -105,49 +129,131 @@ const mountComponent = () => {
   // --- 1. Lifecycle & API Calls ---
 
   it('lädt alle notwendigen Daten beim Starten der View', async () => {
+    mockCredStatus = null
+
     mountComponent()
     await flushPromises()
 
     expect(mockFetchStats).toHaveBeenCalledTimes(1)
     expect(mockFetchQuotas).toHaveBeenCalledTimes(1)
-    expect(mockFetchCredentials).toHaveBeenCalledTimes(1) // Weil mockCredStatus = false
+    expect(mockFetchCredentials).toHaveBeenCalledTimes(1)
   })
 
   it('lädt Credentials nicht erneut, wenn sie bereits vorhanden sind', async () => {
-    mockCredStatus = true // Zustand vor dem Mounten ändern
-    
     mountComponent()
     await flushPromises()
 
     expect(mockFetchCredentials).not.toHaveBeenCalled()
   })
 
-  // --- 2. Computed Properties (Begrüßung & Name) ---
+  // --- 2. Begrüßung & Name ---
 
-  it('formatiert den Usernamen so, dass der erste Buchstabe groß ist', () => {
+  it('zeigt den Usernamen mit großem Anfangsbuchstaben', () => {
     mockUser = { username: 'maximilian' }
-    const wrapper = mountComponent()
 
-    // Test über das ViewModel (wie von dir vermutet)
-    expect((wrapper.vm as any).firstName).toBe('Maximilian')
+    expect(mountComponent().find('h1').text()).toBe('Maximilian')
   })
 
-  it('gibt leeren String für den Namen zurück, wenn kein User existiert', () => {
+  it('zeigt einen leeren Namen, wenn kein User geladen ist', () => {
     mockUser = null
-    const wrapper = mountComponent()
 
-    expect((wrapper.vm as any).firstName).toBe('')
+    expect(mountComponent().find('h1').text()).toBe('')
   })
 
-  it('wählt die korrekte Begrüßung basierend auf der Uhrzeit', () => {
-    // 1. Test am Morgen
-    vi.setSystemTime(new Date(2026, 5, 7, 9, 0, 0))
-    let wrapper = mountComponent()
-    expect((wrapper.vm as any).timeGreeting).toBe('DashboardView.timeGreetings.morning')
+  it.each([
+    [9, 'DashboardView.timeGreetings.morning'],
+    [14, 'DashboardView.timeGreetings.afternoon'],
+    [20, 'DashboardView.timeGreetings.evening']
+  ])('begrüßt um %s Uhr passend', (hour, expected) => {
+    vi.setSystemTime(new Date(2026, 5, 7, hour as number, 0, 0))
 
-    // 2. Test am Abend
-    vi.setSystemTime(new Date(2026, 5, 7, 20, 0, 0))
-    wrapper = mountComponent()
-    expect((wrapper.vm as any).timeGreeting).toBe('DashboardView.timeGreetings.evening')
+    expect(mountComponent().text()).toContain(expected)
+  })
+
+  // --- 3. KPI-Kacheln ---
+
+  it('zeigt die Kennzahlen und verlinkt sie', () => {
+    const wrapper = mountComponent()
+
+    const text = wrapper.text()
+    expect(text).toContain('3')
+    expect(text).toContain('5')
+    expect(text).toContain('2')
+
+    const targets = wrapper.findAllComponents(RouterLinkStub).map((link) => (link.props('to') as any)?.name)
+    expect(targets).toContain('deployments.list')
+    expect(targets).toContain('apps')
+    expect(targets).toContain('courses')
+  })
+
+  it('blendet die Kurs-Kachel aus, wenn die Rolle keinen Zugriff hat', () => {
+    mockCanAccessCourses = false
+
+    const targets = mountComponent().findAllComponents(RouterLinkStub).map((link) => (link.props('to') as any)?.name)
+
+    expect(targets).not.toContain('courses')
+  })
+
+  // --- 4. Banner ---
+
+  it('zeigt den Banner für fehlende Credentials', () => {
+    mockHasCredential = false
+
+    const banner = mountComponent().find('.stub-banner')
+
+    expect(banner.exists()).toBe(true)
+    expect(banner.attributes('data-variant')).toBe('warning')
+  })
+
+  it('zeigt den Banner für ungültige Credentials mit dem Fehlertext des Stores', () => {
+    mockCredLastError = 'Auth failed'
+
+    const banner = mountComponent().find('.stub-banner')
+
+    expect(banner.attributes('data-variant')).toBe('error')
+    expect(banner.text()).toContain('Auth failed')
+  })
+
+  it('zeigt keinen Banner, solange der Credential-Status noch nicht aufgelöst ist', () => {
+    mockCredResolved = false
+    mockHasCredential = false
+
+    expect(mountComponent().find('.stub-banner').exists()).toBe(false)
+  })
+
+  // --- 5. Quota-Bereich ---
+
+  it('zeigt die Quotas mit Auslastung', () => {
+    mockQuotas = [quota({ label: 'RAM', used: 6, limit: 8, percentage: 75, unit: 'GB' })]
+
+    const text = mountComponent().text()
+
+    expect(text).toContain('RAM')
+    expect(text).toContain('6/8GB')
+    expect(text).toContain('DashboardView.quotaUsed {"percentage":75}')
+  })
+
+  it('zeigt das Skeleton beim ersten Laden', () => {
+    mockQuotasLoading = true
+    mockHasCachedQuotas = false
+
+    expect(mountComponent().findAll('.animate-pulse').length).toBe(6)
+  })
+
+  it('zeigt den Hinweis auf fehlende Credentials statt der Quotas', () => {
+    mockQuotas = []
+    mockNeedsCredentials = true
+
+    const text = mountComponent().text()
+
+    expect(text).toContain('DashboardView.noCredentialsTitle')
+    expect(text).toContain('DashboardView.setUpNow')
+  })
+
+  it('zeigt den Fehlertext, wenn keine Quotas geladen werden konnten', () => {
+    mockQuotas = []
+    mockNeedsCredentials = false
+
+    expect(mountComponent().text()).toContain('DashboardView.quotaLoadError')
   })
 })
