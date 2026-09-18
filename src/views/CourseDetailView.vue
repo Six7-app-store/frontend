@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GraduationCap, ArrowLeft, UserMinus, UserPlus, Search, X, Loader2, Edit2, Check, X as CloseIcon, Info } from 'lucide-vue-next'
 import { useCourseStore } from '@/stores/course.store'
 import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
-import { roleLabelKey } from '@/i18n/role-labels'
+import { roleBadgeVariant, roleLabelKey } from '@/i18n/role-labels'
+import { badgeVariantClasses } from '@/components/ui/badge-variants'
 import { useI18n } from 'vue-i18n' // <-- i18n importieren
 import Card from '@/components/ui/Card.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -52,7 +55,7 @@ const saveName = async () => {
     await courseStore.updateCourse(courseId.value, { name: editNameValue.value })
     toast.success(t('CourseDetailView.toasts.nameUpdated'))
     isEditingName.value = false
-  } catch (err) {
+  } catch {
     toast.error(t('CourseDetailView.toasts.nameUpdateError'))
   }
 }
@@ -82,7 +85,7 @@ const loadCourse = async () => {
     }
   } catch {
     toast.error(t('CourseDetailView.toasts.loadError'))
-    router.push({ path: '/courses' })
+    router.push({ name: ROUTE_NAMES.courses })
   }
 }
 
@@ -122,6 +125,7 @@ watch(searchQuery, (q) => {
       const { data } = await userApi.search(query, 10)
       searchResults.value = data
     } catch {
+      // A failed search just shows no results; the user can retype.
       searchResults.value = []
     } finally {
       isSearching.value = false
@@ -178,7 +182,7 @@ const submitAddMembers = async () => {
     }
     closeAddModal()
   } catch (err: any) {
-    toast.error(err?.response?.data?.detail || t('CourseDetailView.toasts.addError'))
+    toast.error(getErrorDetailMessage(err) || t('CourseDetailView.toasts.addError'))
   } finally {
     isAddingMembers.value = false
   }
@@ -208,7 +212,7 @@ const confirmRemoveMember = async () => {
     showRemoveModal.value = false
     memberToRemove.value = null
   } catch (err: any) {
-    toast.error(err?.response?.data?.detail || t('CourseDetailView.toasts.removeError'))
+    toast.error(getErrorDetailMessage(err) || t('CourseDetailView.toasts.removeError'))
   } finally {
     removingId.value = null
   }
@@ -224,19 +228,15 @@ const roleLabel = (role: string | undefined) => {
   return t(roleLabelKey(role))
 }
 
-const roleClass = (role: string | undefined) => {
-  switch (role) {
-    case 'admin': return 'bg-red-50 text-red-700'
-    case 'teacher': return 'bg-purple-50 text-purple-700'
-    default: return 'bg-blue-50 text-blue-700'
-  }
-}
+// Colours come from the central role mapping (``roleBadgeVariant``), the pill
+// keeps its compact shape here.
+const roleClass = (role: string | undefined) => badgeVariantClasses(roleBadgeVariant(role))
 </script>
 
 <template>
   <div class="p-6 max-w-5xl mx-auto">
     <button
-        @click="router.push('/courses')"
+        @click="router.push({ name: ROUTE_NAMES.courses })"
         class="flex items-center gap-2 text-gray-500 hover:text-gray-900 mb-4 text-sm"
     >
       <ArrowLeft :size="16" />
@@ -449,7 +449,9 @@ const roleClass = (role: string | undefined) => {
 
       <template #body>
         <div class="space-y-3">
-          <p class="text-gray-700" v-html="$t('CourseDetailView.removeModal.confirmPrompt', { username: memberToRemove?.username })"></p>
+          <i18n-t keypath="CourseDetailView.removeModal.confirmPrompt" tag="p" class="text-gray-700">
+            <template #username><strong>{{ memberToRemove?.username }}</strong></template>
+          </i18n-t>
           <p class="text-sm text-gray-500">
             {{ $t('CourseDetailView.removeModal.warning') }}
           </p>

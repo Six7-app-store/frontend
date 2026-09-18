@@ -1,11 +1,17 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { userApi } from '@/api/user.api'
 import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
+import {
+  effectiveVariableScope,
+  isMultiImagePackerLayout as detectMultiImagePackerLayout,
+} from '@/services/deployment-variables.service'
+import { getErrorDetail, getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import {
   BarChart3,
@@ -33,7 +39,7 @@ const { t } = useI18n()
 const router = useRouter()
 const deploymentStore = useDeploymentStore()
 const appStore = useAppStore()
-const toastStore = useToastStore()
+const toast = useToast()
 
 // State
 const isLoadingVariables = ref(false)
@@ -73,16 +79,9 @@ const groupModeDisplay = computed(() => {
 // back to ``apiDef.default``. Detection: ``draft.variables.packer`` is a
 // non-empty object whose every top-level element is itself an object (a
 // ``tkey`` bucket). A false positive would at worst render one skewed line.
-const isMultiImagePackerLayout = computed<boolean>(() => {
-  const pk = (deploymentStore.draft.variables as any)?.packer
-  if (!pk || typeof pk !== 'object' || Array.isArray(pk)) return false
-  const keys = Object.keys(pk)
-  if (keys.length === 0) return false
-  return keys.every((k) => {
-    const slot = pk[k]
-    return slot && typeof slot === 'object' && !Array.isArray(slot)
-  })
-})
+const isMultiImagePackerLayout = computed<boolean>(() =>
+  detectMultiImagePackerLayout(deploymentStore.draft.variables)
+)
 
 const _resolvePackerValue = (apiDef: AppVariable): any => {
   const currentVars = deploymentStore.draft.variables as any
@@ -148,7 +147,7 @@ const terraformVars = computed(() => {
  * previous "stringify the detail object" code produced).
  */
 function _formatSubmitError(err: any): string {
-  const detail = err?.response?.data?.detail
+  const detail = getErrorDetail(err) as any
   const fallback = (typeof detail === 'string' ? detail : null)
     ?? err?.message
     ?? t('deployment.summary.submitError')
@@ -238,11 +237,11 @@ const fileVarSummaries = computed(() => {
  * - Plain variables: format the raw value.
  */
 function toSummaryEntry(def: AppVariable, val: any): {label: string, value: string, raw?: string} {
-  // Scoped variables (``varScope = team|user``) arrive as a map
+  // Scoped variables (``varScope``/``osScope`` = team|user) arrive as a map
   // (slotKey → value). Render as ``"slotKey: value"`` lines so the
   // summary makes the per-recipient configuration obvious — same
   // detail level the wizard step shows.
-  if ((def.varScope === 'team' || def.varScope === 'user') && def.osType !== 'file') {
+  if (effectiveVariableScope(def) !== 'all' && def.osType !== 'file') {
     if (!val || typeof val !== 'object' || Array.isArray(val)) {
       return { label: def.name, value: '-' }
     }
@@ -408,10 +407,7 @@ const fetchAndSyncVariables = async () => {
         userOverrides = JSON.parse(rawUserInput)
       } catch (e) {
         console.warn('Invalid JSON in userInputVar', e)
-        toastStore.addToast({
-          message: t('deployment.summary.invalidJson'),
-          type: 'error',
-        })
+        toast.error(t('deployment.summary.invalidJson'))
       }
     }
 
@@ -439,12 +435,9 @@ const fetchAndSyncVariables = async () => {
   } catch (error: any) {
     console.error(error)
     let msg = t('deployment.summary.fetchVarsError')
-    if (error.response?.status === 500) msg = t('deployment.summary.fetchVarsError500')
+    if (getErrorStatus(error) === 500) msg = t('deployment.summary.fetchVarsError500')
     
-    toastStore.addToast({ 
-        message: msg, 
-        type: 'error' 
-    })
+    toast.error(msg)
   } finally {
     isLoadingVariables.value = false
   }
@@ -457,7 +450,7 @@ onMounted(() => {
 // --- Actions ---
 const handleCustomize = () => {
   // Navigate to the variables page.
-  router.push({ name: 'deployment.variables' })
+  router.push({ name: ROUTE_NAMES.deploymentVariables })
 }
 
 const handleDeploy = async () => {
@@ -476,8 +469,8 @@ const handleDeploy = async () => {
       const res = await userApi.list()
       backendUsers = res.data || []
     } catch (err: any) {
-      const detail = err?.response?.data?.detail || err?.message || t('deployment.summary.fetchUsersError')
-      toastStore.addToast({ message: detail, type: 'error' })
+      const detail = getErrorDetailMessage(err) || err?.message || t('deployment.summary.fetchUsersError')
+      toast.error(detail)
       return
     }
 
@@ -519,15 +512,15 @@ const handleDeploy = async () => {
       // actual_bytes, ...}}`` for size/extension/encoding violations (413/422).
       // Branch on ``reason`` and format a localized message with the size numbers.
       const message = _formatSubmitError(err)
-      toastStore.addToast({ message, type: 'error' })
+      toast.error(message)
       return
     }
 
     if (deployment?.deploymentId) {
       // Created successfully → reset the draft so the next wizard run starts clean.
       deploymentStore.resetDraft()
-      toastStore.addToast({ message: t('deployment.summary.submitSuccess'), type: 'success' })
-      await router.push({ name: 'deployments.list' })
+      toast.success(t('deployment.summary.submitSuccess'))
+      await router.push({ name: ROUTE_NAMES.deploymentsList })
     }
   } finally {
     isSubmitting.value = false
@@ -536,7 +529,7 @@ const handleDeploy = async () => {
 
 const handleBack = () => {
     // Back leads to the variables page (step 3).
-    router.push({ name: 'deployment.variables' })
+    router.push({ name: ROUTE_NAMES.deploymentVariables })
 }
 </script>
 

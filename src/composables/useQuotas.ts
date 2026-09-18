@@ -2,6 +2,8 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { Cpu, HardDrive, Network } from 'lucide-vue-next'
 import { quotasApi } from '@/api/quotas.api'
+import i18n from '@/i18n'
+import { getErrorStatus } from '@/utils/http-error'
 import type { QuotaOverview } from '@/types/quota'
 
 // ----------------------------------------------------------------
@@ -21,6 +23,7 @@ function readCachedQuotas(): QuotaOverview | null {
     if (!raw) return null
     return JSON.parse(raw) as QuotaOverview
   } catch {
+    // Unreadable cache entry: behave as if nothing was cached.
     return null
   }
 }
@@ -34,6 +37,20 @@ function writeCachedQuotas(value: QuotaOverview | null) {
   }
 }
 
+/**
+ * One scale for every quota indicator: the bar, the used/limit text and the
+ * warning icon. The dashboard used to carry its own thresholds (60/80), which
+ * made a bar look merely "warm" while the number next to it was already red.
+ */
+const QUOTA_THRESHOLDS = {
+  /** From here the usage is noticeable. */
+  notable: 50,
+  /** From here it gets tight — bar orange, number amber. */
+  high: 75,
+  /** From here it is critical — bar and number red, warning icon. */
+  critical: 90,
+} as const
+
 const quotas = ref<QuotaOverview | null>(readCachedQuotas())
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -42,6 +59,10 @@ const needsCredentials = ref(false)
 // ----------------------------------------------------------------
 // USE QUOTAS COMPOSABLE
 // ----------------------------------------------------------------
+// The composable is also used outside of a component setup (e.g. in unit
+// tests), so it reads the global i18n instance instead of ``useI18n()``.
+const t = (key: string) => i18n.global.t(key)
+
 export const useQuotas = () => {
   const getPercentage = (used: number, limit: number): number => {
     if (limit === 0) return 0
@@ -49,11 +70,22 @@ export const useQuotas = () => {
   }
 
   const getColorClass = (percentage: number): string => {
-    if (percentage >= 90) return 'bg-red-500'
-    if (percentage >= 75) return 'bg-orange-500'
-    if (percentage >= 50) return 'bg-yellow-500'
+    if (percentage >= QUOTA_THRESHOLDS.critical) return 'bg-red-500'
+    if (percentage >= QUOTA_THRESHOLDS.high) return 'bg-orange-500'
+    if (percentage >= QUOTA_THRESHOLDS.notable) return 'bg-yellow-500'
     return 'bg-green-500'
   }
+
+  /** Colour of the used/limit number, on the same scale as the bar. */
+  const getTextColorClass = (percentage: number): string => {
+    if (percentage >= QUOTA_THRESHOLDS.critical) return 'text-red-500'
+    if (percentage >= QUOTA_THRESHOLDS.high) return 'text-amber-500'
+    return 'text-gray-600'
+  }
+
+  /** True when the usage deserves the warning icon. */
+  const isQuotaCritical = (percentage: number): boolean =>
+    percentage >= QUOTA_THRESHOLDS.critical
 
   const formattedQuotas = computed(() => {
     if (!quotas.value) return []
@@ -63,7 +95,7 @@ export const useQuotas = () => {
     return [
       {
         icon: Cpu,
-        label: 'VMs / Instanzen',
+        label: t('DashboardView.quotas.instances'),
         used: compute.instances.used,
         limit: compute.instances.limit,
         percentage: getPercentage(compute.instances.used, compute.instances.limit),
@@ -71,7 +103,7 @@ export const useQuotas = () => {
       },
       {
         icon: Cpu,
-        label: 'vCPUs',
+        label: t('DashboardView.quotas.vcpus'),
         used: compute.vcpus.used,
         limit: compute.vcpus.limit,
         percentage: getPercentage(compute.vcpus.used, compute.vcpus.limit),
@@ -79,7 +111,7 @@ export const useQuotas = () => {
       },
       {
         icon: Cpu,
-        label: 'RAM',
+        label: t('DashboardView.quotas.ram'),
         used: Math.round(compute.ram.used / 1024),
         limit: Math.round(compute.ram.limit / 1024),
         percentage: getPercentage(compute.ram.used, compute.ram.limit),
@@ -87,7 +119,7 @@ export const useQuotas = () => {
       },
       {
         icon: HardDrive,
-        label: 'Volumes',
+        label: t('DashboardView.quotas.volumes'),
         used: storage.volumes.used,
         limit: storage.volumes.limit,
         percentage: getPercentage(storage.volumes.used, storage.volumes.limit),
@@ -95,7 +127,7 @@ export const useQuotas = () => {
       },
       {
         icon: HardDrive,
-        label: 'Storage',
+        label: t('DashboardView.quotas.storage'),
         used: storage.gigabytes.used,
         limit: storage.gigabytes.limit,
         percentage: getPercentage(storage.gigabytes.used, storage.gigabytes.limit),
@@ -103,7 +135,7 @@ export const useQuotas = () => {
       },
       {
         icon: Network,
-        label: 'Floating IPs',
+        label: t('DashboardView.quotas.floatingIps'),
         used: network.floating_ips.used,
         limit: network.floating_ips.limit,
         percentage: getPercentage(network.floating_ips.used, network.floating_ips.limit),
@@ -124,13 +156,13 @@ export const useQuotas = () => {
       quotas.value = response.data
       writeCachedQuotas(response.data)
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 412) {
+      if (axios.isAxiosError(err) && getErrorStatus(err) === 412) {
         needsCredentials.value = true
         // Drop the cache: credentials are gone, the old numbers don't apply
         quotas.value = null
         writeCachedQuotas(null)
       } else {
-        error.value = 'Failed to fetch quotas'
+        error.value = t('DashboardView.quotaLoadError')
         console.error('Quota fetch error:', err)
         // Keep the existing cached numbers visible — a transient error
         // shouldn't blank out the tile.
@@ -148,6 +180,8 @@ export const useQuotas = () => {
     formattedQuotas,
     hasCachedQuotas,
     fetchQuotas,
-    getColorClass
+    getColorClass,
+    getTextColorClass,
+    isQuotaCritical
   }
 }

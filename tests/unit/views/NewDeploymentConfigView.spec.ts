@@ -51,6 +51,9 @@ vi.mock('@/api/user.api', () => ({
 describe('DeploymentConfig.vue', () => {
   let routerPushMock: any
   let toastWarningMock: any
+  let toastErrorMock: any
+  let toastClearMock: any
+  let toastRemoveMock: any
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -58,10 +61,14 @@ describe('DeploymentConfig.vue', () => {
     vi.mocked(useRouter).mockReturnValue({ push: routerPushMock } as any)
     
     toastWarningMock = vi.fn()
+    toastErrorMock = vi.fn(() => 'toast-search-error')
+    toastClearMock = vi.fn()
+    toastRemoveMock = vi.fn()
     vi.mocked(useToast).mockReturnValue({
       warning: toastWarningMock,
-      error: vi.fn(),
-      clear: vi.fn(),
+      error: toastErrorMock,
+      clear: toastClearMock,
+      remove: toastRemoveMock,
       success: vi.fn()
     } as any)
 
@@ -131,6 +138,45 @@ describe('DeploymentConfig.vue', () => {
     
     // Der Kurs sollte nun angezeigt werden, da das v-if korrekt evaluiert wird
     expect(wrapper.text()).toContain('Web Dev')
+  })
+
+  it('loads the student counts once, outside the render, with limited parallelism', async () => {
+    const courses = Array.from({ length: 12 }, (_, i) => ({ courseId: `c${i}`, name: `Kurs ${i}` }))
+    vi.mocked(courseApi.list).mockResolvedValue({ data: courses } as any)
+
+    let inFlight = 0
+    let maxInFlight = 0
+    const resolvers: Array<() => void> = []
+    vi.mocked(courseApi.getById).mockImplementation((courseId: string) => {
+      inFlight++
+      maxInFlight = Math.max(maxInFlight, inFlight)
+      return new Promise((resolve) => {
+        resolvers.push(() => {
+          inFlight--
+          resolve({ data: { users: [{ keycloak_id: `${courseId}-s1` }] } } as any)
+        })
+      })
+    }) as any
+
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    expect(maxInFlight).toBeLessThanOrEqual(5)
+
+    // Resolve everything that is queued, round by round.
+    while (resolvers.length > 0) {
+      resolvers.splice(0).forEach((resolve) => resolve())
+      await flushPromises()
+    }
+
+    expect(courseApi.getById).toHaveBeenCalledTimes(12)
+    expect(maxInFlight).toBeLessThanOrEqual(5)
+    expect(wrapper.text()).toContain('DeploymentDetailView.deploymentStudentCount')
+
+    // Re-rendering must not trigger further requests.
+    await wrapper.vm.$forceUpdate()
+    await flushPromises()
+    expect(courseApi.getById).toHaveBeenCalledTimes(12)
   })
 
   it('shows missing credential banner and hides form if credentials are missing', async () => {
@@ -225,6 +271,69 @@ describe('DeploymentConfig.vue', () => {
     expect(store.draft.studentIds).toContain('u1')
 
     // 7. Timer wieder auf Normalbetrieb stellen (wichtig für andere Tests!)
+    vi.useRealTimers()
+  })
+
+  it.each([
+    ['Ladefehler', () => vi.mocked(courseApi.getById).mockRejectedValue(new Error('offline')), 'error', 'CourseDetailView.toasts.loadUsersError'],
+    ['leerer Kurs', () => vi.mocked(courseApi.getById).mockResolvedValue({ data: { users: [] } } as any), 'warning', 'CourseDetailView.addModal.noUsersFound'],
+  ])('meldet beim Kursklick %s passend', async (_label, arrange, type, key) => {
+    arrange()
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    await wrapper.find('[data-testid="course-c1"]').trigger('click')
+    await flushPromises()
+
+    const expectedSpy = type === 'error' ? toastErrorMock : toastWarningMock
+    const otherSpy = type === 'error' ? toastWarningMock : toastErrorMock
+    expect(expectedSpy).toHaveBeenCalledWith(key)
+    expect(otherSpy).not.toHaveBeenCalled()
+  })
+
+  it('meldet einen Suchfehler mit Objekt-detail als eigenen Text', async () => {
+    vi.useFakeTimers()
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const studentsTabBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.config.studentsLabel'))
+    await studentsTabBtn?.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    vi.mocked(userApi.search).mockRejectedValue({ response: { data: { detail: { reason: 'search_failed' } } } })
+    await wrapper.find('[data-testid="student-search"]').setValue('Jo')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    expect(toastErrorMock).toHaveBeenCalledWith('CourseDetailView.toasts.loadUsersError')
+    vi.useRealTimers()
+  })
+
+  it('removes only its own search-error toast, never all toasts', async () => {
+    vi.useFakeTimers()
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const studentsTabBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.config.studentsLabel'))
+    await studentsTabBtn?.trigger('click')
+    await wrapper.vm.$nextTick()
+    const searchInput = wrapper.find('[data-testid="student-search"]')
+
+    // First search fails → error toast.
+    vi.mocked(userApi.search).mockRejectedValueOnce(new Error('offline'))
+    await searchInput.setValue('Jo')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+    expect(toastErrorMock).toHaveBeenCalledTimes(1)
+
+    // Second search succeeds → only the previous search error is removed.
+    vi.mocked(userApi.search).mockResolvedValue({ data: [] } as any)
+    await searchInput.setValue('John')
+    vi.advanceTimersByTime(300)
+    await flushPromises()
+
+    expect(toastRemoveMock).toHaveBeenCalledWith('toast-search-error')
+    expect(toastClearMock).not.toHaveBeenCalled()
     vi.useRealTimers()
   })
 

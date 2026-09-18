@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { GraduationCap, Trash2, Plus, Users } from 'lucide-vue-next'
 import { useCourseStore } from '@/stores/course.store'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
 import { courseApi } from '@/api/course.api'
 import { useI18n } from 'vue-i18n' // <-- i18n importiert
@@ -39,6 +41,7 @@ const fetchMemberCounts = async () => {
           const { data } = await courseApi.listMembers(c.courseId)
           return [c.courseId, data.length] as const
         } catch {
+          // An unloadable member list only affects the counter on the card.
           return [c.courseId, 0] as const
         }
       })
@@ -49,10 +52,16 @@ const fetchMemberCounts = async () => {
 onMounted(async () => {
   try {
     await courseStore.fetchCourses()
+    // ``fetchCourses`` swallows the error (``rethrow: false``) and only records
+    // it in the store, so the toast has to check the store state.
+    if (courseStore.error) {
+      toast.error(t('CoursesView.toasts.loadError'))
+      return
+    }
     if (isStaff.value) {
       await fetchMemberCounts()
     }
-  } catch (error) {
+  } catch {
     toast.error(t('CoursesView.toasts.loadError'))
   }
 })
@@ -70,10 +79,10 @@ const saveCourse = async () => {
 
     // Navigate to the detail page right after creation.
     if (created?.courseId) {
-      router.push(`/courses/${created.courseId}`)
+      router.push({ name: ROUTE_NAMES.coursesDetail, params: { id: created.courseId } })
     }
   } catch (error: any) {
-    toast.error(error.response?.data?.detail || t('CoursesView.toasts.createError'))
+    toast.error(getErrorDetailMessage(error) || t('CoursesView.toasts.createError'))
   }
 }
 
@@ -99,14 +108,14 @@ const confirmDelete = async () => {
     showDeleteModal.value = false
     courseToDelete.value = null
   } catch (error: any) {
-    toast.error(error.response?.data?.detail || t('CoursesView.toasts.deleteError'))
+    toast.error(getErrorDetailMessage(error) || t('CoursesView.toasts.deleteError'))
   } finally {
     isDeleting.value = false
   }
 }
 
 const goToDetail = (courseId: string) => {
-  router.push({ path: `/courses/${courseId}` })
+  router.push({ name: ROUTE_NAMES.coursesDetail, params: { id: courseId } })
 }
 </script>
 
@@ -228,7 +237,9 @@ const goToDetail = (courseId: string) => {
 
       <template #body>
         <div class="space-y-3">
-          <p class="text-gray-700" v-html="$t('CoursesView.deleteModal.confirmPrompt', { name: courseToDelete?.name })"></p>
+          <i18n-t keypath="CoursesView.deleteModal.confirmPrompt" tag="p" class="text-gray-700">
+            <template #name><strong>{{ courseToDelete?.name }}</strong></template>
+          </i18n-t>
           <p class="text-sm text-gray-500">
             {{ $t('CoursesView.deleteModal.warning') }}
           </p>

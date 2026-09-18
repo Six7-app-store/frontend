@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted, reactive, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -13,7 +14,7 @@ import {
   Upload,
 } from 'lucide-vue-next'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
-import { useToastStore } from '@/stores/toast.store'
+import { useToast } from '@/composables/useToast'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 import { parseCloudsYaml, CloudsYamlError } from '@/utils/clouds-yaml'
 import type {
@@ -23,7 +24,7 @@ import type {
 
 const route = useRoute()
 const router = useRouter()
-const toast = useToastStore()
+const toast = useToast()
 const credStore = useOpenStackCredentialsStore()
 const { t } = useI18n()
 
@@ -120,15 +121,20 @@ const handleSave = async () => {
   try {
     await credStore.save(payload)
     if (credStore.lastError) {
+      // Keep the secret in the form: the credentials were stored but don't
+      // work, so the user will most likely correct and save them again.
       toast.warning(t('SettingsOpenStackView.errors.validationFailedSaved', { error: credStore.lastError }))
-    } else {
-      toast.success(t('SettingsOpenStackView.toasts.saveSuccess'))
-      maybeReturnToWizard()
+      return
     }
+    toast.success(t('SettingsOpenStackView.toasts.saveSuccess'))
+    maybeReturnToWizard()
     formApp.secret = ''
     formPwd.secret = ''
   } catch {
-    if (credStore.error) toast.error(credStore.error)
+    // The store's error text can be empty — e.g. a 409 triggers a refetch
+    // inside the store action, and that clears ``error`` again. Without a
+    // fallback the failed save would stay completely invisible.
+    toast.error(credStore.error || t('SettingsOpenStackView.errors.saveFailed'))
   }
 }
 
@@ -141,7 +147,7 @@ const handleTest = async () => {
       toast.success(t('SettingsOpenStackView.toasts.credentialsValid'))
     }
   } catch {
-    if (credStore.error) toast.error(credStore.error)
+    toast.error(credStore.error || t('SettingsOpenStackView.errors.testFailed'))
   }
 }
 
@@ -157,7 +163,7 @@ const handleDelete = async () => {
     formApp.secret = ''
     formPwd.secret = ''
   } catch {
-    if (credStore.error) toast.error(credStore.error)
+    toast.error(credStore.error || t('SettingsOpenStackView.errors.deleteFailed'))
   }
 }
 
@@ -228,8 +234,20 @@ const onFilePick = (event: Event) => {
   input.value = ''
 }
 
+// Only follow ``next`` when it is an in-app path of a known route. Absolute or
+// protocol-relative URLs (``https://…``, ``//host``, ``/\host``) and unknown
+// paths are ignored, so the user simply stays on this page. Unknown paths end
+// up on the catch-all 404 route, so that one doesn't count as known either.
+const internalNextPath = (next: unknown): string | null => {
+  if (typeof next !== 'string' || !next.startsWith('/')) return null
+  if (next.startsWith('//') || next.startsWith('/\\')) return null
+  const resolved = router.resolve(next)
+  if (resolved.matched.length === 0 || resolved.name === ROUTE_NAMES.notFound) return null
+  return next
+}
+
 const maybeReturnToWizard = () => {
-  const next = route.query.next as string | undefined
+  const next = internalNextPath(route.query.next)
   if (next) router.push(next)
 }
 </script>
@@ -254,7 +272,7 @@ const maybeReturnToWizard = () => {
       :title="t('SettingsOpenStackView.lockBanner.title')"
       :message="t('SettingsOpenStackView.lockBanner.message', { count: credStore.activeDeployments })"
       :cta="t('SettingsOpenStackView.lockBanner.cta')"
-      ctaTo="/deployments"
+      :ctaTo="{ name: ROUTE_NAMES.deploymentsList }"
       class="mb-6"
     />
 

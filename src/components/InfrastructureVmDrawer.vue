@@ -16,6 +16,7 @@ import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeploymentResource } from '@/types'
 import { deploymentApi } from '@/api/deployment.api'
+import { getErrorStatus } from '@/utils/http-error'
 import { formatUptime, pillToneClass } from '@/composables/useVmPresentation'
 import {
   X,
@@ -59,7 +60,7 @@ const load = async () => {
     // lost their OpenStack credentials between mount and click. Both
     // are surfaced inline; the page-level toast is reserved for
     // harder errors.
-    const status = err?.response?.status
+    const status = getErrorStatus(err)
     if (status === 404) {
       errorMessage.value = t('vm.drawer.errors.notFound')
     } else if (status === 412) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted, watch, reactive, nextTick } from 'vue'
 import { userApi } from '@/api/user.api'
 import { useI18n } from 'vue-i18n'
@@ -78,6 +79,17 @@ function ensureDefaultGroupNames() {
   }
 }
 
+// True for an empty name and for the generated default names ("Team #n"),
+// so switching the mode never overwrites a name the user typed.
+function isDefaultGroupName(name: string | undefined) {
+  if (!name || name.trim() === '') return true
+  const count = Math.max(groupNames.value.length, 1)
+  for (let i = 0; i < count; i++) {
+    if (name === t('deployment.assignment.vmDefaultName', { index: i + 1 })) return true
+  }
+  return false
+}
+
 const ensureAssignmentArrays = () => {
   const assignments = store.draft.assignments as string[][]
   for (let i = 0; i < store.draft.groupCount; i++) {
@@ -103,12 +115,6 @@ watch(groupCount, (newCount, oldCount) => {
 
   if (typeof oldCount === 'number' && oldCount > newCount) {
     const assignments = store.draft.assignments as string[][]
-    const removedStudents: string[] = []
-    for (let i = newCount; i < oldCount; i++) {
-      if (assignments[i] && Array.isArray(assignments[i])) {
-        removedStudents.push(...(assignments[i] ?? []))
-      }
-    }
     assignments.length = newCount
     // Also remove the names for removed teams.
     groupNames.value.length = newCount
@@ -118,7 +124,7 @@ watch(groupCount, (newCount, oldCount) => {
 // --- Lifecycle ---
 onMounted(async () => {
   if (!store.draft.studentIds || store.draft.studentIds.length === 0) {
-    router.replace({ name: 'deployment.config' })
+    router.replace({ name: ROUTE_NAMES.deploymentConfig })
     return
   }
   if (!store.draft.groupCount || store.draft.groupCount < 1) {
@@ -140,6 +146,8 @@ onMounted(async () => {
     ...unassignedStudents.value
   ]))
   
+  // Draft student IDs are Keycloak IDs (the cache is keyed by them); the
+  // backend ``userId`` of a user is a different ID.
   const missingIds: string[] = []
   for (const id of allIds) {
     const cached = studentCache[id]
@@ -148,7 +156,7 @@ onMounted(async () => {
       let found = null
       for (const key in studentCache) {
         const s = studentCache[key]
-        if (s && s.userId === id && (s.firstName || s.lastName || s.username || s.email)) {
+        if (s && s.keycloak_id === id && (s.firstName || s.lastName || s.username || s.email)) {
           found = s
           break
         }
@@ -163,10 +171,13 @@ onMounted(async () => {
   }
   
   if (missingIds.length > 0) {
+    // A user that can't be loaded is skipped silently: the placeholder cache
+    // entry set above keeps the assignment UI usable.
     const results = await Promise.all(missingIds.map(id => userApi.getById(id).then(res => res.data).catch(() => null)))
-    results.forEach((user) => {
+    // Cache under the requested ID — that's the key the template looks up.
+    results.forEach((user, i) => {
       if (user && user.userId) {
-        setStudentCache(user.userId, user)
+        setStudentCache(missingIds[i]!, user)
       }
     })
     await nextTick()
@@ -182,9 +193,8 @@ const setOneGroup = () => {
   assignments[0] = [...store.draft.studentIds]
   
   // Keep the existing name or set a default.
-  const defaultName = t('deployment.assignment.vmDefaultName', { index: 1 })
-  if (!groupNames.value[0] || groupNames.value[0].trim() === '' || groupNames.value[0].startsWith('Team')) {
-    groupNames.value[0] = defaultName
+  if (isDefaultGroupName(groupNames.value[0])) {
+    groupNames.value[0] = t('deployment.assignment.vmDefaultName', { index: 1 })
   }
   groupNames.value.length = 1
 }
@@ -217,13 +227,6 @@ const decrement = () => {
     const oldCount = store.draft.groupCount
     const newCount = oldCount - 1
     const assignments = store.draft.assignments as string[][]
-    const removedStudents: string[] = []
-    for (let i = newCount; i < oldCount; i++) {
-      const currentGroup = assignments[i]
-      if (currentGroup && Array.isArray(currentGroup)) {
-        removedStudents.push(...currentGroup)
-      }
-    }
     assignments.length = newCount
     store.draft.groupCount = newCount
   }
@@ -351,8 +354,8 @@ const clearAllAssignments = () => {
   }
 }
 
-const handleNext = () => router.push({ name: 'deployment.variables' }) 
-const handleBack = () => router.push({ name: 'deployment.config' })
+const handleNext = () => router.push({ name: ROUTE_NAMES.deploymentVariables })
+const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
 </script>
 
 <template>

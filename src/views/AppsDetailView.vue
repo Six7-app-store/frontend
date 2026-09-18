@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { appApi } from '@/api/app.api'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import { useI18n } from 'vue-i18n'
 import {
-  Layers, Server, Box, Database, Terminal,
-  Globe, LayoutTemplate, Shield, ArrowLeft, GitBranch,
+  Layers,
+  Globe, ArrowLeft, GitBranch,
   Trash2, AlertCircle, Clock, Send, ShoppingBag, Lock, Undo2,
   Pencil, Image as ImageIcon,
 } from 'lucide-vue-next'
@@ -14,7 +16,9 @@ import { useDeploymentStore } from '@/stores/deployment.store'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRole } from '@/composables/useRole'
-import { formatDate, MAX_IMAGE_BYTES } from '@/utils/format'
+import { formatDate } from '@/utils/format'
+import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
+import { iconForAppName } from '@/services/app-presentation.service'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
@@ -147,17 +151,7 @@ const hasVersionInfo = computed(() => {
 // ----------------------------------------------------------------
 // Helpers
 // ----------------------------------------------------------------
-const getIconForApp = (appName: string) => {
-  const name = (appName || '').toLowerCase()
-  if (name.includes('node')) return Server
-  if (name.includes('vue') || name.includes('front')) return LayoutTemplate
-  if (name.includes('react')) return Globe
-  if (name.includes('python') || name.includes('jupyter') || name.includes('fastapi')) return Box
-  if (name.includes('postgres') || name.includes('sql') || name.includes('data')) return Database
-  if (name.includes('docker') || name.includes('container')) return Terminal
-  if (name.includes('security') || name.includes('pen')) return Shield
-  return Layers
-}
+const getIconForApp = (appName: string) => iconForAppName(appName)
 
 // ----------------------------------------------------------------
 // API calls
@@ -173,7 +167,7 @@ const fetchAppDetails = async () => {
     }
   } catch {
     toast.error(t('AppsDetailView.toasts.loadError'))
-    if (!app.value) router.push({ name: 'apps.index' })
+    if (!app.value) router.push({ name: ROUTE_NAMES.apps })
   } finally {
     isLoading.value = false
   }
@@ -185,6 +179,7 @@ const fetchApprovals = async () => {
     const res = await appApi.listVersionApprovals(appId.value)
     approvals.value = res.data
   } catch {
+    // Without approvals the version list just shows no approval state.
     approvals.value = []
   }
 }
@@ -198,7 +193,7 @@ const handleDeploy = () => {
   deploymentStore.draft.appId = app.value.appId || app.value.id
   deploymentStore.draft.releaseTag = selectedVersion.value
   toast.success(t('AppsDetailView.toasts.preparingConfig', { name: app.value.name }))
-  router.push({ name: 'deployment.config' })
+  router.push({ name: ROUTE_NAMES.deploymentConfig })
 }
 
 const openSubmitModal = (versionTag: string) => {
@@ -217,11 +212,11 @@ const confirmSubmit = async () => {
     showSubmitModal.value = false
     await fetchApprovals()
   } catch (err: any) {
-    const s = err?.response?.status
+    const s = getErrorStatus(err)
     if (s === 409) {
       toast.warning(t('AppsDetailView.toasts.submitDuplicate'))
     } else if (s === 422) {
-      const detail = err?.response?.data?.detail
+      const detail = getErrorDetail(err) as any
       if (detail?.marker_errors?.length) {
         submitMarkerErrors.value = detail.marker_errors
       } else {
@@ -287,12 +282,13 @@ const closeEditModal = () => {
 const triggerEditFileInput = () => editFileInputRef.value?.click()
 
 const processEditFile = (file: File) => {
-  if (!file.type.startsWith('image/')) {
+  const problem = validateImageFile(file)
+  if (problem === 'not_image') {
     toast.error(t('AppsDetailView.toasts.onlyImages'))
     return
   }
-  if (file.size > MAX_IMAGE_BYTES) {
-    toast.error(t('AppsDetailView.toasts.imageTooLarge', { size: Math.round(MAX_IMAGE_BYTES / 1024 / 1024) }))
+  if (problem === 'too_large') {
+    toast.error(t('AppsDetailView.toasts.imageTooLarge', { size: MAX_IMAGE_MB }))
     return
   }
   editImage.value = file
@@ -325,14 +321,7 @@ const editImageFile = computed<File | null>(() =>
   editImage.value instanceof File ? editImage.value : null
 )
 
-const fileToDataUrl = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
-}
+const fileToDataUrl = async (file: File): Promise<string> => (await readFileAsDataUrl(file)) ?? ''
 
 const submitEdit = async () => {
   if (!app.value) return
@@ -385,9 +374,9 @@ const confirmDelete = async () => {
     await appApi.delete(safeId)
     toast.success(t('AppsDetailView.deleteSuccessToast'))
     showDeleteModal.value = false
-    router.push({ name: 'apps' })
+    router.push({ name: ROUTE_NAMES.apps })
   } catch (error: any) {
-    const detail = error?.response?.data?.detail
+    const detail = getErrorDetail(error) as any
     const reason = typeof detail === 'object' ? detail?.message || detail?.reason : detail
     toast.error(`${t('AppsDetailView.deleteErrorToast')}${reason ? ': ' + reason : ''}`)
   } finally {
@@ -594,7 +583,7 @@ onMounted(async () => {
             {{ $t('AppsDetailView.deployButton') }}
           </button>
           <p v-if="credStore.isResolved && !credStore.hasCredential" class="mt-2 text-sm text-amber-700">
-            <router-link to="/user/openstack" class="underline font-medium">{{ $t('AppsDetailView.missingCredsLink') }}</router-link>
+            <router-link :to="{ name: ROUTE_NAMES.userOpenStack }" class="underline font-medium">{{ $t('AppsDetailView.missingCredsLink') }}</router-link>
             {{ $t('AppsDetailView.missingCredsText') }}
           </p>
         </div>
@@ -732,7 +721,9 @@ onMounted(async () => {
       <template #title>{{ $t('AppsDetailView.confirmDeleteTitle') }}</template>
       <template #body>
         <div class="space-y-3">
-          <p class="text-gray-700" v-html="$t('AppsDetailView.confirmDeleteMessage', { name: app.name })"></p>
+          <i18n-t keypath="AppsDetailView.confirmDeleteMessage" tag="p" class="text-gray-700">
+            <template #name><strong>{{ app.name }}</strong></template>
+          </i18n-t>
         </div>
       </template>
       <template #footer>

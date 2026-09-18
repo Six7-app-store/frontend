@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted, computed } from 'vue'
 
 import {
@@ -82,7 +83,7 @@ const getStatusColor = (status: string) => {
   <div class="p-6">
     <PageHeader :title="$t('DeploymentsView.title')" :subtitle="$t('DeploymentsView.subtitle')">
       <template #actions>
-        <RouterLink :to="{ name: 'apps' }">
+        <RouterLink :to="{ name: ROUTE_NAMES.apps }">
           <BaseButton class="flex items-center gap-2">
             <Plus :size="16" />
             {{ $t('DeploymentsView.newDeployment') }}
@@ -98,7 +99,7 @@ const getStatusColor = (status: string) => {
       :empty-message="$t('DeploymentsView.deploymentsMissingMessage')"
     >
       <template #empty-action>
-        <RouterLink :to="{ name: 'apps' }">
+        <RouterLink :to="{ name: ROUTE_NAMES.apps }">
           <BaseButton class="flex items-center gap-2">
             <Plus :size="16" />
             {{ $t('DeploymentsView.newDeployment') }}
@@ -112,7 +113,7 @@ const getStatusColor = (status: string) => {
         <RouterLink
           v-for="deployment in sortedDeployments"
           :key="deployment.deploymentId"
-          :to="{ name: 'deployments.detail', params: { id: deployment.deploymentId } }"
+          :to="{ name: ROUTE_NAMES.deploymentsDetail, params: { id: deployment.deploymentId } }"
           class="block"
         >
           <Card class="flex flex-col h-full cursor-pointer hover:border-emerald-200 transition">

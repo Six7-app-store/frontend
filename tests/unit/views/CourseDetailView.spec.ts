@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { ref } from 'vue'
 
 import CourseDetailView from '@/views/CourseDetailView.vue'
+import de from '@/i18n/locales/de'
 
 // ---------------------------------------------------------
 // 1. Mocks & Setup
@@ -13,6 +14,10 @@ vi.mock('vue-router', () => ({
     useRouter: () => ({ push: mockPush }),
     useRoute: () => ({ params: { id: 'c-123' } })
 }))
+
+// Echtes vue-i18n nur für die ``<i18n-t>``-Komponente im Template; ``useI18n``
+// bleibt unten gemockt.
+const { createI18n } = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
 
 // i18n Mock (unterstützt Variablen)
 vi.mock('vue-i18n', () => ({
@@ -28,7 +33,7 @@ vi.mock('@/composables/useToast', () => ({
 }))
 
 // Rechteverwaltung
-let mockCan = { editCourse: { value: true } }
+const mockCan = { editCourse: { value: true } }
 vi.mock('@/composables/usePermissions', () => ({
     usePermissions: () => ({ can: mockCan })
 }))
@@ -103,6 +108,7 @@ describe('CourseDetailView.vue', () => {
     const mountComponent = () => {
         return mount(CourseDetailView, {
             global: {
+                plugins: [createI18n({ legacy: false, locale: 'de', messages: { de } })],
                 mocks: {
                     $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
                 },
@@ -140,7 +146,7 @@ describe('CourseDetailView.vue', () => {
         await flushPromises()
 
         expect(mockToastError).toHaveBeenCalledWith('CourseDetailView.toasts.loadError')
-        expect(mockPush).toHaveBeenCalledWith({ path: '/courses' })
+        expect(mockPush).toHaveBeenCalledWith({ name: 'courses' })
     })
 
     // --- 2. Inline-Editing (Kursnamen bearbeiten) ---
@@ -293,5 +299,54 @@ describe('CourseDetailView.vue', () => {
 
         // Prüfen, ob das Modal geschlossen wurde
         expect(wrapper.find('.modal').exists()).toBe(false)
+    })
+
+    it.each([
+        ['admin', ['bg-purple-100', 'text-purple-700']],
+        ['teacher', ['bg-blue-100', 'text-blue-700']],
+        ['student', ['bg-green-100', 'text-green-700']],
+        ['irgendwas', ['bg-gray-100', 'text-gray-700']],
+    ])('färbt die Rolle %s wie die zentrale Rollenzuordnung', async (role, expectedClasses) => {
+        mockCurrentMembers = [{ userId: 'u-1', username: 'TestUser', role }]
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        const pill = wrapper.findAll('span').find(s => s.text() === `roleLabels.${role === 'irgendwas' ? 'unknown' : role}`)!
+        expect(pill.exists()).toBe(true)
+        for (const cls of expectedClasses) {
+            expect(pill.classes()).toContain(cls)
+        }
+    })
+
+    it('zeigt beim Entfernen den eigenen Text statt [object Object], wenn detail ein Objekt ist', async () => {
+        mockCurrentMembers = [{ userId: 'u-99', username: 'BadUser', role: 'student' }]
+        mockRemoveMember.mockRejectedValue({ response: { data: { detail: { reason: 'last_teacher' } } } })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        await wrapper.find('button[title="CourseDetailView.removeMemberTitle"]').trigger('click')
+        await flushPromises()
+        const confirmBtn = wrapper.findAll('.modal button').find(b => b.text().includes('CourseDetailView.removeModal.remove'))!
+        await confirmBtn.trigger('click')
+        await flushPromises()
+
+        expect(mockToastError).toHaveBeenCalledWith('CourseDetailView.toasts.removeError')
+    })
+
+    it('rendert den Benutzernamen im Löschen-Modal als Text, nicht als HTML', async () => {
+        const evilName = '<img src=x onerror="alert(1)">'
+        mockCurrentMembers = [{ userId: 'u-98', username: evilName, role: 'student' }]
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        await wrapper.find('button[title="CourseDetailView.removeMemberTitle"]').trigger('click')
+        await flushPromises()
+
+        const modal = wrapper.find('.modal')
+        expect(modal.find('img').exists()).toBe(false)
+        expect(modal.find('strong').text()).toBe(evilName)
     })
 })

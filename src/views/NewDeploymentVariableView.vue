@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -8,6 +9,7 @@ import { useToast } from '@/composables/useToast'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import VariableInput from '@/components/VariableInput.vue'
 import ScopeBadge from '@/components/ui/ScopeBadge.vue'
+import { effectiveVariableScope } from '@/services/deployment-variables.service'
 import {
   ArrowRight,
   ArrowLeft,
@@ -48,9 +50,7 @@ const isList = (type: string) => type.toLowerCase().startsWith('list') || type.t
 const isFileVar = (v: AppVariable): boolean => v.osType === 'file'
 
 // True when the variable has a per-variable scope other than ``all``.
-const effectiveScope = (v: AppVariable): 'all' | 'team' | 'user' => {
-  return (v.varScope || v.osScope || 'all') as 'all' | 'team' | 'user'
-}
+const effectiveScope = effectiveVariableScope
 const isScoped = (v: AppVariable): boolean => effectiveScope(v) !== 'all'
 
 /** Slot keys for a scoped variable. */
@@ -266,6 +266,9 @@ const normalizeValue = (val: any, type: string) => {
   if (val === null || val === undefined) {
     if (isList(type)) return []
     if (isBool(type)) return false
+    // Numbers: same value as an empty input below, so an untouched number
+    // variable without a default doesn't count as changed.
+    if (isNumber(type)) return null
     return ""
   }
 
@@ -296,7 +299,7 @@ const normalizeValue = (val: any, type: string) => {
 // --- Data Loading ---
 onMounted(async () => {
   if (!deploymentStore.draft.appId) {
-    router.replace('/apps')
+    router.replace({ name: ROUTE_NAMES.apps })
     return
   }
 
@@ -532,7 +535,7 @@ const handleNext = () => {
 
     deploymentStore.draft.userInputVar = JSON.stringify(changedValues) as any
     deploymentStore.draft.variables = allValues
-    router.push({ name: 'deployment.summary' })
+    router.push({ name: ROUTE_NAMES.deploymentSummary })
   } catch (e) {
     console.error(e)
     toast.error(t('deployment.variables.saveError'))
@@ -540,7 +543,7 @@ const handleNext = () => {
 }
 
 const handleBack = () => {
-  router.push({ name: 'deployment.teams' })
+  router.push({ name: ROUTE_NAMES.deploymentTeams })
 }
 
 // ----------------------------------------------------------------

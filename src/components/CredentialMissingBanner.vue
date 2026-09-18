@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter, type RouteLocationRaw } from 'vue-router'
 import { AlertTriangle, AlertCircle, Lock } from 'lucide-vue-next'
 
 type Variant = 'warning' | 'error' | 'lock'
@@ -9,8 +10,8 @@ const props = withDefaults(defineProps<{
   title?: string
   message?: string
   cta?: string
-  ctaTo?: string
-  next?: string
+  ctaTo?: RouteLocationRaw
+  next?: RouteLocationRaw
 }>(), {
   variant: 'warning',
 })
@@ -48,10 +49,16 @@ const styles = computed(() => {
   }
 })
 
+const router = useRouter()
+
 const ctaLocation = computed(() => {
   if (!props.ctaTo) return null
   if (props.next) {
-    return { path: props.ctaTo, query: { next: props.next } }
+    // The target page reads ``next`` from the query as a URL path and
+    // navigates back to it, so route objects are resolved to their path.
+    const next = typeof props.next === 'string' ? props.next : router.resolve(props.next).fullPath
+    const base = typeof props.ctaTo === 'string' ? { path: props.ctaTo } : props.ctaTo
+    return { ...base, query: { next } }
   }
   return props.ctaTo
 })

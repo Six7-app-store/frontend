@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
 import { useAppStore } from './app.store'
 import { useAuthStore } from './auth.store'
+import { runRequest, type RequestContext } from './_request'
+import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
+import { isMultiImagePackerLayout as detectMultiImagePackerLayout } from '@/services/deployment-variables.service'
 
 import type {
   Deployment,
@@ -11,6 +14,15 @@ import type {
   DeploymentDraft,
   AppVariable
 } from '@/types'
+
+// Loading/error bookkeeping for ``runRequest`` (same shape as in the app
+// and course stores).
+function requestContext(store: { isLoading: boolean; error: string | null }): RequestContext {
+  return {
+    setLoading: (v: boolean) => { store.isLoading = v },
+    setError: (e: string | null) => { store.error = e },
+  }
+}
 
 const defaultDraft: DeploymentDraft = {
   appId: null,
@@ -70,15 +82,10 @@ export const useDeploymentStore = defineStore('deployment', {
   },
   actions: {
     async fetchDeployments(params?: { userId?: string; appId?: string; status?: DeploymentStatus }) {
-      this.isLoading = true; this.error = null
-      try {
+      await runRequest(requestContext(this), async () => {
         const response = await deploymentApi.list(params)
         this.deployments = response.data
-      } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to fetch deployments'
-      } finally {
-        this.isLoading = false
-      }
+      }, 'Failed to fetch deployments', { rethrow: false })
     },
 
     async fetchDeploymentById(id: string) {
@@ -86,17 +93,17 @@ export const useDeploymentStore = defineStore('deployment', {
       try {
         const response = await deploymentApi.getById(id)
         this.currentDeployment = response.data
-      } catch (err: any) {
+      } catch (err) {
         // 404 = deployment was soft-deleted upstream (e.g. after a successful
         // destroy). This is not a UI error state: the DetailView's stream-ended
         // watcher checks ``currentDeployment === null`` as a soft-delete signal
         // and navigates to the list with a success toast. Other status codes
         // (5xx, network timeout) keep the error path intact.
-        const status = err?.response?.status
+        const status = getErrorStatus(err)
         if (status === 404) {
           this.currentDeployment = null
         } else {
-          this.error = err.response?.data?.detail || 'Failed to fetch deployment'
+          this.error = (getErrorDetail(err) as string | undefined) || 'Failed to fetch deployment'
         }
       } finally {
         this.isLoading = false
@@ -104,17 +111,11 @@ export const useDeploymentStore = defineStore('deployment', {
     },
 
     async createDeployment(data: DeploymentCreate) {
-      this.isLoading = true; this.error = null
-      try {
+      return runRequest(requestContext(this), async () => {
         const response = await deploymentApi.create(data)
         this.deployments.push(response.data)
         return response.data
-      } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to create deployment'
-        throw err
-      } finally {
-        this.isLoading = false
-      }
+      }, 'Failed to create deployment')
     },
 
     /**
@@ -129,17 +130,11 @@ export const useDeploymentStore = defineStore('deployment', {
      * the live progress lives in the detail view that issued the call.
      */
     async deleteDeployment(id: string) {
-      this.isLoading = true; this.error = null
-      try {
+      return runRequest(requestContext(this), async () => {
         const response = await deploymentApi.delete(id)
         this.deployments = this.deployments.filter((d: any) => d.deploymentId !== id)
         return response
-      } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to delete deployment'
-        throw err
-      } finally {
-        this.isLoading = false
-      }
+      }, 'Failed to delete deployment')
     },
 
     /**
@@ -153,15 +148,7 @@ export const useDeploymentStore = defineStore('deployment', {
      * via the next list fetch or the SSE ``succeeded`` event.
      */
     async pauseDeployment(id: string) {
-      this.isLoading = true; this.error = null
-      try {
-        return await deploymentApi.pause(id)
-      } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to pause deployment'
-        throw err
-      } finally {
-        this.isLoading = false
-      }
+      return runRequest(requestContext(this), () => deploymentApi.pause(id), 'Failed to pause deployment')
     },
 
     /**
@@ -170,15 +157,7 @@ export const useDeploymentStore = defineStore('deployment', {
      * the detail view can attach the live stream.
      */
     async resumeDeployment(id: string) {
-      this.isLoading = true; this.error = null
-      try {
-        return await deploymentApi.resume(id)
-      } catch (err: any) {
-        this.error = err.response?.data?.detail || 'Failed to resume deployment'
-        throw err
-      } finally {
-        this.isLoading = false
-      }
+      return runRequest(requestContext(this), () => deploymentApi.resume(id), 'Failed to resume deployment')
     },
 
     resetDraft() {
@@ -242,24 +221,17 @@ export const useDeploymentStore = defineStore('deployment', {
       }))
 
       // userInputVar: { packer: {...}, terraform: {...} }
-      let userInputVarObj: any = { packer: {}, terraform: {} }
+      const userInputVarObj: any = { packer: {}, terraform: {} }
       if (this.draft.variables && typeof this.draft.variables === 'object') {
         // Detect multi-image Packer layout: such apps store Packer values nested
         // under ``draft.variables.packer[<template_key>][<name>]`` rather than
         // flat under ``draft.variables[<name>]``. Reading only flat would leave
-        // ``val`` undefined for those variables. Same detection/resolution as in
-        // ``NewDeploymentSummaryView``.
+        // ``val`` undefined for those variables. Same detection as in
+        // ``NewDeploymentSummaryView`` (``detectMultiImagePackerLayout``); the
+        // value resolution below differs on purpose (packer-only, no default).
         const draftVars = this.draft.variables as Record<string, any>
         const packerContainer = draftVars.packer
-        const isMultiImagePackerLayout =
-          packerContainer
-          && typeof packerContainer === 'object'
-          && !Array.isArray(packerContainer)
-          && Object.keys(packerContainer).length > 0
-          && Object.keys(packerContainer).every((k) => {
-            const slot = packerContainer[k]
-            return slot && typeof slot === 'object' && !Array.isArray(slot)
-          })
+        const isMultiImagePackerLayout = detectMultiImagePackerLayout(draftVars)
 
         const resolveValue = (def: AppVariable): any => {
           if (def.source === 'packer' && isMultiImagePackerLayout) {

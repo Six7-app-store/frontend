@@ -50,9 +50,13 @@ export const useAuthStore = defineStore('auth', {
               this.user = storedUser
             }
 
+            // Fire-and-forget refresh of the stored user: ``fetchMe`` already
+            // logs failures, and the stored user keeps the UI usable meanwhile.
             this.fetchMe().catch(() => {})
           }
         } catch (error) {
+          // Deliberately silent for the user: the router guard treats a
+          // failed init as "not authenticated" and redirects to login.
           console.error('Auth initialization failed:', error)
         } finally {
           this.isLoading = false
@@ -98,6 +102,8 @@ export const useAuthStore = defineStore('auth', {
       fetchMePromise = (async () => {
         try {
           this.user = await AuthService.fetchMe()
+          // Background prefetch; the credentials store records its own
+          // error state, so nothing to handle here.
           useOpenStackCredentialsStore().fetch().catch(() => {})
         } catch (error) {
           console.error('Failed to fetch user:', error)
@@ -124,6 +130,8 @@ export const useAuthStore = defineStore('auth', {
       try {
         await keycloak.logout()
       } catch (error) {
+        // Local session is already cleared above; a failed Keycloak
+        // logout must not block the user, so only log it.
         console.error('Logout failed:', error)
       }
     },

@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetailMessage, getErrorStatus, getErrorStatusText, hasErrorResponse } from '@/utils/http-error'
 import { appApi } from '@/api/app.api'
 import { useI18n } from 'vue-i18n' // <-- i18n Import hinzugefügt
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import { MAX_IMAGE_BYTES } from '@/utils/format'
+import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
 
 // Icons
 import {
@@ -62,13 +64,14 @@ const triggerFileInput = () => {
 }
 
 const processFile = (file: File) => {
-  if (!file.type.startsWith('image/')) {
+  const problem = validateImageFile(file)
+  if (problem === 'not_image') {
     toast.error(t('AppsCreateView.messages.onlyImages'))
     return
   }
-  if (file.size > MAX_IMAGE_BYTES) {
+  if (problem === 'too_large') {
     // Pass the MB value to i18n.
-    toast.error(t('AppsCreateView.messages.imageTooLarge', { size: Math.round(MAX_IMAGE_BYTES / 1024 / 1024) }))
+    toast.error(t('AppsCreateView.messages.imageTooLarge', { size: MAX_IMAGE_MB }))
     return
   }
 
@@ -108,12 +111,7 @@ const isValidGitUrl = (url: string) => {
 
 const fileToDataUrl = (file: File | null): Promise<string | null> => {
   if (!file) return Promise.resolve(null)
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null)
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
+  return readFileAsDataUrl(file)
 }
 
 const handleSubmit = async () => {
@@ -141,16 +139,21 @@ const handleSubmit = async () => {
     })
 
     toast.success(t('AppsCreateView.messages.success'))
-    router.push({ name: 'apps' })
+    router.push({ name: ROUTE_NAMES.apps })
 
   } catch (error: any) {
     console.error('API Error:', error)
 
-    if (error.response) {
-      if (error.response.status === 403 || error.response.status === 400 || error.response.status === 422) {
+    if (hasErrorResponse(error)) {
+      const status = getErrorStatus(error)
+      if (status === 403) {
         toast.error(t('AppsCreateView.messages.noAccess'))
+      } else if (status === 400 || status === 422) {
+        // Validation error, not a permission problem: show the backend's own
+        // message when it sent one.
+        toast.error(getErrorDetailMessage(error) || t('AppsCreateView.messages.validationError'))
       } else {
-        toast.error(t('AppsCreateView.messages.serverError', { statusText: error.response.statusText || 'Unknown' }))
+        toast.error(t('AppsCreateView.messages.serverError', { statusText: getErrorStatusText(error) || 'Unknown' }))
       }
     } else {
       toast.error(t('AppsCreateView.messages.networkError'))

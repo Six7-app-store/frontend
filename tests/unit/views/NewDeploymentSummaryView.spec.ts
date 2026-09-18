@@ -80,7 +80,9 @@ describe('NewDeploymentSummaryView.vue', () => {
             groupNames: ['Team Alpha'],
             variables: {
               'region': 'eu-central-1',
-              'instance_type': 't2.micro'
+              'instance_type': 't2.micro',
+              // Scoped through ``osScope`` only: one value per team.
+              'net': { 'Team Alpha': 'net-1' }
             },
             fileUploads: {
               'ssh_key': {
@@ -97,7 +99,8 @@ describe('NewDeploymentSummaryView.vue', () => {
     appStore.fetchAppVariables = vi.fn().mockResolvedValue([
       { name: 'region', source: 'packer', default: 'us-east' },
       { name: 'instance_type', source: 'terraform', default: 't2.small' },
-      { name: 'ssh_key', source: 'terraform', osType: 'file', osScope: 'user' }
+      { name: 'ssh_key', source: 'terraform', osType: 'file', osScope: 'user' },
+      { name: 'net', source: 'terraform', osType: 'network', osScope: 'team' }
     ])
 
     const deploymentStore = useDeploymentStore()
@@ -150,6 +153,27 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(wrapper.text()).toContain('1 KB') // Formatierte Dateigröße
   })
 
+  it('meldet einen Objekt-detail beim Laden der Nutzer als eigenen Text', async () => {
+    vi.mocked(userApi.list).mockRejectedValue({ response: { data: { detail: { reason: 'forbidden' } } } })
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const toastStore = useToastStore()
+    const deployBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.actions.deploy'))
+    await deployBtn?.trigger('click')
+    await flushPromises()
+
+    expect(toastStore.error).toHaveBeenCalledWith('deployment.summary.fetchUsersError', undefined)
+  })
+
+  it('renders a variable scoped through osScope per slot', async () => {
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Team Alpha: OS-Name-net-1')
+    expect(wrapper.text()).not.toContain('[object Object]')
+  })
+
   it('navigates back to variables step when Back or Edit button is clicked', async () => {
     const wrapper = createWrapper()
     await flushPromises()
@@ -188,10 +212,7 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(deploymentStore.resetDraft).toHaveBeenCalled()
     
     // Erfolgs-Toast gesendet?
-    expect(toastStore.addToast).toHaveBeenCalledWith({
-      message: 'deployment.summary.submitSuccess',
-      type: 'success'
-    })
+    expect(toastStore.success).toHaveBeenCalledWith('deployment.summary.submitSuccess', undefined)
 
     // Routing zur Liste
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployments.list' })
@@ -223,10 +244,7 @@ describe('NewDeploymentSummaryView.vue', () => {
     await flushPromises()
 
     // Prüft ob der Error-Formatter korrekt gearbeitet hat
-    expect(toastStore.addToast).toHaveBeenCalledWith({
-      message: 'deployment.summary.errors.fileTooLarge', // Der i18n Key, den die Methode zurückgibt
-      type: 'error'
-    })
+    expect(toastStore.error).toHaveBeenCalledWith('deployment.summary.errors.fileTooLarge', undefined) // Der i18n Key, den die Methode zurückgibt
     
     // Da es fehlgeschlagen ist, sollte nicht weitergeleitet werden
     expect(routerPushMock).not.toHaveBeenCalledWith({ name: 'deployments.list' })

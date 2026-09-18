@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest'
 
-import { extractErrorMessage } from '@/utils/http-error'
+import {
+  extractErrorMessage,
+  getErrorDetail,
+  getErrorDetailMessage,
+  getErrorReason,
+  getErrorStatus,
+  getErrorStatusText,
+  hasErrorResponse,
+} from '@/utils/http-error'
 
 describe('extractErrorMessage', () => {
   it('returns a string detail verbatim', () => {
@@ -30,5 +38,72 @@ describe('extractErrorMessage', () => {
   it('returns a generic string when nothing is available', () => {
     expect(extractErrorMessage({})).toBe('Unknown error')
     expect(extractErrorMessage(null)).toBe('Unknown error')
+  })
+})
+
+describe('error accessors', () => {
+  const axiosLike = (status: number, detail: unknown) => ({ message: 'Request failed', response: { status, data: { detail } } })
+
+  it('reads the HTTP status', () => {
+    expect(getErrorStatus(axiosLike(409, 'busy'))).toBe(409)
+    expect(getErrorStatus({ message: 'Network Error' })).toBeUndefined()
+  })
+
+  it('returns the raw detail (string, object or undefined)', () => {
+    expect(getErrorDetail(axiosLike(400, 'Boom'))).toBe('Boom')
+    const detail = { reason: 'r', active_deployments: 2 }
+    expect(getErrorDetail(axiosLike(409, detail))).toBe(detail)
+    expect(getErrorDetail({ response: { status: 500 } })).toBeUndefined()
+  })
+
+  it('reads detail.reason only from structured detail', () => {
+    expect(getErrorReason(axiosLike(503, { reason: 'smtp_disabled' }))).toBe('smtp_disabled')
+    expect(getErrorReason(axiosLike(400, 'plain string'))).toBeUndefined()
+    expect(getErrorReason(axiosLike(400, { message: 'm' }))).toBeUndefined()
+  })
+
+  it('tells server answers from network errors and reads the status text', () => {
+    expect(hasErrorResponse({ response: { status: 500, statusText: 'Internal Server Error' } })).toBe(true)
+    expect(getErrorStatusText({ response: { status: 500, statusText: 'Internal Server Error' } })).toBe('Internal Server Error')
+    expect(hasErrorResponse({ message: 'Network Error' })).toBe(false)
+    expect(getErrorStatusText({ message: 'Network Error' })).toBeUndefined()
+  })
+
+  it.each([null, undefined, 'boom', 42, new Error('x')])('tolerates non-axios values (%s)', (value) => {
+    expect(hasErrorResponse(value)).toBe(false)
+    expect(getErrorStatusText(value)).toBeUndefined()
+    expect(getErrorStatus(value)).toBeUndefined()
+    expect(getErrorDetail(value)).toBeUndefined()
+    expect(getErrorReason(value)).toBeUndefined()
+  })
+})
+
+describe('getErrorDetailMessage', () => {
+  const axiosLike = (detail: unknown) => ({ response: { status: 400, data: { detail } } })
+
+  it('returns a string detail verbatim', () => {
+    expect(getErrorDetailMessage(axiosLike('Kurs existiert bereits'))).toBe('Kurs existiert bereits')
+  })
+
+  it('returns detail.message of a structured detail', () => {
+    expect(getErrorDetailMessage(axiosLike({ reason: 'openstack_unavailable', message: 'OpenStack antwortet nicht' })))
+      .toBe('OpenStack antwortet nicht')
+  })
+
+  it.each([
+    [{ reason: 'file_too_large', limit_bytes: 10 }],
+    [[{ loc: ['body', 'name'], msg: 'field required' }]],
+    [{}],
+    [''],
+    ['   '],
+    [undefined],
+    [null],
+  ])('returns undefined for %j so the caller can use its own message', (detail) => {
+    expect(getErrorDetailMessage(axiosLike(detail))).toBeUndefined()
+  })
+
+  it('tolerates non-axios values', () => {
+    expect(getErrorDetailMessage(new Error('boom'))).toBeUndefined()
+    expect(getErrorDetailMessage(undefined)).toBeUndefined()
   })
 })

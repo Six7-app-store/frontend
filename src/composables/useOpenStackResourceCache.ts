@@ -71,12 +71,15 @@ function getFresh(osType: OsResourceType): CacheEntry | null {
  * their own error UI.
  */
 export async function ensureLoaded(osType: OsResourceType): Promise<void> {
-  const fresh = getFresh(osType)
-  if (fresh && !fresh.loading) return
-  if (fresh?.loading) {
-    await fresh.loading
+  // Check the pending load first: its placeholder entry carries ``loadedAt: 0``
+  // and would look stale to the TTL check below, so parallel callers would
+  // start their own fetch instead of waiting.
+  const pending = cache.get(osType)?.loading
+  if (pending) {
+    await pending
     return
   }
+  if (getFresh(osType)) return
 
   const loading = (async () => {
     try {

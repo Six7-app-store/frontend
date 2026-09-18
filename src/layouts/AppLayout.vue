@@ -16,7 +16,8 @@ import {
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/composables/useAuth'
-import { useRole } from '@/composables/useRole'
+import { useRouteAccess } from '@/composables/useRouteAccess'
+import { ROUTE_NAMES } from '@/router/route-names'
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -25,13 +26,14 @@ import logo from '@/assets/Six7-white-withoutBackground.png'
 const { locale, t } = useI18n()
 const authStore = useAuthStore()
 const { logout } = useAuth()
-const { isAdmin, isStaff } = useRole()
+const { canAccess } = useRouteAccess()
 const route = useRoute()
 
 const userName = computed(() => authStore.user?.username || 'User')
 const userInitial = computed(() => (authStore.user?.username ?? 'U').charAt(0).toUpperCase())
 
-const isMeshBgActive = computed(() => route.name === 'dashboard' || route.path === '/')
+// Background and header title come from the route table's ``meta``.
+const isMeshBgActive = computed(() => !!route.meta.useMeshBg)
 
 const sidebarCollapsed = ref(false)
 const userMenuOpen = ref(false)
@@ -44,17 +46,8 @@ onMounted(() => document.addEventListener('click', closeUserMenu))
 onBeforeUnmount(() => document.removeEventListener('click', closeUserMenu))
 
 const pageTitle = computed(() => {
-  const name = route.name as string | undefined
-  const path = route.path as string
-
-  if (name === 'dashboard' || name === 'home' || path === '/') return t('nav.dashboard')
-  if (name?.startsWith('deployments') || path.startsWith('/deployments')) return t('nav.deployments')
-  if (name?.startsWith('apps') || path.startsWith('/apps')) return t('nav.apps')
-  if (name === 'courses' || path === '/courses' || path.startsWith('/courses')) return t('nav.courses')
-  if (name === 'help' || path === '/help') return t('nav.help')
-  if (name === 'config') return t('nav.config')
-  if (name === 'admin.apps') return t('nav.approvals')
-  return ''
+  const titleKey = route.meta.titleKey as string | undefined
+  return titleKey ? t(titleKey) : ''
 })
 
 const changeLocale = (lang: string) => {
@@ -62,14 +55,22 @@ const changeLocale = (lang: string) => {
   localStorage.setItem('locale', lang)
 }
 
+// Which item is highlighted: the section a route belongs to, taken from its
+// ``meta.titleKey`` (the same key the item is labelled with). ``RouterLink``'s
+// own active class only covers the link target and its child routes, so
+// "Dashboard" was inactive under ``/dashboard`` and "Apps"/"Kurse" on their
+// detail pages.
+const isNavItemActive = (item: { label: string }) => route.meta.titleKey === item.label
+
+// Visibility follows the route's ``meta.requiresRole`` (``useRouteAccess``).
 const navItems = computed(() => [
-  { to: '/', label: 'nav.dashboard', icon: LayoutDashboard },
-  { to: { name: 'deployments.list' }, label: 'nav.deployments', icon: BarChart3 },
-  { to: '/apps', label: 'nav.apps', icon: Layers },
-  { to: '/courses', label: 'nav.courses', icon: GraduationCap, visible: isStaff.value },
-  { to: '/admin/apps', label: 'nav.approvals', icon: ShieldCheck, visible: isAdmin.value },
-  { to: '/help', label: 'nav.help', icon: HelpCircle },
-].filter(item => item.visible !== false))
+  { to: { name: ROUTE_NAMES.home }, label: 'nav.dashboard', icon: LayoutDashboard },
+  { to: { name: ROUTE_NAMES.deploymentsList }, label: 'nav.deployments', icon: BarChart3 },
+  { to: { name: ROUTE_NAMES.apps }, label: 'nav.apps', icon: Layers },
+  { to: { name: ROUTE_NAMES.courses }, label: 'nav.courses', icon: GraduationCap },
+  { to: { name: ROUTE_NAMES.adminApps }, label: 'nav.approvals', icon: ShieldCheck },
+  { to: { name: ROUTE_NAMES.help }, label: 'nav.help', icon: HelpCircle },
+].filter(item => canAccess(item.to)))
 </script>
 
 <template>
@@ -83,7 +84,7 @@ const navItems = computed(() => [
 
       <!-- Logo area -->
       <div class="h-16 flex items-center border-b border-white/10 px-3" style="overflow: visible;">
-        <RouterLink to="/" class="block" style="height: 48px; width: 100%; overflow: visible;">
+        <RouterLink :to="{ name: ROUTE_NAMES.home }" class="block" style="height: 48px; width: 100%; overflow: visible;">
           <img :src="logo" alt="SIX7 Click'n Deploy" style="position: relative; z-index: 30; height: 96px; margin-top: -24px; margin-left: -8px; max-width: none;" />
         </RouterLink>
       </div>
@@ -106,8 +107,8 @@ const navItems = computed(() => [
           :key="item.label"
           :to="item.to"
           class="nav-link group"
-          :class="sidebarCollapsed ? 'nav-link-collapsed' : ''"
-          active-class="nav-link-active"
+          :class="[sidebarCollapsed ? 'nav-link-collapsed' : '', isNavItemActive(item) ? 'nav-link-active' : '']"
+          active-class=""
         >
           <span class="nav-indicator" />
           <component :is="item.icon" :size="21" class="flex-shrink-0 opacity-70 group-[.nav-link-active]:opacity-100" />
@@ -186,7 +187,7 @@ const navItems = computed(() => [
                 class="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50"
               >
                 <RouterLink
-                  to="/user"
+                  :to="{ name: ROUTE_NAMES.user }"
                   @click="userMenuOpen = false"
                   class="flex items-center gap-2.5 px-3.5 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                 >

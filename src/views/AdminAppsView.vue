@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
@@ -103,6 +104,7 @@ const loadApprovals = async (appId: string) => {
     submissionCountMap.value[appId] = res.data.length
     pendingCountMap.value[appId] = res.data.filter(a => a.status === 'pending').length
   } catch {
+    // Treat unloadable approvals as none; the row stays usable.
     approvalsMap.value[appId] = []
   } finally {
     loadingMap.value[appId] = false
@@ -303,7 +305,7 @@ onMounted(loadAll)
 
           <!-- Link to app detail -->
           <RouterLink
-            :to="{ name: 'apps.detail', params: { id: app.appId } }"
+            :to="{ name: ROUTE_NAMES.appsDetail, params: { id: app.appId } }"
             class="text-gray-400 hover:text-primary transition-colors p-1 rounded"
             :title="$t('AdminAppsView.goToApp')"
             @click.stop

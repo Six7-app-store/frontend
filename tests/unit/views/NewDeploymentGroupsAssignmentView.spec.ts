@@ -51,14 +51,15 @@ describe('NewDeploymentTeamsView.vue', () => {
     } as any)
   })
 
-  function createWrapper(customDraftState = {}) {
+  function createWrapper(customDraftState = {}, extraCacheEntries: Array<[string, any]> = []) {
     const pinia = createTestingPinia({
       createSpy: vi.fn,
       initialState: {
         deployment: {
           studentCache: new Map([
             ['u1', { userId: 'u1', firstName: 'John', lastName: 'Doe' }],
-            ['u2', { userId: 'u2', firstName: 'Jane', lastName: 'Smith' }]
+            ['u2', { userId: 'u2', firstName: 'Jane', lastName: 'Smith' }],
+            ...extraCacheEntries
           ]),
           draft: {
             studentIds: ['u1', 'u2'],
@@ -99,6 +100,29 @@ describe('NewDeploymentTeamsView.vue', () => {
     expect(routerReplaceMock).toHaveBeenCalledWith({ name: 'deployment.config' })
   })
 
+  it('shows the name of a student loaded by Keycloak ID (backend userId differs)', async () => {
+    vi.mocked(userApi.getById).mockResolvedValue({
+      data: { userId: 'u-db-3', keycloak_id: 'kc-3', firstName: 'Kira', lastName: 'Keycloak' }
+    } as any)
+    const wrapper = createWrapper({ studentIds: ['u1', 'kc-3'] })
+    await flushPromises()
+
+    expect(userApi.getById).toHaveBeenCalledWith('kc-3')
+    expect(wrapper.text()).toContain('Kira Keycloak')
+    expect(wrapper.text()).not.toContain('kc-3')
+  })
+
+  it('finds a cached student stored under another key by its Keycloak ID', async () => {
+    const wrapper = createWrapper(
+      { studentIds: ['u1', 'kc-9'] },
+      [['u-db-9', { userId: 'u-db-9', keycloak_id: 'kc-9', firstName: 'Cached', lastName: 'Person' }]]
+    )
+    await flushPromises()
+
+    expect(userApi.getById).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Cached Person')
+  })
+
   it('renders correctly with unassigned students', async () => {
     const wrapper = createWrapper()
     await flushPromises()
@@ -128,6 +152,21 @@ describe('NewDeploymentTeamsView.vue', () => {
     expect(store.draft.groupMode).toBe('one')
     expect(store.draft.groupCount).toBe(1)
     expect(store.draft.assignments[0]).toEqual(['u1', 'u2']) // Beide im ersten Array
+  })
+
+  it.each([
+    ['einen eigenen Namen behält', 'Team Rot', 'Team Rot'],
+    ['einen Standardnamen ersetzt', 'Team 2', 'Team 1'],
+    ['einen leeren Namen ersetzt', '   ', 'Team 1'],
+  ])('"One Group" %s', async (_label, given, expected) => {
+    const wrapper = createWrapper({ groupNames: [given, 'Team 2'] })
+    await flushPromises()
+    const store = useDeploymentStore()
+
+    const oneGroupBtn = wrapper.findAll('button').find(b => b.text() === 'deployment.groups.one')
+    await oneGroupBtn?.trigger('click')
+
+    expect(store.draft.groupNames).toEqual([expected])
   })
 
   it('assigns one student per group when "Each User" mode is selected', async () => {
@@ -164,6 +203,23 @@ describe('NewDeploymentTeamsView.vue', () => {
     const minusBtn = buttons.find(b => b.html().includes('lucide-minus'))
     await minusBtn?.trigger('click')
     expect(store.draft.groupCount).toBe(2)
+  })
+
+  it('moves the students of a removed group back to the unassigned pool', async () => {
+    const wrapper = createWrapper({
+      studentIds: ['u1', 'u2', 'u3'],
+      assignments: [['u1'], ['u2'], ['u3']],
+      groupCount: 3
+    })
+    await flushPromises()
+    const store = useDeploymentStore()
+
+    const minusBtn = wrapper.findAll('button').find(b => b.html().includes('lucide-minus'))
+    await minusBtn?.trigger('click')
+
+    expect(store.draft.groupCount).toBe(2)
+    expect(store.draft.assignments).toEqual([['u1'], ['u2']])
+    expect(wrapper.text()).not.toContain('deployment.assignment.allAssigned')
   })
 
   it('removes a student from a group when clicking the X button', async () => {

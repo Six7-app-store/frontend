@@ -1,16 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
-import DeploymentsListView from '@/views/DeploymentsListView.vue' // Falls '@' zickt: '../../../src/views/DeploymentsView.vue'
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
+
+import DeploymentsListView from '@/views/DeploymentsListView.vue'
 
 // ---------------------------------------------------------
 // 1. Mocks & Setup
 // ---------------------------------------------------------
-
-vi.mock('lucide-vue-next', () => ({
-  BarChart3: { template: '<span class="icon-barchart" />' },
-  CircleArrowRight: { template: '<span class="icon-arrow" />' },
-  Loader2: { template: '<span class="icon-loader" />' }
-}))
 
 let mockDeployments: any[] = []
 let mockDeploymentsLoading = false
@@ -34,14 +29,21 @@ vi.mock('@/stores/app.store', () => ({
   })
 }))
 
+const makeDeployment = (overrides: Record<string, any> = {}) => ({
+  deploymentId: 'dep-1',
+  appId: 'app-123',
+  status: 'success',
+  name: 'Dep 1',
+  releaseTag: 'v1',
+  created_at: '2026-06-08T15:30:00Z',
+  ...overrides
+})
+
 // ---------------------------------------------------------
 // 2. Die Tests
 // ---------------------------------------------------------
 
-// TODO: Tests gegen die neue View-Struktur neu schreiben (main hat
-// die Liste auf PageHeader + EntityListState + Card umgebaut). Bis
-// dahin geskippt.
-describe.skip('DeploymentsListView.vue', () => {
+describe('DeploymentsListView.vue', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -57,76 +59,93 @@ describe.skip('DeploymentsListView.vue', () => {
           $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
         },
         stubs: {
-          RouterLink: true,
-          BaseButton: { template: '<button><slot /></button>' },
-          BackCard: { template: '<div><slot /></div>' }
+          RouterLink: RouterLinkStub
         }
       }
     })
   }
 
   // --- 1. Lifecycle & API Calls ---
+
   it('lädt alle notwendigen Daten beim Starten der View', async () => {
     mountComponent()
     await flushPromises()
+
     expect(mockFetchDeployments).toHaveBeenCalledTimes(1)
     expect(mockFetchApps).toHaveBeenCalledTimes(1)
   })
 
-  // --- 2. Logik-Tests über das Template (Ersetzt die vm-Aufrufe) ---
+  // --- 2. Karteninhalt ---
 
-  it('getAppName: mappt die appId korrekt auf den App-Namen im Template', () => {
-    mockDeployments = [{ deploymentId: '1', appId: 'app-123', status: 'success', name: 'Dep 1', releaseTag: 'v1', created_at: '2026-06-08T15:30:00Z' }]
+  it('zeigt Name, App-Name, Release-Tag und Datum je Deployment', () => {
+    mockDeployments = [makeDeployment()]
     mockApps = [{ appId: 'app-123', name: 'Mein Backend' }]
 
-    const wrapper = mountComponent()
-    
-    expect(wrapper.text()).toContain('Mein Backend')
+    const text = mountComponent().text()
+
+    expect(text).toContain('Dep 1')
+    expect(text).toContain('Mein Backend')
+    expect(text).toContain('v1')
+    expect(text).toContain('08.06.2026')
   })
 
-  it('getAppName: zeigt "-", wenn die App nicht gefunden wird', () => {
-    mockDeployments = [{ deploymentId: '1', appId: 'unbekannt', status: 'success', name: 'Dep 1', releaseTag: 'v1', created_at: '2026-06-08T15:30:00Z' }]
-    mockApps = [] // Keine Apps geladen
+  it('zeigt "-", wenn die App zur appId nicht geladen ist', () => {
+    mockDeployments = [makeDeployment({ appId: 'unbekannt' })]
+    mockApps = []
 
-    const wrapper = mountComponent()
-    
-    expect(wrapper.text()).toContain('-')
+    expect(mountComponent().text()).toContain('-')
   })
 
-  it('formatDate: formatiert das Datum korrekt im Template', () => {
-    mockDeployments = [{ deploymentId: '1', appId: '1', status: 'success', name: 'Dep 1', releaseTag: 'v1', created_at: '2026-06-08T15:30:00Z' }]
-    
-    const wrapper = mountComponent()
-    
-    // Wir prüfen, ob das formatierte Datum im HTML landet
-    expect(wrapper.text()).toContain('08.06.2026')
+  it('verlinkt jede Karte auf die Detailseite', () => {
+    mockDeployments = [makeDeployment({ deploymentId: 'dep-42' })]
+
+    const links = mountComponent().findAllComponents(RouterLinkStub)
+
+    expect(links.some((link) => {
+      const to = link.props('to') as any
+      return to?.name === 'deployments.detail' && to?.params?.id === 'dep-42'
+    })).toBe(true)
   })
 
-  it('getStatusColor: setzt die korrekten CSS-Klassen basierend auf dem Status', () => {
-    mockDeployments = [{ deploymentId: '1', appId: '1', status: 'failed', name: 'Dep 1', releaseTag: 'v1', created_at: '2026-06-08T15:30:00Z' }]
-    
-    const wrapper = mountComponent()
-    const statusSpan = wrapper.find('.capitalize') // Das Element mit :class="getStatusColor(...)"
-    
-    // Überprüft das Ergebnis von getStatusColor('failed') direkt am Element
-    expect(statusSpan.classes()).toContain('bg-red-100')
-    expect(statusSpan.classes()).toContain('text-red-800')
+  it('sortiert die Deployments mit dem neuesten zuerst', () => {
+    mockDeployments = [
+      makeDeployment({ deploymentId: 'alt', name: 'Alt', created_at: '2026-06-01T10:00:00Z' }),
+      makeDeployment({ deploymentId: 'neu', name: 'Neu', created_at: '2026-06-09T10:00:00Z' }),
+      makeDeployment({ deploymentId: 'ohne-datum', name: 'Ohne Datum', created_at: undefined })
+    ]
+
+    const names = mountComponent().findAll('h3').map((h) => h.text())
+
+    expect(names).toEqual(['Neu', 'Alt', 'Ohne Datum'])
+  })
+
+  it.each([
+    ['failed', ['bg-red-100', 'text-red-800']],
+    ['paused', ['bg-slate-100', 'text-slate-700']],
+    ['unbekannt', ['bg-gray-100', 'text-gray-800']]
+  ])('färbt den Status %s passend ein', (status, expectedClasses) => {
+    mockDeployments = [makeDeployment({ status })]
+
+    const statusSpan = mountComponent().find('.capitalize')
+
+    expect(statusSpan.text()).toBe(status)
+    for (const cls of expectedClasses) {
+      expect(statusSpan.classes()).toContain(cls)
+    }
   })
 
   // --- 3. UI-Zustände ---
 
-  it('zeigt den Loader, wenn isLoading true ist', () => {
+  it('zeigt den Loader, solange noch keine Deployments da sind', () => {
     mockDeploymentsLoading = true
-    const wrapper = mountComponent()
 
-    expect(wrapper.find('.icon-loader').exists()).toBe(true)
+    expect(mountComponent().find('.animate-spin').exists()).toBe(true)
   })
 
   it('zeigt die "Keine Deployments"-Meldung, wenn die Liste leer ist', () => {
-    mockDeploymentsLoading = false
-    mockDeployments = []
     const wrapper = mountComponent()
 
     expect(wrapper.text()).toContain('DeploymentsView.deploymentsMissingMessage')
+    expect(wrapper.find('.animate-spin').exists()).toBe(false)
   })
 })

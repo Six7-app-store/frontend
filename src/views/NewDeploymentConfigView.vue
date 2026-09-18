@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -15,6 +16,7 @@ import {
 import { courseApi } from '@/api/course.api'
 import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
+import { getErrorDetailMessage } from '@/utils/http-error'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 
@@ -81,8 +83,10 @@ const selectedStudents = computed(() => {
 // Cache for students per course (lazy loading).
 const courseStudentsCache = ref(new Map<string, any[]>())
 
-// Helper: return all student IDs of a course (lazy loading).
-async function getStudentIdsForCourse(courseId: string): Promise<string[]> {
+// Helper: return all student IDs of a course (lazy loading). Returns ``null``
+// when the list could not be loaded, so callers can tell a failed request from
+// a course without students.
+async function getStudentIdsForCourse(courseId: string): Promise<string[] | null> {
   // Check the cache.
   if (courseStudentsCache.value.has(courseId)) {
     const students = courseStudentsCache.value.get(courseId)!
@@ -98,29 +102,49 @@ async function getStudentIdsForCourse(courseId: string): Promise<string[]> {
     cacheStudents(students)
     return students.map((s: any) => s.keycloak_id)
   } catch (err) {
+    // Deliberately silent here: the caller decides what to show (the count
+    // stays at 0, a click reports the failed load).
     console.error(`Failed to load students for course ${courseId}:`, err)
-    return []
+    return null
   }
 }
 
 // Loading states for courses.
 const loadingCourseStudents = ref(new Set<string>())
 
-// Helper: return the student count per course (lazy loading).
+// At most this many course member lists are fetched at the same time. The
+// course list can hold up to 200 entries, and firing all of them at once
+// hammers the backend.
+const MAX_PARALLEL_COURSE_LOADS = 5
+
+// Helper: return the student count per course (read-only; the lists are
+// loaded by ``loadCourseStudentCounts`` after the course list arrives).
 function getStudentCountForCourse(courseId: string) {
-  if (courseStudentsCache.value.has(courseId)) {
-    return courseStudentsCache.value.get(courseId)!.length
-  }
-  // Load lazily if not loaded.
-  if (!loadingCourseStudents.value.has(courseId)) {
-    loadingCourseStudents.value.add(courseId)
-    getStudentIdsForCourse(courseId).then(() => {
+  return courseStudentsCache.value.get(courseId)?.length ?? 0
+}
+
+// Load the member list of every course that isn't cached yet, at most
+// ``MAX_PARALLEL_COURSE_LOADS`` at a time. Called once after the courses are
+// there — never from the render, which used to start one request per
+// rendered course.
+async function loadCourseStudentCounts() {
+  const queue = courses.value
+    .map((course: any) => course.courseId as string)
+    .filter((courseId) => courseId && !courseStudentsCache.value.has(courseId))
+  queue.forEach((courseId) => loadingCourseStudents.value.add(courseId))
+
+  const worker = async () => {
+    while (queue.length > 0) {
+      const courseId = queue.shift()!
+      // ``getStudentIdsForCourse`` handles its own errors; the marker is
+      // cleared either way.
+      await getStudentIdsForCourse(courseId)
       loadingCourseStudents.value.delete(courseId)
-    }).catch(() => {
-      loadingCourseStudents.value.delete(courseId)
-    })
+    }
   }
-  return 0 // placeholder while loading
+  await Promise.all(
+    Array.from({ length: Math.min(MAX_PARALLEL_COURSE_LOADS, queue.length) }, worker)
+  )
 }
 
 // Course checkbox: checked when all students of the course are selected.
@@ -135,6 +159,10 @@ function isCourseSelected(courseId: string) {
 // Course checkbox toggle: select/deselect all students of the course.
 const toggleCourse = async (courseId: string) => {
   const studentIds = await getStudentIdsForCourse(courseId)
+  if (studentIds === null) {
+    toast.error(t('CourseDetailView.toasts.loadUsersError'))
+    return
+  }
   if (studentIds.length === 0) {
     toast.warning(t('CourseDetailView.addModal.noUsersFound'))
     return
@@ -198,15 +226,15 @@ const handleNext = () => {
     toast.warning(t('deployment.errors.missingStudents'))
     return
   }
-  router.push({ name: 'deployment.teams' })
+  router.push({ name: ROUTE_NAMES.deploymentTeams })
 }
 
 const handleBack = () => {
   const appId = store.draft.appId
   if (appId) {
-    router.push({ name: 'apps.detail', params: { id: appId } })
+    router.push({ name: ROUTE_NAMES.appsDetail, params: { id: appId } })
   } else {
-    router.push('/apps')
+    router.push({ name: ROUTE_NAMES.apps })
   }
 }
 
@@ -217,7 +245,7 @@ async function loadCourses() {
   try {
     const res = await courseApi.list(0, 200)
     courses.value = res.data || []
-  } catch (err) {
+  } catch {
     coursesError.value = t('CoursesView.toasts.loadError')
     toast.error(coursesError.value)
   } finally {
@@ -234,7 +262,7 @@ async function loadAllStudents() {
     allStudents.value = res.data || []
     students.value = allStudents.value
     cacheStudents(allStudents.value)
-  } catch (err) {
+  } catch {
     studentsError.value = t('CourseDetailView.toasts.loadUsersError')
     toast.error(studentsError.value)
   } finally {
@@ -244,6 +272,16 @@ async function loadAllStudents() {
 
 // Search with debouncing.
 let searchTimer: number | undefined
+// Id of the toast the last failed search produced. Only this one is dismissed
+// when the next search runs — ``toast.clear()`` would also drop unrelated
+// toasts (e.g. the missing-credentials warning).
+let searchErrorToastId: string | null = null
+const dismissSearchError = () => {
+  if (searchErrorToastId !== null) {
+    toast.remove(searchErrorToastId)
+    searchErrorToastId = null
+  }
+}
 watch(studentSearchQuery, (val) => {
   if (searchTimer) window.clearTimeout(searchTimer)
   searchTimer = window.setTimeout(async () => {
@@ -252,13 +290,13 @@ watch(studentSearchQuery, (val) => {
     // Empty query: show the initial list (no extra API call).
     if (!q) {
       students.value = allStudents.value
-      toast.clear()
+      dismissSearchError()
       return
     }
 
     // Query too short: keep the current list (no flicker).
     if (q.length < 2) {
-      toast.clear()
+      dismissSearchError()
       return
     }
 
@@ -266,14 +304,14 @@ watch(studentSearchQuery, (val) => {
     try {
       loadingStudents.value = true
       const res = await userApi.search(q, 50)
-      toast.clear()
+      dismissSearchError()
       students.value = res.data || []
       cacheStudents(students.value) // Cache new students (keyed by keycloak_id)
     } catch (err) {
       console.error('User search error:', err)
       const e: any = err
-      const msg = e?.response?.data?.detail || e?.message || t('CourseDetailView.toasts.loadUsersError')
-      toast.error(msg)
+      const msg = getErrorDetailMessage(e) || e?.message || t('CourseDetailView.toasts.loadUsersError')
+      searchErrorToastId = toast.error(msg)
     } finally {
       loadingStudents.value = false
     }
@@ -285,6 +323,7 @@ onMounted(async () => {
   // Ensure cred state is fresh; banner branch shows when missing
   if (!credStore.status) await credStore.fetch()
   await loadCourses()
+  loadCourseStudentCounts()
   await loadAllStudents()
 })
 </script>
@@ -309,8 +348,8 @@ onMounted(async () => {
         :title="t('AppsDetailView.missingCredsTitle')"
         :message="t('AppsDetailView.missingCredsText')"
         :cta="t('AppsDetailView.missingCredsLink')"
-        ctaTo="/user/openstack"
-        next="/deployment/new/config"
+        :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
+        :next="{ name: ROUTE_NAMES.deploymentConfig }"
         class="mb-6"
       />
 

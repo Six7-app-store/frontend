@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted, computed } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Card from '@/components/ui/Card.vue'
@@ -10,10 +11,10 @@ import { useRouter } from 'vue-router'
 import { appApi } from '@/api/app.api'
 import { useI18n } from 'vue-i18n'
 import {
-  Layers, Server, Box, Database, Terminal,
-  Globe, LayoutTemplate, Shield, Inbox, Plus, Lock
+  Globe, Inbox, Plus, Lock
 } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import { iconForAppName } from '@/services/app-presentation.service'
 import { useAuthStore } from '@/stores/auth.store'
 import type { AppVersionApproval } from '@/types'
 
@@ -35,17 +36,7 @@ const filteredApps = computed(() => {
   return apps.value.filter(a => !a.is_private)
 })
 
-const getIconForApp = (app: any) => {
-  const name = (app.name || '').toLowerCase()
-  if (name.includes('node')) return Server
-  if (name.includes('vue') || name.includes('front')) return LayoutTemplate
-  if (name.includes('react')) return Globe
-  if (name.includes('python') || name.includes('jupyter') || name.includes('fastapi')) return Box
-  if (name.includes('postgres') || name.includes('sql') || name.includes('data')) return Database
-  if (name.includes('docker') || name.includes('container')) return Terminal
-  if (name.includes('security') || name.includes('pen')) return Shield
-  return Layers
-}
+const getIconForApp = (app: any) => iconForAppName(app.name)
 
 const isOwnApp = (app: any) => String(app.userId) === String(authStore.userId)
 
@@ -70,6 +61,7 @@ const fetchApps = async () => {
           const res = await appApi.listVersionApprovals(app.appId)
           approvalsMap.value[app.appId] = res.data
         } catch {
+          // Without approvals the card just shows no approval badge.
           approvalsMap.value[app.appId] = []
         }
       })
@@ -84,7 +76,7 @@ const fetchApps = async () => {
 }
 
 const handleDeploy = (app: any) => {
-  router.push({ name: 'apps.detail', params: { id: app.id || app._id || app.appId } })
+  router.push({ name: ROUTE_NAMES.appsDetail, params: { id: app.id || app._id || app.appId } })
 }
 
 onMounted(() => {
@@ -123,7 +115,7 @@ onMounted(() => {
           </button>
         </div>
 
-        <RouterLink :to="{ name: 'apps.create' }">
+        <RouterLink :to="{ name: ROUTE_NAMES.appsCreate }">
           <BaseButton class="flex items-center gap-2">
             <Plus :size="16" />
             {{ $t('AppsView.addApp') }}
@@ -140,7 +132,7 @@ onMounted(() => {
       :loading-message="$t('AppsView.loading')"
     >
       <template #empty-action>
-        <RouterLink v-if="visibilityFilter === 'all'" :to="{ name: 'apps.create' }">
+        <RouterLink v-if="visibilityFilter === 'all'" :to="{ name: ROUTE_NAMES.appsCreate }">
           <BaseButton class="flex items-center gap-2">
             <Plus :size="16" />
             {{ $t('AppsView.addApp') }}

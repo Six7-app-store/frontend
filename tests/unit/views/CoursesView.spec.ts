@@ -3,6 +3,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 
 import CoursesView from '@/views/CoursesView.vue'
+import de from '@/i18n/locales/de'
 
 // ---------------------------------------------------------
 // 1. Mocks & Setup
@@ -21,6 +22,10 @@ vi.mock('vue-i18n', () => ({
     })
 }))
 
+// Echtes vue-i18n nur für die ``<i18n-t>``-Komponente im Template; ``useI18n``
+// bleibt oben gemockt.
+const { createI18n } = await vi.importActual<typeof import('vue-i18n')>('vue-i18n')
+
 // Toast
 const mockToastError = vi.fn()
 const mockToastSuccess = vi.fn()
@@ -29,7 +34,7 @@ vi.mock('@/composables/useToast', () => ({
 }))
 
 // Rechteverwaltung (Permissions) flexibel mocken
-let mockCan = {
+const mockCan = {
     createCourse: { value: true },
     editCourse: { value: true },
     deleteCourse: { value: true }
@@ -58,11 +63,13 @@ const mockCreateCourse = vi.fn()
 const mockDeleteCourse = vi.fn()
 let mockCourses: any[] = []
 let mockIsLoading = false
+let mockStoreError: string | null = null
 
 vi.mock('@/stores/course.store', () => ({
     useCourseStore: () => ({
         get courses() { return mockCourses },
         get isLoading() { return mockIsLoading },
+        get error() { return mockStoreError },
         fetchCourses: mockFetchCourses,
         createCourse: mockCreateCourse,
         deleteCourse: mockDeleteCourse
@@ -81,6 +88,7 @@ describe('CoursesView.vue', () => {
         // Standard-Zustand für Tests zurücksetzen
         mockCourses = []
         mockIsLoading = false
+        mockStoreError = null
         mockCan.createCourse.value = true
         mockCan.editCourse.value = true
         mockCan.deleteCourse.value = true
@@ -92,6 +100,7 @@ describe('CoursesView.vue', () => {
     const mountComponent = () => {
         return mount(CoursesView, {
             global: {
+                plugins: [createI18n({ legacy: false, locale: 'de', messages: { de } })],
                 // HIER KORRIGIERT: Beachtet jetzt Variablen im Template!
                 mocks: {
                     $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
@@ -139,6 +148,18 @@ describe('CoursesView.vue', () => {
 
     // --- 2. Daten anzeigen & Mitglieder laden ---
 
+    it('zeigt einen Fehler-Toast, wenn der Store beim Laden einen Fehler meldet', async () => {
+        // ``fetchCourses`` wirft nicht (rethrow: false), sondern hinterlegt den
+        // Fehler nur im Store.
+        mockStoreError = 'Failed to fetch courses'
+
+        mountComponent()
+        await flushPromises()
+
+        expect(mockToastError).toHaveBeenCalledWith('CoursesView.toasts.loadError')
+        expect(courseApi.listMembers).not.toHaveBeenCalled()
+    })
+
     it('rendert Kurse und holt die Mitgliederanzahl', async () => {
         mockCourses = [
             { courseId: 'c-1', name: 'Vue JS Kurs' },
@@ -170,7 +191,7 @@ describe('CoursesView.vue', () => {
         const card = wrapper.find('.stub-card')
         await card.trigger('click')
 
-        expect(mockPush).toHaveBeenCalledWith({ path: '/courses/c-99' })
+        expect(mockPush).toHaveBeenCalledWith({ name: 'courses.detail', params: { id: 'c-99' } })
     })
 
     // --- 3. Rechteverwaltung (Permissions) ---
@@ -220,7 +241,7 @@ describe('CoursesView.vue', () => {
 
         expect(mockCreateCourse).toHaveBeenCalledWith({ name: 'Mein neuer Kurs' })
         expect(mockToastSuccess).toHaveBeenCalledWith('CoursesView.toasts.createSuccess')
-        expect(mockPush).toHaveBeenCalledWith('/courses/new-c-1')
+        expect(mockPush).toHaveBeenCalledWith({ name: 'courses.detail', params: { id: 'new-c-1' } })
     })
 
     it('zeigt einen Fehler an, wenn das Erstellen fehlschlägt', async () => {
@@ -234,6 +255,19 @@ describe('CoursesView.vue', () => {
         await flushPromises()
 
         expect(mockToastError).toHaveBeenCalledWith('Backend Error')
+    })
+
+    it('zeigt den eigenen Text statt [object Object], wenn detail ein Objekt ist', async () => {
+        mockCreateCourse.mockRejectedValue({ response: { data: { detail: { reason: 'course_exists' } } } })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        ;(wrapper.vm as any).formData.name = 'Fail Kurs'
+        ;(wrapper.vm as any).saveCourse()
+        await flushPromises()
+
+        expect(mockToastError).toHaveBeenCalledWith('CoursesView.toasts.createError')
     })
 
     // --- 5. Löschen (Modal & API) ---
@@ -260,5 +294,21 @@ describe('CoursesView.vue', () => {
         expect(mockDeleteCourse).toHaveBeenCalledWith('c-77')
         expect(mockToastSuccess).toHaveBeenCalledWith('CoursesView.toasts.deleteSuccess')
         expect((wrapper.vm as any).courseToDelete).toBeNull()
+    })
+
+    it('rendert den Kursnamen im Löschen-Modal als Text, nicht als HTML', async () => {
+        const evilName = '<img src=x onerror="alert(1)">'
+        mockCourses = [{ courseId: 'c-66', name: evilName }]
+        ;(courseApi.listMembers as any).mockResolvedValue({ data: [] })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        await wrapper.find('button[title="CoursesView.deleteTitle"]').trigger('click')
+        await nextTick()
+
+        const modal = wrapper.find('.modal')
+        expect(modal.find('img').exists()).toBe(false)
+        expect(modal.find('strong').text()).toBe(evilName)
     })
 })

@@ -14,12 +14,24 @@ vi.mock('vue-i18n', () => ({
     })
 }))
 
-// Router
+// Router: ``push`` ist ein Spy, ``resolve`` kommt von einem echten Router mit
+// einer kleinen Routentabelle (für die Prüfung des ``next``-Redirects).
 const mockPush = vi.fn()
+const routeState = vi.hoisted(() => ({ query: {} as Record<string, unknown> }))
 vi.mock('vue-router', () => ({
-    useRoute: () => ({ query: {} }),
-    useRouter: () => ({ push: mockPush })
+    useRoute: () => ({ query: routeState.query }),
+    useRouter: () => ({ push: mockPush, resolve: (to: string) => realRouter.resolve(to) })
 }))
+const { createRouter, createMemoryHistory } = await vi.importActual<typeof import('vue-router')>('vue-router')
+const realRouter = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+        { path: '/deployment/new/config', name: 'deployment.config', component: { template: '<div />' } },
+        { path: '/dashboard', name: 'dashboard', component: { template: '<div />' } },
+        // Wie in der echten Routentabelle: Catch-all für unbekannte URLs.
+        { path: '/:pathMatch(.*)*', name: 'not-found', component: { template: '<div />' } },
+    ],
+})
 
 // Toasts
 const mockToastSuccess = vi.fn()
@@ -84,10 +96,9 @@ const mockConfirm = vi.fn()
 // 2. Die Tests
 // ---------------------------------------------------------
 
-// TODO: Tests gegen die neue View-Struktur neu schreiben (i18n
-// rework + UI-Refactor von PR #77 hat die DOM-Selektoren der Tests
-// gebrochen). Bis dahin geskippt.
-describe.skip('SettingsOpenStackView.vue', () => {
+// ``useI18n`` ist gemockt und liefert den Key zurück — die Assertions prüfen
+// deshalb Keys statt übersetzter Texte.
+describe('SettingsOpenStackView.vue', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
@@ -115,7 +126,8 @@ describe.skip('SettingsOpenStackView.vue', () => {
             global: {
                 stubs: {
                     CredentialMissingBanner: { template: '<div class="stub-banner">Banner</div>' },
-                    RouterLink: { template: '<a><slot /></a>' }
+                    RouterLink: { template: '<a><slot /></a>' },
+                    'i18n-t': true
                 }
             }
         })
@@ -162,7 +174,7 @@ describe.skip('SettingsOpenStackView.vue', () => {
         expect(input.attributes('disabled')).toBeDefined()
 
         // Speichern Button muss disabled sein
-        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('Speichern'))!
+        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.save'))!
         expect(saveBtn.attributes('disabled')).toBeDefined()
     })
 
@@ -173,10 +185,10 @@ describe.skip('SettingsOpenStackView.vue', () => {
         await flushPromises()
 
         // Klick auf Speichern ohne etwas einzugeben
-        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('Speichern'))!
+        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.save'))!
         await saveBtn.trigger('click')
 
-        expect(mockToastError).toHaveBeenCalledWith('Bitte fülle alle Pflichtfelder aus.')
+        expect(mockToastError).toHaveBeenCalledWith('SettingsOpenStackView.errors.missingFields', undefined)
         expect(mockSave).not.toHaveBeenCalled()
     })
 
@@ -194,7 +206,7 @@ describe.skip('SettingsOpenStackView.vue', () => {
         const pwdInput = wrapper.find('input[type="password"]')
         await pwdInput.setValue('my-secret-key')
 
-        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('Speichern'))!
+        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.save'))!
         await saveBtn.trigger('click')
         await flushPromises()
 
@@ -207,7 +219,7 @@ describe.skip('SettingsOpenStackView.vue', () => {
             identifier: 'my-app-id',
             secret: 'my-secret-key'
         })
-        expect(mockToastSuccess).toHaveBeenCalledWith('OpenStack-Credentials gespeichert und validiert.')
+        expect(mockToastSuccess).toHaveBeenCalledWith('SettingsOpenStackView.toasts.saveSuccess', undefined)
     })
 
     // --- 4. Tab Wechsel (Password Credentials) ---
@@ -217,7 +229,7 @@ describe.skip('SettingsOpenStackView.vue', () => {
         await flushPromises()
 
         // Tab wechseln
-        const pwdTab = wrapper.findAll('button').find(b => b.text().includes('Username & Passwort'))!
+        const pwdTab = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.tabs.password'))!
         await pwdTab.trigger('click')
         await flushPromises()
 
@@ -233,7 +245,7 @@ describe.skip('SettingsOpenStackView.vue', () => {
         const pwdInput = wrapper.find('input[type="password"]')
         await pwdInput.setValue('super-secret')
 
-        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('Speichern'))!
+        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.save'))!
         await saveBtn.trigger('click')
         await flushPromises()
 
@@ -261,7 +273,7 @@ describe.skip('SettingsOpenStackView.vue', () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('Löschen'))!
+        const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.status.delete'))!
         await deleteBtn.trigger('click')
 
         expect(mockConfirm).toHaveBeenCalled()
@@ -275,12 +287,12 @@ describe.skip('SettingsOpenStackView.vue', () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('Löschen'))!
+        const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.status.delete'))!
         await deleteBtn.trigger('click')
         await flushPromises()
 
         expect(mockRemove).toHaveBeenCalledTimes(1)
-        expect(mockToastSuccess).toHaveBeenCalledWith('Credentials gelöscht.')
+        expect(mockToastSuccess).toHaveBeenCalledWith('SettingsOpenStackView.status.deleteSuccess', undefined)
     })
 
     // --- 6. Datei Upload (clouds.yaml) ---
@@ -307,10 +319,187 @@ describe.skip('SettingsOpenStackView.vue', () => {
         await flushPromises()
 
         expect(parseCloudsYaml).toHaveBeenCalledWith('dummy yaml content')
-        expect(mockToastSuccess).toHaveBeenCalledWith('Daten aus clouds.yaml übernommen — bitte prüfen und speichern.')
+        expect(mockToastSuccess).toHaveBeenCalledWith('SettingsOpenStackView.cloudsYamlImported', undefined)
 
         // HIER KORRIGIERT: Type Casting als HTMLInputElement
         const urlInput = wrapper.find('input[type="url"]')
         expect((urlInput.element as HTMLInputElement).value).toBe('https://yaml.com')
+    })
+})
+
+// ---------------------------------------------------------
+// 3. Rücksprung über ``next`` nach dem Speichern
+// ---------------------------------------------------------
+
+describe('SettingsOpenStackView.vue — Rücksprung über next', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        routeState.query = {}
+        storeState = {
+            isLocked: false,
+            activeDeployments: 0,
+            loading: false,
+            hasCredential: false,
+            isValidated: false,
+            lastError: null,
+            error: null,
+            status: {}
+        }
+        mockSave.mockResolvedValue({})
+    })
+
+    const saveValidAppCredentials = async () => {
+        const wrapper = mount(SettingsOpenStackView, {
+            global: { stubs: { CredentialMissingBanner: true, 'i18n-t': true } }
+        })
+        await flushPromises()
+        await wrapper.find('input[type="url"]').setValue('https://test.com')
+        await wrapper.findAll('input[type="text"]')[1]!.setValue('my-app-id')
+        await wrapper.find('input[type="password"]').setValue('my-secret-key')
+        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.save'))!
+        await saveBtn.trigger('click')
+        await flushPromises()
+        expect(mockSave).toHaveBeenCalledTimes(1)
+    }
+
+    it('springt zu einem internen Pfad der App zurück', async () => {
+        routeState.query = { next: '/deployment/new/config' }
+        await saveValidAppCredentials()
+        expect(mockPush).toHaveBeenCalledWith('/deployment/new/config')
+    })
+
+    it.each([
+        ['protokoll-relative URL', '//evil.example'],
+        ['absolute URL', 'https://evil.example/login'],
+        ['Backslash-Trick', '/\\evil.example'],
+        ['javascript-URL', 'javascript:alert(1)'],
+        ['unbekannte Route', '/gibts-nicht'],
+        ['mehrfacher Parameter', ['/deployment/new/config', '//evil.example']],
+    ])('ignoriert next bei %s und bleibt auf der Seite', async (_label, next) => {
+        routeState.query = { next }
+        await saveValidAppCredentials()
+        expect(mockPush).not.toHaveBeenCalled()
+    })
+})
+
+// ---------------------------------------------------------
+// 4. Speichern: Formularzustand nach fehlgeschlagener Validierung
+// ---------------------------------------------------------
+
+describe('SettingsOpenStackView.vue — Speichern', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        routeState.query = {}
+        storeState = {
+            isLocked: false,
+            activeDeployments: 0,
+            loading: false,
+            hasCredential: false,
+            isValidated: false,
+            lastError: null,
+            error: null,
+            status: {}
+        }
+        mockSave.mockResolvedValue({})
+    })
+
+    const fillAndSave = async () => {
+        const wrapper = mount(SettingsOpenStackView, {
+            global: { stubs: { CredentialMissingBanner: true, 'i18n-t': true } }
+        })
+        await flushPromises()
+        await wrapper.find('input[type="url"]').setValue('https://test.com')
+        await wrapper.findAll('input[type="text"]')[1]!.setValue('my-app-id')
+        await wrapper.find('input[type="password"]').setValue('my-secret-key')
+        const saveBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.save'))!
+        await saveBtn.trigger('click')
+        await flushPromises()
+        return wrapper
+    }
+
+    it('behält das Secret, wenn die Validierung nach dem Speichern fehlschlägt', async () => {
+        storeState.lastError = 'Auth failed'
+
+        const wrapper = await fillAndSave()
+
+        expect(mockSave).toHaveBeenCalledTimes(1)
+        expect(mockToastWarning).toHaveBeenCalled()
+        expect((wrapper.find('input[type="password"]').element as HTMLInputElement).value).toBe('my-secret-key')
+    })
+
+    it('leert das Secret nach erfolgreichem Speichern', async () => {
+        const wrapper = await fillAndSave()
+
+        expect(mockToastSuccess).toHaveBeenCalled()
+        expect((wrapper.find('input[type="password"]').element as HTMLInputElement).value).toBe('')
+    })
+})
+
+// ---------------------------------------------------------
+// 5. Fehlschläge ohne Fehlertext im Store
+// ---------------------------------------------------------
+
+describe('SettingsOpenStackView.vue — Fehlschläge ohne Store-Fehlertext', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        window.confirm = mockConfirm
+        mockConfirm.mockReturnValue(true)
+        routeState.query = {}
+        storeState = {
+            isLocked: false,
+            activeDeployments: 0,
+            loading: false,
+            hasCredential: true,
+            isValidated: true,
+            lastError: null,
+            // z.B. nach einem 409: save() scheitert, der anschließende fetch()
+            // im Store setzt error wieder auf null.
+            error: null,
+            status: { has_credential: true, auth_type: 'v3applicationcredential' }
+        }
+    })
+
+    afterEach(() => {
+        window.confirm = originalConfirm
+    })
+
+    const mountView = () => mount(SettingsOpenStackView, {
+        global: { stubs: { CredentialMissingBanner: true, 'i18n-t': true } }
+    })
+
+    const clickButton = async (label: string) => {
+        const wrapper = mountView()
+        await flushPromises()
+        if (label === 'SettingsOpenStackView.save') {
+            await wrapper.find('input[type="url"]').setValue('https://test.com')
+            await wrapper.findAll('input[type="text"]')[1]!.setValue('my-app-id')
+            await wrapper.find('input[type="password"]').setValue('my-secret-key')
+        }
+        const btn = wrapper.findAll('button').find(b => b.text().includes(label))!
+        await btn.trigger('click')
+        await flushPromises()
+        return wrapper
+    }
+
+    it.each([
+        ['SettingsOpenStackView.save', () => mockSave, 'SettingsOpenStackView.errors.saveFailed'],
+        ['SettingsOpenStackView.status.retest', () => mockTest, 'SettingsOpenStackView.errors.testFailed'],
+        ['SettingsOpenStackView.status.delete', () => mockRemove, 'SettingsOpenStackView.errors.deleteFailed'],
+    ])('zeigt bei %s auch ohne Store-Fehlertext einen Fehler', async (label, getMock, expectedKey) => {
+        getMock().mockRejectedValue(new Error('boom'))
+
+        await clickButton(label)
+
+        expect(getMock()).toHaveBeenCalled()
+        expect(mockToastError).toHaveBeenCalledWith(expectedKey, undefined)
+    })
+
+    it('zeigt weiterhin den Fehlertext des Stores, wenn es einen gibt', async () => {
+        storeState.error = 'Credentials gesperrt — 2 aktive(s) Deployment(s)'
+        mockTest.mockRejectedValue(new Error('boom'))
+
+        await clickButton('SettingsOpenStackView.status.retest')
+
+        expect(mockToastError).toHaveBeenCalledWith('Credentials gesperrt — 2 aktive(s) Deployment(s)', undefined)
     })
 })
