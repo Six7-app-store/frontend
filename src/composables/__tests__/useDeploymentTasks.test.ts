@@ -7,6 +7,7 @@ vi.mock('@/api/task.api', () => ({ taskApi }))
 
 import { useDeploymentTasks } from '@/composables/useDeploymentTasks'
 import { useToastStore } from '@/stores/toast.store'
+import i18n from '@/i18n'
 import type { Task } from '@/types'
 
 const task = (taskId: string, created_at: string, status: Task['status'] = 'success') =>
@@ -98,7 +99,7 @@ describe('useDeploymentTasks', () => {
     expect(state.selectedTask.value).toBeNull()
     expect(state.loadingTaskDetail.value).toBe(false)
     expect(useToastStore().toasts.map(({ type, message }) => ({ type, message }))).toEqual([
-      { type: 'error', message: 'Failed to load task details' },
+      { type: 'error', message: i18n.global.t('DeploymentDetailView.taskDetailLoadError') },
     ])
   })
 })

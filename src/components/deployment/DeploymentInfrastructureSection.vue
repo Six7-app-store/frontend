@@ -38,13 +38,13 @@ defineEmits<{
         <div class="p-2 bg-gray-100 rounded-lg">
           <Server :size="20" class="text-gray-600" />
         </div>
-        <span class="text-lg font-semibold text-gray-900">Infrastruktur</span>
+        <span class="text-lg font-semibold text-gray-900">{{ $t('DeploymentDetailView.infrastructure') }}</span>
       </div>
       <button
         @click="$emit('refresh')"
         :disabled="resourcesLoading"
         class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-1.5 transition-colors"
-        title="Live-Status neu abfragen"
+        :title="$t('DeploymentDetailView.refreshLiveStatus')"
       >
         <RefreshCw :size="13" :class="resourcesLoading ? 'animate-spin' : ''" />
         Aktualisieren

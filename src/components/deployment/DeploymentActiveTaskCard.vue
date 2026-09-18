@@ -56,7 +56,7 @@ defineProps<{
           : streamConnectionState === 'reconnecting'
             ? 'bg-yellow-100 text-yellow-700 border border-yellow-200'
             : 'bg-gray-100 text-gray-600 border border-gray-200'">
-          {{ streamConnectionState === 'live' ? 'Stream live' : streamConnectionState }}
+          {{ streamConnectionState === 'live' ? $t('DeploymentDetailView.streamLive') : streamConnectionState }}
         </span>
       </div>
     </div>
@@ -74,7 +74,7 @@ defineProps<{
       <template v-if="streamCurrentPhaseIndex === null && !streamCurrentPhase">
         <div class="flex items-center gap-3 py-6 justify-center text-gray-500">
           <Loader2 class="animate-spin" :size="20" />
-          <span class="text-sm">Worker is starting up…</span>
+          <span class="text-sm">{{ $t('DeploymentDetailView.workerStarting') }}</span>
         </div>
       </template>
       <template v-else>
@@ -82,7 +82,7 @@ defineProps<{
         <div>
           <div class="flex items-baseline justify-between mb-2">
             <span class="text-base font-semibold text-gray-900">
-              {{ phaseLabel(streamCurrentPhase) || 'Starting…' }}
+              {{ phaseLabel(streamCurrentPhase) || $t('DeploymentDetailView.phaseStarting') }}
             </span>
             <span class="text-2xl font-bold text-gray-900 tabular-nums">
               {{ streamProgress ?? 0 }}<span class="text-sm text-gray-500 font-medium">%</span>
@@ -127,12 +127,12 @@ defineProps<{
                      producing output even after the box is full. -->
       <div v-if="streamLiveLogs.length > 0" class="space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs uppercase tracking-wide font-semibold text-gray-600">Live output</span>
+          <span class="text-xs uppercase tracking-wide font-semibold text-gray-600">{{ $t('DeploymentDetailView.liveOutput') }}</span>
           <span class="text-xs text-gray-500">
-            {{ streamTotalLogCount.toLocaleString() }} {{ streamTotalLogCount === 1 ? 'line' : 'lines'
+            {{ streamTotalLogCount.toLocaleString() }} {{ streamTotalLogCount === 1 ? $t('DeploymentDetailView.logLine') : $t('DeploymentDetailView.logLines')
             }}
             <span v-if="streamLiveLogs.length < streamTotalLogCount" class="text-gray-400">
-              · last {{ streamLiveLogs.length }} shown
+              · {{ $t('DeploymentDetailView.lastShown', { count: streamLiveLogs.length }) }}
             </span>
           </span>
         </div>

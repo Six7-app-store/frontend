@@ -1,5 +1,6 @@
 import { computed, ref, type Ref } from 'vue'
 import { taskApi } from '@/api/task.api'
+import i18n from '@/i18n'
 import { useToast } from '@/composables/useToast'
 import { findActiveTask, sortTasksNewestFirst } from '@/services/deployment-tasks.service'
 import type { Task } from '@/types'
@@ -79,7 +80,7 @@ export function useDeploymentTasks(deploymentId: string, isOwnerView: Ref<boolea
       selectedTask.value = data
     } catch (err) {
       console.error('Error loading task details:', err)
-      toast.error('Failed to load task details')
+      toast.error(i18n.global.t('DeploymentDetailView.taskDetailLoadError'))
     } finally {
       loadingTaskDetail.value = false
     }

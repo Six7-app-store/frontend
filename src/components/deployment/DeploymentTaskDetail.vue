@@ -61,11 +61,11 @@ const taskLogsSplit = computed(() => {
       <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
-            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Type</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskType') }}</div>
             <div class="text-sm font-medium text-gray-900 capitalize">{{ selectedTask.type }}</div>
           </div>
           <div>
-            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Status</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStatus') }}</div>
             <span
               class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize"
               :class="getStatusStyles(selectedTask.status).badgeClass">
@@ -73,29 +73,29 @@ const taskLogsSplit = computed(() => {
             </span>
           </div>
           <div>
-            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Started</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStarted') }}</div>
             <div class="text-sm text-gray-700">{{ formatDate(selectedTask.started_at) }}</div>
           </div>
           <div>
-            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Finished</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskFinished') }}</div>
             <div class="text-sm text-gray-700">{{ formatDate(selectedTask.finished_at) }}</div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-3">
           <div>
-            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Task ID</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskId') }}</div>
             <div class="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded">{{
               selectedTask.taskId
             }}</div>
           </div>
           <div>
-            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Celery Task ID</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.celeryTaskId') }}</div>
             <div class="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded">{{
               selectedTask.celeryTaskId }}</div>
           </div>
           <div>
-            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Created At</div>
+            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskCreatedAt') }}</div>
             <div class="text-sm text-gray-700">{{ formatDate(selectedTask.created_at) }}</div>
           </div>
         </div>
@@ -116,20 +116,20 @@ const taskLogsSplit = computed(() => {
               <div class="p-1.5 bg-white rounded-md border border-emerald-200">
                 <Terminal :size="16" class="text-emerald-600" />
               </div>
-              <span class="font-semibold text-gray-900">Logs</span>
+              <span class="font-semibold text-gray-900">{{ $t('DeploymentDetailView.logs') }}</span>
               <span v-if="logEntryCount !== null"
                 class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded border border-emerald-200">
-                {{ logEntryCount }} entries
+                {{ logEntryCount }} {{ $t('DeploymentDetailView.logEntries') }}
               </span>
             </div>
             <button @click="copyToClipboard(prettyJson(selectedTask.logs), 'logs')"
-              :title="copiedKey === 'logs' ? 'Copied!' : 'Copy to clipboard'"
+              :title="copiedKey === 'logs' ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyToClipboard')"
               class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors"
               :class="copiedKey === 'logs'
                 ? 'bg-emerald-600 text-white border-emerald-600'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'">
               <component :is="copiedKey === 'logs' ? Check : Copy" :size="13" />
-              {{ copiedKey === 'logs' ? 'Copied' : 'Copy' }}
+              {{ copiedKey === 'logs' ? $t('DeploymentDetailView.copiedShort') : $t('DeploymentDetailView.copyShort') }}
             </button>
           </div>
           <div class="bg-gray-50 p-4 overflow-y-auto max-h-[500px]">
@@ -149,7 +149,7 @@ const taskLogsSplit = computed(() => {
                   class="text-xs text-gray-600 hover:text-gray-900 underline mb-2"
                   @click="$emit('toggle-trace')"
                 >
-                  {{ showTaskLogsTrace ? 'Technische Details ausblenden' : 'Technische Details anzeigen' }}
+                  {{ showTaskLogsTrace ? $t('DeploymentDetailView.hideTechnicalDetails') : $t('DeploymentDetailView.showTechnicalDetails') }}
                 </button>
                 <pre
                   v-if="showTaskLogsTrace && taskLogsSplit.details"
@@ -166,12 +166,12 @@ const taskLogsSplit = computed(() => {
           <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
             <div class="flex items-center gap-2">
               <Terminal :size="16" class="text-gray-400" />
-              <span class="font-semibold text-gray-700">Logs</span>
+              <span class="font-semibold text-gray-700">{{ $t('DeploymentDetailView.logs') }}</span>
             </div>
           </div>
           <div class="text-center py-8 text-gray-500">
             <Terminal :size="32" class="mx-auto mb-2 text-gray-300" />
-            <p class="text-sm">No logs available for this task</p>
+            <p class="text-sm">{{ $t('DeploymentDetailView.noLogs') }}</p>
           </div>
         </div>
       </div>
@@ -190,20 +190,20 @@ const taskLogsSplit = computed(() => {
                   $t('DeploymentDetailView.terraformState')
                   }}</span>
                 <span class="text-xs text-gray-500">
-                  {{ tfResourcesCount > 0 ? `${tfResourcesCount} verwaltete Ressourcen` :
-                    'Erweiterte Details' }}
+                  {{ tfResourcesCount > 0 ? $t('DeploymentDetailView.terraformResourcesCount', { count: tfResourcesCount }) :
+                    $t('DeploymentDetailView.advancedDetails') }}
                 </span>
               </div>
             </div>
 
             <button @click="copyToClipboard(prettyJson(activeDataTask?.tf_state), 'tf_state')"
-              :title="copiedKey === 'tf_state' ? 'Kopiert!' : 'In die Zwischenablage kopieren'"
+              :title="copiedKey === 'tf_state' ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyToClipboard')"
               class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors flex-shrink-0"
               :class="copiedKey === 'tf_state'
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'">
               <component :is="copiedKey === 'tf_state' ? Check : Copy" :size="13" />
-              {{ copiedKey === 'tf_state' ? 'Copied' : 'Copy' }}
+              {{ copiedKey === 'tf_state' ? $t('DeploymentDetailView.copiedShort') : $t('DeploymentDetailView.copyShort') }}
             </button>
           </div>
 

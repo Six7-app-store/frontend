@@ -113,7 +113,7 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
     redeployInFlight.value.add(address)
     try {
       await deploymentApi.redeployResource(deploymentId, address)
-      toast.success(`Redeploy gestartet für ${address}`)
+      toast.success(t('DeploymentDetailView.redeployStarted', { address }))
       // Refresh the task list right away so the freshly-dispatched
       // REDEPLOY row shows up as the new ``activeTask``. That in
       // turn flips ``isStreamRelevant`` to true → the SSE stream
@@ -126,13 +126,13 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       redeployInFlight.value.delete(address)
       const reason = getErrorReason(err)
       if (reason === 'non_redeployable_resource_type') {
-        toast.error('Nur Compute-Instanzen können einzeln redeployed werden.')
+        toast.error(t('DeploymentDetailView.redeployNotRedeployable'))
       } else if (reason === 'resource_not_in_state') {
-        toast.error('Diese Resource ist nicht mehr im aktuellen State.')
+        toast.error(t('DeploymentDetailView.redeployNotInState'))
       } else if (getErrorStatus(err) === 409) {
-        toast.error('Es läuft bereits eine Lifecycle-Aktion für dieses Deployment.')
+        toast.error(t('DeploymentDetailView.redeployBusy'))
       } else {
-        toast.error(err?.message || 'Redeploy fehlgeschlagen.')
+        toast.error(err?.message || t('DeploymentDetailView.redeployError'))
       }
     }
   }

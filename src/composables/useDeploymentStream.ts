@@ -24,6 +24,7 @@
  */
 
 import { ref, type Ref } from 'vue'
+import i18n from '@/i18n'
 import { useKeycloak } from '@/composables/useKeycloak'
 import { env } from '@/env'
 
@@ -187,7 +188,7 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
         timestamp: new Date().toISOString(),
         level: 'WARNING',
         category: 'system',
-        message: 'Live stream lagged behind — older entries dropped',
+        message: i18n.global.t('DeploymentDetailView.streamLagged'),
       })
       return
     }

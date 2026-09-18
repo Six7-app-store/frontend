@@ -41,7 +41,7 @@ defineEmits<{
 
       <div>
         <h1 class="text-3xl font-bold text-gray-900">{{ deployment.name }}</h1>
-        <p class="text-sm text-gray-500 mt-1">Deployment Details</p>
+        <p class="text-sm text-gray-500 mt-1">{{ $t('DeploymentDetailView.detailsSubtitle') }}</p>
       </div>
     </div>
 

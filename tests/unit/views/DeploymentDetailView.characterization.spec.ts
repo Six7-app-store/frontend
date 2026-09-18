@@ -423,7 +423,7 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     const text = wrapper.text()
 
     expect(wrapper.find('h1').text()).toBe('Data Lab')
-    expect(text).toContain('Deployment Details')
+    expect(text).toContain(t('DeploymentDetailView.detailsSubtitle'))
     expect(text).toContain(t('DeploymentsView.deploymentSuccessful'))
     expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ name: 'deployments.list' })
 
@@ -444,15 +444,15 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
       data: { ...base, app: { ...base.app, description: '   ' } },
     })
     let wrapper = await mountLoaded()
-    expect(wrapper.text()).toContain('No description')
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.noDescription'))
     wrapper.unmount()
 
     h.deploymentApi.getById.mockResolvedValue({
       data: { ...base, app: null, user: null },
     })
     wrapper = await mountLoaded()
-    expect(wrapper.text()).toContain('No app information available')
-    expect(wrapper.text()).toContain('No user information available')
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.noAppInfo'))
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.noUserInfo'))
   })
 
   it('zeigt Gruppen mit Drill-down und Fallback-Namen', async () => {
@@ -658,13 +658,13 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     expect(h.taskApi.getById).toHaveBeenLastCalledWith('task-deploy')
     const text = wrapper.text()
     expect(text).toContain('celery-deploy')
-    expect(text).toContain('2 entries')
+    expect(text).toContain(`2 ${t('DeploymentDetailView.logEntries')}`)
     expect(text).toContain('hello from the worker')
     expect(text).toContain(t('DeploymentDetailView.terraformState'))
-    expect(text).toContain('2 verwaltete Ressourcen')
+    expect(text).toContain(t('DeploymentDetailView.terraformResourcesCount', { count: 2 }))
     expect(wrapper.html()).toMatchSnapshot('task-detail')
 
-    await buttonWithText(wrapper, 'Back to list')!.trigger('click')
+    await buttonWithText(wrapper, t('DeploymentDetailView.backToTaskList'))!.trigger('click')
     expect(taskRows(wrapper)).toHaveLength(2)
   })
 
@@ -673,12 +673,14 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     await taskRows(wrapper)[0]!.trigger('click')
     await settle()
 
-    await wrapper.find('button[title="Copy to clipboard"]').trigger('click')
+    await wrapper.findAll(`button[title="${t('DeploymentDetailView.copyToClipboard')}"]`)[0]!.trigger('click')
     await settle()
     expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(JSON.stringify(makeTask().logs, null, 2))
-    expect(buttonWithText(wrapper, 'Copied')).toBeTruthy()
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.copiedShort'))).toBeTruthy()
 
-    await wrapper.find('button[title="In die Zwischenablage kopieren"]').trigger('click')
+    // Both copy buttons share the title; the logs one now reads "copied", so
+    // the remaining match is the terraform-state button.
+    await wrapper.findAll(`button[title="${t('DeploymentDetailView.copyToClipboard')}"]`)[0]!.trigger('click')
     await settle()
     expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(JSON.stringify(makeTask().tf_state, null, 2))
   })
@@ -697,13 +699,13 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     expect(memberRow(wrapper, 'anna').text()).toContain('SSH:ssh anna@10.0.0.5')
     expect(memberRow(wrapper, 'anna').text()).toContain('PW:••••••••')
 
-    await buttonWithText(wrapper, 'Technische Details anzeigen')!.trigger('click')
+    await buttonWithText(wrapper, t('DeploymentDetailView.showTechnicalDetails'))!.trigger('click')
     expect(wrapper.text()).toContain('Traceback (most recent call last):')
 
-    await buttonWithText(wrapper, 'Back to list')!.trigger('click')
+    await buttonWithText(wrapper, t('DeploymentDetailView.backToTaskList'))!.trigger('click')
     await taskRows(wrapper)[1]!.trigger('click')
     await settle()
-    expect(wrapper.text()).toContain('Technische Details ausblenden')
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.hideTechnicalDetails'))
   })
 
   it('erkennt den Divider „--- Technische Details ---“', async () => {
@@ -722,7 +724,7 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     expect(wrapper.find('.text-red-700 .font-medium').text()).toBe('Worker nicht erreichbar.')
     // State without a ``resources`` array → generic subtitle.
     expect(wrapper.text()).toContain('Erweiterte Details')
-    await buttonWithText(wrapper, 'Technische Details anzeigen')!.trigger('click')
+    await buttonWithText(wrapper, t('DeploymentDetailView.showTechnicalDetails'))!.trigger('click')
     expect(wrapper.find('pre').text()).toBe('NotRegistered: tasks.deploy')
   })
 
@@ -735,12 +737,12 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
 
     await taskRows(wrapper)[0]!.trigger('click')
     await settle()
-    expect(wrapper.text()).toContain('No logs available for this task')
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.noLogs'))
 
-    await buttonWithText(wrapper, 'Back to list')!.trigger('click')
+    await buttonWithText(wrapper, t('DeploymentDetailView.backToTaskList'))!.trigger('click')
     await taskRows(wrapper)[1]!.trigger('click')
     await settle()
-    expect(wrapper.text()).not.toContain('entries')
+    expect(wrapper.text()).not.toContain(t('DeploymentDetailView.logEntries'))
     expect(wrapper.text()).toContain('just text')
   })
 
@@ -751,7 +753,7 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     await taskRows(wrapper)[0]!.trigger('click')
     await settle()
 
-    expect(toasts()).toEqual([{ type: 'error', message: 'Failed to load task details' }])
+    expect(toasts()).toEqual([{ type: 'error', message: t('DeploymentDetailView.taskDetailLoadError') }])
     expect(taskRows(wrapper)).toHaveLength(2)
   })
 
@@ -759,7 +761,7 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     h.taskApi.listByDeployment.mockResolvedValue({ data: [] })
     const wrapper = await mountLoaded()
 
-    expect(wrapper.text()).toContain('No tasks found')
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.noTasks'))
     expect(h.taskApi.getById).not.toHaveBeenCalled()
   })
 })
@@ -995,18 +997,18 @@ describe('DeploymentDetailView — Redeploy', () => {
     await settle()
 
     expect(h.deploymentApi.redeployResource).toHaveBeenCalledWith('dep-1', ADDRESS_VM)
-    expect(toasts()).toEqual([{ type: 'success', message: `Redeploy gestartet für ${ADDRESS_VM}` }])
+    expect(toasts()).toEqual([{ type: 'success', message: t('DeploymentDetailView.redeployStarted', { address: ADDRESS_VM }) }])
     expect(h.taskApi.listByDeployment).toHaveBeenCalledTimes(2)
     expect(wrapper.find('.fixed').exists()).toBe(false)
     expect(buttonWithText(wrapper, de.vm.actions.redeploying)!.attributes('disabled')).toBeDefined()
   })
 
   it.each([
-    [httpError(422, { reason: 'non_redeployable_resource_type' }), 'Nur Compute-Instanzen können einzeln redeployed werden.'],
-    [httpError(422, { reason: 'resource_not_in_state' }), 'Diese Resource ist nicht mehr im aktuellen State.'],
-    [httpError(409, 'busy'), 'Es läuft bereits eine Lifecycle-Aktion für dieses Deployment.'],
+    [httpError(422, { reason: 'non_redeployable_resource_type' }), t('DeploymentDetailView.redeployNotRedeployable')],
+    [httpError(422, { reason: 'resource_not_in_state' }), t('DeploymentDetailView.redeployNotInState')],
+    [httpError(409, 'busy'), t('DeploymentDetailView.redeployBusy')],
     [httpError(500, 'x', 'Request failed'), 'Request failed'],
-    [httpError(500, 'x', ''), 'Redeploy fehlgeschlagen.'],
+    [httpError(500, 'x', ''), t('DeploymentDetailView.redeployError')],
   ])('meldet Redeploy-Fehler verständlich (%#)', async (err, message) => {
     h.deploymentApi.redeployResource.mockRejectedValue(err)
     const wrapper = await mountLoaded()
@@ -1129,7 +1131,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
     ])
     expect(text).toContain('Waiting for first log line…')
     // History hides the active task.
-    expect(text).toMatch(/Task History\s*2/)
+    expect(text).toContain(t('DeploymentDetailView.taskHistory'))
     // Busy deployment → resend disabled.
     expect(lastButton(memberRow(wrapper, 'anna')).attributes('disabled')).toBeDefined()
 
@@ -1140,7 +1142,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
     withRunning(runningTask({ status: 'pending', current_phase: null, progress_pct: null }), 'pending')
     const wrapper = await mountLoaded()
 
-    expect(wrapper.text()).toContain('Worker is starting up…')
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.workerStarting'))
     expect(stepLabels(wrapper)).toEqual([])
   })
 
@@ -1163,10 +1165,10 @@ describe('DeploymentDetailView — Live-Stream', () => {
 
     const text = wrapper.text()
     expect(stepLabels(wrapper)).toEqual(['Starting', 'Packer Build [database]', 'Terraform Apply'])
-    expect(text).toContain('Stream live')
+    expect(text).toContain(t('DeploymentDetailView.streamLive'))
     expect(text).toMatch(/66\s*%/)
-    expect(text).toContain('250 lines')
-    expect(text).toContain('· last 2 shown')
+    expect(text).toContain(`250 ${t('DeploymentDetailView.logLines')}`)
+    expect(text).toContain(`· ${t('DeploymentDetailView.lastShown', { count: 2 })}`)
     expect(text).toContain('13:01:02[packer]building image')
     expect(wrapper.find('.text-red-400').text()).toContain('retrying')
   })

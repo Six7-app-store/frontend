@@ -35,7 +35,7 @@ const deploymentTimestamp = computed(() => {
           <div class="text-sm font-medium text-gray-900">{{ deployment.name }}</div>
         </div>
         <div>
-          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release Tag</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.releaseTag') }}</div>
           <div class="text-sm">
             <span
               class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300">
@@ -64,7 +64,7 @@ const deploymentTimestamp = computed(() => {
       </h2>
       <div class="space-y-4" v-if="deployment.app">
         <div>
-          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App Name</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.appName') }}</div>
           <div class="text-sm font-medium text-gray-900">{{ deployment.app.name }}</div>
         </div>
         <div>
@@ -78,17 +78,17 @@ const deploymentTimestamp = computed(() => {
             :expandable="true"
             class="text-sm"
           />
-          <div v-else class="text-sm text-gray-500 italic">No description</div>
+          <div v-else class="text-sm text-gray-500 italic">{{ $t('DeploymentDetailView.noDescription') }}</div>
         </div>
         <div>
-          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git Repository</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.gitRepository') }}</div>
           <a :href="deployment.app.git_link ?? undefined" target="_blank"
             class="text-sm text-blue-600 hover:text-blue-800 underline break-all">
             {{ deployment.app.git_link }}
           </a>
         </div>
       </div>
-      <div v-else class="text-sm text-gray-500">No app information available</div>
+      <div v-else class="text-sm text-gray-500">{{ $t('DeploymentDetailView.noAppInfo') }}</div>
     </div>
 
     <!-- User info card -->
@@ -110,7 +110,7 @@ const deploymentTimestamp = computed(() => {
           </div>
         </div>
         <div>
-          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</div>
+          <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.email') }}</div>
           <div class="text-sm text-gray-700">{{ deployment.user.email }}</div>
         </div>
         <div>
@@ -124,7 +124,7 @@ const deploymentTimestamp = computed(() => {
           </div>
         </div>
       </div>
-      <div v-else class="text-sm text-gray-500">No user information available</div>
+      <div v-else class="text-sm text-gray-500">{{ $t('DeploymentDetailView.noUserInfo') }}</div>
     </div>
   </div>
 </template>

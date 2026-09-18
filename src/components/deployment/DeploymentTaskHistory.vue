@@ -54,7 +54,7 @@ const showTaskLogsTrace = ref(false)
           <Terminal :size="20" class="text-gray-600" />
         </div>
         <span class="text-lg font-semibold text-gray-900">
-          {{ isStreamRelevant ? 'Task History' : 'Tasks & Logs' }}
+          {{ isStreamRelevant ? $t('DeploymentDetailView.taskHistory') : $t('DeploymentDetailView.tasksAndLogs') }}
         </span>
         <span v-if="historyTasks.length > 0"
           class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">
@@ -64,7 +64,7 @@ const showTaskLogsTrace = ref(false)
       <button v-if="selectedTask" @click="$emit('deselect')"
         class="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm">
         <CircleArrowLeft :size="16" />
-        <span>Back to list</span>
+        <span>{{ $t('DeploymentDetailView.backToTaskList') }}</span>
       </button>
     </div>
 
@@ -75,7 +75,7 @@ const showTaskLogsTrace = ref(false)
       </div>
 
       <div v-else-if="historyTasks.length === 0" class="text-center py-10 text-gray-500">
-        {{ isStreamRelevant ? 'No previous tasks for this deployment.' : 'No tasks found' }}
+        {{ isStreamRelevant ? $t('DeploymentDetailView.noPreviousTasks') : $t('DeploymentDetailView.noTasks') }}
       </div>
 
       <div v-else class="space-y-2">

@@ -41,7 +41,7 @@ const { copiedKey, copyToClipboard } = injectCopyToClipboard()
       <button
         @click="copyToClipboard(account.data.username, 'user-' + account.key)"
         class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-        :title="copiedKey === 'user-' + account.key ? 'Kopiert!' : 'Username kopieren'">
+        :title="copiedKey === 'user-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyUsername')">
         <component :is="copiedKey === 'user-' + account.key ? Check : Copy" :size="12" />
       </button>
     </div>
@@ -54,7 +54,7 @@ const { copiedKey, copyToClipboard } = injectCopyToClipboard()
       <button
         @click="copyToClipboard(userUrlFor(account.data, teamVm?.url) ?? '', 'vmurl-' + account.key)"
         class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-        :title="copiedKey === 'vmurl-' + account.key ? 'Kopiert!' : 'URL kopieren'">
+        :title="copiedKey === 'vmurl-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyUrl')">
         <component :is="copiedKey === 'vmurl-' + account.key ? Check : Copy" :size="12" />
       </button>
     </div>
@@ -66,7 +66,7 @@ const { copiedKey, copyToClipboard } = injectCopyToClipboard()
       <button
         @click="copyToClipboard(teamVm.url, 'vmurl-' + account.key)"
         class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-        :title="copiedKey === 'vmurl-' + account.key ? 'Kopiert!' : 'URL kopieren'">
+        :title="copiedKey === 'vmurl-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyUrl')">
         <component :is="copiedKey === 'vmurl-' + account.key ? Check : Copy" :size="12" />
       </button>
     </div>
@@ -80,7 +80,7 @@ const { copiedKey, copyToClipboard } = injectCopyToClipboard()
       <button
         @click="copyToClipboard(sshCommandFor(account.data), 'ssh-' + account.key)"
         class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-        :title="copiedKey === 'ssh-' + account.key ? 'Kopiert!' : 'SSH-Befehl kopieren'">
+        :title="copiedKey === 'ssh-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copySshCommand')">
         <component :is="copiedKey === 'ssh-' + account.key ? Check : Copy" :size="12" />
       </button>
     </div>
@@ -104,7 +104,7 @@ const { copiedKey, copyToClipboard } = injectCopyToClipboard()
         <button
           @click="copyToClipboard(account.data.auth, 'auth-' + account.key)"
           class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-gray-200 transition-colors"
-          :title="copiedKey === 'auth-' + account.key ? 'Kopiert!' : 'Passwort kopieren'">
+          :title="copiedKey === 'auth-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyPassword')">
           <component :is="copiedKey === 'auth-' + account.key ? Check : Copy"
             :size="12" />
         </button>

@@ -18,7 +18,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               </svg></button></a>
           <div>
             <h1 class="text-3xl font-bold text-gray-900">Data Lab</h1>
-            <p class="text-sm text-gray-500 mt-1">Deployment Details</p>
+            <p class="text-sm text-gray-500 mt-1">Deployment-Details</p>
           </div>
         </div>
         <div class="flex items-center gap-4">
@@ -54,7 +54,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               <div class="text-sm font-medium text-gray-900">Data Lab</div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release Tag</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release-Tag</div>
               <div class="text-sm"><span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide mr-1 lucide-git-branch-icon lucide-git-branch mr-1"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg> v1.2.3</span></div>
             </div>
             <div>
@@ -77,7 +77,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
             </svg> App</h2>
           <div class="space-y-4">
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App Name</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App-Name</div>
               <div class="text-sm font-medium text-gray-900">Notebook Stack</div>
             </div>
             <div>
@@ -89,7 +89,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               </div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git Repository</div><a href="https://git.example/app.git" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 underline break-all">https://git.example/app.git</a>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git-Repository</div><a href="https://git.example/app.git" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 underline break-all">https://git.example/app.git</a>
             </div>
           </div>
         </div><!-- User info card -->
@@ -106,7 +106,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               </div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">E-Mail</div>
               <div class="text-sm text-gray-700">owner@example.com</div>
             </div>
             <div>
@@ -628,7 +628,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
             <div class="p-2 bg-gray-100 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-gray-600 lucide-terminal-icon lucide-terminal text-gray-600">
                 <path d="M12 19h8"></path>
                 <path d="m4 17 6-6-6-6"></path>
-              </svg></div><span class="text-lg font-semibold text-gray-900">Task History</span><span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">2</span>
+              </svg></div><span class="text-lg font-semibold text-gray-900">Task-Historie</span><span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-bold rounded">2</span>
           </div>
           <!--v-if-->
         </div><!-- Task List View -->
@@ -707,7 +707,7 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
               </svg></button></a>
           <div>
             <h1 class="text-3xl font-bold text-gray-900">Data Lab</h1>
-            <p class="text-sm text-gray-500 mt-1">Deployment Details</p>
+            <p class="text-sm text-gray-500 mt-1">Deployment-Details</p>
           </div>
         </div>
         <div class="flex items-center gap-4">
@@ -739,7 +739,7 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
               <div class="text-sm font-medium text-gray-900">Data Lab</div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release Tag</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release-Tag</div>
               <div class="text-sm"><span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide mr-1 lucide-git-branch-icon lucide-git-branch mr-1"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg> v1.2.3</span></div>
             </div>
             <div>
@@ -762,7 +762,7 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
             </svg> App</h2>
           <div class="space-y-4">
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App Name</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App-Name</div>
               <div class="text-sm font-medium text-gray-900">Notebook Stack</div>
             </div>
             <div>
@@ -774,7 +774,7 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
               </div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git Repository</div><a href="https://git.example/app.git" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 underline break-all">https://git.example/app.git</a>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git-Repository</div><a href="https://git.example/app.git" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 underline break-all">https://git.example/app.git</a>
             </div>
           </div>
         </div><!-- User info card -->
@@ -791,7 +791,7 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
               </div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">E-Mail</div>
               <div class="text-sm text-gray-700">owner@example.com</div>
             </div>
             <div>
@@ -1073,7 +1073,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
               </svg></button></a>
           <div>
             <h1 class="text-3xl font-bold text-gray-900">Data Lab</h1>
-            <p class="text-sm text-gray-500 mt-1">Deployment Details</p>
+            <p class="text-sm text-gray-500 mt-1">Deployment-Details</p>
           </div>
         </div>
         <div class="flex items-center gap-4">
@@ -1113,7 +1113,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
               <div class="text-sm font-medium text-gray-900">Data Lab</div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release Tag</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release-Tag</div>
               <div class="text-sm"><span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide mr-1 lucide-git-branch-icon lucide-git-branch mr-1"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg> v1.2.3</span></div>
             </div>
             <div>
@@ -1136,7 +1136,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
             </svg> App</h2>
           <div class="space-y-4">
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App Name</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App-Name</div>
               <div class="text-sm font-medium text-gray-900">Notebook Stack</div>
             </div>
             <div>
@@ -1148,7 +1148,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
               </div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git Repository</div><a href="https://git.example/app.git" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 underline break-all">https://git.example/app.git</a>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git-Repository</div><a href="https://git.example/app.git" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 underline break-all">https://git.example/app.git</a>
             </div>
           </div>
         </div><!-- User info card -->
@@ -1165,7 +1165,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
               </div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">E-Mail</div>
               <div class="text-sm text-gray-700">owner@example.com</div>
             </div>
             <div>
@@ -1675,7 +1675,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
               </svg></button></a>
           <div>
             <h1 class="text-3xl font-bold text-gray-900">Data Lab</h1>
-            <p class="text-sm text-gray-500 mt-1">Deployment Details</p>
+            <p class="text-sm text-gray-500 mt-1">Deployment-Details</p>
           </div>
         </div>
         <div class="flex items-center gap-4">
@@ -1715,7 +1715,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
               <div class="text-sm font-medium text-gray-900">Data Lab</div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release Tag</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Release-Tag</div>
               <div class="text-sm"><span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-300"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide mr-1 lucide-git-branch-icon lucide-git-branch mr-1"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg> v1.2.3</span></div>
             </div>
             <div>
@@ -1738,7 +1738,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
             </svg> App</h2>
           <div class="space-y-4">
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App Name</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">App-Name</div>
               <div class="text-sm font-medium text-gray-900">Notebook Stack</div>
             </div>
             <div>
@@ -1750,7 +1750,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
               </div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git Repository</div><a href="https://git.example/app.git" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 underline break-all">https://git.example/app.git</a>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Git-Repository</div><a href="https://git.example/app.git" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 underline break-all">https://git.example/app.git</a>
             </div>
           </div>
         </div><!-- User info card -->
@@ -1767,7 +1767,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
               </div>
             </div>
             <div>
-              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Email</div>
+              <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">E-Mail</div>
               <div class="text-sm text-gray-700">owner@example.com</div>
             </div>
             <div>
@@ -2203,7 +2203,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
               <circle cx="12" cy="12" r="10"></circle>
               <path d="m12 8-4 4 4 4"></path>
               <path d="M16 12H8"></path>
-            </svg><span>Back to list</span></button>
+            </svg><span>Zurück zur Liste</span></button>
         </div><!-- Task List View -->
         <!-- Task Detail View -->
         <div class="space-y-4">
@@ -2211,32 +2211,32 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
             <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
               <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 <div>
-                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Type</div>
+                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Typ</div>
                   <div class="text-sm font-medium text-gray-900 capitalize">deploy</div>
                 </div>
                 <div>
                   <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Status</div><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize bg-green-100 text-green-800 border-green-300">success</span>
                 </div>
                 <div>
-                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Started</div>
+                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Gestartet</div>
                   <div class="text-sm text-gray-700">08.06.2026, 12:10:00</div>
                 </div>
                 <div>
-                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Finished</div>
+                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Beendet</div>
                   <div class="text-sm text-gray-700">08.06.2026, 12:20:00</div>
                 </div>
               </div>
               <div class="grid grid-cols-1 gap-3">
                 <div>
-                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Task ID</div>
+                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Task-ID</div>
                   <div class="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded">task-deploy</div>
                 </div>
                 <div>
-                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Celery Task ID</div>
+                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Celery-Task-ID</div>
                   <div class="text-xs font-mono text-gray-700 bg-white px-2 py-1 rounded">celery-deploy</div>
                 </div>
                 <div>
-                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Created At</div>
+                  <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Erstellt am</div>
                   <div class="text-sm text-gray-700">08.06.2026, 12:09:00</div>
                 </div>
               </div>
@@ -2255,11 +2255,11 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                     <div class="p-1.5 bg-white rounded-md border border-emerald-200"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-emerald-600 lucide-terminal-icon lucide-terminal text-emerald-600">
                         <path d="M12 19h8"></path>
                         <path d="m4 17 6-6-6-6"></path>
-                      </svg></div><span class="font-semibold text-gray-900">Logs</span><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded border border-emerald-200">2 entries </span>
-                  </div><button title="Copy to clipboard" class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy">
+                      </svg></div><span class="font-semibold text-gray-900">Logs</span><span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded border border-emerald-200">2 Einträge</span>
+                  </div><button title="In die Zwischenablage kopieren" class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors bg-white text-gray-700 border-gray-300 hover:bg-gray-50"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy">
                       <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
                       <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-                    </svg> Copy</button>
+                    </svg> Kopieren</button>
                 </div>
                 <div class="bg-gray-50 p-4 overflow-y-auto max-h-[500px]">
                   <div class="bg-white rounded-lg border border-gray-200 p-4">
@@ -2296,7 +2296,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                   </div><button title="In die Zwischenablage kopieren" class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors flex-shrink-0 bg-white text-gray-700 border-gray-300 hover:bg-gray-50"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy">
                       <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
                       <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
-                    </svg> Copy</button>
+                    </svg> Kopieren</button>
                 </div>
                 <div class="bg-white p-4 overflow-y-auto max-h-[500px]">
                   <div class="font-mono text-xs leading-relaxed text-left whitespace-pre-wrap select-text"><pre>{

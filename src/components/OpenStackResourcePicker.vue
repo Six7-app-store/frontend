@@ -370,7 +370,7 @@ async function load(opts: { forceRefresh?: boolean } = {}) {
       errorMessage.value = detail?.message || err?.message || t('openstackPicker.osError')
     } else {
       errorReason.value = 'unavailable'
-      errorMessage.value = err?.message || 'Resource konnte nicht geladen werden.'
+      errorMessage.value = err?.message || t('openstackPicker.loadError')
     }
     items.value = []
   } finally {
@@ -480,19 +480,10 @@ function formatRam(mb: number | undefined | null): string {
   return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`
 }
 
+// Resource type as shown to the user (in placeholders, search field, empty
+// state). The keys mirror the ``OsResourceType`` values.
 function osTypeLabel(): string {
-  switch (props.osType) {
-    case 'network': return 'Network'
-    case 'subnet': return 'Subnet'
-    case 'flavor': return 'Flavor'
-    case 'image': return 'Image'
-    case 'keypair': return 'Keypair'
-    case 'security_group': return 'Security Group'
-    case 'floating_ip_pool': return 'Floating-IP Pool'
-    case 'volume': return 'Volume'
-    case 'router': return 'Router'
-    case 'availability_zone': return 'Availability Zone'
-  }
+  return t(`openstackPicker.types.${props.osType}`)
 }
 
 const placeholderText = computed(() => {

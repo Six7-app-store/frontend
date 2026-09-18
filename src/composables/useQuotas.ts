@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { Cpu, HardDrive, Network } from 'lucide-vue-next'
 import { quotasApi } from '@/api/quotas.api'
+import i18n from '@/i18n'
 import { getErrorStatus } from '@/utils/http-error'
 import type { QuotaOverview } from '@/types/quota'
 
@@ -58,6 +59,10 @@ const needsCredentials = ref(false)
 // ----------------------------------------------------------------
 // USE QUOTAS COMPOSABLE
 // ----------------------------------------------------------------
+// The composable is also used outside of a component setup (e.g. in unit
+// tests), so it reads the global i18n instance instead of ``useI18n()``.
+const t = (key: string) => i18n.global.t(key)
+
 export const useQuotas = () => {
   const getPercentage = (used: number, limit: number): number => {
     if (limit === 0) return 0
@@ -90,7 +95,7 @@ export const useQuotas = () => {
     return [
       {
         icon: Cpu,
-        label: 'VMs / Instanzen',
+        label: t('DashboardView.quotas.instances'),
         used: compute.instances.used,
         limit: compute.instances.limit,
         percentage: getPercentage(compute.instances.used, compute.instances.limit),
@@ -98,7 +103,7 @@ export const useQuotas = () => {
       },
       {
         icon: Cpu,
-        label: 'vCPUs',
+        label: t('DashboardView.quotas.vcpus'),
         used: compute.vcpus.used,
         limit: compute.vcpus.limit,
         percentage: getPercentage(compute.vcpus.used, compute.vcpus.limit),
@@ -106,7 +111,7 @@ export const useQuotas = () => {
       },
       {
         icon: Cpu,
-        label: 'RAM',
+        label: t('DashboardView.quotas.ram'),
         used: Math.round(compute.ram.used / 1024),
         limit: Math.round(compute.ram.limit / 1024),
         percentage: getPercentage(compute.ram.used, compute.ram.limit),
@@ -114,7 +119,7 @@ export const useQuotas = () => {
       },
       {
         icon: HardDrive,
-        label: 'Volumes',
+        label: t('DashboardView.quotas.volumes'),
         used: storage.volumes.used,
         limit: storage.volumes.limit,
         percentage: getPercentage(storage.volumes.used, storage.volumes.limit),
@@ -122,7 +127,7 @@ export const useQuotas = () => {
       },
       {
         icon: HardDrive,
-        label: 'Storage',
+        label: t('DashboardView.quotas.storage'),
         used: storage.gigabytes.used,
         limit: storage.gigabytes.limit,
         percentage: getPercentage(storage.gigabytes.used, storage.gigabytes.limit),
@@ -130,7 +135,7 @@ export const useQuotas = () => {
       },
       {
         icon: Network,
-        label: 'Floating IPs',
+        label: t('DashboardView.quotas.floatingIps'),
         used: network.floating_ips.used,
         limit: network.floating_ips.limit,
         percentage: getPercentage(network.floating_ips.used, network.floating_ips.limit),
@@ -157,7 +162,7 @@ export const useQuotas = () => {
         quotas.value = null
         writeCachedQuotas(null)
       } else {
-        error.value = 'Failed to fetch quotas'
+        error.value = t('DashboardView.quotaLoadError')
         console.error('Quota fetch error:', err)
         // Keep the existing cached numbers visible — a transient error
         // shouldn't blank out the tile.
