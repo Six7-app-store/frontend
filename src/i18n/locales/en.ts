@@ -853,6 +853,9 @@ export default {
       lockedActiveDeployments: 'Credentials locked — {count} active deployment(s).',
       validationFailedSaved: 'Saved, but validation failed: {error}',
       validationFailed: 'Validation failed: {error}',
+      saveFailed: 'Credentials could not be saved.',
+      testFailed: 'Credentials could not be checked.',
+      deleteFailed: 'Credentials could not be deleted.',
     },
     toasts: {
       saveSuccess: 'OpenStack credentials saved and validated.',

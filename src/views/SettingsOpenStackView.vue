@@ -131,7 +131,10 @@ const handleSave = async () => {
     formApp.secret = ''
     formPwd.secret = ''
   } catch {
-    if (credStore.error) toast.error(credStore.error)
+    // The store's error text can be empty — e.g. a 409 triggers a refetch
+    // inside the store action, and that clears ``error`` again. Without a
+    // fallback the failed save would stay completely invisible.
+    toast.error(credStore.error || t('SettingsOpenStackView.errors.saveFailed'))
   }
 }
 
@@ -144,7 +147,7 @@ const handleTest = async () => {
       toast.success(t('SettingsOpenStackView.toasts.credentialsValid'))
     }
   } catch {
-    if (credStore.error) toast.error(credStore.error)
+    toast.error(credStore.error || t('SettingsOpenStackView.errors.testFailed'))
   }
 }
 
@@ -160,7 +163,7 @@ const handleDelete = async () => {
     formApp.secret = ''
     formPwd.secret = ''
   } catch {
-    if (credStore.error) toast.error(credStore.error)
+    toast.error(credStore.error || t('SettingsOpenStackView.errors.deleteFailed'))
   }
 }
 

@@ -432,3 +432,72 @@ describe('SettingsOpenStackView.vue — Speichern', () => {
         expect((wrapper.find('input[type="password"]').element as HTMLInputElement).value).toBe('')
     })
 })
+
+// ---------------------------------------------------------
+// 5. Fehlschläge ohne Fehlertext im Store
+// ---------------------------------------------------------
+
+describe('SettingsOpenStackView.vue — Fehlschläge ohne Store-Fehlertext', () => {
+    beforeEach(() => {
+        vi.clearAllMocks()
+        window.confirm = mockConfirm
+        mockConfirm.mockReturnValue(true)
+        routeState.query = {}
+        storeState = {
+            isLocked: false,
+            activeDeployments: 0,
+            loading: false,
+            hasCredential: true,
+            isValidated: true,
+            lastError: null,
+            // z.B. nach einem 409: save() scheitert, der anschließende fetch()
+            // im Store setzt error wieder auf null.
+            error: null,
+            status: { has_credential: true, auth_type: 'v3applicationcredential' }
+        }
+    })
+
+    afterEach(() => {
+        window.confirm = originalConfirm
+    })
+
+    const mountView = () => mount(SettingsOpenStackView, {
+        global: { stubs: { CredentialMissingBanner: true, 'i18n-t': true } }
+    })
+
+    const clickButton = async (label: string) => {
+        const wrapper = mountView()
+        await flushPromises()
+        if (label === 'SettingsOpenStackView.save') {
+            await wrapper.find('input[type="url"]').setValue('https://test.com')
+            await wrapper.findAll('input[type="text"]')[1]!.setValue('my-app-id')
+            await wrapper.find('input[type="password"]').setValue('my-secret-key')
+        }
+        const btn = wrapper.findAll('button').find(b => b.text().includes(label))!
+        await btn.trigger('click')
+        await flushPromises()
+        return wrapper
+    }
+
+    it.each([
+        ['SettingsOpenStackView.save', () => mockSave, 'SettingsOpenStackView.errors.saveFailed'],
+        ['SettingsOpenStackView.status.retest', () => mockTest, 'SettingsOpenStackView.errors.testFailed'],
+        ['SettingsOpenStackView.status.delete', () => mockRemove, 'SettingsOpenStackView.errors.deleteFailed'],
+    ])('zeigt bei %s auch ohne Store-Fehlertext einen Fehler', async (label, getMock, expectedKey) => {
+        getMock().mockRejectedValue(new Error('boom'))
+
+        await clickButton(label)
+
+        expect(getMock()).toHaveBeenCalled()
+        expect(mockToastError).toHaveBeenCalledWith(expectedKey, undefined)
+    })
+
+    it('zeigt weiterhin den Fehlertext des Stores, wenn es einen gibt', async () => {
+        storeState.error = 'Credentials gesperrt — 2 aktive(s) Deployment(s)'
+        mockTest.mockRejectedValue(new Error('boom'))
+
+        await clickButton('SettingsOpenStackView.status.retest')
+
+        expect(mockToastError).toHaveBeenCalledWith('Credentials gesperrt — 2 aktive(s) Deployment(s)', undefined)
+    })
+})
