@@ -22,6 +22,9 @@ export default {
   nav: {
     dashboard: "Dashboard",
     deployments: "Deployments",
+    // Students never create one — for them the section is named
+    // after what they find there, not the act that produced it.
+    environments: "Environments",
     courses: "Courses",
     apps: "Apps",
     help: "Help",
@@ -270,6 +273,23 @@ export default {
     deploymentResuming: "resuming",
     deploymentPauseFailed: "pause failed",
     deploymentResumeFailed: "resume failed",
+
+    // --- Student view ------------------------------------------------
+    // Same page, different language: students never create an
+    // environment, they are assigned one. All they need to know is
+    // whether it runs and how to get in — release tags, task status and
+    // terraform vocabulary are staff concerns.
+    titleStudent: "My environments",
+    subtitleStudent: "Environments assigned to you",
+    emptyStudent: "No environment has been assigned to you yet.",
+    emptyStudentHint: "Your lecturer will set one up for you.",
+    // Three states instead of twelve. "Unavailable" covers everything a
+    // student cannot do anything about.
+    studentReady: "Ready",
+    studentPreparing: "Being prepared",
+    studentUnavailable: "Unavailable",
+    studentUnavailableHint: "Please contact your lecturer.",
+    studentOpenAccess: "View credentials",
   },
   DeploymentDetailView: {
     redeployStarted: 'Redeploy started for {address}',

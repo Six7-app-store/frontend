@@ -593,7 +593,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -619,7 +619,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -645,7 +645,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": true,
@@ -671,7 +671,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": true,
@@ -697,7 +697,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -723,7 +723,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": true,
@@ -749,7 +749,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -775,7 +775,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -801,7 +801,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -827,7 +827,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -851,9 +851,9 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Dashboard",
       },
       {
-        "active": true,
+        "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -867,7 +867,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       },
     ],
     "mesh": false,
-    "title": "Deployments",
+    "title": "Umgebungen",
   },
   "/deployments/dep-1": {
     "links": [
@@ -877,9 +877,9 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Dashboard",
       },
       {
-        "active": true,
+        "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -893,7 +893,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       },
     ],
     "mesh": false,
-    "title": "Deployments",
+    "title": "Umgebungen",
   },
   "/does-not-exist": {
     "links": [
@@ -905,7 +905,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -931,7 +931,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -957,7 +957,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,
@@ -983,7 +983,7 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
       {
         "active": false,
         "href": "/deployments",
-        "text": "Deployments",
+        "text": "Umgebungen",
       },
       {
         "active": false,

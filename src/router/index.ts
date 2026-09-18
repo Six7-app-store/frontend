@@ -208,13 +208,17 @@ export const routes: RouteRecordRaw[] = [
     path: '/deployment/new/config',
     name: ROUTE_NAMES.deploymentConfig,
     component: NewDeploymentConfigView,
-    meta: { requiresAuth: true, layout: 'app' }
+    // Creating a deployment is staff work — the backend rejects a
+    // student on POST /deployments with ``role_required``. This guard
+    // only keeps a deep-linked student out of a wizard that could
+    // never finish; it is not the protection itself.
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['teacher', 'admin'] as UserRole[] },
   },
   {
     path: '/deployment/new/teams',
     name: ROUTE_NAMES.deploymentTeams,
     component: NewDeploymentGroupsAssignmentView,
-    meta: { requiresAuth: true, layout: 'app' },
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['teacher', 'admin'] as UserRole[] },
     // Step 2 requires step 1 (app + name + at least one student). Deep-links
     // otherwise redirect to step 1.
     beforeEnter: requireWizardStep(['appId', 'name', 'studentIds']),
@@ -223,7 +227,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/deployment/new/variables',
     name: ROUTE_NAMES.deploymentVariables,
     component: NewDeploymentVariableView,
-    meta: { requiresAuth: true, layout: 'app' },
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['teacher', 'admin'] as UserRole[] },
     // The variables step needs the team setup filled in; otherwise redirect
     // to the matching earlier step.
     beforeEnter: requireWizardStep(['appId', 'name', 'studentIds']),
@@ -232,7 +236,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/deployment/new/summary',
     name: ROUTE_NAMES.deploymentSummary,
     component: NewDeploymentSummaryView,
-    meta: { requiresAuth: true, layout: 'app' },
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['teacher', 'admin'] as UserRole[] },
     // Summary is only reachable once all previous steps have data.
     beforeEnter: requireWizardStep(['appId', 'name', 'studentIds']),
   },
