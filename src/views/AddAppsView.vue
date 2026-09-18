@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { appApi } from '@/api/app.api'
@@ -42,6 +42,19 @@ const form = ref({
 const imagePreviewUrl = ref<string | null>(null)
 const isDragging = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+
+// Every installation runs its own GitHub App, so the link comes from the
+// backend. Stays null when none is configured; the hint then has no link.
+const githubAppInstallUrl = ref<string | null>(null)
+
+onMounted(async () => {
+  try {
+    const { data } = await appApi.getGithubApp()
+    githubAppInstallUrl.value = data.install_url
+  } catch {
+    githubAppInstallUrl.value = null
+  }
+})
 
 const previewIcon = computed(() => {
   const name = form.value.name.toLowerCase()
@@ -366,10 +379,13 @@ const handleSubmit = async () => {
           <Info class="shrink-0 mt-0.5 text-blue-700" :size="20" />
           <div>
             <span class="font-semibold block mb-1">{{ $t('AppsCreateView.info.important') }}</span>
-            <span v-html="$t('AppsCreateView.info.inviteText')"></span><br>
-            <a href="https://github.com/six7clickndeploy" target="_blank" class="text-blue-700 underline hover:text-blue-500 break-all">
-              https://github.com/six7clickndeploy
-            </a>
+            <span v-html="$t('AppsCreateView.info.installText')"></span>
+            <template v-if="githubAppInstallUrl">
+              <br>
+              <a :href="githubAppInstallUrl" target="_blank" class="text-blue-700 underline hover:text-blue-500 break-all">
+                {{ githubAppInstallUrl }}
+              </a>
+            </template>
           </div>
         </div>
       </div>

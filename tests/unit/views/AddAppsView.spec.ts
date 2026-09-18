@@ -29,7 +29,11 @@ vi.mock('@/composables/useToast', () => ({
 }))
 
 vi.mock('@/api/app.api', () => ({
-    appApi: { create: vi.fn() }
+    appApi: {
+        create: vi.fn(),
+        // Called on mount for the GitHub App hint; null = no App configured.
+        getGithubApp: vi.fn(() => Promise.resolve({ data: { install_url: null } }))
+    }
 }))
 import { appApi } from '@/api/app.api'
 
