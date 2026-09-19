@@ -19,21 +19,40 @@
  */
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ltiApi, type LtiContext } from '@/api/lti.api'
+import {
+  ltiApi,
+  type LtiContext,
+  type LtiRosterImport,
+  type LtiRosterSkipReason,
+} from '@/api/lti.api'
 import { courseApi } from '@/api/course.api'
 import type { Course } from '@/types'
-import { Loader2, GraduationCap, CheckCircle2, AlertCircle } from 'lucide-vue-next'
+import {
+  Loader2,
+  GraduationCap,
+  CheckCircle2,
+  AlertCircle,
+  DownloadCloud,
+} from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
 
-type State = 'loading' | 'ready' | 'saving' | 'saved' | 'error'
+type State =
+  | 'loading'
+  | 'ready'
+  | 'saving'
+  | 'saved'
+  | 'importing'
+  | 'imported'
+  | 'error'
 
 const state = ref<State>('loading')
 const error = ref<string | null>(null)
 const context = ref<LtiContext | null>(null)
 const courses = ref<Course[]>([])
 const selected = ref<string>('')
+const report = ref<LtiRosterImport | null>(null)
 
 /** What Moodle calls this course, with the short label as a fallback. */
 const moodleName = computed(
@@ -49,6 +68,55 @@ function describe(err: any): string {
     return 'Der Moodle-Kurs oder die Studiengruppe ist nicht mehr vorhanden.'
   }
   return 'Die Zuordnung ist fehlgeschlagen. Bitte die Aktivität in Moodle erneut öffnen.'
+}
+
+/** Why a member was left alone, in words the lecturer can act on. */
+const SKIP_LABELS: Record<LtiRosterSkipReason, string> = {
+  no_subject: 'Moodle hat keine eindeutige Kennung mitgeschickt.',
+  no_email: 'Keine E-Mail-Adresse im Moodle-Profil.',
+  link_required:
+    'Adresse gehört bereits zu einem Konto. Die Person meldet sich einmal direkt an, dann verknüpft sich der Moodle-Zugang selbst.',
+  already_in_another_group:
+    'Ist bereits in einer anderen Studiengruppe und bleibt dort.',
+  instructor_not_trusted:
+    'In Moodle Trainer:in — die Dozentenrolle im App Store vergibt eine Administration.',
+}
+
+function skipLabel(reason: LtiRosterSkipReason): string {
+  return SKIP_LABELS[reason] ?? 'Konnte nicht übernommen werden.'
+}
+
+function describeImport(err: any): string {
+  const code = err?.response?.data?.detail?.code
+  if (code === 'lti_nrps_unavailable') {
+    return 'Moodle gibt die Teilnehmerliste für diesen Kurs nicht heraus. In den Tool-Einstellungen „Kursmitglieder abrufen" aktivieren und die Aktivität einmal neu öffnen.'
+  }
+  if (code === 'lti_nrps_failed' || code === 'lti_nrps_unreachable') {
+    return 'Die Teilnehmerliste konnte nicht von Moodle gelesen werden. Es wurde nichts angelegt.'
+  }
+  if (code === 'lti_context_already_mapped') {
+    return 'Dieser Moodle-Kurs ist bereits einer Studiengruppe zugeordnet.'
+  }
+  if (err?.response?.status === 403) {
+    return 'Dafür fehlen dir die Rechte. Anlegen kann eine Studiengruppe, wer als Dozent:in eingetragen ist.'
+  }
+  return 'Das Anlegen ist fehlgeschlagen. Es wurde nichts gespeichert.'
+}
+
+async function importFromMoodle() {
+  if (!context.value) return
+
+  state.value = 'importing'
+  try {
+    const { data } = await ltiApi.importContext(context.value.ltiContextId)
+    report.value = data
+    context.value = data.context
+    state.value = 'imported'
+  } catch (err) {
+    console.error('Importing the Moodle roster failed:', err)
+    error.value = describeImport(err)
+    state.value = 'error'
+  }
 }
 
 async function save() {
@@ -109,6 +177,56 @@ onMounted(async () => {
         <p class="text-gray-600">Moodle-Kurs wird geladen…</p>
       </div>
 
+      <div v-else-if="state === 'importing'" class="flex flex-col items-center gap-4">
+        <Loader2 class="animate-spin text-primary" :size="48" />
+        <p class="text-gray-600">Teilnehmende werden aus Moodle geholt…</p>
+      </div>
+
+      <div
+        v-else-if="state === 'imported' && report"
+        data-testid="import-success"
+        class="flex flex-col items-center gap-4 w-full"
+      >
+        <CheckCircle2 class="text-green-600" :size="48" />
+        <div>
+          <p class="font-semibold">
+            Studiengruppe „{{ report.courseName }}" angelegt
+          </p>
+          <p class="text-sm text-gray-600 mt-2">
+            {{ report.students }} Studierende, {{ report.teachers }} Dozierende
+            übernommen — davon {{ report.created }} neu und
+            {{ report.matched }} bereits bekannt.
+          </p>
+        </div>
+
+        <div
+          v-if="report.skipped.length"
+          data-testid="import-skipped"
+          class="w-full text-left rounded-md border border-amber-200 bg-amber-50 p-3"
+        >
+          <p class="text-sm font-medium text-amber-900">
+            {{ report.skipped.length }} nicht übernommen
+          </p>
+          <ul class="mt-2 flex flex-col gap-2">
+            <li
+              v-for="(skip, i) in report.skipped"
+              :key="i"
+              class="text-xs text-amber-900"
+            >
+              <span class="font-medium">{{ skip.name || skip.email || 'Unbekannt' }}</span>
+              — {{ skipLabel(skip.reason) }}
+            </li>
+          </ul>
+        </div>
+
+        <button
+          class="px-4 py-2 rounded-md bg-primary text-white hover:opacity-90"
+          @click="skip"
+        >
+          Weiter zu den Deployments
+        </button>
+      </div>
+
       <div
         v-else-if="state === 'ready' || state === 'saving'"
         data-testid="map-form"
@@ -157,6 +275,28 @@ onMounted(async () => {
             Später
           </button>
         </div>
+
+        <!-- The other way round: no Studiengruppe to point at yet, so
+             make it from what Moodle already knows about the course. -->
+        <div class="w-full flex items-center gap-3 pt-2">
+          <span class="h-px flex-1 bg-gray-200" />
+          <span class="text-xs text-gray-400">oder</span>
+          <span class="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <button
+          data-testid="map-import"
+          :disabled="state === 'saving'"
+          class="flex items-center gap-2 px-4 py-2 rounded-md border border-primary text-primary hover:bg-primary/5 disabled:opacity-50"
+          @click="importFromMoodle"
+        >
+          <DownloadCloud :size="18" />
+          Studiengruppe aus Moodle anlegen
+        </button>
+        <p class="text-xs text-gray-500 -mt-2">
+          Legt „{{ moodleName }}" als neue Studiengruppe an und übernimmt die
+          Teilnehmenden aus Moodle.
+        </p>
       </div>
 
       <div
