@@ -318,6 +318,7 @@ export default {
     copyUsername: 'Username kopieren',
     copyUrl: 'URL kopieren',
     copySshCommand: 'SSH-Befehl kopieren',
+    copyConnection: 'Verbindung kopieren',
     copyPassword: 'Passwort kopieren',
     taskType: 'Typ',
     taskStatus: 'Status',
