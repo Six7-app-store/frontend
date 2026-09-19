@@ -54,3 +54,9 @@ in Produktion fällt die Unterscheidung weg.
 - `.env`, `*.pem`, `node_modules/`
 - `*.d.ts` neben `*.ts` — die erzeugt der Build
 - Kein Prod-Deploy, kein `git push --force`
+- `.claude/` — erzeugt aus `deployment/harness/`. Was hier geändert wird, ist
+  beim nächsten `make harness-sync` weg. Änderungen gehören in die Quelle.
+
+Geheimnisse, Produktions-Deploys, `terraform apply` und Pushes auf `main` sind
+zusätzlich als deny-Regel in `.claude/settings.json` gesperrt. So ein Kommando
+scheitert ohne Nachfrage — das ist Absicht und kein Werkzeugfehler.
