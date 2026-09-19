@@ -12,6 +12,7 @@ export const ROUTE_NAMES = {
   ltiCallback: 'lti.callback',
   ltiLink: 'lti.link',
   ltiMapCourse: 'lti.mapCourse',
+  ltiDeepLink: 'lti.deepLink',
   home: 'home',
   dashboard: 'dashboard',
   courses: 'courses',

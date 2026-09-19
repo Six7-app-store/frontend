@@ -16,6 +16,7 @@ let mockQuery: Record<string, unknown> = {}
 const replace = vi.fn()
 const getContext = vi.fn()
 const mapContext = vi.fn()
+const importContext = vi.fn()
 const listCourses = vi.fn()
 
 vi.mock('vue-router', () => ({
@@ -27,6 +28,7 @@ vi.mock('@/api/lti.api', () => ({
   ltiApi: {
     getContext: (...args: unknown[]) => getContext(...args),
     mapContext: (...args: unknown[]) => mapContext(...args),
+    importContext: (...args: unknown[]) => importContext(...args),
   },
 }))
 
@@ -36,7 +38,13 @@ vi.mock('@/api/course.api', () => ({
 
 vi.mock('lucide-vue-next', () => {
   const icon = { template: '<span />' }
-  return { Loader2: icon, GraduationCap: icon, CheckCircle2: icon, AlertCircle: icon }
+  return {
+    Loader2: icon,
+    GraduationCap: icon,
+    CheckCircle2: icon,
+    AlertCircle: icon,
+    DownloadCloud: icon,
+  }
 })
 
 import LtiCourseMapView from '@/views/LtiCourseMapView.vue'
@@ -136,5 +144,97 @@ describe('LtiCourseMapView', () => {
 
     expect(getContext).not.toHaveBeenCalled()
     expect(wrapper.find('[data-testid="map-error"]').exists()).toBe(true)
+  })
+})
+
+/**
+ * The other way out of this page: there is no Studiengruppe to point
+ * at, so one is made from the Moodle course itself. The counts and the
+ * skip list are the whole reason this reports back instead of just
+ * saying "done" — a lecturer has to see who did *not* come across.
+ */
+describe('LtiCourseMapView — Studiengruppe aus Moodle anlegen', () => {
+  const report = (overrides: Record<string, unknown> = {}) => ({
+    context: context('c9'),
+    courseId: 'c9',
+    courseName: 'Cloud Computing',
+    created: 12,
+    matched: 3,
+    teachers: 1,
+    students: 14,
+    skipped: [],
+    ...overrides,
+  })
+
+  it('creates the group and reports what came across', async () => {
+    importContext.mockResolvedValue({ data: report() })
+    const wrapper = await open()
+
+    await wrapper.find('[data-testid="map-import"]').trigger('click')
+    await flushPromises()
+
+    expect(importContext).toHaveBeenCalledWith(CONTEXT_ID)
+    expect(wrapper.find('[data-testid="import-success"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Cloud Computing')
+    expect(wrapper.text()).toContain('14')
+  })
+
+  it('names every member it left alone, and why', async () => {
+    importContext.mockResolvedValue({
+      data: report({
+        skipped: [
+          { name: 'Lea Neumann', email: 'lea@dhbw.de', reason: 'link_required' },
+          { name: 'Tom Weber', email: 'tom@dhbw.de', reason: 'already_in_another_group' },
+        ],
+      }),
+    })
+    const wrapper = await open()
+
+    await wrapper.find('[data-testid="map-import"]').trigger('click')
+    await flushPromises()
+
+    const skipped = wrapper.find('[data-testid="import-skipped"]')
+    expect(skipped.exists()).toBe(true)
+    expect(skipped.text()).toContain('Lea Neumann')
+    expect(skipped.text()).toContain('direkt an')
+    expect(skipped.text()).toContain('Tom Weber')
+    expect(skipped.text()).toContain('anderen Studiengruppe')
+  })
+
+  it('says what to switch on in Moodle when the roster is withheld', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    importContext.mockRejectedValue({
+      response: { status: 409, data: { detail: { code: 'lti_nrps_unavailable' } } },
+    })
+    const wrapper = await open()
+
+    await wrapper.find('[data-testid="map-import"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="map-error"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Kursmitglieder abrufen')
+  })
+
+  it('makes clear nothing was created when Moodle refuses', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    importContext.mockRejectedValue({
+      response: { status: 502, data: { detail: { code: 'lti_nrps_failed' } } },
+    })
+    const wrapper = await open()
+
+    await wrapper.find('[data-testid="map-import"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('nichts angelegt')
+  })
+
+  it('leaves the plain mapping untouched', async () => {
+    importContext.mockResolvedValue({ data: report() })
+    const wrapper = await open()
+
+    await wrapper.find('[data-testid="map-import"]').trigger('click')
+    await flushPromises()
+
+    expect(mapContext).not.toHaveBeenCalled()
   })
 })

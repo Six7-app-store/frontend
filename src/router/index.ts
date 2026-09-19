@@ -121,6 +121,20 @@ export const routes: RouteRecordRaw[] = [
     },
   },
   {
+    // Where a deep-linking request lands: Moodle is asking what the
+    // activity being created should point at. Same gate as the mapping
+    // page — reached from a finished launch, and only staff create
+    // activities.
+    path: "/lti/auswahl",
+    name: ROUTE_NAMES.ltiDeepLink,
+    component: () => import('@/views/LtiDeepLinkView.vue'),
+    meta: {
+      layout: "auth",
+      requiresAuth: true,
+      requiresRole: ['teacher', 'admin'] as UserRole[],
+    },
+  },
+  {
     path: "/",
     name: ROUTE_NAMES.home,
     component: DashboardView,
