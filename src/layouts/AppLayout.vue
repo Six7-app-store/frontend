@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth.store'
 import { useAuth } from '@/composables/useAuth'
 import { useRouteAccess } from '@/composables/useRouteAccess'
+import { useRole } from '@/composables/useRole'
 import { ROUTE_NAMES } from '@/router/route-names'
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
@@ -27,6 +28,9 @@ const { locale, t } = useI18n()
 const authStore = useAuthStore()
 const { logout } = useAuth()
 const { canAccess } = useRouteAccess()
+// Role visibility comes from the route table via ``canAccess``; this is
+// only needed for the one label that differs by role.
+const { isStudent } = useRole()
 const route = useRoute()
 
 const userName = computed(() => authStore.user?.username || 'User')
@@ -47,7 +51,12 @@ onBeforeUnmount(() => document.removeEventListener('click', closeUserMenu))
 
 const pageTitle = computed(() => {
   const titleKey = route.meta.titleKey as string | undefined
-  return titleKey ? t(titleKey) : ''
+  if (!titleKey) return ''
+  // Students never create a deployment, so for them the section is named
+  // after what they find there. The route table carries one key; the
+  // rename happens here rather than in every deployments route.
+  if (titleKey === 'nav.deployments' && isStudent.value) return t('nav.environments')
+  return t(titleKey)
 })
 
 const changeLocale = (lang: string) => {
@@ -65,7 +74,11 @@ const isNavItemActive = (item: { label: string }) => route.meta.titleKey === ite
 // Visibility follows the route's ``meta.requiresRole`` (``useRouteAccess``).
 const navItems = computed(() => [
   { to: { name: ROUTE_NAMES.home }, label: 'nav.dashboard', icon: LayoutDashboard },
-  { to: { name: ROUTE_NAMES.deploymentsList }, label: 'nav.deployments', icon: BarChart3 },
+  {
+    to: { name: ROUTE_NAMES.deploymentsList },
+    label: isStudent.value ? 'nav.environments' : 'nav.deployments',
+    icon: BarChart3,
+  },
   { to: { name: ROUTE_NAMES.apps }, label: 'nav.apps', icon: Layers },
   { to: { name: ROUTE_NAMES.courses }, label: 'nav.courses', icon: GraduationCap },
   { to: { name: ROUTE_NAMES.adminApps }, label: 'nav.approvals', icon: ShieldCheck },

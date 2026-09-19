@@ -3,6 +3,8 @@ import { describe, it, expect } from 'vitest'
 import {
   sshCommandFor,
   userUrlFor,
+  resolveProtocol,
+  connectionFor,
   deriveExpectedAccountKey,
   matchTeamAccounts,
 } from '@/services/deployment-account-matching.service'
@@ -101,5 +103,88 @@ describe('matchTeamAccounts', () => {
   it('returns null accounts without any accounts', () => {
     const teams = matchTeamAccounts([team('Team A', [['anna', 'anna@x.org']])], null, null)
     expect(accountOf(teams, 'anna')).toBeNull()
+  })
+})
+
+
+describe('resolveProtocol', () => {
+  it('honours an explicit protocol over every inference', () => {
+    expect(resolveProtocol({ protocol: 'rdp', ip: '1.2.3.4', port: 8080 })).toBe('rdp')
+    expect(resolveProtocol({ protocol: ' RDP ', ip: '1.2.3.4', port: 22 })).toBe('rdp')
+    expect(resolveProtocol({ protocol: 'none', ip: '1.2.3.4', port: 8080 })).toBe('none')
+  })
+
+  it('falls through to inference for an unknown protocol', () => {
+    expect(resolveProtocol({ protocol: 'telnet', ip: '1.2.3.4', port: 3389 })).toBe('rdp')
+  })
+
+  it('reads the legacy authtype slot', () => {
+    expect(resolveProtocol({ authtype: 'ssh', ip: '1.2.3.4', port: 8080 })).toBe('ssh')
+    expect(resolveProtocol({ authtype: 'url', ip: '1.2.3.4', port: 8080 })).toBe('web')
+  })
+
+  it('infers from the credential type and the well-known port', () => {
+    expect(resolveProtocol({ type: 'ssh_key', ip: '1.2.3.4', port: 8080 })).toBe('ssh')
+    expect(resolveProtocol({ ip: '1.2.3.4', port: 3389 })).toBe('rdp')
+    expect(resolveProtocol({ ip: '1.2.3.4', port: 5900 })).toBe('vnc')
+    expect(resolveProtocol({ ip: '1.2.3.4', port: 22 })).toBe('ssh')
+  })
+
+  it('keeps the old defaults: ip:port is a web UI, anything else is ssh', () => {
+    expect(resolveProtocol({ ip: '1.2.3.4', port: 8080 })).toBe('web')
+    expect(resolveProtocol({ ip: '1.2.3.4', username: 'anna' })).toBe('ssh')
+    expect(resolveProtocol({}, 'http://1.2.3.4:8080')).toBe('web')
+    expect(resolveProtocol({})).toBe('ssh')
+  })
+})
+
+describe('connectionFor', () => {
+  it('builds an ssh command for ssh accounts', () => {
+    expect(connectionFor({ ip: '1.2.3.4', port: 22, username: 'anna' })).toEqual({
+      protocol: 'ssh',
+      label: 'SSH',
+      value: 'ssh anna@1.2.3.4',
+    })
+  })
+
+  it('builds a host:port for rdp and vnc, never a command or a link', () => {
+    expect(connectionFor({ protocol: 'rdp', ip: '10.200.5.60', port: 3389, username: 'hannahroth' })).toEqual({
+      protocol: 'rdp',
+      label: 'RDP',
+      value: '10.200.5.60:3389',
+    })
+    // Default ports when the app leaves the port out.
+    expect(connectionFor({ protocol: 'rdp', ip: '10.200.5.60' })?.value).toBe('10.200.5.60:3389')
+    expect(connectionFor({ protocol: 'vnc', ip: '10.200.5.60' })?.value).toBe('10.200.5.60:5900')
+  })
+
+  it('builds a link for web accounts and strips the scheme from the label', () => {
+    expect(connectionFor({ ip: '1.2.3.4', port: 8080 }, 'http://1.2.3.4/pgadmin4')).toEqual({
+      protocol: 'web',
+      label: 'URL',
+      value: '1.2.3.4:8080/pgadmin4',
+      href: 'http://1.2.3.4:8080/pgadmin4',
+    })
+    // No per-user port: fall back to the team VM URL.
+    expect(connectionFor({ authtype: 'url' }, 'http://1.2.3.4:8080')?.href).toBe('http://1.2.3.4:8080')
+  })
+
+  it('falls back to the team Web-UI when the protocol line cannot be built', () => {
+    // An ssh_key account without a username — no command is possible,
+    // but the team's shared URL still reaches the machine.
+    expect(connectionFor({ type: 'ssh_key', ip: '1.2.3.4', port: 22 }, 'http://1.2.3.4/pgadmin4/')).toEqual({
+      protocol: 'web',
+      label: 'URL',
+      value: '1.2.3.4/pgadmin4/',
+      href: 'http://1.2.3.4/pgadmin4/',
+    })
+    expect(connectionFor({ protocol: 'rdp' }, 'http://1.2.3.4:8080')?.protocol).toBe('web')
+  })
+
+  it('returns null rather than half a line', () => {
+    expect(connectionFor({ protocol: 'none', ip: '1.2.3.4', port: 3389 })).toBeNull()
+    expect(connectionFor({ protocol: 'rdp' })).toBeNull()
+    expect(connectionFor({ ip: '1.2.3.4' })).toBeNull()
+    expect(connectionFor({})).toBeNull()
   })
 })

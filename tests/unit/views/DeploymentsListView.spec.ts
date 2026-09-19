@@ -29,6 +29,21 @@ vi.mock('@/stores/app.store', () => ({
   })
 }))
 
+// Die View liest die Rolle, um Studierenden den Anlegen-Knopf und das
+// Deployment-Vokabular vorzuenthalten. Ohne Mock zieht ``useRole`` den
+// echten Auth-Store und damit Pinia herein. Diese Datei prueft die
+// Dozentenansicht — Release-Tag, Datum, Anlegen-Knopf.
+// Die Studentenansicht hat ihre eigene Spec: DeploymentsListView.roles.
+vi.mock('@/composables/useRole', async () => {
+  const { computed } = await import('vue')
+  return {
+    useRole: () => ({
+      isStaff: computed(() => true),
+      isStudent: computed(() => false),
+    }),
+  }
+})
+
 const makeDeployment = (overrides: Record<string, any> = {}) => ({
   deploymentId: 'dep-1',
   appId: 'app-123',

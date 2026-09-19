@@ -1,7 +1,8 @@
 /**
  * Matches deployment team members to their access credentials and builds the
- * copy-paste access strings (SSH command, per-user URL) for the Teams card on
- * the deployment detail page. Pure functions — no Vue, no I/O.
+ * copy-paste access strings for the Teams card on the deployment detail page:
+ * the connection line for the app's protocol (ssh command, RDP/VNC host:port,
+ * web URL) plus the per-user URL. Pure functions — no Vue, no I/O.
  */
 import type { DeploymentTeam, DeploymentTeamMember } from '@/types'
 import type { TeamVm, UserAccount } from '@/services/deployment-outputs.service'
@@ -27,6 +28,106 @@ export function sshCommandFor(data: { username?: string; ip?: string; port?: num
   if (!data.username || !data.ip) return ''
   const portFlag = data.port && data.port !== 22 ? `-p ${data.port} ` : ''
   return `ssh ${portFlag}${data.username}@${data.ip}`
+}
+
+/** The protocols an app may declare in ``user_accounts.<key>.protocol``. */
+export const PROTOCOLS = ['ssh', 'rdp', 'vnc', 'web', 'none'] as const
+export type Protocol = (typeof PROTOCOLS)[number]
+
+// Ports that identify a protocol on their own. Only consulted when the
+// app declared none — an explicit ``protocol`` always wins, so an app
+// may serve RDP on a non-standard port.
+const PORT_PROTOCOLS: Record<number, Protocol> = { 22: 'ssh', 3389: 'rdp', 5900: 'vnc' }
+
+// The legacy slot some templates wrote before ``protocol`` existed.
+const AUTHTYPE_PROTOCOLS: Record<string, Protocol> = { ssh: 'ssh', url: 'web', http: 'web', web: 'web' }
+
+/** The account fields the protocol resolution reads. */
+export type ConnectionInput = Partial<
+  Pick<UserAccount, 'protocol' | 'authtype' | 'type' | 'ip' | 'port' | 'username'>
+>
+
+/**
+ * Decide how the user connects. Mirrors ``_resolve_protocol`` in the
+ * backend notifier so the deployment page and the access mail never
+ * disagree about one account.
+ *
+ * An explicit ``protocol`` wins. The rules below it exist so apps
+ * deployed before the field keep rendering as they did: the legacy
+ * ``authtype``, then an ``ssh_key`` credential (which can only mean
+ * SSH), then the well-known port, then "it has an ip:port, so it is
+ * probably a web UI" — the assumption this page already made.
+ */
+export function resolveProtocol(data: ConnectionInput, teamVmUrl?: string): Protocol {
+  const declared = data.protocol?.trim().toLowerCase()
+  if (declared && (PROTOCOLS as readonly string[]).includes(declared)) return declared as Protocol
+
+  const legacy = data.authtype?.trim().toLowerCase()
+  const byAuthtype = legacy ? AUTHTYPE_PROTOCOLS[legacy] : undefined
+  if (byAuthtype) return byAuthtype
+
+  if (data.type === 'ssh_key') return 'ssh'
+
+  const byPort = data.port ? PORT_PROTOCOLS[data.port] : undefined
+  if (byPort) return byPort
+
+  if (data.ip && data.port) return 'web'
+  if (teamVmUrl) return 'web'
+  return 'ssh'
+}
+
+/** One ready-to-use access line, resolved for the account's protocol. */
+export interface Connection {
+  protocol: Protocol
+  /** Pill label, e.g. ``SSH`` / ``RDP`` / ``URL``. */
+  label: string
+  /** The string to show and copy. */
+  value: string
+  /** Set for ``web`` only — the pill renders a link instead of text. */
+  href?: string
+}
+
+/**
+ * Build the connection pill for an account: an ssh command, the
+ * ``host:port`` an RDP/VNC client dials, or a URL. Returns ``null``
+ * when the app ships no reachable endpoint (``protocol: 'none'``) or
+ * the account is too incomplete to build a usable line — better no
+ * pill than half a one.
+ */
+export function connectionFor(data: ConnectionInput, teamVmUrl?: string): Connection | null {
+  const protocol = resolveProtocol(data, teamVmUrl)
+  if (protocol === 'ssh') {
+    const value = sshCommandFor(data)
+    if (value) return { protocol, label: 'SSH', value }
+    // An account too thin for a command (no username) still reaches its
+    // machine through the team's Web-UI if the app published one. The
+    // per-user URL is deliberately not used here — an ip:port meant for
+    // ssh is not an address a browser can open.
+    return teamUrlConnection(teamVmUrl)
+  }
+  if (protocol === 'rdp' || protocol === 'vnc') {
+    if (!data.ip) return teamUrlConnection(teamVmUrl)
+    const port = data.port ?? (protocol === 'rdp' ? 3389 : 5900)
+    return { protocol, label: protocol.toUpperCase(), value: `${data.ip}:${port}` }
+  }
+  if (protocol === 'web') return webConnection(data, teamVmUrl)
+  return null
+}
+
+/** The URL pill: the per-user URL when the account carries ip + port,
+ * otherwise the team's shared Web-UI. */
+function webConnection(data: ConnectionInput, teamVmUrl?: string): Connection | null {
+  return urlConnection(userUrlFor(data, teamVmUrl) ?? teamVmUrl)
+}
+
+/** The URL pill built from the team's Web-UI alone. */
+function teamUrlConnection(teamVmUrl?: string): Connection | null {
+  return urlConnection(teamVmUrl)
+}
+
+function urlConnection(href?: string | null): Connection | null {
+  if (!href) return null
+  return { protocol: 'web', label: 'URL', value: href.replace(/^https?:\/\//, ''), href }
 }
 
 // Build a per-user URL from user_accounts (ip + port), preserving any path

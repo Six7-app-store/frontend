@@ -20,6 +20,14 @@ export interface UserAccount {
   auth: string
   type?: 'password' | 'ssh_key' | 'oauth' | 'none' | string
   authtype?: 'ssh' | 'url' | string
+  /**
+   * How the user reaches the machine, declared by the app in its
+   * terraform output. Independent of ``type``, which only says what the
+   * ``auth`` value is — a Windows VM ships ``type: 'password'`` like a
+   * Linux one but ``protocol: 'rdp'``. Optional; ``resolveProtocol``
+   * infers it for apps that predate the field.
+   */
+  protocol?: 'ssh' | 'rdp' | 'vnc' | 'web' | 'none' | string
   url?: string
 }
 

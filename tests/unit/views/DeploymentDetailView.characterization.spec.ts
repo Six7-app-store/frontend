@@ -132,6 +132,12 @@ const userAccounts = {
   'Team Beta-erin': {
     team: 'Team Beta', ip: '1.2.3.4', port: 22, type: 'ssh_key',
   },
+  // A Windows app: same password credential as a Linux one, but the
+  // ``protocol`` says the user connects over RDP.
+  'Team Beta-carl': {
+    username: 'carl', team: 'Team Beta', ip: '10.200.5.60', port: 3389,
+    auth: 'pw-carl', type: 'password', protocol: 'rdp',
+  },
 }
 
 const teamVms = {
@@ -493,9 +499,13 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     expect(anna).not.toContain('URL:')
     expect(anna).toContain('PW:••••••••')
 
+    // One pill per account: dave's ip:port is a Web-UI, so he gets the
+    // URL and the account name — not the nonsensical
+    // ``ssh -p 2222 dave@example.com@10.0.0.6`` this used to also show.
     const dave = memberRow(wrapper, 'dave').text()
     expect(dave).toContain('URL:10.0.0.6:2222')
-    expect(dave).toContain('SSH:ssh -p 2222 dave@example.com@10.0.0.6')
+    expect(dave).toContain('User:dave@example.com')
+    expect(dave).not.toContain('SSH:')
     expect(memberRow(wrapper, 'dave').find('a').attributes('href')).toBe('http://10.0.0.6:2222')
 
     const bob = memberRow(wrapper, 'bob')
@@ -504,13 +514,23 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     expect(bob.text()).not.toContain('SSH:')
     expect(bob.find('a').attributes('href')).toBe('http://1.2.3.4:8081/pgadmin4')
 
+    // erin's account carries no username, so the pill that would show it
+    // is dropped instead of rendering an empty one. Her ip:port is an
+    // ssh endpoint, so the team's Web-UI is what she gets.
     const erin = memberRow(wrapper, 'erin')
-    expect(erin.text()).toContain('User:')
+    expect(erin.text()).not.toContain('User:')
     expect(erin.text()).toContain('URL:1.2.3.4/pgadmin4/')
     expect(erin.find('a').attributes('href')).toBe('http://1.2.3.4/pgadmin4/')
     expect(erin.text()).not.toContain('PW:')
 
-    expect(memberRow(wrapper, 'carl').text()).not.toContain('URL:')
+    // ``protocol: 'rdp'`` — an address for an RDP client, no ssh command
+    // and no link, plus the account name the client asks for.
+    const carl = memberRow(wrapper, 'carl')
+    expect(carl.text()).toContain('RDP:10.200.5.60:3389')
+    expect(carl.text()).toContain('User:carl')
+    expect(carl.text()).not.toContain('SSH:')
+    expect(carl.text()).not.toContain('URL:')
+    expect(carl.find('a').exists()).toBe(false)
     expect(memberRow(wrapper, 'annabelle').text()).not.toContain('SSH:')
     expect(memberRow(wrapper, 'annabelle').text()).not.toContain('PW:')
 
