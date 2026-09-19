@@ -41,3 +41,6 @@ coverage/
 # .claude/settings.json und gehoert ins Repository; was hier landet, gilt
 # nur fuer einen Rechner und darf niemandem sonst die Hooks umstellen.
 .claude/settings.local.json
+
+# Der Claude-Hook unter .claude/hooks/ ist Python.
+__pycache__/

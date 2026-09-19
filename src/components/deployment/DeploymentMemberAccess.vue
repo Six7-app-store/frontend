@@ -1,19 +1,25 @@
 <script setup lang="ts">
 /**
- * Access pills of one team member in the Teams card: username + web URL
- * (web-UI apps), per-user URL, ready-to-use SSH command and the masked
- * password, each with a copy button.
+ * Access pills of one team member in the Teams card: the account
+ * username, the connection line for the app's protocol (ssh command,
+ * RDP/VNC host:port, web URL) and the masked password, each with a
+ * copy button.
+ *
+ * Which pills appear follows ``connectionFor`` — the app declares
+ * ``protocol`` in its terraform output, so a Windows VM gets an RDP
+ * address instead of an ssh command it could not answer.
  *
  * Copy buttons share the page-wide "just copied" state
  * (``injectCopyToClipboard``); password visibility is owned by the
  * Teams card and toggled via ``toggle-password``.
  */
+import { computed } from 'vue'
 import { Check, Copy, Eye, EyeOff } from 'lucide-vue-next'
 import { injectCopyToClipboard } from '@/composables/useCopyToClipboard'
-import { sshCommandFor, userUrlFor, type AccountMatch } from '@/services/deployment-account-matching.service'
+import { connectionFor, type AccountMatch } from '@/services/deployment-account-matching.service'
 import type { TeamVm } from '@/services/deployment-outputs.service'
 
-defineProps<{
+const props = defineProps<{
   account: AccountMatch
   /** The team's VM metadata; ``url`` is set for apps that serve a Web-UI. */
   teamVm: TeamVm | null
@@ -25,16 +31,29 @@ defineEmits<{
 }>()
 
 const { copiedKey, copyToClipboard } = injectCopyToClipboard()
+
+/** The one access line for this account, or ``null`` when the app
+ * ships no reachable endpoint. */
+const connection = computed(() => connectionFor(props.account.data, props.teamVm?.url))
+
+/** The ssh command already carries the account name, every other
+ * protocol needs it spelled out. */
+const showUsername = computed(
+  () => !!props.account.data.username && connection.value?.protocol !== 'ssh',
+)
+
+const copyTitleKey = computed(() => {
+  if (connection.value?.protocol === 'ssh') return 'DeploymentDetailView.copySshCommand'
+  if (connection.value?.protocol === 'web') return 'DeploymentDetailView.copyUrl'
+  return 'DeploymentDetailView.copyConnection'
+})
 </script>
 
 <template>
   <div
     class="flex flex-wrap items-center gap-4 text-xs font-mono text-gray-600 lg:justify-end">
 
-    <!-- Web-app URL from ``team_vms.<team>.url``,
-                                     shared by every team member. When set, the
-                                     SSH pill is dropped and the username shows next to it. -->
-    <div v-if="teamVm?.url"
+    <div v-if="showUsername"
       class="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
       <span class="text-gray-400 font-sans text-[10px] uppercase tracking-wider flex-shrink-0">User:</span>
       <span>{{ account.data.username }}</span>
@@ -46,42 +65,19 @@ const { copiedKey, copyToClipboard } = injectCopyToClipboard()
       </button>
     </div>
 
-    <div v-if="account.data.ip && account.data.port && account.data.type !== 'ssh_key' && account.data.authtype !== 'ssh' && account.data.port !== 22"
+    <!-- Connection pill. ``web`` renders a link, everything else plain
+                                     text — an RDP address is not something a browser can open. -->
+    <div v-if="connection"
       class="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100 max-w-[280px]">
-      <span class="text-gray-400 font-sans text-[10px] uppercase tracking-wider flex-shrink-0">URL:</span>
-      <a :href="userUrlFor(account.data, teamVm?.url) ?? ''" target="_blank" rel="noopener noreferrer"
-        class="text-blue-600 hover:underline truncate">{{ userUrlFor(account.data, teamVm?.url)?.replace(/^https?:\/\//, '') }}</a>
+      <span class="text-gray-400 font-sans text-[10px] uppercase tracking-wider flex-shrink-0">{{ connection.label }}:</span>
+      <a v-if="connection.href" :href="connection.href" target="_blank" rel="noopener noreferrer"
+        class="text-blue-600 hover:underline truncate">{{ connection.value }}</a>
+      <span v-else class="truncate">{{ connection.value }}</span>
       <button
-        @click="copyToClipboard(userUrlFor(account.data, teamVm?.url) ?? '', 'vmurl-' + account.key)"
+        @click="copyToClipboard(connection.href ?? connection.value, 'conn-' + account.key)"
         class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-        :title="copiedKey === 'vmurl-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyUrl')">
-        <component :is="copiedKey === 'vmurl-' + account.key ? Check : Copy" :size="12" />
-      </button>
-    </div>
-    <div v-else-if="teamVm?.url"
-      class="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100 max-w-[280px]">
-      <span class="text-gray-400 font-sans text-[10px] uppercase tracking-wider flex-shrink-0">URL:</span>
-      <a :href="teamVm.url" target="_blank" rel="noopener noreferrer"
-        class="text-blue-600 hover:underline truncate">{{ teamVm.url.replace(/^https?:\/\//, '') }}</a>
-      <button
-        @click="copyToClipboard(teamVm.url, 'vmurl-' + account.key)"
-        class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-        :title="copiedKey === 'vmurl-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyUrl')">
-        <component :is="copiedKey === 'vmurl-' + account.key ? Check : Copy" :size="12" />
-      </button>
-    </div>
-
-    <!-- Ready-to-use SSH command line — already
-                                     includes username, IP and (for non-22) the port. -->
-    <div v-if="!teamVm?.url && account.data.ip && account.data.username && (!account.data.authtype || account.data.authtype === 'ssh')"
-      class="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100 max-w-full">
-      <span class="text-gray-400 font-sans text-[10px] uppercase tracking-wider flex-shrink-0">SSH:</span>
-      <span class="truncate">{{ sshCommandFor(account.data) }}</span>
-      <button
-        @click="copyToClipboard(sshCommandFor(account.data), 'ssh-' + account.key)"
-        class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-        :title="copiedKey === 'ssh-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copySshCommand')">
-        <component :is="copiedKey === 'ssh-' + account.key ? Check : Copy" :size="12" />
+        :title="copiedKey === 'conn-' + account.key ? $t('DeploymentDetailView.copied') : $t(copyTitleKey)">
+        <component :is="copiedKey === 'conn-' + account.key ? Check : Copy" :size="12" />
       </button>
     </div>
 
