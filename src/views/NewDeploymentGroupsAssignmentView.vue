@@ -260,16 +260,32 @@ const handleDragEnterGroup = (groupIndex: number) => {
   dragOverGroup.value = groupIndex
 }
 
-const handleDragLeaveGroup = () => {
-  dragOverGroup.value = null
+// ``dragenter`` and ``dragleave`` bubble, so every child of a drop zone fires
+// them as the pointer crosses it. Clearing the highlight on each one is not
+// just a flicker: the highlight changes the zone's own geometry, so dropping
+// it moves the box out from under a stationary cursor, which fires the pair
+// again. The two states then chase each other for as long as the pointer
+// hovers, the page re-renders every frame, and the browser never gets to the
+// ``drop`` -- the drag hangs with the cursor stuck and nothing clickable.
+//
+// ``relatedTarget`` is the node the pointer moved *to*. When that node still
+// sits inside the zone, the pointer never left it.
+function hasLeftZone(event: DragEvent) {
+  const zone = event.currentTarget as Node | null
+  const entered = event.relatedTarget as Node | null
+  return !zone || !entered || !zone.contains(entered)
+}
+
+const handleDragLeaveGroup = (event: DragEvent) => {
+  if (hasLeftZone(event)) dragOverGroup.value = null
 }
 
 const handleDragEnterUnassigned = () => {
   dragOverUnassigned.value = true
 }
 
-const handleDragLeaveUnassigned = () => {
-  dragOverUnassigned.value = false
+const handleDragLeaveUnassigned = (event: DragEvent) => {
+  if (hasLeftZone(event)) dragOverUnassigned.value = false
 }
 
 const handleDropOnGroup = (groupIndex: number, event: DragEvent) => {
@@ -474,6 +490,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
               <div 
                 class="flex-grow p-3 overflow-y-auto bg-gray-50"
                 :class="dragOverUnassigned ? 'bg-gray-200 ring-4 ring-gray-400' : ''"
+                data-testid="unassigned-dropzone"
                 @dragover="handleDragOver"
                 @dragenter="handleDragEnterUnassigned"
                 @dragleave="handleDragLeaveUnassigned"
@@ -517,7 +534,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
                 :key="index"
                 class="flex flex-col bg-white rounded-xl border-2 shadow-lg overflow-hidden transition-all"
                 :class="dragOverGroup === index 
-                  ? 'border-emerald-500 ring-4 ring-emerald-200 shadow-2xl scale-[1.02]' 
+                  ? 'border-emerald-500 ring-4 ring-emerald-200 shadow-2xl' 
                   : 'border-gray-200 hover:border-emerald-300 hover:shadow-xl'">
                 
                 <!-- Team Header -->
@@ -540,6 +557,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
                 <div 
                   class="flex-grow p-3 min-h-[200px] overflow-y-auto"
                   :class="dragOverGroup === index ? 'bg-emerald-50' : 'bg-gray-50'"
+                  :data-testid="`group-dropzone-${index}`"
                   @dragover="handleDragOver"
                   @dragenter="() => handleDragEnterGroup(index)"
                   @dragleave="handleDragLeaveGroup"
