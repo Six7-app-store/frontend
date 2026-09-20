@@ -16,12 +16,16 @@ import {
 import { useToast } from '@/composables/useToast'
 import { iconForAppName } from '@/services/app-presentation.service'
 import { useAuthStore } from '@/stores/auth.store'
+import { useRole } from '@/composables/useRole'
 import type { AppVersionApproval } from '@/types'
 
 const { t, locale } = useI18n()
 const toast = useToast()
 const router = useRouter()
 const authStore = useAuthStore()
+// The catalogue is readable for everyone, but only staff can turn an entry
+// into a deployment — so for a student it is a catalogue, not a launch pad.
+const { canCreateDeployment } = useRole()
 
 const isLoading = ref(false)
 const apps = ref<any[]>([])
@@ -86,7 +90,10 @@ onMounted(() => {
 
 <template>
   <div class="p-6">
-    <PageHeader :title="$t('AppsView.title')" :subtitle="$t('AppsView.subtitle')">
+    <PageHeader
+      :title="$t('AppsView.title')"
+      :subtitle="canCreateDeployment ? $t('AppsView.subtitle') : $t('AppsView.subtitleStudent')"
+    >
       <template #actions>
         <!-- Admin-only visibility filter -->
         <div v-if="authStore.isAdmin" class="flex items-center bg-gray-100 rounded-lg p-1 gap-1 text-sm">
@@ -178,7 +185,7 @@ onMounted(() => {
               class="w-full flex items-center justify-center gap-2"
               @click.stop="handleDeploy(app)"
             >
-              {{ $t('AppsView.detailsDeploy') }}
+              {{ canCreateDeployment ? $t('AppsView.detailsDeploy') : $t('AppsView.detailsOnly') }}
             </BaseButton>
           </div>
         </Card>

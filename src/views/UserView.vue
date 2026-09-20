@@ -2,6 +2,7 @@
 import { ROUTE_NAMES } from '@/router/route-names'
 import { User, Mail, Shield, Calendar, Cloud, ChevronRight, BookOpen, Contact, Key } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth.store'
+import { useRole } from '@/composables/useRole'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { roleLabelKey, roleBadgeVariant as roleBadgeVariantFor } from '@/i18n/role-labels'
@@ -11,6 +12,9 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
+// The only settings entry is the OpenStack credential page, and that route
+// is staff-only. For a student the whole section would be a dead link.
+const { canUseOpenStack } = useRole()
 
 // Cast to ``any`` so fields like firstName/course are accessible without the strict user type.
 const user = computed(() => authStore.user as any)
@@ -139,7 +143,7 @@ const createdDate = computed(() => {
 
       <!-- Settings — list layout rather than a card grid; same border/padding
            style as the cards above. -->
-      <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <div v-if="canUseOpenStack" class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b">
           <h2 class="text-lg font-semibold text-gray-900">{{ t('UserView.settings.title') }}</h2>
         </div>

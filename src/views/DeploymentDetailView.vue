@@ -48,7 +48,10 @@ const loadFailed = ref(false)
 
 // Owner-view vs member-view — gates tasks/logs, lifecycle actions, the
 // live stream and other members' resend buttons (see ``useDeploymentOwnerView``).
-const { isOwnerView } = useDeploymentOwnerView(deployment)
+// Read gate vs. write gate — see ``useDeploymentOwnerView``. Staff may
+// inspect a deployment they don't own; only the owner and admins may act
+// on it.
+const { isOwnerView, canOperate } = useDeploymentOwnerView(deployment)
 
 // Task list, active task, opened task detail and the newest task's
 // outputs (see ``useDeploymentTasks``).
@@ -188,6 +191,7 @@ const {
     deploymentId,
     deployment,
     isOwnerView,
+    canOperate,
     tasks,
     activeTask,
     connectionState: streamConnectionState,
@@ -227,7 +231,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
         <!-- Header with back button and status badge -->
         <DeploymentDetailHeader
             :deployment="deployment"
-            :is-owner-view="isOwnerView"
+            :can-operate="canOperate"
             :can-delete="canDelete"
             :delete-disabled-reason="deleteDisabledReason"
             :can-pause-or-resume="canPauseOrResume"
@@ -296,6 +300,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             :network-resources="networkResources"
             :security-resources="securityResources"
             :redeploy-in-flight="redeployInFlight"
+            :can-operate="canOperate"
             :open-drawer-address="openDrawerAddress"
             @refresh="loadResources()"
             @open-details="openVmDrawer"

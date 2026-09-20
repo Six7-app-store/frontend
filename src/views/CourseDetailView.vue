@@ -24,11 +24,12 @@ const route = useRoute()
 const router = useRouter()
 const courseStore = useCourseStore()
 const toast = useToast()
-// Permission mirror: editing course name and managing members is the
-// same staff-level capability the backend gates on course-teacher
-// membership. We approximate with ``isStaff`` because the legacy view
-// already did, and the API will still reject non-teachers.
-const { isStaff } = useRole()
+// Two different rights, not one: renaming the course goes through
+// ``ensure_edit_course`` (admin or designated teacher of this course),
+// while the member roster is gated on the plain staff role
+// (``require_staff``). Approximating both with ``isStaff`` put a rename
+// pencil on courses the teacher does not teach, which answers 403.
+const { isStaff, canEditCourse } = useRole()
 const { t } = useI18n() // <-- i18n initialisieren
 
 const courseId = computed(() => String(route.params.id))
@@ -256,7 +257,7 @@ const roleClass = (role: string | undefined) => badgeVariantClasses(roleBadgeVar
           <div v-if="!isEditingName" class="flex items-center gap-3">
             <h1 class="text-3xl font-bold text-gray-900">{{ courseStore.currentCourse.name }}</h1>
             <button
-                v-if="isStaff"
+                v-if="canEditCourse(courseStore.currentCourse)"
                 @click="startEditName"
                 class="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-blue-600 transition"
                 :title="$t('CourseDetailView.editNameTitle')"

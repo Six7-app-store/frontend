@@ -22,7 +22,14 @@ import type { DeploymentWithRelations, Task } from '@/types'
 const httpError = (status: number, detail: unknown) =>
   Object.assign(new Error(''), { response: { status, data: { detail } } })
 
-const setup = (status: DeploymentWithRelations['status'] = 'success', owner = true) => {
+// ``operate`` is the write gate (owner or admin); ``owner`` is the read
+// gate, which is broader — staff may inspect a deployment they cannot act
+// on. The two are passed separately so a read-only inspector can be set up.
+const setup = (
+  status: DeploymentWithRelations['status'] = 'success',
+  operate = true,
+  ownerView = operate,
+) => {
   const pinia = createPinia()
   setActivePinia(pinia)
   const deployment = ref({ deploymentId: 'dep-1', status } as DeploymentWithRelations)
@@ -35,7 +42,11 @@ const setup = (status: DeploymentWithRelations['status'] = 'success', owner = tr
   mount(defineComponent({
     setup() {
       api = useDeploymentLifecycle({
-        deploymentId: 'dep-1', deployment, isOwnerView: ref(owner), tasks, activeTask, connectionState, loadTasks,
+        deploymentId: 'dep-1',
+        deployment,
+        isOwnerView: ref(ownerView),
+        canOperate: ref(operate),
+        tasks, activeTask, connectionState, loadTasks,
       })
       return () => null
     },
@@ -66,6 +77,15 @@ describe('useDeploymentLifecycle', () => {
     const member = setup('success', false)
     expect(member.api.canDelete.value).toBe(false)
     expect(member.api.canPauseOrResume.value).toBe(false)
+  })
+
+  it('gives a read-only inspector no lifecycle actions', () => {
+    // A teacher looking at someone else's deployment: owner-view for the
+    // logs and the infrastructure list, but ``ensure_operate_deployment``
+    // would answer 403 on pause/resume/destroy.
+    const inspector = setup('success', false, true)
+    expect(inspector.api.canDelete.value).toBe(false)
+    expect(inspector.api.canPauseOrResume.value).toBe(false)
   })
 
   it('leaves the page after a direct soft-delete (204)', async () => {

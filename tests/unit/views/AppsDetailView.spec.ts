@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { computed, nextTick } from 'vue'
 
 import AppsDetailView from '@/views/AppsDetailView.vue'
 import { ROUTE_NAMES } from '@/router/route-names'
@@ -69,6 +69,16 @@ vi.mock('@/stores/auth.store', () => ({
     })
 }))
 
+// Rolle: nur Staff darf ein Deployment anlegen, also sieht auch nur Staff
+// die Deploy-Spalte. Default ist Lehrkraft, einzelne Tests schalten um.
+let mockRole: 'student' | 'teacher' | 'admin' = 'teacher'
+vi.mock('@/composables/useRole', () => ({
+    useRole: () => ({
+        isAdmin: computed(() => mockRole === 'admin'),
+        canCreateDeployment: computed(() => mockRole !== 'student'),
+    })
+}))
+
 // ---------------------------------------------------------
 // 2. Die Tests
 // ---------------------------------------------------------
@@ -77,6 +87,7 @@ describe('AppsDetailView.vue', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
+        mockRole = 'teacher'
         // Standard-Antwort der API
         ;(appApi.getById as any).mockResolvedValue({
             data: {
@@ -173,6 +184,18 @@ describe('AppsDetailView.vue', () => {
 
         expect(mockToastWarning).toHaveBeenCalledWith('AppsDetailView.toasts.selectVersionFirst')
         expect(mockPush).not.toHaveBeenCalled()
+    })
+
+    it('zeigt Studenten keine Deploy-Spalte', async () => {
+        mockRole = 'student'
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        const deployButton = wrapper.findAll('button')
+            .find(b => b.text().includes('AppsDetailView.deployButton'))
+        expect(deployButton).toBeUndefined()
+        expect(wrapper.text()).not.toContain('AppsDetailView.startDeploymentTitle')
     })
 
     // --- 3. Löschen (Modal & API) ---

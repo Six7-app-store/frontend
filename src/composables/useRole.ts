@@ -28,12 +28,28 @@ export function useRole() {
   const canApproveApp = computed(() => isAdmin.value)
   const canOperateDeployment = (d: Deployment) =>
     isAdmin.value || d.userId === auth.user?.userId
+  // Mirrors ``ensure_edit_course``: admin, or a designated teacher of
+  // *this* course. A plain teacher role is not enough — the courses list
+  // returns every course, and acting on one they don't teach answers 403.
+  // Covers renaming and deleting; adding/removing members is a separate,
+  // staff-level right on the backend (``require_staff``).
   const canEditCourse = (c: Course) =>
-    isAdmin.value ||
-    ((c as Course & { teacherIds?: string[] }).teacherIds?.includes(
-      auth.user?.userId ?? ""
-    ) ?? false)
+    isAdmin.value || (c.teacherIds?.includes(auth.user?.userId ?? "") ?? false)
+  const canDeleteCourse = canEditCourse
   const canChangeUserRole = computed(() => isAdmin.value)
+
+  // Creating a deployment is staff work — mirrors ``can_create_deployment``
+  // in backend/app/utils/capabilities.py, which rejects a student with
+  // ``role_required``. Students receive access to an environment a teacher
+  // set up for them; they never start one.
+  const canCreateDeployment = computed(() => isStaff.value)
+
+  // OpenStack credentials exist for one purpose: running a deployment
+  // against the cloud. Someone who cannot create a deployment has nothing
+  // to do with them, and showing the credential surface (banner, settings
+  // page, quota tile) suggests otherwise. Hides the whole surface rather
+  // than gating the individual widgets.
+  const canUseOpenStack = computed(() => isStaff.value)
 
   return {
     role,
@@ -47,6 +63,9 @@ export function useRole() {
     canApproveApp,
     canOperateDeployment,
     canEditCourse,
+    canDeleteCourse,
     canChangeUserRole,
+    canCreateDeployment,
+    canUseOpenStack,
   }
 }

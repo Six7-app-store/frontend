@@ -33,22 +33,20 @@ vi.mock('@/composables/useToast', () => ({
     useToast: () => ({ error: mockToastError, success: mockToastSuccess })
 }))
 
-// Rechteverwaltung (Permissions) flexibel mocken
-const mockCan = {
-    createCourse: { value: true },
-    editCourse: { value: true },
-    deleteCourse: { value: true }
-}
-vi.mock('@/composables/usePermissions', () => ({
-    usePermissions: () => ({ can: mockCan })
-}))
-
 // useRole greift intern auf useAuthStore (Pinia) zu — daher hier mocken.
 // ``isStaff`` muss ein echter Vue ``ref`` sein, damit das Template-
 // Auto-Unwrap funktioniert (sonst ist ``{ value: false }`` immer truthy).
+//
+// Zwei getrennte Rechte: Anlegen hängt an der Staff-Rolle, Löschen an der
+// Kurs-Lehrenden-Zuordnung der einzelnen Zeile (``teacherIds``). Deshalb
+// ist ``canDeleteCourse`` eine Funktion über den Kurs, kein Flag.
 const mockIsStaff = ref(true)
+let mockTeacherId = 'teacher-1'
 vi.mock('@/composables/useRole', () => ({
-    useRole: () => ({ isStaff: mockIsStaff })
+    useRole: () => ({
+        isStaff: mockIsStaff,
+        canDeleteCourse: (c: any) => (c.teacherIds ?? []).includes(mockTeacherId),
+    })
 }))
 
 // API (Mitgliederanzahl)
@@ -89,10 +87,8 @@ describe('CoursesView.vue', () => {
         mockCourses = []
         mockIsLoading = false
         mockStoreError = null
-        mockCan.createCourse.value = true
-        mockCan.editCourse.value = true
-        mockCan.deleteCourse.value = true
         mockIsStaff.value = true
+        mockTeacherId = 'teacher-1'
 
         mockFetchCourses.mockResolvedValue(undefined)
     })
@@ -162,8 +158,8 @@ describe('CoursesView.vue', () => {
 
     it('rendert Kurse und holt die Mitgliederanzahl', async () => {
         mockCourses = [
-            { courseId: 'c-1', name: 'Vue JS Kurs' },
-            { courseId: 'c-2', name: 'Python Kurs' }
+            { courseId: 'c-1', name: 'Vue JS Kurs', teacherIds: ['teacher-1'] },
+            { courseId: 'c-2', name: 'Python Kurs', teacherIds: ['teacher-1'] }
         ]
 
         ;(courseApi.listMembers as any).mockImplementation((id: string) => {
@@ -182,7 +178,7 @@ describe('CoursesView.vue', () => {
     })
 
     it('navigiert zur Detailseite, wenn ein Kurs geklickt wird', async () => {
-        mockCourses = [{ courseId: 'c-99', name: 'Klick Test' }]
+        mockCourses = [{ courseId: 'c-99', name: 'Klick Test', teacherIds: ['teacher-1'] }]
         ;(courseApi.listMembers as any).mockResolvedValue({ data: [] })
 
         const wrapper = mountComponent()
@@ -197,7 +193,6 @@ describe('CoursesView.vue', () => {
     // --- 3. Rechteverwaltung (Permissions) ---
 
     it('versteckt die "Erstellen" Buttons, wenn die Rechte fehlen', async () => {
-        mockCan.createCourse.value = false
         mockIsStaff.value = false
         const wrapper = mountComponent()
         await flushPromises()
@@ -207,9 +202,7 @@ describe('CoursesView.vue', () => {
     })
 
     it('versteckt den Löschen-Button und die Mitgliederanzahl, wenn edit-Rechte fehlen', async () => {
-        mockCourses = [{ courseId: 'c-1', name: 'Test Kurs' }]
-        mockCan.editCourse.value = false
-        mockCan.deleteCourse.value = true
+        mockCourses = [{ courseId: 'c-1', name: 'Test Kurs', teacherIds: [] }]
         mockIsStaff.value = false
 
         const wrapper = mountComponent()
@@ -218,6 +211,26 @@ describe('CoursesView.vue', () => {
         expect(courseApi.listMembers).not.toHaveBeenCalled()
         expect(wrapper.find('button[title="CoursesView.deleteTitle"]').exists()).toBe(false)
         expect(wrapper.text()).not.toContain('CoursesView.memberPlural')
+    })
+
+    it('zeigt der Lehrkraft Löschen nur bei den eigenen Kursen', async () => {
+        // Die Liste liefert jeden Kurs; ``ensure_edit_course`` lässt aber nur
+        // den durch, bei dem die Lehrkraft in ``course_teachers`` steht.
+        mockCourses = [
+            { courseId: 'mine', name: 'Meiner', teacherIds: ['teacher-1'] },
+            { courseId: 'theirs', name: 'Fremder', teacherIds: ['teacher-2'] },
+        ]
+        ;(courseApi.listMembers as any).mockResolvedValue({ data: [] })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        const deleteButtons = wrapper.findAll('button[title="CoursesView.deleteTitle"]')
+        expect(deleteButtons).toHaveLength(1)
+        // Der Button sitzt in der Karte des eigenen Kurses.
+        const [mine, theirs] = wrapper.findAll('.stub-card')
+        expect(mine!.find('button[title="CoursesView.deleteTitle"]').exists()).toBe(true)
+        expect(theirs!.find('button[title="CoursesView.deleteTitle"]').exists()).toBe(false)
     })
 
     // --- 4. Erstellen (Modal & API) ---
@@ -273,7 +286,7 @@ describe('CoursesView.vue', () => {
     // --- 5. Löschen (Modal & API) ---
 
     it('öffnet das Löschen-Modal und löscht den Kurs erfolgreich', async () => {
-        mockCourses = [{ courseId: 'c-77', name: 'Zu löschender Kurs' }]
+        mockCourses = [{ courseId: 'c-77', name: 'Zu löschender Kurs', teacherIds: ['teacher-1'] }]
         ;(courseApi.listMembers as any).mockResolvedValue({ data: [] })
         mockDeleteCourse.mockResolvedValue(undefined)
 
@@ -298,7 +311,7 @@ describe('CoursesView.vue', () => {
 
     it('rendert den Kursnamen im Löschen-Modal als Text, nicht als HTML', async () => {
         const evilName = '<img src=x onerror="alert(1)">'
-        mockCourses = [{ courseId: 'c-66', name: evilName }]
+        mockCourses = [{ courseId: 'c-66', name: evilName, teacherIds: ['teacher-1'] }]
         ;(courseApi.listMembers as any).mockResolvedValue({ data: [] })
 
         const wrapper = mountComponent()

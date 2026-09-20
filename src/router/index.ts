@@ -264,7 +264,11 @@ export const routes: RouteRecordRaw[] = [
     path: '/user/openstack',
     name: ROUTE_NAMES.userOpenStack,
     component: () => import('@/views/SettingsOpenStackView.vue'),
-    meta: { requiresAuth: true, layout: 'user' },
+    // Credentials only serve to run a deployment, and creating one is
+    // staff-only (backend ``can_create_deployment``). A student with
+    // credentials stored could reach OpenStack outside the course setup,
+    // so the page is gated at the same level as the wizard.
+    meta: { requiresAuth: true, layout: 'user', requiresRole: ['teacher', 'admin'] as UserRole[] },
   },
   {
     path: '/forbidden',

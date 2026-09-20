@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { computed, nextTick } from 'vue'
 
 import AppsView from '@/views/AppsView.vue'
 import { Server, Globe, Box, Layers } from 'lucide-vue-next'
@@ -30,6 +30,15 @@ vi.mock('@/stores/auth.store', () => ({
     useAuthStore: () => ({ userId: 'other-user-id', isTeacherOrAdmin: false })
 }))
 
+// Der Katalog ist für alle lesbar, aber nur Staff kann daraus ein
+// Deployment machen — davon hängen Untertitel und Button-Text ab.
+let mockRole: 'student' | 'teacher' = 'teacher'
+vi.mock('@/composables/useRole', () => ({
+    useRole: () => ({
+        canCreateDeployment: computed(() => mockRole === 'teacher'),
+    })
+}))
+
 vi.mock('@/api/app.api', () => ({
     appApi: {
         list: vi.fn(),
@@ -46,6 +55,7 @@ describe('AppsView.vue', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
+        mockRole = 'teacher'
         // Unterdrücke die Konsolenausgabe für Fehler in unseren Tests
         vi.spyOn(console, 'error').mockImplementation(() => {})
     })
@@ -128,6 +138,19 @@ describe('AppsView.vue', () => {
             name: 'apps.detail',
             params: { id: 'app-999' }
         })
+    })
+
+    it('beschriftet die Karte für Studenten ohne Deployment-Versprechen', async () => {
+        mockRole = 'student'
+        ;(appApi.list as any).mockResolvedValue({ data: [{ id: 'app-999', name: 'Test App' }] })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        const text = wrapper.text()
+        expect(text).toContain('AppsView.detailsOnly')
+        expect(text).not.toContain('AppsView.detailsDeploy')
+        expect(text).toContain('AppsView.subtitleStudent')
     })
 
     // --- Erweiterte Tests (Edge Cases & UI Logik) ---

@@ -22,7 +22,11 @@ const toast = useToast()
 // enforces course-teacher membership on edit/delete). ``isStaff`` covers
 // teacher + admin which matches the previous ``can.editCourse`` /
 // ``can.createCourse`` / ``can.deleteCourse`` semantics.
-const { isStaff } = useRole()
+// Creating a course is a plain staff right (``require_staff``), but
+// deleting one is not: ``ensure_edit_course`` wants an admin or a
+// designated teacher of *that* course. The list shows every course, so
+// the delete button has to be decided per row.
+const { isStaff, canDeleteCourse } = useRole()
 const router = useRouter()
 const { t } = useI18n() // <-- i18n initialisiert
 
@@ -156,7 +160,7 @@ const goToDetail = (courseId: string) => {
         >
           <!-- Delete action (top-right) -->
           <button
-              v-if="isStaff"
+              v-if="canDeleteCourse(course)"
               @click.stop="requestDelete(course)"
               class="absolute top-3 right-3 p-2 hover:bg-red-50 rounded-lg transition z-10"
               :title="$t('CoursesView.deleteTitle')"

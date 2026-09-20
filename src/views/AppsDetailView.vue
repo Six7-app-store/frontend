@@ -29,7 +29,7 @@ import type { AppVersionApproval, AppVariableMarkerError } from '@/types'
 const deploymentStore = useDeploymentStore()
 const credStore = useOpenStackCredentialsStore()
 const authStore = useAuthStore()
-const { isAdmin } = useRole()
+const { isAdmin, canCreateDeployment } = useRole()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -481,7 +481,9 @@ onMounted(async () => {
       <!-- ============================================================ -->
       <div v-if="activeTab === 'overview'" class="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-        <div class="lg:col-span-2 space-y-6">
+        <!-- Without the deploy sidebar the description takes the full
+             width instead of leaving a third of the row empty. -->
+        <div class="space-y-6" :class="canCreateDeployment ? 'lg:col-span-2' : 'lg:col-span-3'">
 
           <div>
             <h2 class="text-xl font-semibold text-gray-900 mb-3">{{ $t('AppsDetailView.descriptionTitle') }}</h2>
@@ -558,8 +560,10 @@ onMounted(async () => {
 
         </div>
 
-        <!-- Deploy sidebar -->
-        <div class="bg-[#FAFAFA] border border-gray-200 rounded-xl p-6 h-fit sticky top-6">
+        <!-- Deploy sidebar — staff only. The backend rejects a student on
+             POST /deployments (``role_required``), and the wizard route is
+             gated too, so the button could only ever lead to /forbidden. -->
+        <div v-if="canCreateDeployment" class="bg-[#FAFAFA] border border-gray-200 rounded-xl p-6 h-fit sticky top-6">
           <h2 class="text-lg font-semibold text-gray-900 mb-6">{{ $t('AppsDetailView.startDeploymentTitle') }}</h2>
 
           <div class="mb-6">

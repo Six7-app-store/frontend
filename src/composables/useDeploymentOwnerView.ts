@@ -4,26 +4,35 @@ import { useRole } from '@/composables/useRole'
 import type { DeploymentWithRelations } from '@/types'
 
 /**
- * Owner-view vs member-view — mirrors backend/app/utils/permissions.py
- * ``is_deployment_owner_view``. Drives every gated UI element on the
- * deployment detail page: tasks/logs sections, terraform-state/outputs
- * blocks, the Delete button, the SSE live-stream connection, and the
- * resend-credentials buttons of *other* members in the same team.
+ * Two separate gates, deliberately not one:
  *
- * We trust the backend on the source-of-truth side (it returns 403
- * or filters data when the caller isn't owner-view); this computed
- * just hides the affordances so the user doesn't see buttons that
- * would 403 on click.
+ * ``isOwnerView`` — may *read* the owner-level data: tasks/logs sections,
+ * terraform-state/outputs blocks, the infrastructure list, the SSE
+ * live-stream connection, and the resend-credentials buttons of other
+ * members in the same team. Mirrors backend
+ * ``can_view_deployment_owner`` (admin, owner, or course-teacher of the
+ * owner's Studiengruppe), approximated by ``isStaff``.
+ *
+ * ``canOperate`` — may *change* the deployment: Pause, Resume, Delete,
+ * per-VM Redeploy. Mirrors ``can_operate_deployment``, which is owner or
+ * admin only. A teacher who merely inspects someone else's deployment is
+ * read-only, so gating those buttons on ``isOwnerView`` offered actions
+ * that answer 403 on click.
+ *
+ * We trust the backend on the source-of-truth side; these computeds only
+ * hide affordances the caller could not use.
  */
 export function useDeploymentOwnerView(deployment: Ref<DeploymentWithRelations | null>) {
   const authStore = useAuthStore()
-  const { isStaff } = useRole()
+  const { isStaff, isAdmin } = useRole()
 
-  const isOwnerView = computed(() => {
-    if (isStaff.value) return true
+  const isOwner = computed(() => {
     const ownerId = deployment.value?.userId
     return !!ownerId && String(ownerId) === String(authStore.userId)
   })
 
-  return { isOwnerView }
+  const isOwnerView = computed(() => isStaff.value || isOwner.value)
+  const canOperate = computed(() => isAdmin.value || isOwner.value)
+
+  return { isOwnerView, canOperate }
 }

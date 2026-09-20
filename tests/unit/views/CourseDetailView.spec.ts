@@ -41,9 +41,16 @@ vi.mock('@/composables/usePermissions', () => ({
 // useRole greift intern auf useAuthStore (Pinia) zu — daher hier mocken.
 // ``isStaff`` muss ein echter Vue ``ref`` sein, damit das Template-
 // Auto-Unwrap funktioniert (sonst ist ``{ value: false }`` immer truthy).
+// Zwei getrennte Rechte: die Mitgliederverwaltung hängt an der
+// Staff-Rolle (``require_staff``), das Umbenennen an der
+// Kurs-Lehrenden-Zuordnung (``ensure_edit_course``).
 const mockIsStaff = ref(true)
+let mockTeacherId = 'teacher-1'
 vi.mock('@/composables/useRole', () => ({
-    useRole: () => ({ isStaff: mockIsStaff })
+    useRole: () => ({
+        isStaff: mockIsStaff,
+        canEditCourse: (c: any) => (c?.teacherIds ?? []).includes(mockTeacherId),
+    })
 }))
 
 // User API
@@ -90,7 +97,8 @@ describe('CourseDetailView.vue', () => {
         vi.clearAllMocks()
 
         // Standard-Zustand für erfolgreichen Start
-        mockCurrentCourse = { courseId: 'c-123', name: 'Vue 3 Masterclass' }
+        mockCurrentCourse = { courseId: 'c-123', name: 'Vue 3 Masterclass', teacherIds: ['teacher-1'] }
+        mockTeacherId = 'teacher-1'
         mockCurrentMembers = []
         mockIsLoading = false
         mockCan.editCourse.value = true
@@ -191,13 +199,25 @@ describe('CourseDetailView.vue', () => {
     // --- 3. Rechteverwaltung ---
 
     it('versteckt Bearbeiten- und Hinzufügen-Buttons, wenn Rechte fehlen', async () => {
-        mockCan.editCourse.value = false
         mockIsStaff.value = false
+        mockCurrentCourse = { ...mockCurrentCourse, teacherIds: [] }
         const wrapper = mountComponent()
         await flushPromises()
 
         expect(wrapper.find('button[title="CourseDetailView.editNameTitle"]').exists()).toBe(false)
         expect(wrapper.text()).not.toContain('CourseDetailView.addMemberBtn')
+    })
+
+    it('lässt einer fremden Lehrkraft die Mitglieder, aber nicht das Umbenennen', async () => {
+        // Staff darf jeden Kurs-Roster pflegen (``require_staff``), umbenennen
+        // aber nur, wer in ``course_teachers`` dieses Kurses steht.
+        mockIsStaff.value = true
+        mockCurrentCourse = { ...mockCurrentCourse, teacherIds: ['someone-else'] }
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        expect(wrapper.find('button[title="CourseDetailView.editNameTitle"]').exists()).toBe(false)
+        expect(wrapper.text()).toContain('CourseDetailView.addMemberBtn')
     })
 
     // --- 4. Mitglieder Hinzufügen (Modal & Suche) ---

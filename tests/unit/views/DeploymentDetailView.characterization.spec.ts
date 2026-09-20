@@ -324,7 +324,12 @@ beforeEach(() => {
   setActivePinia(pinia)
   i18n = createI18n({ legacy: false, locale: 'de', messages: { de } })
 
-  authState.user = makeUser()
+  // Default actor is the deployment's owner. Owner-view (reading tasks,
+  // logs, infrastructure) is granted to any staff member, but acting on
+  // the deployment — pause, resume, destroy, redeploy — is owner-or-admin
+  // (``ensure_operate_deployment``). A non-owning teacher is covered by
+  // its own block below.
+  authState.user = makeUser({ userId: 'owner-1' })
 
   stream.progress.value = null
   stream.currentPhase.value = null
@@ -1037,6 +1042,42 @@ describe('DeploymentDetailView — Redeploy', () => {
 
     expect(toasts()).toEqual([{ type: 'error', message }])
     expect(buttonWithText(wrapper, de.vm.actions.redeploy)!.attributes('disabled')).toBeUndefined()
+  })
+})
+
+// =========================================================
+// Read-only staff inspector
+// =========================================================
+
+describe('DeploymentDetailView — fremde Lehrkraft', () => {
+  beforeEach(() => {
+    // Staff, aber nicht der Besitzer: darf lesen (``can_view_deployment_owner``),
+    // aber nicht handeln (``can_operate_deployment`` ist Besitzer oder Admin).
+    authState.user = makeUser({ userId: 'staff-1', role: 'teacher' })
+  })
+
+  it('sieht Tasks und Infrastruktur, aber keine Lifecycle-Buttons', async () => {
+    const wrapper = await mountLoaded()
+
+    expect(wrapper.text()).toContain(t('DeploymentDetailView.infrastructure'))
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))).toBeUndefined()
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentPause'))).toBeUndefined()
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentResume'))).toBeUndefined()
+  })
+
+  it('sieht die VM-Karte, aber keinen Redeploy-Button', async () => {
+    const wrapper = await mountLoaded()
+
+    expect(buttonWithText(wrapper, de.vm.actions.showDetails)).toBeDefined()
+    expect(buttonWithText(wrapper, de.vm.actions.redeploy)).toBeUndefined()
+  })
+
+  it('behält die Lifecycle-Buttons für den Admin', async () => {
+    authState.user = makeUser({ userId: 'admin-1', role: 'admin' })
+    const wrapper = await mountLoaded()
+
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))).toBeDefined()
+    expect(buttonWithText(wrapper, de.vm.actions.redeploy)).toBeDefined()
   })
 })
 

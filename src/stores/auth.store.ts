@@ -120,8 +120,13 @@ export const useAuthStore = defineStore('auth', {
         try {
           this.user = await AuthService.fetchMe()
           // Background prefetch; the credentials store records its own
-          // error state, so nothing to handle here.
-          useOpenStackCredentialsStore().fetch().catch(() => {})
+          // error state, so nothing to handle here. Skipped for students:
+          // they may not create a deployment (backend
+          // ``can_create_deployment``), so they never hold credentials and
+          // the whole credential surface stays hidden for them.
+          if (this.hasAnyRole('teacher', 'admin')) {
+            useOpenStackCredentialsStore().fetch().catch(() => {})
+          }
         } catch (error) {
           console.error('Failed to fetch user:', error)
           this.user = null

@@ -35,6 +35,10 @@ const props = defineProps<{
    *  ``Ausblenden``) and a subtle accent on the card border so the
    *  user sees which card the open panel belongs to. */
   isExpanded?: boolean
+  /** Whether the viewer may act on this deployment (owner or admin). A
+   *  teacher inspecting someone else's deployment reads the card but gets
+   *  no redeploy button — the backend answers 403 on that call. */
+  canOperate?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -214,6 +218,7 @@ const cardBorderClass = computed(() => {
         {{ isExpanded ? t('vm.actions.hideDetails') : t('vm.actions.showDetails') }}
       </button>
       <button
+        v-if="canOperate"
         @click="emit('redeploy', resource.address)"
         :disabled="redeploying"
         class="flex-1 text-xs font-semibold py-1.5 px-3 rounded border transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"

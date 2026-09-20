@@ -26,6 +26,8 @@ exports[`HelpView (de) > matches snapshot 1`] = `
       </div>
       <p class="text-gray-600 leading-7 mb-4">Diese Checkliste hilft dir, die häufigsten Blocker schnell zu finden und zu verstehen, was du als nächstes prüfen solltest.</p>
       <ul class="list-disc list-inside space-y-2 text-gray-600">
+        <!-- Quotas belong to the OpenStack project a lecturer's
+               credentials point at; a student has none to check. -->
         <li>Prüfe, ob du dein Quota-Limit erreicht hast.</li>
         <li>Sieh dir die Deployment-Details und Logs an, um den Fehler einzugrenzen.</li>
       </ul>
@@ -54,6 +56,8 @@ exports[`HelpView (de) > matches snapshot 1`] = `
           <h3 class="font-semibold text-base">Apps</h3>
           <p class="text-gray-600">Apps prüfen, Versionen auswählen und neue Anwendungen bereitstellen.</p>
         </div>
+        <!-- Courses is a staff-only route; for a student the entry would
+               describe a page they cannot open. -->
         <div>
           <h3 class="font-semibold text-base">Kurse</h3>
           <p class="text-gray-600">Deployments mit Kursen verknüpfen und Teilnehmergruppen organisieren.</p>
@@ -126,6 +130,8 @@ exports[`HelpView (en) > matches snapshot 1`] = `
       </div>
       <p class="text-gray-600 leading-7 mb-4">This checklist helps you find the most common blockers quickly and understand what to check next.</p>
       <ul class="list-disc list-inside space-y-2 text-gray-600">
+        <!-- Quotas belong to the OpenStack project a lecturer's
+               credentials point at; a student has none to check. -->
         <li>Check whether you have reached your quota limit.</li>
         <li>Look at deployment details and logs to narrow down the issue.</li>
       </ul>
@@ -154,6 +160,8 @@ exports[`HelpView (en) > matches snapshot 1`] = `
           <h3 class="font-semibold text-base">Apps</h3>
           <p class="text-gray-600">Verify the app you need or add new applications and versions.</p>
         </div>
+        <!-- Courses is a staff-only route; for a student the entry would
+               describe a page they cannot open. -->
         <div>
           <h3 class="font-semibold text-base">Courses</h3>
           <p class="text-gray-600">Link deployments to courses and organize participant groups.</p>

@@ -22,6 +22,10 @@ defineProps<{
   redeployInFlight: Set<string>
   /** Address of the VM whose detail panel is open, if any. */
   openDrawerAddress: string | null
+  /** Whether the viewer may act on the deployment (owner or admin) —
+   *  passed down so the cards drop their redeploy button for someone
+   *  who may read the infrastructure but not change it. */
+  canOperate: boolean
 }>()
 
 defineEmits<{
@@ -92,6 +96,7 @@ defineEmits<{
           :key="vm.address"
           :resource="vm"
           :redeploying="redeployInFlight.has(vm.address)"
+          :can-operate="canOperate"
           :is-expanded="openDrawerAddress === vm.address"
           @open-details="$emit('open-details', $event)"
           @redeploy="$emit('redeploy', $event)"

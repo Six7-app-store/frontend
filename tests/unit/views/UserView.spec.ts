@@ -147,11 +147,21 @@ describe('UserView.vue', () => {
     // --- 5. Navigation ---
 
     it('verlinkt korrekt auf die OpenStack-Einstellungen', () => {
-        mockUser = { username: 'testuser' }
+        mockUser = { username: 'testuser', role: 'teacher' }
         const wrapper = mountComponent()
 
         const link = wrapper.find('a.router-link-stub')
         expect(link.exists()).toBe(true)
         expect(link.attributes('href')).toBe('user.openstack')
+    })
+
+    it('zeigt Studenten den OpenStack-Einstieg nicht', () => {
+        // Die Route ist Staff-only; für Studenten wäre der Eintrag ein
+        // Link nach /forbidden.
+        mockUser = { username: 'testuser', role: 'student' }
+        const wrapper = mountComponent()
+
+        expect(wrapper.find('a.router-link-stub').exists()).toBe(false)
+        expect(wrapper.text()).not.toContain('UserView.settings.title')
     })
 })

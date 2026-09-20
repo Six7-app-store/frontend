@@ -14,7 +14,9 @@ vi.mock('vue-i18n', () => ({
   })
 }))
 
-let mockUser: any = { username: 'john' }
+// Role drives the credential/quota surface: only staff may create a
+// deployment, so only staff see credentials, quotas and the deploy CTA.
+let mockUser: any = { username: 'john', role: 'teacher' }
 let mockCredStatus: any = null
 let mockCredResolved = true
 let mockHasCredential = true
@@ -90,7 +92,7 @@ describe('DashboardView.vue', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    mockUser = { username: 'john' }
+    mockUser = { username: 'john', role: 'teacher' }
     mockCredStatus = { has_credential: true }
     mockCredResolved = true
     mockHasCredential = true
@@ -139,6 +141,41 @@ describe('DashboardView.vue', () => {
     expect(mockFetchStats).toHaveBeenCalledTimes(1)
     expect(mockFetchQuotas).toHaveBeenCalledTimes(1)
     expect(mockFetchCredentials).toHaveBeenCalledTimes(1)
+  })
+
+  // --- Studierende: kein Credential-/Quota-Anteil ---
+
+  it('fragt als Student weder Quotas noch Credentials ab', async () => {
+    mockUser = { username: 'john', role: 'student' }
+    mockCredStatus = null
+
+    mountComponent()
+    await flushPromises()
+
+    expect(mockFetchStats).toHaveBeenCalledTimes(1)
+    expect(mockFetchQuotas).not.toHaveBeenCalled()
+    expect(mockFetchCredentials).not.toHaveBeenCalled()
+  })
+
+  it('zeigt Studenten weder den Credential-Banner noch die Quota-Kachel', async () => {
+    mockUser = { username: 'john', role: 'student' }
+    mockHasCredential = false
+
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    expect(wrapper.find('.stub-banner').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('DashboardView.availableResources')
+  })
+
+  it('führt Studenten zu ihren Umgebungen statt zu einem neuen Deployment', async () => {
+    mockUser = { username: 'john', role: 'student' }
+
+    const wrapper = mountComponent()
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('DashboardView.environmentsOpen')
+    expect(wrapper.text()).not.toContain('DashboardView.deploymentNew')
   })
 
   it('lädt Credentials nicht erneut, wenn sie bereits vorhanden sind', async () => {

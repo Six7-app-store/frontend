@@ -63,6 +63,12 @@ export interface UserPasswordUpdate {
 export interface Course {
   courseId: string
   name: string
+  /**
+   * User-ids of the course's designated teachers. Together with the admin
+   * role this is what decides edit/delete rights on a course — the backend
+   * gates them via ``ensure_edit_course``, not via the plain staff role.
+   */
+  teacherIds: string[]
 }
 
 export interface CourseWithUsers extends Course {

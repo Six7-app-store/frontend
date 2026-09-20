@@ -1,9 +1,22 @@
 import { mount } from '@vue/test-utils'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { computed } from 'vue'
 import { createI18n } from 'vue-i18n'
-import HelpView from '@/views/HelpView.vue'
 import en from '../../../src/i18n/locales/en.ts'
 import de from '../../../src/i18n/locales/de.ts'
+
+// The page describes two different workflows: the lecturer sets an
+// environment up, the student only uses the one assigned to them. Both
+// branches are covered below.
+let mockRole: 'student' | 'teacher' = 'teacher'
+vi.mock('@/composables/useRole', () => ({
+  useRole: () => ({
+    isStaff: computed(() => mockRole === 'teacher'),
+    canCreateDeployment: computed(() => mockRole === 'teacher'),
+  }),
+}))
+
+import HelpView from '@/views/HelpView.vue'
 
 const locales: { [key: string]: any } = { en, de }
 
@@ -12,6 +25,7 @@ for (const [lng, msgs] of Object.entries(locales)) {
     let wrapper: ReturnType<typeof mount>
 
     beforeEach(() => {
+      mockRole = 'teacher'
       const i18n = createI18n({ legacy: false, locale: lng, messages: { [lng]: msgs } })
       wrapper = mount(HelpView as any, {
         global: {
@@ -100,6 +114,23 @@ for (const [lng, msgs] of Object.entries(locales)) {
 
     it('matches snapshot', () => {
       expect(wrapper.html()).toMatchSnapshot()
+    })
+
+    it('replaces the deployment walkthrough for students', () => {
+      mockRole = 'student'
+      const i18n = createI18n({ legacy: false, locale: lng, messages: { [lng]: msgs } })
+      const studentWrapper = mount(HelpView as any, {
+        global: { plugins: [i18n], stubs: ['HelpCircle', 'Layers', 'BookOpen'] },
+      })
+
+      const text = studentWrapper.text()
+      expect(text).toContain(msgs.HelpView.quickHelp.processTitleStudent)
+      expect(text).toContain(msgs.HelpView.quickHelp.studentStep1)
+      // No "start a deployment" instructions, no course page, no quotas.
+      expect(text).not.toContain(msgs.HelpView.quickHelp.step1)
+      expect(text).not.toContain(msgs.HelpView.quickHelp.pageCoursesTitle)
+      expect(text).not.toContain(msgs.HelpView.troubleshooting.item1)
+      expect(studentWrapper.findAll('ol li').length).toBe(3)
     })
   })
 }
