@@ -13,10 +13,18 @@ Alles im Container — die `node_modules` am Host sind unvollständig, ein
 - Typecheck: `docker exec frontend-dev sh -lc 'cd /app && npx vue-tsc -b'`
 - Logs: `docker logs -f frontend-dev`
 
-**Nach neuen Dateien oder Routen: `docker restart frontend-dev`.** Der
-Bind-Mount liefert keine inotify-Events, Vite sieht neue Dateien sonst nicht.
-Symptom: eine neue Route landet im falschen Layout, und
-`curl http://localhost:5173/src/router/index.ts` zeigt den alten Stand.
+Der Bind-Mount liefert keine inotify-Events, deshalb pollt der Watcher
+(`server.watch.usePolling` in `vite.config.ts`). Ohne das feuert er nie, und
+Vite liefert weiter den Transform, den es beim Start gecacht hat — die Datei
+auf der Platte ist geändert, im Browser passiert nichts. Das sieht aus, als
+hätte die Änderung nicht gewirkt.
+
+**Prüfen, was der Dev-Server wirklich ausliefert:**
+`curl http://localhost:5173/src/views/Foo.vue`. Steht dort der alte Stand,
+liegt es am Watcher, nicht am Code — dann `docker restart frontend-dev`
+(bei hartnäckigem Cache vorher
+`docker exec frontend-dev rm -rf /app/node_modules/.vite`). Der Browser hält
+das alte Modul zusätzlich fest: Ctrl+Shift+R.
 
 ## Konventionen
 

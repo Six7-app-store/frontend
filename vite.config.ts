@@ -25,5 +25,22 @@ export default defineConfig({
     // Dev only: `vite build` does not read this, and the production
     // image serves the built assets through nginx.
     allowedHosts: ['localhost', 'host.docker.internal'],
+
+    // The source tree reaches the container through a Windows bind mount,
+    // and that mount delivers no inotify events. Without polling the
+    // watcher never fires, so Vite keeps serving the transform it cached
+    // at startup: the file on disk is fixed, `curl
+    // http://localhost:5173/src/views/Foo.vue` still shows the old one,
+    // and a browser reload changes nothing. It reads like the fix did not
+    // work rather than like a dev-server setting.
+    //
+    // Dev only: `vite build` does not read `server`.
+    watch: {
+      usePolling: true,
+      interval: 300,
+      // A coverage run writes ~150 HTML files at once, and every one of
+      // them triggers a full page reload in an open tab.
+      ignored: ['**/coverage/**'],
+    },
   },
 })
