@@ -65,7 +65,7 @@ describe('NewDeploymentSummaryView.vue', () => {
         },
         deployment: {
           studentCache: new Map([
-            ['kc1', { userId: 'u1', firstName: 'John', lastName: 'Doe', keycloak_id: 'kc1' }]
+            ['u1', { userId: 'u1', firstName: 'John', lastName: 'Doe', keycloak_id: null }]
           ]),
           draft: {
             name: 'My Deployment',
@@ -73,9 +73,9 @@ describe('NewDeploymentSummaryView.vue', () => {
             releaseTag: '1.0.0',
             groupCount: 1,
             groupMode: 'one',
-            studentIds: ['kc1'],
+            studentIds: ['u1'],
             assignments: {
-              0: ['kc1']
+              0: ['u1']
             },
             groupNames: ['Team Alpha'],
             variables: {
@@ -86,7 +86,7 @@ describe('NewDeploymentSummaryView.vue', () => {
             },
             fileUploads: {
               'ssh_key': {
-                'kc1': { name: 'id_rsa.pub', size: 1024 } // 1 KB
+                'u1': { name: 'id_rsa.pub', size: 1024 } // 1 KB
               }
             },
             variableDefinitions: []
@@ -153,19 +153,6 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(wrapper.text()).toContain('1 KB') // Formatierte Dateigröße
   })
 
-  it('meldet einen Objekt-detail beim Laden der Nutzer als eigenen Text', async () => {
-    vi.mocked(userApi.list).mockRejectedValue({ response: { data: { detail: { reason: 'forbidden' } } } })
-    const wrapper = createWrapper()
-    await flushPromises()
-
-    const toastStore = useToastStore()
-    const deployBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.actions.deploy'))
-    await deployBtn?.trigger('click')
-    await flushPromises()
-
-    expect(toastStore.error).toHaveBeenCalledWith('deployment.summary.fetchUsersError', undefined)
-  })
-
   it('renders a variable scoped through osScope per slot', async () => {
     const wrapper = createWrapper()
     await flushPromises()
@@ -189,7 +176,7 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployment.variables' }) // Ruft die gleiche Route auf
   })
 
-  it('submits the deployment, maps IDs correctly and redirects on success', async () => {
+  it('reicht die userIds unveraendert an submitDraft weiter und leitet weiter', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
@@ -203,7 +190,9 @@ describe('NewDeploymentSummaryView.vue', () => {
     // Warten auf API Calls
     await flushPromises()
 
-    // Prüft, ob Keycloak ID -> User ID Mapping korrekt war (kc1 -> u1)
+    // Der Assistent fuehrt userIds, das Backend erwartet userIds - dazwischen
+    // wird nichts mehr umgeschluesselt. Frueher stand hier eine Uebersetzung
+    // von Keycloak-IDs, die jeden ohne Keycloak-Konto verlor.
     expect(deploymentStore.draft.studentIds).toContain('u1')
     expect((deploymentStore.draft.assignments as any)[0]).toContain('u1')
     
