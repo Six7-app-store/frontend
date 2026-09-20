@@ -469,7 +469,7 @@ export default {
     },
     info: {
       important: "Important:",
-      inviteText: "Please invite the git user <strong>six7clickndeploy</strong> as a collaborator to the repo."
+      installText: "For a <strong>private</strong> repository, this platform's GitHub App has to be installed on it. Public repositories need nothing."
     },
     buttons: {
       saving: "Saving...",
