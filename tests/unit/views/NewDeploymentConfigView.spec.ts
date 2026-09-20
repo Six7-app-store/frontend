@@ -233,6 +233,32 @@ describe('DeploymentConfig.vue', () => {
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployment.teams' })
   })
 
+  it('nimmt Kursmitglieder ohne Keycloak-Konto mit', async () => {
+    // Der Fehler, für den die Umstellung auf ``userId`` gemacht ist: wer über
+    // einen Moodle-Launch entstanden ist, hat kein ``keycloak_id``. Vorher
+    // verwarf der Cache genau diese Leute — der Kurs meldete weiter "3
+    // Studenten", die Auswahl daneben blieb leer, und das sah nach einem
+    // Ladefehler aus statt nach einem Filter.
+    vi.mocked(courseApi.getById).mockResolvedValue({
+      data: {
+        users: [
+          { userId: 'u-lti-1', keycloak_id: null, firstName: 'Lea', lastName: 'Moodle' },
+          { userId: 'u-kc-2', keycloak_id: 'kc-2', firstName: 'Tom', lastName: 'Keycloak' },
+        ],
+      },
+    } as any)
+
+    const wrapper = createWrapper()
+    await flushPromises()
+    const store = useDeploymentStore()
+
+    await wrapper.find('[data-testid="course-c1"]').trigger('click')
+    await flushPromises()
+
+    expect(store.draft.studentIds).toContain('u-lti-1')
+    expect(store.draft.studentIds).toContain('u-kc-2')
+  })
+
   it('switches tabs and selects an individual student', async () => {
     // 1. Fake-Timer aktivieren, um das 300ms Debouncing zu überspringen
     vi.useFakeTimers()
@@ -249,9 +275,11 @@ describe('DeploymentConfig.vue', () => {
     await studentsTabBtn?.trigger('click')
     await wrapper.vm.$nextTick()
 
-    // 3. Mock für die Suche konfigurieren
-    vi.mocked(userApi.search).mockResolvedValue({ 
-      data: [{ keycloak_id: 'u1', firstName: 'John', lastName: 'Doe' }] 
+    // 3. Mock für die Suche konfigurieren. ``/users/search`` synchronisiert den
+    //    Keycloak-Treffer erst in die lokale DB und gibt deshalb beide Kennungen
+    //    zurück; ausgewählt wird über die ``userId``, weil nur die jeder hat.
+    vi.mocked(userApi.search).mockResolvedValue({
+      data: [{ userId: 'u1', keycloak_id: 'kc-1', firstName: 'John', lastName: 'Doe' }]
     } as any)
 
     // 4. Suche auslösen (damit die Liste nicht leer ist)

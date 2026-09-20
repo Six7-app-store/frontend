@@ -146,8 +146,10 @@ onMounted(async () => {
     ...unassignedStudents.value
   ]))
   
-  // Draft student IDs are Keycloak IDs (the cache is keyed by them); the
-  // backend ``userId`` of a user is a different ID.
+  // Draft student IDs are ``userId``s, and so is the cache key. The loop
+  // below still scans the cached objects, because an entry can have been
+  // stored under a different key by an earlier step and is then cheaper to
+  // reuse than to fetch again.
   const missingIds: string[] = []
   for (const id of allIds) {
     const cached = studentCache[id]
@@ -156,7 +158,7 @@ onMounted(async () => {
       let found = null
       for (const key in studentCache) {
         const s = studentCache[key]
-        if (s && s.keycloak_id === id && (s.firstName || s.lastName || s.username || s.email)) {
+        if (s && s.userId === id && (s.firstName || s.lastName || s.username || s.email)) {
           found = s
           break
         }
