@@ -290,4 +290,71 @@ describe('NewDeploymentTeamsView.vue', () => {
 
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployment.config' })
   })
+
+  // `dragenter`/`dragleave` bubble, so the student cards inside a drop zone
+  // fire them too. Clearing the highlight on those used to make the zone
+  // resize under a stationary cursor, which fired the pair again and hung the
+  // drag. The zone must only give up its highlight once the pointer is
+  // really outside it.
+  describe('Drag-Hervorhebung', () => {
+    it('behaelt die Hervorhebung, wenn der Zeiger auf ein Kind der Zone wandert', async () => {
+      const wrapper = createWrapper({ assignments: [['u1'], ['u2']] })
+      await flushPromises()
+
+      const zone = wrapper.find('[data-testid="group-dropzone-0"]')
+      await zone.trigger('dragenter')
+      expect(zone.classes()).toContain('bg-emerald-50')
+
+      // Ein Studentenkaertchen innerhalb der Zone.
+      const child = zone.element.querySelector('div')
+      expect(child).not.toBeNull()
+
+      await zone.trigger('dragleave', { relatedTarget: child })
+      expect(zone.classes()).toContain('bg-emerald-50')
+    })
+
+    it('gibt die Hervorhebung frei, wenn der Zeiger die Zone wirklich verlaesst', async () => {
+      const wrapper = createWrapper({ assignments: [['u1'], ['u2']] })
+      await flushPromises()
+
+      const zone = wrapper.find('[data-testid="group-dropzone-0"]')
+      await zone.trigger('dragenter')
+      expect(zone.classes()).toContain('bg-emerald-50')
+
+      await zone.trigger('dragleave', { relatedTarget: document.body })
+      expect(zone.classes()).toContain('bg-gray-50')
+    })
+
+    it('haelt auch die Unassigned-Spalte ueber ihren Kindern hervorgehoben', async () => {
+      const wrapper = createWrapper({ assignments: [[], []] })
+      await flushPromises()
+
+      const zone = wrapper.find('[data-testid="unassigned-dropzone"]')
+      await zone.trigger('dragenter')
+      expect(zone.classes()).toContain('bg-gray-200')
+
+      const child = zone.element.querySelector('div')
+      expect(child).not.toBeNull()
+
+      await zone.trigger('dragleave', { relatedTarget: child })
+      expect(zone.classes()).toContain('bg-gray-200')
+
+      await zone.trigger('dragleave', { relatedTarget: document.body })
+      expect(zone.classes()).not.toContain('bg-gray-200')
+    })
+
+    // Die Karte darf sich beim Ueberfahren nicht vergroessern -- genau das
+    // zog den Rand unter dem Zeiger weg und startete die Schleife neu.
+    it('vergroessert die Team-Karte beim Ueberfahren nicht', async () => {
+      const wrapper = createWrapper({ assignments: [['u1'], ['u2']] })
+      await flushPromises()
+
+      const zone = wrapper.find('[data-testid="group-dropzone-0"]')
+      await zone.trigger('dragenter')
+
+      const card = wrapper.findAll('.rounded-xl').find(el => el.element.contains(zone.element))
+      expect(card).toBeDefined()
+      expect(card!.classes().join(' ')).not.toContain('scale-')
+    })
+  })
 })
