@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ROUTE_NAMES } from '@/router/route-names'
-import { ref, computed } from 'vue'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
