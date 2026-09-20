@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ROUTE_NAMES } from '@/router/route-names'
-import { userApi } from '@/api/user.api'
 import { computed, ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -11,7 +10,7 @@ import {
   effectiveVariableScope,
   isMultiImagePackerLayout as detectMultiImagePackerLayout,
 } from '@/services/deployment-variables.service'
-import { getErrorDetail, getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
+import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import {
   BarChart3,
@@ -461,53 +460,16 @@ const handleDeploy = async () => {
   isSubmitting.value = true
 
   try {
-    // 1) Keycloak ID → user ID mapping. Kept local and not written back into
-    //    the draft, otherwise the draft IDs would no longer match the
-    //    Keycloak-keyed ``studentCache`` after a failed submit.
-    let backendUsers: any[] = []
-    try {
-      const res = await userApi.list()
-      backendUsers = res.data || []
-    } catch (err: any) {
-      const detail = getErrorDetailMessage(err) || err?.message || t('deployment.summary.fetchUsersError')
-      toast.error(detail)
-      return
-    }
-
-    const keycloakToUserId = new Map<string, string>()
-    backendUsers.forEach((u: any) => {
-      if (u.keycloak_id) keycloakToUserId.set(u.keycloak_id, u.userId)
-      keycloakToUserId.set(u.userId, u.userId) // fallback: already a userId
-    })
-
-    // 2) Local copies of the ID lists with translated IDs.
-    const sourceAssignments = (deploymentStore.draft.assignments || {}) as Record<number, string[]>
-    const mappedAssignments: Record<number, string[]> = {}
-    Object.entries(sourceAssignments).forEach(([teamIdx, arr]) => {
-      mappedAssignments[Number(teamIdx)] = (arr || [])
-        .map((id: string) => keycloakToUserId.get(id) || id)
-        .filter(Boolean)
-    })
-
-    const mappedStudentIds = (deploymentStore.draft.studentIds || [])
-      .map((id: string) => keycloakToUserId.get(id) || id)
-      .filter(Boolean)
-
-    // 3) Patch the draft transiently for ``submitDraft`` only, then roll back
-    //    so the wizard still shows the original Keycloak IDs on failure.
-    const originalAssignments = deploymentStore.draft.assignments
-    const originalStudentIds = deploymentStore.draft.studentIds
-    deploymentStore.draft.assignments = mappedAssignments
-    deploymentStore.draft.studentIds = mappedStudentIds
-
+    // The draft already carries ``userId``s — the picker keys on them, and so
+    // does the backend. There used to be a translation step here that fetched
+    // every user to map Keycloak ids onto user ids, plus a transient patch of
+    // the draft and a rollback on failure. All of it is gone: the ids were
+    // Keycloak-shaped only because the wizard identified students by
+    // ``keycloak_id``, which silently lost everybody without one.
     let deployment: any
     try {
       deployment = await deploymentStore.submitDraft()
     } catch (err: any) {
-      // Roll the draft back to Keycloak IDs so the user sees their selection
-      // again in steps 2/3.
-      deploymentStore.draft.assignments = originalAssignments
-      deploymentStore.draft.studentIds = originalStudentIds
       // Backend returns ``{detail: {reason, variable, slot, limit_bytes,
       // actual_bytes, ...}}`` for size/extension/encoding violations (413/422).
       // Branch on ``reason`` and format a localized message with the size numbers.

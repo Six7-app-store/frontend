@@ -18,6 +18,11 @@ export const appApi = {
     return api.get<App[]>('/apps/', { params })
   },
 
+  // install_url is null when this installation has no GitHub App configured.
+  getGithubApp: () => {
+    return api.get<{ install_url: string | null }>('/apps/github-app')
+  },
+
   getById: (appId: string, refresh: boolean = false) => {
     return api.get<AppWithUser>(`/apps/${appId}`, {
       params: { refresh }

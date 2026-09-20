@@ -100,27 +100,41 @@ describe('NewDeploymentTeamsView.vue', () => {
     expect(routerReplaceMock).toHaveBeenCalledWith({ name: 'deployment.config' })
   })
 
-  it('shows the name of a student loaded by Keycloak ID (backend userId differs)', async () => {
+  it('lädt einen Studenten nach, der noch gar nicht im Cache steht', async () => {
     vi.mocked(userApi.getById).mockResolvedValue({
-      data: { userId: 'u-db-3', keycloak_id: 'kc-3', firstName: 'Kira', lastName: 'Keycloak' }
+      data: { userId: 'u-db-3', keycloak_id: 'kc-3', firstName: 'Kira', lastName: 'Kirsch' }
     } as any)
-    const wrapper = createWrapper({ studentIds: ['u1', 'kc-3'] })
+    const wrapper = createWrapper({ studentIds: ['u1', 'u-db-3'] })
     await flushPromises()
 
-    expect(userApi.getById).toHaveBeenCalledWith('kc-3')
-    expect(wrapper.text()).toContain('Kira Keycloak')
-    expect(wrapper.text()).not.toContain('kc-3')
+    expect(userApi.getById).toHaveBeenCalledWith('u-db-3')
+    expect(wrapper.text()).toContain('Kira Kirsch')
+    expect(wrapper.text()).not.toContain('u-db-3')
   })
 
-  it('finds a cached student stored under another key by its Keycloak ID', async () => {
+  it('findet einen Studenten wieder, der unter einem anderen Schlüssel im Cache liegt', async () => {
     const wrapper = createWrapper(
-      { studentIds: ['u1', 'kc-9'] },
-      [['u-db-9', { userId: 'u-db-9', keycloak_id: 'kc-9', firstName: 'Cached', lastName: 'Person' }]]
+      { studentIds: ['u1', 'u-db-9'] },
+      [['irgendein-anderer-key', { userId: 'u-db-9', firstName: 'Cached', lastName: 'Person' }]]
     )
     await flushPromises()
 
     expect(userApi.getById).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Cached Person')
+  })
+
+  it('zeigt auch Studierende ohne Keycloak-Konto', async () => {
+    // Der Fall, für den die Umstellung auf ``userId`` gemacht ist: wer über
+    // einen Moodle-Launch entstanden ist, hat kein ``keycloak_id``. Vorher
+    // fiel so jemand aus dem Assistenten heraus, ohne dass es auffiel.
+    const wrapper = createWrapper(
+      { studentIds: ['u-lti-1'] },
+      [['u-lti-1', { userId: 'u-lti-1', keycloak_id: null, firstName: 'Lea', lastName: 'Moodle' }]]
+    )
+    await flushPromises()
+
+    expect(userApi.getById).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Lea Moodle')
   })
 
   it('renders correctly with unassigned students', async () => {
