@@ -471,7 +471,7 @@ export default {
     },
     info: {
       important: "Wichtig:",
-      inviteText: "Bitte lade den Git user <strong>six7clickndeploy</strong> als Collaborator zu dem Repo ein."
+      installText: "Bei einem <strong>privaten</strong> Repository muss die GitHub App dieser Plattform darauf installiert sein. Öffentliche Repositories brauchen nichts."
     },
     buttons: {
       saving: "Speichern...",
