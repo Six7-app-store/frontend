@@ -16,6 +16,7 @@ import {
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useToast } from '@/composables/useToast'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import { parseCloudsYaml, CloudsYamlError } from '@/utils/clouds-yaml'
 import { isInAppPath } from '@/utils/safe-redirect'
 import { formatDateTime } from '@/utils/format'
@@ -464,15 +465,15 @@ const maybeReturnToWizard = () => {
       </div>
 
       <div class="px-6 pb-6 flex justify-end">
-        <button
-          class="btn-primary px-4 py-2 rounded-control font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        <BaseButton
+          size="sm"
           :disabled="credStore.loading || credStore.isLocked"
           :title="credStore.isLocked ? t('SettingsOpenStackView.tooltips.lockedActiveDeployments') : ''"
           @click="handleSave"
         >
           <KeyRound :size="16" />
           {{ t('SettingsOpenStackView.save') }}
-        </button>
+        </BaseButton>
       </div>
     </div>
   </div>

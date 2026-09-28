@@ -463,7 +463,7 @@ const roleClass = (role: string | undefined) => badgeVariantClasses(roleBadgeVar
           <BaseButton variant="ghost" @click="closeRemoveModal" :disabled="!!removingId">
             {{ $t('CourseDetailView.removeModal.cancel') }}
           </BaseButton>
-          <BaseButton variant="red" @click="confirmRemoveMember" :disabled="!!removingId">
+          <BaseButton variant="danger" @click="confirmRemoveMember" :disabled="!!removingId">
             {{ removingId ? $t('CourseDetailView.removeModal.removing') : $t('CourseDetailView.removeModal.remove') }}
           </BaseButton>
         </div>

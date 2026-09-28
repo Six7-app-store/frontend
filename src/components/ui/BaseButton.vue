@@ -1,46 +1,45 @@
 <script setup lang="ts">
 /**
- * App-wide primary button.
- *
- * Variants — kept small so all views share the same visual vocabulary:
- *   * ``primary`` / ``yellow`` (default) — main action / create / submit. The
- *                                          red accent button; ``yellow`` is a
- *                                          historical alias kept so call sites
- *                                          needn't change.
- *   * ``green``                          — confirming secondary action (resume,
- *                                          save in a non-destructive context).
- *                                          Neutral glass button — green is a
- *                                          status colour only.
- *   * ``red``                            — destructive action (delete, reject, reset).
- *   * ``ghost``                          — very subtle action (cancel in modals).
- *
- * Disabled: all variants switch to ``opacity-50 + cursor-not-allowed``; the
- * hover styles in components.css skip disabled buttons.
+ * App-wide button. ``primary`` is the red accent (main action), ``secondary``
+ * the neutral glass button, ``danger`` destructive, ``ghost`` very subtle
+ * (cancel in modals). Disabled buttons fade out; the hover styles in
+ * components.css skip them.
  */
-withDefaults(defineProps<{
-  variant?: 'primary' | 'yellow' | 'green' | 'red' | 'ghost'
+import { computed } from 'vue'
+
+export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
+export type ButtonSize = 'sm' | 'md'
+
+const props = withDefaults(defineProps<{
+  variant?: ButtonVariant
+  size?: ButtonSize
 }>(), {
   variant: 'primary',
+  size: 'md',
 })
+
+const VARIANT_CLASS: Record<ButtonVariant, string> = {
+  primary: 'btn-primary',
+  secondary: 'btn-secondary',
+  danger: 'btn-danger',
+  ghost: 'btn-ghost',
+}
+
+const SIZE_CLASS: Record<ButtonSize, string> = {
+  sm: 'px-4 py-2',
+  md: 'px-5 py-2.5',
+}
+
+const classes = computed(() => [
+  'inline-flex items-center justify-center gap-2',
+  `${SIZE_CLASS[props.size]} rounded-control font-semibold text-sm transition duration-150`,
+  'disabled:opacity-50 disabled:cursor-not-allowed',
+  VARIANT_CLASS[props.variant],
+])
 </script>
 
 <template>
-  <button
-    :class="[
-      'inline-flex items-center justify-center gap-2',
-      'px-5 py-2.5 rounded-control font-semibold text-sm transition duration-150',
-      'disabled:opacity-50 disabled:cursor-not-allowed',
-      (variant === 'primary' || variant === 'yellow')
-        ? 'btn-primary'
-        : variant === 'green'
-        ? 'btn-secondary'
-        : variant === 'red'
-        ? 'btn-danger'
-        : variant === 'ghost'
-        ? 'btn-ghost'
-        : ''
-    ]"
-  >
+  <button :class="classes">
     <slot />
   </button>
 </template>

@@ -24,6 +24,7 @@ import { ltiApi } from '@/api/lti.api'
 import { appApi } from '@/api/app.api'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
 import type { App } from '@/types'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import { Loader2, Link2, AlertCircle } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -153,14 +154,14 @@ onMounted(async () => {
           </option>
         </select>
 
-        <button
+        <BaseButton
           data-testid="deeplink-submit"
+          size="sm"
           :disabled="!selected"
-          class="btn-primary px-4 py-2 rounded-control font-semibold disabled:opacity-50"
           @click="choose"
         >
           Übernehmen
-        </button>
+        </BaseButton>
 
         <p class="text-xs text-fg-muted">
           Die Zuordnung steckt danach in der Moodle-Aktivität. Welche Umgebung

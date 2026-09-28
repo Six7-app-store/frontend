@@ -28,6 +28,7 @@ import {
 import { courseApi } from '@/api/course.api'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
 import type { Course } from '@/types'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import {
   Loader2,
   GraduationCap,
@@ -220,12 +221,9 @@ onMounted(async () => {
           </ul>
         </div>
 
-        <button
-          class="btn-primary px-4 py-2 rounded-control font-semibold"
-          @click="skip"
-        >
+        <BaseButton size="sm" @click="skip">
           Weiter zu den Deployments
-        </button>
+        </BaseButton>
       </div>
 
       <div
@@ -260,14 +258,14 @@ onMounted(async () => {
         </select>
 
         <div class="flex items-center gap-3">
-          <button
+          <BaseButton
             data-testid="map-submit"
+            size="sm"
             :disabled="!selected || state === 'saving'"
-            class="btn-primary px-4 py-2 rounded-control font-semibold disabled:opacity-50"
             @click="save"
           >
             Zuordnen
-          </button>
+          </BaseButton>
           <button
             data-testid="map-skip"
             class="px-4 py-2 rounded-md text-fg-muted hover:text-fg"
@@ -285,15 +283,16 @@ onMounted(async () => {
           <span class="h-px flex-1 bg-line/[.12]" />
         </div>
 
-        <button
+        <BaseButton
           data-testid="map-import"
+          variant="secondary"
+          size="sm"
           :disabled="state === 'saving'"
-          class="flex items-center gap-2 px-4 py-2 btn-secondary rounded-control font-semibold disabled:opacity-50"
           @click="importFromMoodle"
         >
           <DownloadCloud :size="18" />
           Studiengruppe aus Moodle anlegen
-        </button>
+        </BaseButton>
         <p class="text-xs text-fg-muted -mt-2">
           Legt „{{ moodleName }}" als neue Studiengruppe an und übernimmt die
           Teilnehmenden aus Moodle.
@@ -313,12 +312,9 @@ onMounted(async () => {
             direkt in ihrer Umgebung.
           </p>
         </div>
-        <button
-          class="btn-primary px-4 py-2 rounded-control font-semibold"
-          @click="skip"
-        >
+        <BaseButton size="sm" @click="skip">
           Weiter zu den Deployments
-        </button>
+        </BaseButton>
       </div>
 
       <div

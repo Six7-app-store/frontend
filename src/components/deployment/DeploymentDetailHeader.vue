@@ -63,7 +63,7 @@ defineEmits<{
           ? $t('DeploymentDetailView.pauseTooltip')
           : $t('DeploymentDetailView.resumeTooltip')"
         class="flex items-center gap-2 px-4 py-2"
-        :variant="pauseResumeAction === 'pause' ? 'yellow' : 'green'">
+        :variant="pauseResumeAction === 'pause' ? 'primary' : 'secondary'">
         <PauseCircle v-if="pauseResumeAction === 'pause'" :size="18" />
         <PlayCircle v-else :size="18" />
         <span class="font-medium">
@@ -77,7 +77,7 @@ defineEmits<{
                      triggers a destroy task or a straight soft-delete based on
                      status. Hidden for everyone who may not operate it. -->
       <BaseButton v-if="canOperate" @click="canDelete && $emit('delete')" :disabled="!canDelete"
-        :title="deleteDisabledReason" class="flex items-center gap-2 px-4 py-2" variant="red">
+        :title="deleteDisabledReason" class="flex items-center gap-2 px-4 py-2" variant="danger">
         <Trash2 :size="18" />
         <span class="font-medium">{{ $t('DeploymentDetailView.deploymentDelete') }}</span>
       </BaseButton>

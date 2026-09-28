@@ -17,6 +17,7 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useLtiLink } from '@/composables/useLtiLink'
 import { getErrorCode } from '@/utils/http-error'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import { Loader2, Link2, CheckCircle2, AlertCircle } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -128,13 +129,9 @@ onMounted(async () => {
             ohne weitere Schritte.
           </p>
         </div>
-        <button
-          data-testid="link-login"
-          class="btn-primary px-4 py-2 rounded-control font-semibold"
-          @click="signIn"
-        >
+        <BaseButton data-testid="link-login" size="sm" @click="signIn">
           Jetzt anmelden und verknüpfen
-        </button>
+        </BaseButton>
       </div>
 
       <div

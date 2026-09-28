@@ -485,7 +485,7 @@ onMounted(loadAll)
             {{ $t('AdminAppsView.rejectModal.cancel') }}
           </BaseButton>
           <BaseButton
-            variant="red"
+            variant="danger"
             @click="handleReject"
             :disabled="!rejectionReason.trim() || isRejecting"
           >

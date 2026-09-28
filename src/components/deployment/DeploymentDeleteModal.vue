@@ -33,7 +33,7 @@ defineEmits<{
         <BaseButton variant="ghost" @click="$emit('close')">
           {{ $t('DeploymentDetailView.cancelButton') }}
         </BaseButton>
-        <BaseButton variant="red" @click="$emit('confirm')">
+        <BaseButton variant="danger" @click="$emit('confirm')">
           {{ $t('DeploymentDetailView.confirmButton') }}
         </BaseButton>
       </div>

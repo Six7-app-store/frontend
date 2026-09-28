@@ -430,7 +430,7 @@ onMounted(async () => {
                 <Pencil :size="18" />
                 <span class="font-medium">{{ $t('AppsDetailView.editApp') }}</span>
               </BaseButton>
-              <BaseButton v-if="canEditApp" @click="showDeleteModal = true" class="flex items-center gap-2 px-4 py-2" variant="red">
+              <BaseButton v-if="canEditApp" @click="showDeleteModal = true" class="flex items-center gap-2 px-4 py-2" variant="danger">
                 <Trash2 :size="18" />
                 <span class="font-medium">{{ $t('AppsDetailView.deleteApp') }}</span>
               </BaseButton>
@@ -722,7 +722,7 @@ onMounted(async () => {
           <BaseButton variant="ghost" @click="showDeleteModal = false" :disabled="isDeleting">
             {{ $t('AppsDetailView.cancelButton') }}
           </BaseButton>
-          <BaseButton variant="red" @click="confirmDelete" :disabled="isDeleting">
+          <BaseButton variant="danger" @click="confirmDelete" :disabled="isDeleting">
             {{ isDeleting ? $t('AppsDetailView.deletingButton') : $t('AppsDetailView.confirmButton') }}
           </BaseButton>
         </div>

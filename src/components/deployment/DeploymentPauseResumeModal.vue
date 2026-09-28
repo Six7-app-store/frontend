@@ -46,7 +46,7 @@ defineEmits<{
           {{ $t('DeploymentDetailView.cancelButton') }}
         </BaseButton>
         <BaseButton
-          :variant="action === 'pause' ? 'yellow' : 'green'"
+          :variant="action === 'pause' ? 'primary' : 'secondary'"
           @click="$emit('confirm')"
           :disabled="busy">
           {{ action === 'pause'
