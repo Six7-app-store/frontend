@@ -6,6 +6,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
+import { userDisplayName } from '@/utils/user-display'
 import { Plus, Minus, Users, ArrowLeft, ArrowRight, GripVertical, Trash2, UserPlus, Shuffle, X } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -510,16 +511,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
                     class="group bg-panel rounded-lg px-4 py-3 border-2 border-subtle cursor-move hover:border-strong hover:shadow-lg hover:scale-[1.02] transition-all flex items-center gap-3">
                     <GripVertical :size="18" class="text-icon group-hover:text-fg transition-colors" />
                     <span class="font-semibold text-fg group-hover:text-fg flex-1 transition-colors">
-                      {{
-                        (() => {
-                          const s = studentCache[studentId]
-                          if (!s) return studentId;
-                          if (s.firstName || s.lastName) return `${s.firstName || ''} ${s.lastName || ''}`.trim();
-                          if (s.username) return s.username;
-                          if (s.email) return s.email;
-                          return studentId;
-                        })()
-                      }}
+                      {{ userDisplayName(studentCache[studentId], studentId) }}
                     </span>
                   </div>
                 </div>
@@ -578,16 +570,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
                       class="group bg-panel rounded-lg px-3 py-2.5 border-2 border-subtle cursor-move hover:border-strong hover:shadow-lg hover:scale-[1.02] transition-all flex items-center gap-2">
                       <GripVertical :size="16" class="text-icon group-hover:text-fg transition-colors flex-shrink-0" />
                       <span class="font-semibold text-fg group-hover:text-fg flex-1 text-sm transition-colors">
-                        {{
-                          (() => {
-                            const s = studentCache[studentId]
-                            if (!s) return studentId;
-                            if (s.firstName || s.lastName) return `${s.firstName || ''} ${s.lastName || ''}`.trim();
-                            if (s.username) return s.username;
-                            if (s.email) return s.email;
-                            return studentId;
-                          })()
-                        }}
+                        {{ userDisplayName(studentCache[studentId], studentId) }}
                       </span>
                       <button 
                         @click="removeFromGroup(studentId, index)"

@@ -18,6 +18,7 @@ import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
+import { userDisplayName } from '@/utils/user-display'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 
 const { t } = useI18n()
@@ -469,9 +470,7 @@ onMounted(async () => {
                      <Check v-if="store.draft.studentIds.includes(student.userId)" :size="16" class="text-on-accent" />
                   </div>
                   <span class="text-fg font-medium">
-                    {{ (student.firstName || student.lastName) 
-                        ? `${student.firstName || ''} ${student.lastName || ''}`.trim()
-                        : (student.username || student.email || student.name || student.userId) }}
+                    {{ userDisplayName(student, student.userId) }}
                   </span>
                 </div>
                 
@@ -499,9 +498,7 @@ onMounted(async () => {
                   class="flex items-center justify-between bg-panel p-3 rounded-lg border border-subtle"
                 >
                   <span class="text-fg font-medium">
-                    {{ (student.firstName || student.lastName) 
-                        ? `${student.firstName || ''} ${student.lastName || ''}`.trim()
-                        : (student.username || student.email || student.name || student.userId) }}
+                    {{ userDisplayName(student, student.userId) }}
                   </span>
                   <button 
                     @click="toggleStudent(student.userId)" 

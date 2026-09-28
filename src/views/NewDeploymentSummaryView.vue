@@ -23,6 +23,7 @@ import type { AppVariable } from '@/types'
 import type { OsResourceType } from '@/api/openstack-resources.api'
 import { formatBytes } from '@/utils/format'
 import { splitCsv } from '@/services/variable-types'
+import { userDisplayName } from '@/utils/user-display'
 import {
   ensureLoaded as ensureOsCacheLoaded,
   getDisplayName as getOsDisplayName,
@@ -557,11 +558,7 @@ const handleBack = () => {
             <div class="flex flex-wrap gap-2">
               <span v-for="studentId in deploymentStore.draft.studentIds" :key="studentId" 
                 class="px-3 py-1 bg-line/[.07] text-fg rounded-full text-sm font-medium border border-strong">
-                {{
-                  (deploymentStore.studentCache.get(studentId)?.firstName || deploymentStore.studentCache.get(studentId)?.lastName)
-                    ? `${deploymentStore.studentCache.get(studentId)?.firstName || ''} ${deploymentStore.studentCache.get(studentId)?.lastName || ''}`.trim()
-                    : (deploymentStore.studentCache.get(studentId)?.username || deploymentStore.studentCache.get(studentId)?.email || studentId)
-                }}
+                {{ userDisplayName(deploymentStore.studentCache.get(studentId), studentId) }}
               </span>
             </div>
           </div>
@@ -594,11 +591,7 @@ const handleBack = () => {
             <div class="space-y-1 max-h-32 overflow-y-auto">
               <div v-for="studentId in assignments" :key="studentId" 
                 class="text-sm text-fg bg-line/[.04] px-2 py-1 rounded border border-subtle">
-                {{
-                  (deploymentStore.studentCache && deploymentStore.studentCache.get(studentId)?.firstName || deploymentStore.studentCache.get(studentId)?.lastName)
-                    ? `${deploymentStore.studentCache.get(studentId)?.firstName || ''} ${deploymentStore.studentCache.get(studentId)?.lastName || ''}`.trim()
-                    : (deploymentStore.studentCache && (deploymentStore.studentCache.get(studentId)?.username || deploymentStore.studentCache.get(studentId)?.email) || studentId)
-                }}
+                {{ userDisplayName(deploymentStore.studentCache.get(studentId), studentId) }}
               </div>
               <p v-if="!assignments || assignments.length === 0" class="text-xs text-fg-muted italic">{{ t('deployment.summary.noUsersAssigned') }}</p>
             </div>
