@@ -407,7 +407,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 3 Reine Helfer | erledigt | `561b8d6` (D3, D4), `8cc62c0` (D10), `55e14bc` (Charakterisierungstests `submitDraft`), `a43fc76` (D1, D7, D8), `13db0ae` (D2), `2fe8cf1` (D5, D33), `eec4dca` (D16, D17), `c694e40` (D24), `c401b18` (D31 teilweise, D32 teilweise) |
 | 4 Einheitliche Fehlerbehandlung | erledigt | `fc9fd16` (V9), `2a3f738` (V7), `1c1150a` (D26, V8), `2dbcde8` (D25), `05f6dac` (D27) |
 | 5 Single Source of Truth Status/Rollen | erledigt | `3451e95` (Lifecycle-Buttons nur für Owner/Admin), `34d6247` (D15, T13), `8d11e85` (D14), `9a40bf8` (Charakterisierung Router), `64c7478` (D28, V17), `4d91fc9` (D18 App-Teil, D19, D20), `ee19486` (D22) |
-| 6–16 | offen | — |
+| 6 UI-Bausteine | **in Arbeit** (2 von 9) | `60db13c` (V18 `BaseButton`), `817e3d6` (T5, V15 `ConfirmModal`) |
+| 7–16 | offen | — |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -424,10 +425,20 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **V10 offen:** Die englischen Ersatztexte in `runRequest`-Aufrufen (`'Failed to …'`) stehen weiter im Store-Feld `error`, das außer in `CoursesView` (nur als Boolean) niemand anzeigt. Der Credentials-Store speichert jetzt nur noch die Backend-Meldung; für die übrigen Stores ist das mit Schritt 11 zu entscheiden, wenn die App-Views über den Store laufen.
 - **D18 geklärt (Schritt 5):** Das Backend kennt zwei Regeln — *einsehen* (`can_view_deployment_owner`: Admin, Owner, Lehrkraft des Kurses) und *bedienen* (`can_operate_deployment`: nur Admin oder Owner). Das Frontend hatte beides unter „Staff oder Owner“ zusammengelegt; eine Lehrkraft sah bei fremden Deployments Löschen/Pausieren/Redeploy und bekam 403. `useDeploymentOwnerView` liefert jetzt zusätzlich `canOperate`.
 - **Schritt 5, sichtbar:** Deployment-Liste, Task-Historie und Task-Detail zeigen den Status übersetzt statt als Rohwert (`success` → „erfolgreich“); die Status-Badge der Liste hat jetzt die kompakte Größe der Historie. Die Vorschau auf der Create-Seite zeigt dasselbe Icon wie der Katalog.
+- **Schritt 6, `BaseButton` (V18):** Varianten heißen `primary | secondary | danger | ghost` (vorher `yellow`/`green`/`red`), neuer Prop `size` (`sm` = `px-4 py-2`, `md` = Standard). Die rohen `px-4 py-2`-Buttons in den drei LTI-Views und in `SettingsOpenStackView` laufen jetzt über `BaseButton size="sm"`; ihre Schrift ist dadurch `text-sm`. Aufrufer, die `BaseButton` per `class="px-4 py-2"` verkleinern wollten (`DeploymentDetailHeader`, `AppsDetailView`), sind unverändert — ob die Klasse dort überhaupt greift, hängt an der Tailwind-Reihenfolge und ist ungeprüft; bei Gelegenheit auf `size="sm"` umstellen und im Browser vergleichen.
+- **Schritt 6, `ConfirmModal` (T5, V15):** Alle sechs Ja/Nein-Dialoge laufen über `components/ui/ConfirmModal.vue`; während `busy` lässt sich der Dialog nicht schließen. Die drei `Deployment*Modal.vue` bleiben als dünne Hüllen (ihre Spec prüft sie direkt). **Fehlerbehebung:** Deployment löschen hatte keinen Busy-Schutz, ein Doppelklick schickte zwei DELETEs → `deleteBusy` in `useDeploymentLifecycle`. **Sichtbar:** Die Kurs-Dialoge (Kurs löschen, Mitglied entfernen) haben keinen roten, größeren Titel mehr. Neuer i18n-Schlüssel `action.cancel`; die verwaisten `CoursesView.deleteModal.cancel`, `CourseDetailView.removeModal.cancel`, `DeploymentDetailView.cancelButton` sind entfernt.
+- **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand:** Schritte 0–5 sind abgeschlossen und committet (Branch `refactor/second_review`, nicht gepusht). **Nächster Schritt: 6 (UI-Bausteine)** aus Abschnitt 4.
+**Stand:** Schritte 0–5 sind abgeschlossen, Schritt 6 ist zu 2 von 9 Bausteinen erledigt (`BaseButton`, `ConfirmModal`); alles committet, Branch `refactor/second_review`, nicht gepusht. Arbeitsbaum sauber, keine halb fertigen Dateien.
+
+**Hier weitermachen: Schritt 6, `ReasonModal` (T6).**
+- Nutzer: Reject- und Revoke-Dialog in `AdminAppsView.vue` (Begründung Pflicht), Submit-Dialog in `AppsDetailView.vue` (Notiz optional, darunter die Marker-Fehler aus einer 422).
+- Vorgehen: `ConfirmModal` um `confirmDisabled` erweitern; `ReasonModal` = `ConfirmModal` + Textarea per `v-model`, Props `label`, `placeholder`, `required`; Default-Slot für den Kontext über der Textarea, Slot `after` für die Marker-Fehler.
+- **Zuerst Charakterisierungstests (eigener Commit)**, denn diese Abläufe sind heute ungetestet: AdminApps — Submit ohne Begründung gesperrt, Begründung wird getrimmt an `rejectVersion`/`revokeVersion` übergeben, Dialog schließt. AppsDetail — Store-Tab öffnen, „Einreichen“ → `submitVersion('app-123', 'v1.0', undefined, <getrimmte Notiz | undefined>)`; 422 mit `marker_errors` zeigt die Fehler im offenen Dialog. Dafür im AppsDetail-Spec `submitVersion` und `listVersionApprovals` (Default `{ data: [] }`) ins `appApi`-Mock aufnehmen.
+- Danach die übrigen Bausteine in dieser Reihenfolge: `ToggleSwitch` (T7), `TabBar` (T9), `ImageDropZone` + `useImageUpload` (T8, D23), `CopyButton` (T19), `PageHeader` mit `back` (T12), `EntityListState` mit `isError` (T11).
+- Ungeprüft im Browser: die Schritte 6a/6b sind nur über Tests abgesichert (Stack lief nicht).
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
