@@ -123,7 +123,7 @@ const toggleApp = async (appId: string) => {
 // ----------------------------------------------------------------
 // Actions
 // ----------------------------------------------------------------
-const handleApprove = async (appId: string, _appName: string, versionTag: string) => {
+const handleApprove = async (appId: string, versionTag: string) => {
   actingOn.value = `${appId}:${versionTag}`
   try {
     await appApi.admin.approveVersion(appId, versionTag)
@@ -144,8 +144,8 @@ const handleApprove = async (appId: string, _appName: string, versionTag: string
   }
 }
 
-const openRejectModal = (appId: string, versionTag: string) => {
-  rejectTarget.value = { appId, appName: '', versionTag }
+const openRejectModal = (appId: string, appName: string, versionTag: string) => {
+  rejectTarget.value = { appId, appName, versionTag }
   rejectionReason.value = ''
   showRejectModal.value = true
 }
@@ -402,7 +402,7 @@ onMounted(loadAll)
                     <!-- Pending: Approve + Reject -->
                     <template v-if="approval.status === 'pending'">
                       <button
-                        @click="handleApprove(app.appId, app.name, approval.version_tag)"
+                        @click="handleApprove(app.appId, approval.version_tag)"
                         :disabled="actingOn === `${app.appId}:${approval.version_tag}`"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success-dot/10 text-success border border-success-dot/30 text-xs font-medium hover:bg-success-dot/10 transition-colors disabled:opacity-50"
                       >
@@ -410,7 +410,7 @@ onMounted(loadAll)
                         {{ $t('AdminAppsView.approveBtn') }}
                       </button>
                       <button
-                        @click="openRejectModal(app.appId, approval.version_tag)"
+                        @click="openRejectModal(app.appId, app.name, approval.version_tag)"
                         :disabled="actingOn === `${app.appId}:${approval.version_tag}`"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-danger-dot/10 text-danger border border-danger-dot/30 text-xs font-medium hover:bg-danger-dot/10 transition-colors disabled:opacity-50"
                       >
@@ -434,7 +434,7 @@ onMounted(loadAll)
                     <!-- Rejected: Approve again -->
                     <template v-else-if="approval.status === 'rejected'">
                       <button
-                        @click="handleApprove(app.appId, app.name, approval.version_tag)"
+                        @click="handleApprove(app.appId, approval.version_tag)"
                         :disabled="actingOn === `${app.appId}:${approval.version_tag}`"
                         class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success-dot/10 text-success border border-success-dot/30 text-xs font-medium hover:bg-success-dot/10 transition-colors disabled:opacity-50"
                       >
