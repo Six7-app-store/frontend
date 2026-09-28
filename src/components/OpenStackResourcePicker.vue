@@ -49,7 +49,7 @@ import {
 import { useToast } from '@/composables/useToast'
 import { splitCsv } from '@/services/variable-types'
 import { formatBytes } from '@/utils/format'
-import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
+import { getErrorDetailMessage, openStackFailure } from '@/utils/http-error'
 import {
   openstackResourcesApi,
   type OsResourceType,
@@ -363,18 +363,16 @@ async function load(opts: { forceRefresh?: boolean } = {}) {
     if (!props.filterNetworkId) {
       primeDisplayCache(props.osType, res.data || [])
     }
-  } catch (err: any) {
-    const status = getErrorStatus(err)
-    const detail = getErrorDetail(err) as any
-    if (status === 412 && detail?.reason === 'openstack_credentials_missing') {
+  } catch (err) {
+    const failure = openStackFailure(err)
+    if (failure === 'credentials_missing') {
       errorReason.value = 'credentials_missing'
-    } else if (status === 502 || detail?.reason === 'openstack_unavailable' ||
-               detail?.reason === 'openstack_list_failed') {
+    } else if (failure === 'unavailable') {
       errorReason.value = 'unavailable'
-      errorMessage.value = detail?.message || err?.message || t('openstackPicker.osError')
+      errorMessage.value = getErrorDetailMessage(err) ?? t('openstackPicker.osError')
     } else {
       errorReason.value = 'unavailable'
-      errorMessage.value = err?.message || t('openstackPicker.loadError')
+      errorMessage.value = t('openstackPicker.loadError')
     }
     items.value = []
   } finally {

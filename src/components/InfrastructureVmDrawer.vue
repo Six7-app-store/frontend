@@ -16,7 +16,7 @@ import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeploymentResource } from '@/types'
 import { deploymentApi } from '@/api/deployment.api'
-import { getErrorStatus } from '@/utils/http-error'
+import { openStackFailure } from '@/utils/http-error'
 import { formatUptime, pillToneClass } from '@/composables/useVmPresentation'
 import {
   X,
@@ -55,21 +55,18 @@ const load = async () => {
       props.address,
     )
     detail.value = response.data
-  } catch (err: any) {
-    // 404 — resource removed since the list was rendered. 412 — user
-    // lost their OpenStack credentials between mount and click. Both
-    // are surfaced inline; the page-level toast is reserved for
+  } catch (err) {
+    // Not found: the resource was removed since the list was rendered.
+    // Missing credentials: the user lost them between mount and click.
+    // Both are surfaced inline; the page-level toast is reserved for
     // harder errors.
-    const status = getErrorStatus(err)
-    if (status === 404) {
-      errorMessage.value = t('vm.drawer.errors.notFound')
-    } else if (status === 412) {
-      errorMessage.value = t('vm.drawer.errors.missingCredentials')
-    } else if (status === 502) {
-      errorMessage.value = t('vm.drawer.errors.unreachable')
-    } else {
-      errorMessage.value = err?.message || t('vm.drawer.errors.generic')
-    }
+    const messageKey = {
+      not_found: 'vm.drawer.errors.notFound',
+      credentials_missing: 'vm.drawer.errors.missingCredentials',
+      unavailable: 'vm.drawer.errors.unreachable',
+      other: 'vm.drawer.errors.generic',
+    }[openStackFailure(err)]
+    errorMessage.value = t(messageKey)
   } finally {
     isLoading.value = false
   }

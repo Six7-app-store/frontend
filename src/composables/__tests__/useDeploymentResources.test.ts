@@ -72,7 +72,7 @@ describe('useDeploymentResources', () => {
   it.each([
     [httpError(412), de.vm.resourcesErrors.missingCredentials],
     [httpError(502), de.vm.resourcesErrors.unreachable],
-    [httpError(500, undefined, 'Boom'), 'Boom'],
+    [httpError(500, undefined, 'Boom'), de.vm.resourcesErrors.generic],
     [httpError(500), de.vm.resourcesErrors.generic],
     [httpError(404), null],
   ])('maps load errors to messages (%#)', async (err, message) => {
@@ -126,7 +126,8 @@ describe('useDeploymentResources', () => {
     [httpError(422, { reason: 'non_redeployable_resource_type' }), 'Nur Compute-Instanzen können einzeln redeployed werden.'],
     [httpError(422, { reason: 'resource_not_in_state' }), 'Diese Resource ist nicht mehr im aktuellen State.'],
     [httpError(409, 'busy'), 'Es läuft bereits eine Lifecycle-Aktion für dieses Deployment.'],
-    [httpError(500, undefined, 'Boom'), 'Boom'],
+    [httpError(500, undefined, 'Boom'), 'Redeploy fehlgeschlagen.'],
+    [httpError(500, 'Kontingent erschöpft'), 'Kontingent erschöpft'],
     [httpError(500), 'Redeploy fehlgeschlagen.'],
   ])('reports redeploy errors and releases the address (%#)', async (err, message) => {
     deploymentApi.redeployResource.mockRejectedValue(err)

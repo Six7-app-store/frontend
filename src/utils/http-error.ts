@@ -88,3 +88,23 @@ export function getErrorCode(err: unknown): string | undefined {
   const code = (detail as { code?: unknown }).code
   return typeof code === 'string' ? code : undefined
 }
+
+export type OpenStackFailure = 'credentials_missing' | 'unavailable' | 'not_found' | 'other'
+
+/**
+ * What went wrong with a request that reaches into OpenStack: the user has
+ * no credentials stored (412), OpenStack did not answer (502 or an
+ * ``openstack_unavailable`` / ``openstack_list_failed`` reason), the
+ * resource is gone (404), or something else. Each caller words these
+ * cases for its own place on the page.
+ */
+export function openStackFailure(err: unknown): OpenStackFailure {
+  const status = getErrorStatus(err)
+  const reason = getErrorReason(err)
+  if (status === 412 || reason === 'openstack_credentials_missing') return 'credentials_missing'
+  if (status === 502 || reason === 'openstack_unavailable' || reason === 'openstack_list_failed') {
+    return 'unavailable'
+  }
+  if (status === 404) return 'not_found'
+  return 'other'
+}

@@ -2,7 +2,7 @@ import { computed, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { deploymentApi } from '@/api/deployment.api'
 import { useToast } from '@/composables/useToast'
-import { getErrorReason, getErrorStatus } from '@/utils/http-error'
+import { getErrorDetailMessage, getErrorReason, getErrorStatus, openStackFailure } from '@/utils/http-error'
 import type { DeploymentResource } from '@/types'
 
 export interface DeploymentResourcesOptions {
@@ -57,19 +57,19 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
     try {
       const response = await deploymentApi.listResources(deploymentId, { refresh })
       resources.value = response.data.resources
-    } catch (err: any) {
-      const status = getErrorStatus(err)
-      if (status === 412) {
+    } catch (err) {
+      const failure = openStackFailure(err)
+      if (failure === 'credentials_missing') {
         resourcesError.value = t('vm.resourcesErrors.missingCredentials')
-      } else if (status === 502) {
+      } else if (failure === 'unavailable') {
         resourcesError.value = t('vm.resourcesErrors.unreachable')
-      } else if (status === 404) {
+      } else if (failure === 'not_found') {
         // Deployment was soft-deleted upstream (e.g. right after a
         // successful destroy). The resources are gone; the stream watcher
         // handles the ``gone`` path, so just clear silently here.
         resources.value = []
       } else {
-        resourcesError.value = err?.message || t('vm.resourcesErrors.generic')
+        resourcesError.value = t('vm.resourcesErrors.generic')
       }
     } finally {
       resourcesLoading.value = false
@@ -122,7 +122,7 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       // Without this poll, the new task only becomes visible on
       // the next manual page reload.
       await onRedeployStarted()
-    } catch (err: any) {
+    } catch (err) {
       redeployInFlight.value.delete(address)
       const reason = getErrorReason(err)
       if (reason === 'non_redeployable_resource_type') {
@@ -132,7 +132,7 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       } else if (getErrorStatus(err) === 409) {
         toast.error(t('DeploymentDetailView.lifecycleBusy'))
       } else {
-        toast.error(err?.message || t('DeploymentDetailView.redeployError'))
+        toast.error(getErrorDetailMessage(err) ?? t('DeploymentDetailView.redeployError'))
       }
     }
   }

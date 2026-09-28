@@ -619,7 +619,7 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
   it.each([
     [httpError(412, 'x'), de.vm.resourcesErrors.missingCredentials],
     [httpError(502, 'x'), de.vm.resourcesErrors.unreachable],
-    [httpError(500, 'x', 'Request failed with status code 500'), 'Request failed with status code 500'],
+    [httpError(500, 'x', 'Request failed with status code 500'), de.vm.resourcesErrors.generic],
     [httpError(500, 'x', ''), de.vm.resourcesErrors.generic],
   ])('zeigt den passenden Infrastruktur-Fehlertext (%#)', async (err, expected) => {
     h.deploymentApi.listResources.mockRejectedValue(err)
@@ -1027,8 +1027,9 @@ describe('DeploymentDetailView — Redeploy', () => {
     [httpError(422, { reason: 'non_redeployable_resource_type' }), t('DeploymentDetailView.redeployNotRedeployable')],
     [httpError(422, { reason: 'resource_not_in_state' }), t('DeploymentDetailView.redeployNotInState')],
     [httpError(409, 'busy'), t('DeploymentDetailView.lifecycleBusy')],
-    [httpError(500, 'x', 'Request failed'), 'Request failed'],
-    [httpError(500, 'x', ''), t('DeploymentDetailView.redeployError')],
+    [httpError(500, 'Kontingent erschöpft', 'Request failed'), 'Kontingent erschöpft'],
+    [httpError(500, { reason: 'x' }, 'Request failed'), t('DeploymentDetailView.redeployError')],
+    [httpError(500, undefined, ''), t('DeploymentDetailView.redeployError')],
   ])('meldet Redeploy-Fehler verständlich (%#)', async (err, message) => {
     h.deploymentApi.redeployResource.mockRejectedValue(err)
     const wrapper = await mountLoaded()

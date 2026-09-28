@@ -7,6 +7,7 @@ import {
   getErrorReason,
   getErrorStatus,
   getErrorStatusText,
+  openStackFailure,
   hasErrorResponse,
 } from '@/utils/http-error'
 
@@ -88,5 +89,22 @@ describe('getErrorCode', () => {
     expect(getErrorCode({ response: { data: {} } })).toBeUndefined()
     expect(getErrorCode({ response: { data: { detail: { code: 42 } } } })).toBeUndefined()
     expect(getErrorCode(new Error('offline'))).toBeUndefined()
+  })
+})
+
+describe('openStackFailure', () => {
+  const err = (status: number, detail?: unknown) => ({ response: { status, data: { detail } } })
+
+  it.each([
+    [err(412, { reason: 'openstack_credentials_missing' }), 'credentials_missing'],
+    [err(412), 'credentials_missing'],
+    [err(502), 'unavailable'],
+    [err(500, { reason: 'openstack_unavailable' }), 'unavailable'],
+    [err(500, { reason: 'openstack_list_failed' }), 'unavailable'],
+    [err(404), 'not_found'],
+    [err(500, 'Boom'), 'other'],
+    [new Error('offline'), 'other'],
+  ])('classifies %j as %s', (e, expected) => {
+    expect(openStackFailure(e)).toBe(expected)
   })
 })
