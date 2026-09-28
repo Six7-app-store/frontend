@@ -24,7 +24,7 @@ import type { OsResourceType } from '@/api/openstack-resources.api'
 
 const { t } = useI18n()
 
-const props = defineProps<{
+defineProps<{
   variable: AppVariable
   modelValue: any
   /** Which Network's id-mode value to consult when this is a subnet
