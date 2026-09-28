@@ -246,4 +246,26 @@ describe('AddAppsView.vue', () => {
 
         expect(mockToastError).toHaveBeenCalledWith(expected)
     })
+
+    describe('GitHub-App-Hinweis', () => {
+        it('verlinkt die Installationsseite, die das Backend liefert', async () => {
+            ;(appApi.getGithubApp as any).mockResolvedValueOnce({
+                data: { install_url: 'https://github.com/apps/six7/installations/new' }
+            })
+            const wrapper = mountComponent()
+            await flushPromises()
+
+            const link = wrapper.find('[data-testid="github-app-install-link"]')
+            expect(link.attributes('href')).toBe('https://github.com/apps/six7/installations/new')
+            expect(wrapper.text()).toContain('AppsCreateView.info.installText')
+        })
+
+        it('zeigt keinen Link, wenn keine GitHub App konfiguriert ist', async () => {
+            const wrapper = mountComponent()
+            await flushPromises()
+
+            expect(wrapper.find('[data-testid="github-app-install-link"]').exists()).toBe(false)
+            expect(wrapper.html()).not.toContain('github.com/six7clickndeploy')
+        })
+    })
 })

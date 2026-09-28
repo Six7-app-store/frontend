@@ -376,10 +376,19 @@ const handleSubmit = async () => {
           <Info class="shrink-0 mt-0.5 text-icon" :size="20" />
           <div>
             <span class="font-semibold block mb-1">{{ $t('AppsCreateView.info.important') }}</span>
-            <span v-html="$t('AppsCreateView.info.inviteText')"></span><br>
-            <a href="https://github.com/six7clickndeploy" target="_blank" class="text-accent-fg underline hover:text-accent-fg break-all">
-              https://github.com/six7clickndeploy
-            </a>
+            <span v-html="$t('AppsCreateView.info.installText')"></span>
+            <template v-if="githubAppInstallUrl">
+              <br>
+              <a
+                :href="githubAppInstallUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="github-app-install-link"
+                class="text-accent-fg underline hover:text-accent-fg break-all"
+              >
+                {{ githubAppInstallUrl }}
+              </a>
+            </template>
           </div>
         </div>
       </div>
