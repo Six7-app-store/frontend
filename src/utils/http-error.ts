@@ -77,6 +77,18 @@ export function getErrorReason(err: unknown): string | undefined {
   return (detail as { reason?: string }).reason
 }
 
+/**
+ * ``detail.code`` of a structured backend error; ``undefined`` otherwise.
+ * The LTI endpoints name their failures with ``code`` where the rest of
+ * the API uses ``reason``.
+ */
+export function getErrorCode(err: unknown): string | undefined {
+  const detail = getErrorDetail(err)
+  if (detail === null || typeof detail !== 'object') return undefined
+  const code = (detail as { code?: unknown }).code
+  return typeof code === 'string' ? code : undefined
+}
+
 /** Turn an axios-style error into a human-readable string. */
 export function extractErrorMessage(err: any): string {
   const detail = err?.response?.data?.detail

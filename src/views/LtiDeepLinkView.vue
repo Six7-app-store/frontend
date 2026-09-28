@@ -22,6 +22,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ltiApi } from '@/api/lti.api'
 import { appApi } from '@/api/app.api'
+import { getErrorCode, getErrorStatus } from '@/utils/http-error'
 import type { App } from '@/types'
 import { Loader2, Link2, AlertCircle } from 'lucide-vue-next'
 
@@ -35,18 +36,19 @@ const apps = ref<App[]>([])
 const handle = ref<string | null>(null)
 const selected = ref<string>('')
 
-function describe(err: any): string {
-  const code = err?.response?.data?.detail?.code
+function describe(err: unknown): string {
+  const code = getErrorCode(err)
+  const status = getErrorStatus(err)
   if (code === 'lti_deep_link_expired') {
     return 'Diese Auswahl ist nicht mehr offen. Lege die Aktivität in Moodle noch einmal an.'
   }
   if (code === 'lti_deep_link_foreign') {
     return 'Diese Auswahl gehört zu einem anderen Konto.'
   }
-  if (err?.response?.status === 403) {
+  if (status === 403) {
     return 'Dafür fehlen dir die Rechte.'
   }
-  if (err?.response?.status === 404) {
+  if (status === 404) {
     return 'Diese App gibt es nicht mehr.'
   }
   return 'Die Auswahl konnte nicht an Moodle übergeben werden.'

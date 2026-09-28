@@ -16,6 +16,7 @@ import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useLtiLink } from '@/composables/useLtiLink'
+import { getErrorCode } from '@/utils/http-error'
 import { Loader2, Link2, CheckCircle2, AlertCircle } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -30,8 +31,8 @@ const challenge = ref<string | null>(null)
 
 const RELAUNCH_HINT = 'Bitte die Aktivität in Moodle erneut öffnen.'
 
-function describe(err: any): string {
-  const code = err?.response?.data?.detail?.code
+function describe(err: unknown): string {
+  const code = getErrorCode(err)
 
   switch (code) {
     case 'lti_link_challenge_spent':
@@ -48,8 +49,8 @@ function describe(err: any): string {
 }
 
 /** Whether a failed attempt leaves the challenge worth keeping. */
-function isSpent(err: any): boolean {
-  const code = err?.response?.data?.detail?.code
+function isSpent(err: unknown): boolean {
+  const code = getErrorCode(err)
   return (
     code === 'lti_link_challenge_spent' ||
     code === 'lti_link_challenge_invalid' ||

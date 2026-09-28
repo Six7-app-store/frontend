@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 
 import {
   extractErrorMessage,
+  getErrorCode,
   getErrorDetail,
   getErrorDetailMessage,
   getErrorReason,
@@ -105,5 +106,19 @@ describe('getErrorDetailMessage', () => {
   it('tolerates non-axios values', () => {
     expect(getErrorDetailMessage(new Error('boom'))).toBeUndefined()
     expect(getErrorDetailMessage(undefined)).toBeUndefined()
+  })
+})
+
+describe('getErrorCode', () => {
+  it('reads detail.code of a structured detail', () => {
+    const err = { response: { data: { detail: { code: 'lti_nrps_unavailable' } } } }
+    expect(getErrorCode(err)).toBe('lti_nrps_unavailable')
+  })
+
+  it('is undefined for string, missing or non-string codes', () => {
+    expect(getErrorCode({ response: { data: { detail: 'Boom' } } })).toBeUndefined()
+    expect(getErrorCode({ response: { data: {} } })).toBeUndefined()
+    expect(getErrorCode({ response: { data: { detail: { code: 42 } } } })).toBeUndefined()
+    expect(getErrorCode(new Error('offline'))).toBeUndefined()
   })
 })

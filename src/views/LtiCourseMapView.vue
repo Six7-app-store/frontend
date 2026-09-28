@@ -26,6 +26,7 @@ import {
   type LtiRosterSkipReason,
 } from '@/api/lti.api'
 import { courseApi } from '@/api/course.api'
+import { getErrorCode, getErrorStatus } from '@/utils/http-error'
 import type { Course } from '@/types'
 import {
   Loader2,
@@ -59,8 +60,8 @@ const moodleName = computed(
   () => context.value?.title || context.value?.label || context.value?.context_id || ''
 )
 
-function describe(err: any): string {
-  const status = err?.response?.status
+function describe(err: unknown): string {
+  const status = getErrorStatus(err)
   if (status === 403) {
     return 'Für diese Studiengruppe fehlen dir die Rechte. Zuordnen kann sie, wer als Dozent:in dafür eingetragen ist.'
   }
@@ -86,8 +87,8 @@ function skipLabel(reason: LtiRosterSkipReason): string {
   return SKIP_LABELS[reason] ?? 'Konnte nicht übernommen werden.'
 }
 
-function describeImport(err: any): string {
-  const code = err?.response?.data?.detail?.code
+function describeImport(err: unknown): string {
+  const code = getErrorCode(err)
   if (code === 'lti_nrps_unavailable') {
     return 'Moodle gibt die Teilnehmerliste für diesen Kurs nicht heraus. In den Tool-Einstellungen „Kursmitglieder abrufen" aktivieren und die Aktivität einmal neu öffnen.'
   }
@@ -97,7 +98,7 @@ function describeImport(err: any): string {
   if (code === 'lti_context_already_mapped') {
     return 'Dieser Moodle-Kurs ist bereits einer Studiengruppe zugeordnet.'
   }
-  if (err?.response?.status === 403) {
+  if (getErrorStatus(err) === 403) {
     return 'Dafür fehlen dir die Rechte. Anlegen kann eine Studiengruppe, wer als Dozent:in eingetragen ist.'
   }
   return 'Das Anlegen ist fehlgeschlagen. Es wurde nichts gespeichert.'
