@@ -22,7 +22,8 @@ import type { DeploymentWithRelations, Task } from '@/types'
 export interface DeploymentLifecycleOptions {
   deploymentId: string
   deployment: Ref<DeploymentWithRelations | null>
-  isOwnerView: Ref<boolean>
+  /** Admin or owner — see ``useDeploymentOwnerView``. */
+  canOperate: Ref<boolean>
   tasks: Ref<Task[]>
   activeTask: Ref<Task | null>
   /** Live-stream connection state; ``'ended'`` triggers the outcome handling. */
@@ -40,22 +41,22 @@ export interface DeploymentLifecycleOptions {
  * watcher registers after the stream's own watchers.
  */
 export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
-  const { deploymentId, deployment, isOwnerView, tasks, activeTask, connectionState, loadTasks } = options
+  const { deploymentId, deployment, canOperate, tasks, activeTask, connectionState, loadTasks } = options
   const { t } = useI18n()
   const router = useRouter()
   const deploymentStore = useDeploymentStore()
   const toast = useToast()
 
   // Lifecycle action gating — the status matrix lives in
-  // ``services/deployment-lifecycle.service``. Members can never act on
-  // lifecycle, so every action is additionally gated on ``isOwnerView``.
-  const canDelete = computed(() => isOwnerView.value && canDeleteDeployment(deployment.value?.status))
+  // ``services/deployment-lifecycle.service``. Only the owner or an admin
+  // may act on a deployment, so every action is also gated on ``canOperate``.
+  const canDelete = computed(() => canOperate.value && canDeleteDeployment(deployment.value?.status))
 
   const deleteDisabledReason = computed(() => canDelete.value ? '' : DELETE_DISABLED_REASON)
 
   // One Pause/Resume button — what it does depends on status.
-  const canPause = computed(() => isOwnerView.value && canPauseDeployment(deployment.value?.status))
-  const canResume = computed(() => isOwnerView.value && canResumeDeployment(deployment.value?.status))
+  const canPause = computed(() => canOperate.value && canPauseDeployment(deployment.value?.status))
+  const canResume = computed(() => canOperate.value && canResumeDeployment(deployment.value?.status))
   const canPauseOrResume = computed(() => canPause.value || canResume.value)
   const pauseResumeAction = computed<PauseResumeAction | null>(() => pauseResumeActionFor(deployment.value?.status))
 

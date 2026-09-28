@@ -99,9 +99,11 @@ vi.mock('@/composables/useDeploymentStream', () => ({
 const t = (key: string, named?: Record<string, unknown>): string => i18n.global.t(key, named ?? {})
 let i18n = createI18n({ legacy: false, locale: 'de', messages: { de } })
 
+// Default: the teacher who owns the deployment below (``owner-1``), i.e.
+// someone who may both inspect and operate it.
 const makeUser = (overrides: Partial<User> = {}): User =>
   ({
-    userId: 'staff-1',
+    userId: 'owner-1',
     username: 'teacher',
     email: 'teacher@example.com',
     role: 'teacher',
@@ -862,6 +864,26 @@ describe('DeploymentDetailView — Member-Ansicht', () => {
 describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
   const setStatus = (status: DeploymentWithRelations['status']) =>
     h.deploymentApi.getById.mockResolvedValue({ data: makeDeployment({ status }) })
+
+  // The backend lets a teacher inspect a deployment of their course but
+  // only its owner or an admin operate it (can_operate_deployment).
+  it('zeigt einer fremden Lehrkraft Tasks, aber keine Lifecycle-Buttons', async () => {
+    authState.user = makeUser({ userId: 'staff-1' })
+    const wrapper = await mountLoaded()
+
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))).toBeUndefined()
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentPause'))).toBeUndefined()
+    expect(buttonWithText(wrapper, de.vm.actions.redeploy)).toBeUndefined()
+    expect(h.taskApi.listByDeployment).toHaveBeenCalled()
+  })
+
+  it('zeigt einem Admin die Lifecycle-Buttons auch für fremde Deployments', async () => {
+    authState.user = makeUser({ userId: 'admin-1', role: 'admin' })
+    const wrapper = await mountLoaded()
+
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))).toBeDefined()
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentPause'))).toBeDefined()
+  })
 
   it.each([
     ['success', { deleteEnabled: true, action: 'deploymentPause' }],

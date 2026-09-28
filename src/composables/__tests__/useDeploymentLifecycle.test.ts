@@ -35,7 +35,7 @@ const setup = (status: DeploymentWithRelations['status'] = 'success', owner = tr
   mount(defineComponent({
     setup() {
       api = useDeploymentLifecycle({
-        deploymentId: 'dep-1', deployment, isOwnerView: ref(owner), tasks, activeTask, connectionState, loadTasks,
+        deploymentId: 'dep-1', deployment, canOperate: ref(owner), tasks, activeTask, connectionState, loadTasks,
       })
       return () => null
     },

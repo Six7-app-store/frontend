@@ -30,6 +30,8 @@ const props = defineProps<{
    *  button shows a spinner and is disabled. Identified by address
    *  because the parent owns the redeploy state, not the card. */
   redeploying?: boolean
+  /** Hides the redeploy button for users who may only inspect. */
+  canRedeploy?: boolean
   /** Whether the inline detail panel under this card is currently
    *  expanded. Drives the Details button label (``Details`` vs.
    *  ``Ausblenden``) and a subtle accent on the card border so the
@@ -214,6 +216,7 @@ const cardBorderClass = computed(() => {
         {{ isExpanded ? t('vm.actions.hideDetails') : t('vm.actions.showDetails') }}
       </button>
       <button
+        v-if="canRedeploy"
         @click="emit('redeploy', resource.address)"
         :disabled="redeploying"
         class="flex-1 text-xs font-semibold py-1.5 px-3 rounded border transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"

@@ -15,7 +15,8 @@ import type { DeploymentWithRelations } from '@/types'
 
 defineProps<{
   deployment: DeploymentWithRelations
-  isOwnerView: boolean
+  /** Owner or admin — only they get the lifecycle buttons. */
+  canOperate: boolean
   canDelete: boolean
   deleteDisabledReason: string
   canPauseOrResume: boolean
@@ -79,8 +80,8 @@ defineEmits<{
 
       <!-- Single Delete button. The backend decides whether this
                      triggers a destroy task or a straight soft-delete based on
-                     status. Hidden entirely for members. -->
-      <BaseButton v-if="isOwnerView" @click="canDelete && $emit('delete')" :disabled="!canDelete"
+                     status. Hidden for everyone who may not operate it. -->
+      <BaseButton v-if="canOperate" @click="canDelete && $emit('delete')" :disabled="!canDelete"
         :title="deleteDisabledReason" class="flex items-center gap-2 px-4 py-2" variant="red">
         <Trash2 :size="18" />
         <span class="font-medium">{{ $t('DeploymentDetailView.deploymentDelete') }}</span>
