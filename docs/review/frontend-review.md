@@ -394,3 +394,27 @@ Grundsätze für jeden Schritt:
 3. **Schritt 15:** Sind die LTI-Views bewusst nur deutsch?
 4. **Fachlich:** Ist die `DeploymentGroupsCard` neben der `DeploymentTeamsCard` redundant?
 5. **Schritt 16:** Sollen Tests künftig unter `tests/unit/` oder neben dem Code liegen?
+
+## 5. Umsetzungsstand
+
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 723 Tests.
+
+| Schritt | Status | Commits |
+|---|---|---|
+| 0 Baseline grün | erledigt | `955100b` (Auswahl über `userId`), `04f5a66` (Drop-Zonen-Fix), `44a2675` (Lint) |
+| 1 Sichtbare Fehler | erledigt | `c1d6ae2` (LTI-Tokens), `3b53a43` (Stream-Auth über `api/axios`), `8b186a2` (Reject-Dialog), `acdecee` (Dashboard-Ladefehler) |
+| 2 Toter Code | erledigt | `77fdcb4` |
+| 3 Reine Helfer | erledigt | `561b8d6` (D3, D4), `8cc62c0` (D10), `55e14bc` (Charakterisierungstests `submitDraft`), `a43fc76` (D1, D7, D8), `13db0ae` (D2), `2fe8cf1` (D5, D33), `eec4dca` (D16, D17), `c694e40` (D24), `c401b18` (D31 teilweise, D32 teilweise) |
+| 4–16 | offen | — |
+
+**Nachträge zum Befund:**
+- **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
+  - `d14d17c` (`userId` im Wizard)
+  - `6aefaa6` (Drop-Zonen)
+  - `1a0acf2` (GitHub-App-Hinweis; die Create-Seite zeigte dadurch den rohen i18n-Schlüssel `AppsCreateView.info.inviteText`)
+
+  Eine Suche über alle Commits seit dem 10.09., deren hinzugefügte Zeilen im aktuellen Stand fehlen, hat keine weiteren Verluste ergeben. Die übrigen Treffer sind spätere, gewollte Umbauten.
+- **D8** ist nur teilweise zusammengeführt. Store und Variablen-Schritt teilen jetzt `fallbackTeamName` (`Team-n`); der Name ist dort ein Slot-Schlüssel. Die i18n-Vorgabe `Team #n` im Team-Schritt (vom Nutzer editierbar) und `Gruppe n` in `deployment-input.service` (Anzeige alter Deployments) bleiben bewusst getrennt.
+- **D24:** Der Keycloak-Callback (`CallbackView`) hat das `returnUrl` bisher ungeprüft an den Router übergeben; jetzt gilt dort derselbe Filter wie an den anderen beiden Stellen.
+- **D31 offen:** `utils/format.ts` formatiert weiter fest mit `de-DE`, auch wenn die App auf Englisch steht. Das zu ändern ist eine sichtbare Verhaltensänderung und mehrere Tests prüfen deutsche Datumsformate — eigene Entscheidung.
+- **D32 offen:** Die RAM-Umrechnungen (`InfrastructureVmCard`, `useQuotas`, `formatRam` im Picker) runden weiterhin unterschiedlich.
