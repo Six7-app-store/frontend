@@ -47,7 +47,8 @@ vi.mock('lucide-vue-next', () => {
   return {
     BarChart3: icon, Plus: icon, Inbox: icon,
     GitBranch: icon, Box: icon, Clock: icon, ArrowRight: icon,
-    Loader2: icon,
+    Loader2: icon, AlertCircle: icon, CheckCircle: icon, Flame: icon,
+    PauseCircle: icon, StopCircle: icon, XCircle: icon,
   }
 })
 
@@ -137,10 +138,10 @@ describe('DeploymentsListView — role split', () => {
     expect(render().html()).toContain(`DeploymentsView.${expected}`)
   })
 
-  it('keeps the raw lifecycle status for staff', () => {
+  it('shows staff the lifecycle status, not the student state', () => {
     mockDeployments = [deployment('pause_failed')]
     const html = render().html()
-    expect(html).toContain('pause_failed')
+    expect(html).toContain('DeploymentsView.deploymentPauseFailed')
     expect(html).not.toContain('DeploymentsView.studentUnavailable')
   })
 })

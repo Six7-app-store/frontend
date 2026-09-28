@@ -13,6 +13,7 @@ import { AlertCircle, ChevronDown, CircleArrowLeft, Loader2, Terminal } from 'lu
 import DeploymentTaskDetail from '@/components/deployment/DeploymentTaskDetail.vue'
 import { formatDateTime } from '@/utils/format'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import type { Task } from '@/types'
 
 defineProps<{
@@ -82,17 +83,11 @@ const showTaskLogsTrace = ref(false)
         <div v-for="task in historyTasks" :key="task.taskId" @click="$emit('select', task)"
           class="flex items-center justify-between p-4 bg-line/[.04] rounded-lg hover:bg-line/[.07] transition-colors cursor-pointer border border-subtle hover:border-strong">
           <div class="flex items-center gap-4 flex-1">
-            <component :is="getStatusStyles(task.status).icon" :size="18" :class="task.status === 'success' ? 'text-success' :
-              task.status === 'failed' ? 'text-danger' :
-                task.status === 'running' ? 'text-fg-muted' : 'text-warning'" />
+            <component :is="getStatusStyles(task.status).icon" :size="18" :class="getStatusStyles(task.status).iconClass" />
             <div class="flex-1">
               <div class="flex items-center gap-3 mb-1">
                 <span class="font-medium text-fg capitalize">{{ task.type }}</span>
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize"
-                  :class="getStatusStyles(task.status).badgeClass">
-                  {{ task.status }}
-                </span>
+                <StatusBadge :status="task.status" />
               </div>
               <div class="text-xs text-fg-muted">
                 Created: {{ formatDateTime(task.created_at) }}

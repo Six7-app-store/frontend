@@ -24,7 +24,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
         <div class="flex items-center gap-4">
           <div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-fg-muted lucide-loader-circle-icon lucide-loader-circle text-fg-muted">
               <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-            </svg><span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold border capitalize status-success">läuft</span></div>
+            </svg><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-success px-3 py-1.5 rounded-lg text-sm">läuft</span></div>
           <!-- Pause / Resume button. One slot, two states, visible only
                      when the lifecycle matrix permits the action right now. -->
           <!--v-if-->
@@ -642,7 +642,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
                   <path d="m9 11 3 3L22 4"></path>
                 </svg>
                 <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-1"><span class="font-medium text-fg capitalize">deploy</span><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize status-success">success</span></div>
+                  <div class="flex items-center gap-3 mb-1"><span class="font-medium text-fg capitalize">deploy</span><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-success px-2 py-0.5 rounded text-xs">erfolgreich</span></div>
                   <div class="text-xs text-fg-muted"> Created: 08.06.2026, 12:09:00</div>
                 </div>
               </div><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon transform -rotate-90 lucide-chevron-down-icon lucide-chevron-down text-icon transform -rotate-90">
@@ -656,7 +656,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
                   <path d="m9 9 6 6"></path>
                 </svg>
                 <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-1"><span class="font-medium text-fg capitalize">deploy</span><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize status-danger">failed</span></div>
+                  <div class="flex items-center gap-3 mb-1"><span class="font-medium text-fg capitalize">deploy</span><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-danger px-2 py-0.5 rounded text-xs">fehlgeschlagen</span></div>
                   <div class="text-xs text-fg-muted"> Created: 01.06.2026, 08:00:00</div>
                 </div>
               </div><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon transform -rotate-90 lucide-chevron-down-icon lucide-chevron-down text-icon transform -rotate-90">
@@ -716,7 +716,7 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
           <div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-success lucide-circle-check-big-icon lucide-circle-check-big text-success">
               <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
               <path d="m9 11 3 3L22 4"></path>
-            </svg><span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold border capitalize status-success">erfolgreich</span></div>
+            </svg><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-success px-3 py-1.5 rounded-lg text-sm">erfolgreich</span></div>
           <!-- Pause / Resume button. One slot, two states, visible only
                      when the lifecycle matrix permits the action right now. -->
           <!--v-if-->
@@ -1078,7 +1078,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
           <div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-success lucide-circle-check-big-icon lucide-circle-check-big text-success">
               <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
               <path d="m9 11 3 3L22 4"></path>
-            </svg><span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold border capitalize status-success">erfolgreich</span></div>
+            </svg><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-success px-3 py-1.5 rounded-lg text-sm">erfolgreich</span></div>
           <!-- Pause / Resume button. One slot, two states, visible only
                      when the lifecycle matrix permits the action right now. --><button class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control font-semibold text-sm transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed btn-primary flex items-center gap-2 px-4 py-2" title="Compute-Instanzen stoppen; Volumes und Netzwerke bleiben erhalten."><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-pause-icon lucide-circle-pause">
               <circle cx="12" cy="12" r="10"></circle>
@@ -1608,7 +1608,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
                   <path d="m9 11 3 3L22 4"></path>
                 </svg>
                 <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-1"><span class="font-medium text-fg capitalize">deploy</span><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize status-success">success</span></div>
+                  <div class="flex items-center gap-3 mb-1"><span class="font-medium text-fg capitalize">deploy</span><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-success px-2 py-0.5 rounded text-xs">erfolgreich</span></div>
                   <div class="text-xs text-fg-muted"> Created: 08.06.2026, 12:09:00</div>
                 </div>
               </div><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon transform -rotate-90 lucide-chevron-down-icon lucide-chevron-down text-icon transform -rotate-90">
@@ -1622,7 +1622,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
                   <path d="m9 9 6 6"></path>
                 </svg>
                 <div class="flex-1">
-                  <div class="flex items-center gap-3 mb-1"><span class="font-medium text-fg capitalize">deploy</span><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize status-danger">failed</span></div>
+                  <div class="flex items-center gap-3 mb-1"><span class="font-medium text-fg capitalize">deploy</span><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-danger px-2 py-0.5 rounded text-xs">fehlgeschlagen</span></div>
                   <div class="text-xs text-fg-muted"> Created: 01.06.2026, 08:00:00</div>
                 </div>
               </div><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon transform -rotate-90 lucide-chevron-down-icon lucide-chevron-down text-icon transform -rotate-90">
@@ -1682,7 +1682,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
           <div class="flex items-center gap-3"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-success lucide-circle-check-big-icon lucide-circle-check-big text-success">
               <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
               <path d="m9 11 3 3L22 4"></path>
-            </svg><span class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold border capitalize status-success">erfolgreich</span></div>
+            </svg><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-success px-3 py-1.5 rounded-lg text-sm">erfolgreich</span></div>
           <!-- Pause / Resume button. One slot, two states, visible only
                      when the lifecycle matrix permits the action right now. --><button class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-control font-semibold text-sm transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed btn-primary flex items-center gap-2 px-4 py-2" title="Compute-Instanzen stoppen; Volumes und Netzwerke bleiben erhalten."><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-pause-icon lucide-circle-pause">
               <circle cx="12" cy="12" r="10"></circle>
@@ -2217,7 +2217,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                   <div class="text-sm font-medium text-fg capitalize">deploy</div>
                 </div>
                 <div>
-                  <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">Status</div><span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize status-success">success</span>
+                  <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">Status</div><span class="inline-flex items-center font-semibold border capitalize whitespace-nowrap status-success px-2 py-0.5 rounded text-xs">erfolgreich</span>
                 </div>
                 <div>
                   <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">Gestartet</div>

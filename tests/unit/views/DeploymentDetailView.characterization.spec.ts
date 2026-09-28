@@ -666,8 +666,8 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
 
     expect(wrapper.text()).toMatch(/Tasks & Logs\s*2/)
     expect(taskRows(wrapper).map((r) => r.text())).toEqual([
-      'deploysuccess Created: 08.06.2026, 12:09:00',
-      'deployfailed Created: 01.06.2026, 08:00:00',
+      'deployerfolgreich Created: 08.06.2026, 12:09:00',
+      'deployfehlgeschlagen Created: 01.06.2026, 08:00:00',
     ])
   })
 

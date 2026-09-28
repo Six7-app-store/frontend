@@ -135,15 +135,15 @@ describe('DeploymentsListView.vue', () => {
   })
 
   it.each([
-    ['failed', ['status-danger']],
-    ['paused', ['status-neutral']],
-    ['unbekannt', ['status-neutral']]
-  ])('färbt den Status %s passend ein', (status, expectedClasses) => {
+    ['failed', 'DeploymentsView.deploymentFailed', ['status-danger']],
+    ['paused', 'DeploymentsView.deploymentPaused', ['status-neutral']],
+    ['unbekannt', 'DeploymentsView.noStatus', ['status-neutral']]
+  ])('zeigt den Status %s übersetzt und passend eingefärbt', (status, label, expectedClasses) => {
     mockDeployments = [makeDeployment({ status })]
 
     const statusSpan = mountComponent().find('.capitalize')
 
-    expect(statusSpan.text()).toBe(status)
+    expect(statusSpan.text()).toBe(label)
     for (const cls of expectedClasses) {
       expect(statusSpan.classes()).toContain(cls)
     }

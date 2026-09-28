@@ -13,6 +13,7 @@ import {
 } from 'lucide-vue-next'
 
 import BaseButton from '@/components/ui/BaseButton.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import Card from '@/components/ui/Card.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
@@ -103,25 +104,6 @@ const studentStateColor = (status: string | null | undefined) =>
     unavailable: 'status-neutral',
   })[studentState(status)]
 
-// Status pills. Same four tones as ``getStatusStyles``: green = running,
-// yellow = in flight / needs attention, red = failed, grey = idle.
-const getStatusColor = (status: string) => {
-  const colors = {
-    'success': 'status-success',
-    'failed': 'status-danger',
-    'running': 'status-success',
-    'pending': 'status-neutral',
-    'cancelled': 'status-neutral',
-    'destroyed': 'status-neutral',
-    'destroying': 'status-warning',
-    'pausing': 'status-warning',
-    'paused': 'status-neutral',
-    'resuming': 'status-warning',
-    'pause_failed': 'status-warning',
-    'resume_failed': 'status-warning',
-  }
-  return colors[status as keyof typeof colors] || 'status-neutral'
-}
 </script>
 
 
@@ -203,13 +185,7 @@ const getStatusColor = (status: string) => {
               >
                 {{ $t(studentStateLabel(deployment.status)) }}
               </span>
-              <span
-                v-else
-                class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border capitalize whitespace-nowrap"
-                :class="getStatusColor(deployment.status)"
-              >
-                {{ deployment.status }}
-              </span>
+              <StatusBadge v-else :status="deployment.status" />
             </div>
 
             <!-- Student footer: the one question they have is "how do I
