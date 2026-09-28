@@ -9,7 +9,7 @@ import { useToast } from '@/composables/useToast'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import VariableInput from '@/components/VariableInput.vue'
 import ScopeBadge from '@/components/ui/ScopeBadge.vue'
-import { effectiveVariableScope } from '@/services/deployment-variables.service'
+import { effectiveVariableScope, templateKeyOf } from '@/services/deployment-variables.service'
 import { isBool, isList, isNumber, splitCsv } from '@/services/variable-types'
 import { fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
 import { parseUserInputVar } from '@/services/deployment-input.service'
@@ -232,7 +232,7 @@ const packerByTemplate = computed<Record<string, AppVariable[]>>(() => {
   const out: Record<string, AppVariable[]> = {}
   for (const v of variables.value) {
     if (v.source !== 'packer') continue
-    const key = v.template_key ?? 'default'
+    const key = templateKeyOf(v)
     ;(out[key] ??= []).push(v)
   }
   return out
@@ -253,7 +253,7 @@ const isMultiImage = computed(
 )
 
 const packerFormKey = (variable: AppVariable): string => {
-  const tkey = variable.template_key ?? 'default'
+  const tkey = templateKeyOf(variable)
   if (!isMultiImage.value || tkey === 'default') return variable.name
   return `${tkey}.${variable.name}`
 }
@@ -318,7 +318,7 @@ onMounted(async () => {
       const key = v.source === 'packer' ? packerFormKey(v) : v.name
       let stored_value: any
       if (v.source === 'packer' && isMultiImage.value) {
-        const tkey = v.template_key ?? 'default'
+        const tkey = templateKeyOf(v)
         stored_value = stored.packer?.[tkey]?.[v.name]
       } else if (v.source === 'packer') {
         stored_value = stored.packer?.[v.name] ?? stored[v.name]
@@ -361,7 +361,7 @@ onMounted(async () => {
     const uniqueVariablesMap = new Map<string, AppVariable>()
     rawVariables.forEach(v => {
       const dedupKey = v.source === 'packer'
-        ? `${v.template_key ?? 'default'}.${v.name}`
+        ? `${templateKeyOf(v)}.${v.name}`
         : v.name
       if (!uniqueVariablesMap.has(dedupKey)) uniqueVariablesMap.set(dedupKey, v)
     })
@@ -456,7 +456,7 @@ const handleNext = () => {
       if (v.osType === 'file') return
 
       const storageKey = v.source === 'packer' ? packerFormKey(v) : v.name
-      const tkey = v.template_key ?? 'default'
+      const tkey = templateKeyOf(v)
       const isMultiPacker = v.source === 'packer' && isMultiImage.value
 
       if (isScoped(v)) {

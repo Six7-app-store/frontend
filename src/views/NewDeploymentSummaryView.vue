@@ -9,6 +9,8 @@ import { useToast } from '@/composables/useToast'
 import {
   effectiveVariableScope,
   isMultiImagePackerLayout as detectMultiImagePackerLayout,
+  storedPackerValue,
+  templateKeyOf,
 } from '@/services/deployment-variables.service'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
@@ -81,14 +83,8 @@ const isMultiImagePackerLayout = computed<boolean>(() =>
 )
 
 const _resolvePackerValue = (apiDef: AppVariable): any => {
-  const currentVars = deploymentStore.draft.variables as any
-  if (isMultiImagePackerLayout.value) {
-    const tkey = apiDef.template_key ?? 'default'
-    const fromNested = currentVars?.packer?.[tkey]?.[apiDef.name]
-    if (fromNested !== undefined) return fromNested
-  }
-  if (currentVars?.[apiDef.name] !== undefined) return currentVars[apiDef.name]
-  return apiDef.default
+  const stored = storedPackerValue(deploymentStore.draft.variables, apiDef, isMultiImagePackerLayout.value)
+  return stored !== undefined ? stored : apiDef.default
 }
 
 const packerVars = computed(() => {
@@ -101,7 +97,7 @@ const packerVars = computed(() => {
     // which image the value belongs to — three packer entries called
     // "region" with no qualifier would be confusing.
     if (isMultiImagePackerLayout.value) {
-      const tkey = apiDef.template_key ?? 'default'
+      const tkey = templateKeyOf(apiDef)
       const entry = toSummaryEntry(apiDef, val)
       result.push({ ...entry, label: `[${tkey}] ${entry.label}` })
     } else {

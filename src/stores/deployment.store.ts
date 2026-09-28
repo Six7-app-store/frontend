@@ -2,7 +2,11 @@ import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
 import { runRequest, type RequestContext } from './_request'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
-import { isMultiImagePackerLayout as detectMultiImagePackerLayout } from '@/services/deployment-variables.service'
+import {
+  isMultiImagePackerLayout as detectMultiImagePackerLayout,
+  storedPackerValue,
+  templateKeyOf,
+} from '@/services/deployment-variables.service'
 import { distributeEvenly, fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
 
 import type {
@@ -185,24 +189,16 @@ export const useDeploymentStore = defineStore('deployment', {
       // userInputVar: { packer: {...}, terraform: {...} }
       const userInputVarObj: any = { packer: {}, terraform: {} }
       if (this.draft.variables && typeof this.draft.variables === 'object') {
-        // Detect multi-image Packer layout: such apps store Packer values nested
-        // under ``draft.variables.packer[<template_key>][<name>]`` rather than
-        // flat under ``draft.variables[<name>]``. Reading only flat would leave
-        // ``val`` undefined for those variables. Same detection as in
-        // ``NewDeploymentSummaryView`` (``detectMultiImagePackerLayout``); the
-        // value resolution below differs on purpose (packer-only, no default).
+        // Multi-image apps store Packer values nested per template (see
+        // ``storedPackerValue``). Unlike the summary, no HCL default is
+        // filled in here: an unset value must reach the backend as unset.
         const draftVars = this.draft.variables as Record<string, any>
-        const packerContainer = draftVars.packer
         const isMultiImagePackerLayout = detectMultiImagePackerLayout(draftVars)
 
-        const resolveValue = (def: AppVariable): any => {
-          if (def.source === 'packer' && isMultiImagePackerLayout) {
-            const tkey = def.template_key ?? 'default'
-            const fromNested = packerContainer?.[tkey]?.[def.name]
-            if (fromNested !== undefined) return fromNested
-          }
-          return draftVars[def.name]
-        }
+        const resolveValue = (def: AppVariable): any =>
+          def.source === 'packer'
+            ? storedPackerValue(draftVars, def, isMultiImagePackerLayout)
+            : draftVars[def.name]
 
         // variableDefinitions carries whether each var is packer/terraform.
         if (Array.isArray(this.draft.variableDefinitions)) {
@@ -239,7 +235,7 @@ export const useDeploymentStore = defineStore('deployment', {
               // (siehe worker/app/tasks.py). Single-image/legacy stays
               // flat at ``user_vars["packer"][name]``.
               if (isMultiImagePackerLayout) {
-                const tkey = def.template_key ?? 'default'
+                const tkey = templateKeyOf(def)
                 ;(userInputVarObj.packer[tkey] ??= {})[def.name] = val
               } else {
                 userInputVarObj.packer[def.name] = val
