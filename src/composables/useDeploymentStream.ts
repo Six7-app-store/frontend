@@ -3,10 +3,9 @@
  *
  * The browser's native ``EventSource`` would be the obvious fit but it
  * cannot attach an ``Authorization`` header — and we authenticate with
- * Keycloak Bearer tokens, not cookies. So we use ``fetch`` + a
- * ``ReadableStream`` reader instead, which lets us carry the same
- * Bearer token the rest of the API uses and gives us explicit control
- * over reconnect behaviour.
+ * Bearer tokens, not cookies. So we use ``fetch`` + a ``ReadableStream``
+ * reader instead. The token and the 401 reaction come from ``api/axios``,
+ * so a Moodle-launched tab sends its LTI session token here as well.
  *
  * Returns reactive state:
  *
@@ -25,7 +24,8 @@
 
 import { ref, type Ref } from 'vue'
 import i18n from '@/i18n'
-import { useKeycloak } from '@/composables/useKeycloak'
+import { authorizationFor, handleUnauthorized } from '@/api/axios'
+import { deploymentApi } from '@/api/deployment.api'
 import { env } from '@/env'
 
 export interface LogEntry {
@@ -206,17 +206,16 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
     abortController = new AbortController()
     connectionState.value = reconnectAttempt === 0 ? 'connecting' : 'reconnecting'
 
-    const keycloak = useKeycloak()
-    const token = await keycloak.getAccessToken()
+    const path = deploymentApi.streamPath(deploymentId.value)
+    const headers: Record<string, string> = { Accept: 'text/event-stream' }
+    const authorization = await authorizationFor(path)
+    if (authorization) headers.Authorization = authorization
 
     let response: Response
     try {
-      response = await fetch(`${env.API_URL}/deployments/${deploymentId.value}/stream`, {
+      response = await fetch(`${env.API_URL}${path}`, {
         signal: abortController.signal,
-        headers: {
-          Authorization: token ? `Bearer ${token}` : '',
-          Accept: 'text/event-stream',
-        },
+        headers,
       })
     } catch (err) {
       // Network error — schedule a retry. Auto-cancel from the user
@@ -234,6 +233,7 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
       // Don't reconnect on 401/403/404 — those won't fix themselves.
       if (response.status >= 400 && response.status < 500) {
         connectionState.value = 'error'
+        if (response.status === 401) await handleUnauthorized()
         return
       }
       scheduleReconnect()
