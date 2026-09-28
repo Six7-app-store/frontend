@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
 import { runRequest, type RequestContext } from './_request'
-import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
+import { getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
 import {
   isMultiImagePackerLayout as detectMultiImagePackerLayout,
   storedPackerValue,
@@ -88,7 +88,7 @@ export const useDeploymentStore = defineStore('deployment', {
         if (status === 404) {
           this.currentDeployment = null
         } else {
-          this.error = (getErrorDetail(err) as string | undefined) || 'Failed to fetch deployment'
+          this.error = getErrorDetailMessage(err) || 'Failed to fetch deployment'
         }
       } finally {
         this.isLoading = false

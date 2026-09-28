@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { courseApi } from '@/api/course.api'
 import type { Course, CourseWithUsers, CourseCreate, CourseUpdate, User } from '@/types'
 import { runRequest } from './_request'
-import { getErrorDetail } from '@/utils/http-error'
+import { getErrorDetailMessage } from '@/utils/http-error'
 
 export const useCourseStore = defineStore('course', {
   state: () => ({
@@ -94,7 +94,7 @@ export const useCourseStore = defineStore('course', {
         this.currentMembers = data
         return data
       } catch (err) {
-        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to fetch members'
+        this.error = getErrorDetailMessage(err) || 'Failed to fetch members'
         throw err
       }
     },
@@ -105,7 +105,7 @@ export const useCourseStore = defineStore('course', {
         this.currentMembers = data
         return data
       } catch (err) {
-        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to add members'
+        this.error = getErrorDetailMessage(err) || 'Failed to add members'
         throw err
       }
     },
@@ -115,7 +115,7 @@ export const useCourseStore = defineStore('course', {
         await courseApi.removeMember(courseId, userId)
         this.currentMembers = this.currentMembers.filter((u) => u.userId !== userId)
       } catch (err) {
-        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to remove member'
+        this.error = getErrorDetailMessage(err) || 'Failed to remove member'
         throw err
       }
     },

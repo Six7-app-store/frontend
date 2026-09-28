@@ -36,6 +36,13 @@ describe('DeploymentStore request actions', () => {
     expect(store.isLoading).toBe(false)
   })
 
+  it('records the fallback, not [object Object], for a structured detail', async () => {
+    const store = useDeploymentStore()
+    deploymentApi.list.mockRejectedValueOnce(httpError(412, { reason: 'openstack_credentials_missing' }))
+    await store.fetchDeployments()
+    expect(store.error).toBe('Failed to fetch deployments')
+  })
+
   it('fetchDeploymentById treats 404 as soft-deleted, other errors as error state', async () => {
     const store = useDeploymentStore()
     store.currentDeployment = { deploymentId: 'd-1' } as never

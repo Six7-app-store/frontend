@@ -7,7 +7,7 @@
  * keeping the exact per-action semantics (loading transitions, error fallback
  * string, and whether the error is re-thrown) under the caller's control.
  */
-import { getErrorDetail } from '@/utils/http-error'
+import { getErrorDetailMessage } from '@/utils/http-error'
 
 export interface RequestContext {
   setLoading: (value: boolean) => void
@@ -23,7 +23,7 @@ export interface RunRequestOptions {
  * Runs `fn`, mirroring the store actions' loading/error/finally behavior.
  *
  * - Sets loading to `true` and clears the error before running.
- * - On failure, stores the backend ``detail`` (``getErrorDetail``) or
+ * - On failure, stores the backend message (``getErrorDetailMessage``) or
  *   `fallbackMsg` as the error.
  * - Always resets loading to `false` in a `finally` block.
  * - Re-throws by default (return type `Promise<T>`); pass `{ rethrow: false }`
@@ -53,7 +53,7 @@ export async function runRequest<T>(
   try {
     return await fn()
   } catch (err) {
-    ctx.setError((getErrorDetail(err) as string | undefined) || fallbackMsg)
+    ctx.setError(getErrorDetailMessage(err) || fallbackMsg)
     if (rethrow) {
       throw err
     }
