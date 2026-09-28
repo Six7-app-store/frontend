@@ -18,6 +18,7 @@
  * dashboard they then have to navigate out of.
  */
 import { onMounted, ref } from 'vue'
+import { isInAppPath } from '@/utils/safe-redirect'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useLtiSession } from '@/composables/useLtiSession'
@@ -32,21 +33,9 @@ const error = ref<string | null>(null)
 
 const FALLBACK_TARGET = '/dashboard'
 
-/**
- * Accept the landing path only if it is one of ours.
- *
- * The value arrives through the address bar, so a crafted launch URL
- * must not be able to turn this redirect into a trip to another site.
- * Anything that is not a plain in-app path is dropped in favour of the
- * dashboard — landing a page too early is a nuisance, an open redirect
- * is a phishing tool.
- */
+/** The landing path of the launch, if it is one of ours; else the dashboard. */
 function safeTarget(raw: unknown): string {
-  if (typeof raw !== 'string' || !raw.startsWith('/')) return FALLBACK_TARGET
-  // ``//host`` and ``/\host`` are protocol-relative: a browser reads
-  // both as a different origin.
-  if (raw.startsWith('//') || raw.startsWith('/\\')) return FALLBACK_TARGET
-  return raw
+  return isInAppPath(raw) ? raw : FALLBACK_TARGET
 }
 
 onMounted(async () => {

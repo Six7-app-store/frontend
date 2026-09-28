@@ -17,6 +17,7 @@ import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.sto
 import { useToast } from '@/composables/useToast'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 import { parseCloudsYaml, CloudsYamlError } from '@/utils/clouds-yaml'
+import { isInAppPath } from '@/utils/safe-redirect'
 import type {
   OpenStackAuthType,
   OpenStackCredentialUpsert,
@@ -234,13 +235,11 @@ const onFilePick = (event: Event) => {
   input.value = ''
 }
 
-// Only follow ``next`` when it is an in-app path of a known route. Absolute or
-// protocol-relative URLs (``https://…``, ``//host``, ``/\host``) and unknown
-// paths are ignored, so the user simply stays on this page. Unknown paths end
-// up on the catch-all 404 route, so that one doesn't count as known either.
+// Only follow ``next`` when it is an in-app path of a known route; otherwise
+// the user simply stays on this page. Unknown paths end up on the catch-all
+// 404 route, so that one doesn't count as known either.
 const internalNextPath = (next: unknown): string | null => {
-  if (typeof next !== 'string' || !next.startsWith('/')) return null
-  if (next.startsWith('//') || next.startsWith('/\\')) return null
+  if (!isInAppPath(next)) return null
   const resolved = router.resolve(next)
   if (resolved.matched.length === 0 || resolved.name === ROUTE_NAMES.notFound) return null
   return next

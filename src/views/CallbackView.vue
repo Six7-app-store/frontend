@@ -4,6 +4,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { Loader2 } from 'lucide-vue-next'
+import { isInAppPath } from '@/utils/safe-redirect'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -14,8 +15,9 @@ onMounted(async () => {
     // Handle OAuth callback
     const returnUrl = await authStore.handleCallback()
     
-    // Redirect to original destination or dashboard
-    router.push(returnUrl || { name: ROUTE_NAMES.dashboard })
+    // Back to where the sign-in started, if that is one of our pages. The
+    // value round-trips through ?returnUrl=, so it is not trusted.
+    router.push(isInAppPath(returnUrl) ? returnUrl : { name: ROUTE_NAMES.dashboard })
   } catch (err: any) {
     console.error('Callback error:', err)
     error.value = err.message || 'Authentication failed'
