@@ -11,7 +11,7 @@
 import { ref } from 'vue'
 import { AlertCircle, ChevronDown, CircleArrowLeft, Loader2, Terminal } from 'lucide-vue-next'
 import DeploymentTaskDetail from '@/components/deployment/DeploymentTaskDetail.vue'
-import { formatDateTime as formatDate } from '@/utils/format'
+import { formatDateTime } from '@/utils/format'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
 import type { Task } from '@/types'
 
@@ -95,7 +95,7 @@ const showTaskLogsTrace = ref(false)
                 </span>
               </div>
               <div class="text-xs text-fg-muted">
-                Created: {{ formatDate(task.created_at) }}
+                Created: {{ formatDateTime(task.created_at) }}
               </div>
             </div>
           </div>

@@ -11,7 +11,7 @@
 import { computed } from 'vue'
 import { AlertCircle, Check, Copy, Loader2, Settings, Terminal } from 'lucide-vue-next'
 import { injectCopyToClipboard } from '@/composables/useCopyToClipboard'
-import { formatDateTime as formatDate } from '@/utils/format'
+import { formatDateTime } from '@/utils/format'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
 import { prettyJson, highlightJson } from '@/utils/json-display'
 import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
@@ -74,11 +74,11 @@ const taskLogsSplit = computed(() => {
           </div>
           <div>
             <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStarted') }}</div>
-            <div class="text-sm text-fg">{{ formatDate(selectedTask.started_at) }}</div>
+            <div class="text-sm text-fg">{{ formatDateTime(selectedTask.started_at) }}</div>
           </div>
           <div>
             <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskFinished') }}</div>
-            <div class="text-sm text-fg">{{ formatDate(selectedTask.finished_at) }}</div>
+            <div class="text-sm text-fg">{{ formatDateTime(selectedTask.finished_at) }}</div>
           </div>
         </div>
 
@@ -96,7 +96,7 @@ const taskLogsSplit = computed(() => {
           </div>
           <div>
             <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskCreatedAt') }}</div>
-            <div class="text-sm text-fg">{{ formatDate(selectedTask.created_at) }}</div>
+            <div class="text-sm text-fg">{{ formatDateTime(selectedTask.created_at) }}</div>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { roleLabelKey, roleBadgeVariant as roleBadgeVariantFor } from '@/i18n/ro
 import Badge from '@/components/ui/Badge.vue'
 import Card from '@/components/ui/Card.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
+import { formatDateTime } from '@/utils/format'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -21,11 +22,7 @@ const roleLabel = computed(() => t(roleLabelKey(user.value?.role)))
 
 const createdDate = computed(() => {
   if (!user.value?.created_at) return 'N/A'
-  return new Date(user.value.created_at).toLocaleDateString('de-DE', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  return formatDateTime(user.value.created_at, { year: 'numeric', month: 'long', day: 'numeric' })
 })
 
 </script>

@@ -9,7 +9,7 @@
  * comments below still refer to the right values.
  */
 import { Loader2 } from 'lucide-vue-next'
-import { formatDateTime as formatDate } from '@/utils/format'
+import { formatDateTime } from '@/utils/format'
 import { phaseLabel } from '@/services/deployment-phases.service'
 import type { ConnectionState, LogEntry } from '@/composables/useDeploymentStream'
 import type { Task } from '@/types'
@@ -45,7 +45,7 @@ defineProps<{
               <span class="text-sm font-semibold text-fg capitalize">{{ activeTask.type
               }}</span>
               <span class="text-xs font-medium text-fg-muted">·</span>
-              <span class="text-xs text-fg-muted">running since {{ formatDate(activeTask.started_at ||
+              <span class="text-xs text-fg-muted">running since {{ formatDateTime(activeTask.started_at ||
                 activeTask.created_at) }}</span>
             </div>
             <div class="text-xs text-fg-muted font-mono mt-0.5">{{ activeTask.taskId }}</div>

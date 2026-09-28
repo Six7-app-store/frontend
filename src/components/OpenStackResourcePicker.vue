@@ -48,6 +48,7 @@ import {
 } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
 import { splitCsv } from '@/services/variable-types'
+import { formatBytes } from '@/utils/format'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import {
   openstackResourcesApi,
@@ -158,14 +159,16 @@ function adapt(raw: any): ResourceItem {
         tertiary: raw.is_public ? '' : t('openstackPicker.network.private'),
         raw,
       }
-    case 'image':
+    case 'image': {
+      const size = raw.size ? formatBytes(raw.size) : ''
       return {
         id: raw.id ?? '',
         name: raw.name ?? '',
-        secondary: raw.disk_format ? `${raw.disk_format} · ${formatBytes(raw.size)}` : formatBytes(raw.size),
+        secondary: raw.disk_format ? `${raw.disk_format} · ${size}` : size,
         tertiary: raw.status === 'active' ? '' : raw.status,
         raw,
       }
+    }
     case 'network':
       return {
         id: raw.id ?? '',
@@ -464,13 +467,6 @@ function onFreeTextInput(val: string) {
 // ----------------------------------------------------------------
 // Display-Helpers
 // ----------------------------------------------------------------
-function formatBytes(bytes: number | undefined | null): string {
-  if (!bytes) return ''
-  const mb = bytes / (1024 * 1024)
-  if (mb < 1024) return `${mb.toFixed(0)} MB`
-  return `${(mb / 1024).toFixed(1)} GB`
-}
-
 function formatRam(mb: number | undefined | null): string {
   if (!mb) return '0 MB'
   if (mb < 1024) return `${mb} MB`

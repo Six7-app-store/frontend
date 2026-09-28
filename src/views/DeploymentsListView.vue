@@ -40,8 +40,8 @@ const getAppName = (appId: string) => {
   return app ? app.name : '-'
 }
 
-// Format a timestamp as date + time (no seconds).
-const formatDate = (dateString: string) =>
+// Creation time in the list: date + time, without seconds.
+const formatCreatedAt = (dateString: string) =>
   formatDateTime(dateString, {
     year: 'numeric',
     month: '2-digit',
@@ -244,7 +244,7 @@ const getStatusColor = (status: string) => {
               </span>
               <span class="inline-flex items-center gap-1">
                 <Clock :size="11" />
-                {{ formatDate(deployment.created_at) }}
+                {{ formatCreatedAt(deployment.created_at) }}
               </span>
             </div>
           </Card>

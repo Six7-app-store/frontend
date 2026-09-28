@@ -47,14 +47,15 @@ export function formatDateTime(
 }
 
 /**
- * Human-readable byte size (``B`` / ``KB`` / ``MB``). Bytes under 1 KiB show as
- * whole bytes, KiB values are rounded to a whole number, and MiB values keep one
- * decimal. Consolidates the per-component byte formatters.
+ * Human-readable byte size (``B`` / ``KB`` / ``MB`` / ``GB``). Bytes under
+ * 1 KiB show as whole bytes, KiB values are rounded to a whole number, MiB and
+ * GiB values keep one decimal. Consolidates the per-component byte formatters.
  */
 export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
-  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`
-  return `${(n / 1024 / 1024).toFixed(1)} MB`
+  if (n < 1024 ** 2) return `${Math.round(n / 1024)} KB`
+  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`
+  return `${(n / 1024 ** 3).toFixed(1)} GB`
 }
 
 /**
