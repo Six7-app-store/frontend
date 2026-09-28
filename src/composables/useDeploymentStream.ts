@@ -26,6 +26,8 @@ import { ref, type Ref } from 'vue'
 import i18n from '@/i18n'
 import { authorizationFor, handleUnauthorized } from '@/api/axios'
 import { deploymentApi } from '@/api/deployment.api'
+import { DEFAULT_PHASE_COUNT } from '@/services/deployment-phases.service'
+import { isLiveTaskStatus, isTerminalTaskStatus } from '@/services/deployment-tasks.service'
 import { env } from '@/env'
 
 export interface LogEntry {
@@ -78,7 +80,7 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
   // reconstructing it from ``progress_pct`` (which is rounded and
   // collides on consecutive phases when total is small).
   const currentPhaseIndex = ref<number | null>(null)
-  const totalPhases = ref<number>(11)
+  const totalPhases = ref<number>(DEFAULT_PHASE_COUNT)
   // Authoritative phase-name list from the worker. ``[]`` means no
   // event with ``phase_names`` has been received yet (or the task
   // doesn't ship it, like the legacy single-image deploy where the
@@ -107,7 +109,7 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
     // total (e.g. 11 for deploy) doesn't briefly bleed into the next
     // run's stepper (e.g. 7 for destroy) before its first progress
     // event arrives.
-    totalPhases.value = 11
+    totalPhases.value = DEFAULT_PHASE_COUNT
     phaseNames.value = []
     liveLogs.value = []
     totalLogCount.value = 0
@@ -131,8 +133,9 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
   const handleEvent = (eventName: string, data: any) => {
     if (eventName === 'snapshot') {
       const snap = data as SnapshotEvent
-      const status = (snap.status || '').toUpperCase()
-      const isActive = status === 'PENDING' || status === 'RUNNING'
+      // The snapshot reports the task status upper-case.
+      const status = (snap.status || '').toLowerCase()
+      const isActive = isLiveTaskStatus(status)
       // Only adopt the snapshot's progress/phase when the latest task
       // is actually live. After a successful deploy the snapshot still
       // carries ``progress_pct=100`` and ``current_phase="OUTPUTS_…"``
@@ -147,7 +150,7 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
       }
       // Snapshot doesn't carry total_phases; the first progress event
       // will fill it in. We keep the conservative default (11).
-      if (status === 'SUCCESS' || status === 'FAILED' || status === 'CANCELLED') {
+      if (isTerminalTaskStatus(status)) {
         connectionState.value = 'ended'
       }
       return

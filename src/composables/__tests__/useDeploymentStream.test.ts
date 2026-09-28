@@ -69,3 +69,49 @@ describe('useDeploymentStream authentication', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('useDeploymentStream snapshot', () => {
+  const sseBody = (...frames: string[]) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const f of frames) controller.enqueue(new TextEncoder().encode(f + '\n\n'))
+        controller.close()
+      },
+    })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    h.authorizationFor.mockResolvedValue('Bearer t')
+  })
+
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('adopts progress and phase from a live snapshot (upper-case status)', async () => {
+    const snapshot = { task_id: 't1', status: 'RUNNING', current_phase: 'TERRAFORM_APPLY', progress_pct: 40, type: 'deploy' }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, body: sseBody(`event: snapshot\ndata: ${JSON.stringify(snapshot)}`),
+    }))
+
+    const stream = useDeploymentStream(ref('d1'))
+    stream.start()
+    await flushPromises()
+
+    expect(stream.progress.value).toBe(40)
+    expect(stream.currentPhase.value).toBe('TERRAFORM_APPLY')
+    expect(stream.totalPhases.value).toBe(11)
+  })
+
+  it('ignores a finished task in the snapshot and ends the stream', async () => {
+    const snapshot = { task_id: 't1', status: 'SUCCESS', current_phase: 'OUTPUTS', progress_pct: 100, type: 'deploy' }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true, status: 200, body: sseBody(`event: snapshot\ndata: ${JSON.stringify(snapshot)}`),
+    }))
+
+    const stream = useDeploymentStream(ref('d1'))
+    stream.start()
+    await flushPromises()
+
+    expect(stream.progress.value).toBeNull()
+    expect(stream.connectionState.value).toBe('ended')
+  })
+})

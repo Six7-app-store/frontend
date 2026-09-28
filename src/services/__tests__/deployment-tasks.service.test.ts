@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 
 import {
   isLiveTaskStatus,
+  isTerminalTaskStatus,
   sortTasksNewestFirst,
   findActiveTask,
   selectHistoryTasks,
@@ -71,5 +72,15 @@ describe('selectHistoryTasks', () => {
   it('lists all tasks newest first otherwise', () => {
     expect(selectHistoryTasks(tasks, tasks[1]!, false).map((t) => t.taskId)).toEqual(['b', 'a'])
     expect(selectHistoryTasks(tasks, null, true).map((t) => t.taskId)).toEqual(['b', 'a'])
+  })
+})
+
+describe('isTerminalTaskStatus', () => {
+  it.each(['success', 'failed', 'cancelled'])('%s is terminal', (s) => {
+    expect(isTerminalTaskStatus(s)).toBe(true)
+  })
+
+  it.each(['pending', 'running', null, undefined, 'SUCCESS'])('%s is not terminal', (s) => {
+    expect(isTerminalTaskStatus(s)).toBe(false)
   })
 })
