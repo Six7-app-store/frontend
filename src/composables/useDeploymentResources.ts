@@ -130,7 +130,7 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       } else if (reason === 'resource_not_in_state') {
         toast.error(t('DeploymentDetailView.redeployNotInState'))
       } else if (getErrorStatus(err) === 409) {
-        toast.error(t('DeploymentDetailView.redeployBusy'))
+        toast.error(t('DeploymentDetailView.lifecycleBusy'))
       } else {
         toast.error(err?.message || t('DeploymentDetailView.redeployError'))
       }

@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 import { credentialsApi } from '@/api/credentials.api'
-import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
+import { getErrorDetailMessage, getErrorReason, getErrorStatus } from '@/utils/http-error'
 import type {
   OpenStackCredentialFromYaml,
   OpenStackCredentialResponse,
@@ -11,34 +10,15 @@ import type {
 interface State {
   status: OpenStackCredentialResponse | null
   loading: boolean
+  // The backend's own message of the last failure, if it sent one. Views
+  // fall back to their translated text when this is null.
   error: string | null
 }
 
 const LOCKED_REASON = 'openstack_credentials_locked'
 
-// Only axios errors carry a backend ``detail``; anything else (e.g. a bug
-// in the request code) falls back to the generic message.
-function extractError(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err)) {
-    const detail = getErrorDetail(err)
-    if (typeof detail === 'string') return detail
-    if (detail && typeof detail === 'object') {
-      const reason = (detail as { reason?: string }).reason
-      if (reason === LOCKED_REASON) {
-        const n = (detail as { active_deployments?: number }).active_deployments ?? 0
-        return `Credentials gesperrt — ${n} aktive(s) Deployment(s)`
-      }
-      if (reason) return String(reason)
-    }
-  }
-  return fallback
-}
-
 function isLockedError(err: unknown): boolean {
-  if (!axios.isAxiosError(err)) return false
-  if (getErrorStatus(err) !== 409) return false
-  const detail = getErrorDetail(err)
-  return !!(detail && typeof detail === 'object' && (detail as { reason?: string }).reason === LOCKED_REASON)
+  return getErrorStatus(err) === 409 && getErrorReason(err) === LOCKED_REASON
 }
 
 // Dedupe concurrent fetch() calls — DashboardView mount, auth store
@@ -77,7 +57,7 @@ export const useOpenStackCredentialsStore = defineStore('openstack-credentials',
           this.status = res.data
           return res.data
         } catch (err) {
-          this.error = extractError(err, 'Failed to load OpenStack credentials')
+          this.error = getErrorDetailMessage(err) ?? null
           return null
         } finally {
           this.loading = false
@@ -95,7 +75,7 @@ export const useOpenStackCredentialsStore = defineStore('openstack-credentials',
         this.status = res.data
         return res.data
       } catch (err) {
-        this.error = extractError(err, 'Failed to save OpenStack credentials')
+        this.error = getErrorDetailMessage(err) ?? null
         if (isLockedError(err)) await this.fetch()
         throw err
       } finally {
@@ -111,7 +91,7 @@ export const useOpenStackCredentialsStore = defineStore('openstack-credentials',
         this.status = res.data
         return res.data
       } catch (err) {
-        this.error = extractError(err, 'Failed to parse clouds.yaml')
+        this.error = getErrorDetailMessage(err) ?? null
         if (isLockedError(err)) await this.fetch()
         throw err
       } finally {
@@ -126,7 +106,7 @@ export const useOpenStackCredentialsStore = defineStore('openstack-credentials',
         await credentialsApi.remove()
         await this.fetch()
       } catch (err) {
-        this.error = extractError(err, 'Failed to delete OpenStack credentials')
+        this.error = getErrorDetailMessage(err) ?? null
         if (isLockedError(err)) await this.fetch()
         throw err
       } finally {
@@ -142,7 +122,7 @@ export const useOpenStackCredentialsStore = defineStore('openstack-credentials',
         this.status = res.data
         return res.data
       } catch (err) {
-        this.error = extractError(err, 'Failed to validate OpenStack credentials')
+        this.error = getErrorDetailMessage(err) ?? null
         throw err
       } finally {
         this.loading = false

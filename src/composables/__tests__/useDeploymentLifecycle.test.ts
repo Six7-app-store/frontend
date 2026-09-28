@@ -93,15 +93,27 @@ describe('useDeploymentLifecycle', () => {
     expect(h.push).not.toHaveBeenCalled()
   })
 
-  it('reports a failed delete with the extracted reason', async () => {
+  it('reports a delete refused as busy with the translated reason', async () => {
     h.deploymentApi.delete.mockRejectedValue(httpError(409, { reason: 'deployment_busy' }))
     const { api, toasts, t } = setup()
     api.showDeleteModal.value = true
 
     await api.confirmDelete()
 
-    expect(toasts()).toEqual([{ type: 'error', message: `${t('DeploymentDetailView.deleteErrorToast')}: deployment_busy` }])
+    expect(toasts()).toEqual([{
+      type: 'error',
+      message: `${t('DeploymentDetailView.deleteErrorToast')}: ${t('DeploymentDetailView.lifecycleBusy')}`,
+    }])
     expect(api.showDeleteModal.value).toBe(false)
+  })
+
+  it('leaves an unknown machine code out of the delete toast', async () => {
+    h.deploymentApi.delete.mockRejectedValue(httpError(412, { reason: 'openstack_credentials_missing' }))
+    const { api, toasts, t } = setup()
+
+    await api.confirmDelete()
+
+    expect(toasts()).toEqual([{ type: 'error', message: t('DeploymentDetailView.deleteErrorToast') }])
   })
 
   it.each([

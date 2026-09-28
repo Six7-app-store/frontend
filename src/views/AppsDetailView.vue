@@ -4,7 +4,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { appApi } from '@/api/app.api'
 import { useToast } from '@/composables/useToast'
-import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
+import { getErrorDetail, getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
 import { useI18n } from 'vue-i18n'
 import {
   Layers,
@@ -374,9 +374,8 @@ const confirmDelete = async () => {
     toast.success(t('AppsDetailView.deleteSuccessToast'))
     showDeleteModal.value = false
     router.push({ name: ROUTE_NAMES.apps })
-  } catch (error: any) {
-    const detail = getErrorDetail(error) as any
-    const reason = typeof detail === 'object' ? detail?.message || detail?.reason : detail
+  } catch (error) {
+    const reason = getErrorDetailMessage(error)
     toast.error(`${t('AppsDetailView.deleteErrorToast')}${reason ? ': ' + reason : ''}`)
   } finally {
     isDeleting.value = false

@@ -5,13 +5,13 @@
  * The backend returns error detail in two shapes: a plain string, or a
  * structured object (e.g. ``{ reason, message }`` for a 412
  * PRECONDITION_FAILED). Plain interpolation would print
- * ``[object Object]`` for the dict case, so :func:`extractErrorMessage`
- * drills into ``.reason`` / ``.message`` when present and falls back to
- * ``err.message`` so a toast is always readable.
+ * ``[object Object]`` for the dict case, so a message for the user comes
+ * from :func:`getErrorDetailMessage` only, and callers add their own
+ * translated text around it.
  *
  * The accessors (:func:`hasErrorResponse`, :func:`getErrorStatus`,
- * :func:`getErrorStatusText`, :func:`getErrorDetail`, :func:`getErrorReason`)
- * return the raw values unchanged. Callers use
+ * :func:`getErrorStatusText`, :func:`getErrorDetail`, :func:`getErrorReason`,
+ * :func:`getErrorCode`) return the raw values unchanged. Callers use
  * them instead of reaching into ``err.response`` directly, so every
  * error-handling site reads errors the same way (see the "Fehlerbehandlung"
  * section in the frontend README).
@@ -87,15 +87,4 @@ export function getErrorCode(err: unknown): string | undefined {
   if (detail === null || typeof detail !== 'object') return undefined
   const code = (detail as { code?: unknown }).code
   return typeof code === 'string' ? code : undefined
-}
-
-/** Turn an axios-style error into a human-readable string. */
-export function extractErrorMessage(err: any): string {
-  const detail = err?.response?.data?.detail
-  if (typeof detail === 'string') return detail
-  if (detail && typeof detail === 'object') {
-    if (typeof detail.reason === 'string') return detail.reason
-    if (typeof detail.message === 'string') return detail.message
-  }
-  return err?.message || 'Unknown error'
 }

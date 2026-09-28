@@ -930,7 +930,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
     expect(wrapper.find('.fixed').exists()).toBe(false)
   })
 
-  it('zeigt beim Löschfehler den extrahierten Grund', async () => {
+  it('zeigt beim Löschfehler den übersetzten Grund', async () => {
     h.deploymentApi.delete.mockRejectedValue(httpError(409, { reason: 'deployment_busy' }))
     const wrapper = await mountLoaded()
 
@@ -939,7 +939,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
     await settle()
 
     expect(toasts()).toEqual([
-      { type: 'error', message: `${t('DeploymentDetailView.deleteErrorToast')}: deployment_busy` },
+      { type: 'error', message: `${t('DeploymentDetailView.deleteErrorToast')}: ${t('DeploymentDetailView.lifecycleBusy')}` },
     ])
     expect(wrapper.find('.fixed').exists()).toBe(false)
   })
@@ -1026,7 +1026,7 @@ describe('DeploymentDetailView — Redeploy', () => {
   it.each([
     [httpError(422, { reason: 'non_redeployable_resource_type' }), t('DeploymentDetailView.redeployNotRedeployable')],
     [httpError(422, { reason: 'resource_not_in_state' }), t('DeploymentDetailView.redeployNotInState')],
-    [httpError(409, 'busy'), t('DeploymentDetailView.redeployBusy')],
+    [httpError(409, 'busy'), t('DeploymentDetailView.lifecycleBusy')],
     [httpError(500, 'x', 'Request failed'), 'Request failed'],
     [httpError(500, 'x', ''), t('DeploymentDetailView.redeployError')],
   ])('meldet Redeploy-Fehler verständlich (%#)', async (err, message) => {

@@ -16,7 +16,7 @@ import {
   type PauseResumeAction,
 } from '@/services/deployment-lifecycle.service'
 import { sortTasksNewestFirst } from '@/services/deployment-tasks.service'
-import { extractErrorMessage } from '@/utils/http-error'
+import { getErrorDetailMessage, getErrorReason } from '@/utils/http-error'
 import type { DeploymentWithRelations, Task } from '@/types'
 
 export interface DeploymentLifecycleOptions {
@@ -126,6 +126,16 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
   //     attaches to the new DESTROY task; the stream-ended
   //     watcher routes back to the list when the task completes.
   //   * 204 → leave immediately with a success toast.
+  // "<what failed>: <why>". The why is the backend's own message, or the
+  // translated text for a lifecycle action already running; a bare
+  // machine code would mean nothing to the user, so it is left out.
+  const failureMessage = (base: string, err: unknown): string => {
+    const why = getErrorReason(err) === 'deployment_busy'
+      ? t('DeploymentDetailView.lifecycleBusy')
+      : getErrorDetailMessage(err)
+    return why ? `${base}: ${why}` : base
+  }
+
   const confirmDelete = async () => {
     if (!deploymentId) return
     try {
@@ -144,7 +154,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
         router.push({ name: ROUTE_NAMES.deploymentsList })
       }
     } catch (err) {
-      toast.error(`${t('DeploymentDetailView.deleteErrorToast')}: ` + extractErrorMessage(err))
+      toast.error(failureMessage(t('DeploymentDetailView.deleteErrorToast'), err))
     } finally {
       showDeleteModal.value = false
     }
@@ -173,11 +183,9 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
       await deploymentStore.fetchDeploymentById(deploymentId)
       await loadTasks()
     } catch (err) {
-      toast.error((action === 'pause'
+      toast.error(failureMessage(action === 'pause'
           ? t('DeploymentDetailView.pauseErrorToast')
-          : t('DeploymentDetailView.resumeErrorToast'))
-          + ': '
-          + extractErrorMessage(err))
+          : t('DeploymentDetailView.resumeErrorToast'), err))
     } finally {
       pauseResumeBusy.value = false
       showPauseResumeModal.value = false
