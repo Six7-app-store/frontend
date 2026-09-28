@@ -25,6 +25,7 @@ import { formatBytes } from '@/utils/format'
 import { splitCsv } from '@/services/variable-types'
 import { userDisplayName } from '@/utils/user-display'
 import { releaseVersion } from '@/services/deployment-draft.service'
+import { parseUserInputVar } from '@/services/deployment-input.service'
 import {
   ensureLoaded as ensureOsCacheLoaded,
   getDisplayName as getOsDisplayName,
@@ -383,19 +384,12 @@ const fetchAndSyncVariables = async () => {
     }
     appVariables.value = variables || []
 
-    // C. Parse user input. ``userInputVar`` can be either a JSON string or a
-    // Record (type ``Record<string, any> | string``), so branch on the type.
+    // C. Parse user input.
     let userOverrides: Record<string, any> = {}
-    const rawUserInput: any = deploymentStore.draft.userInputVar
-    if (rawUserInput && typeof rawUserInput === 'object' && !Array.isArray(rawUserInput)) {
-      userOverrides = rawUserInput
-    } else if (typeof rawUserInput === 'string' && rawUserInput.trim() !== '') {
-      try {
-        userOverrides = JSON.parse(rawUserInput)
-      } catch (e) {
-        console.warn('Invalid JSON in userInputVar', e)
-        toast.error(t('deployment.summary.invalidJson'))
-      }
+    try {
+      userOverrides = parseUserInputVar(deploymentStore.draft.userInputVar)
+    } catch {
+      toast.error(t('deployment.summary.invalidJson'))
     }
 
     // D. Initialize draft

@@ -12,6 +12,7 @@ import ScopeBadge from '@/components/ui/ScopeBadge.vue'
 import { effectiveVariableScope } from '@/services/deployment-variables.service'
 import { isBool, isList, isNumber, splitCsv } from '@/services/variable-types'
 import { fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
+import { parseUserInputVar } from '@/services/deployment-input.service'
 import {
   ArrowRight,
   ArrowLeft,
@@ -379,16 +380,10 @@ onMounted(async () => {
     }
 
     let savedValues: Record<string, any> = {}
-    const rawUserInput: any = deploymentStore.draft.userInputVar
-    if (rawUserInput && typeof rawUserInput === 'object' && !Array.isArray(rawUserInput)) {
-      savedValues = rawUserInput
-    } else if (typeof rawUserInput === 'string' && rawUserInput.trim() !== '') {
-      try {
-        savedValues = JSON.parse(rawUserInput)
-      } catch (e) {
-        console.warn('Invalid JSON in userInputVar', e)
-        toast.error(t('deployment.summary.invalidJson'))
-      }
+    try {
+      savedValues = parseUserInputVar(deploymentStore.draft.userInputVar)
+    } catch {
+      toast.error(t('deployment.summary.invalidJson'))
     }
 
     variables.value.forEach(v => {
