@@ -14,6 +14,14 @@ export interface RequestContext {
   setError: (message: string | null) => void
 }
 
+/** The context for a store whose state has the usual ``isLoading`` / ``error`` pair. */
+export function requestContext(store: { isLoading: boolean; error: string | null }): RequestContext {
+  return {
+    setLoading: (v: boolean) => { store.isLoading = v },
+    setError: (e: string | null) => { store.error = e },
+  }
+}
+
 export interface RunRequestOptions {
   /** When false, the caught error is swallowed instead of re-thrown. Defaults to true. */
   rethrow?: boolean

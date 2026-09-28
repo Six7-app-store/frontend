@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
-import { runRequest, type RequestContext } from './_request'
+import { requestContext, runRequest } from './_request'
 import { getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
 import {
   isMultiImagePackerLayout as detectMultiImagePackerLayout,
@@ -17,15 +17,6 @@ import type {
   DeploymentDraft,
   AppVariable
 } from '@/types'
-
-// Loading/error bookkeeping for ``runRequest`` (same shape as in the app
-// and course stores).
-function requestContext(store: { isLoading: boolean; error: string | null }): RequestContext {
-  return {
-    setLoading: (v: boolean) => { store.isLoading = v },
-    setError: (e: string | null) => { store.error = e },
-  }
-}
 
 const defaultDraft: DeploymentDraft = {
   appId: null,

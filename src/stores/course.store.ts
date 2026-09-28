@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { courseApi } from '@/api/course.api'
 import type { Course, CourseWithUsers, CourseCreate, CourseUpdate, User } from '@/types'
-import { runRequest } from './_request'
+import { requestContext, runRequest } from './_request'
 import { getErrorDetailMessage } from '@/utils/http-error'
 
 export const useCourseStore = defineStore('course', {
@@ -18,22 +18,14 @@ export const useCourseStore = defineStore('course', {
 
   actions: {
     async fetchCourses() {
-      const ctx = {
-        setLoading: (v: boolean) => { this.isLoading = v },
-        setError: (e: string | null) => { this.error = e },
-      }
-      await runRequest(ctx, async () => {
+      await runRequest(requestContext(this), async () => {
         const { data } = await courseApi.list()
         this.courses = data
       }, 'Failed to fetch courses', { rethrow: false })
     },
 
     async fetchCourseById(courseId: string) {
-      const ctx = {
-        setLoading: (v: boolean) => { this.isLoading = v },
-        setError: (e: string | null) => { this.error = e },
-      }
-      await runRequest(ctx, async () => {
+      await runRequest(requestContext(this), async () => {
         const { data } = await courseApi.getById(courseId)
         this.currentCourse = data
         this.currentMembers = data.users ?? []
@@ -41,11 +33,7 @@ export const useCourseStore = defineStore('course', {
     },
 
     async createCourse(data: CourseCreate) {
-      const ctx = {
-        setLoading: (v: boolean) => { this.isLoading = v },
-        setError: (e: string | null) => { this.error = e },
-      }
-      return runRequest(ctx, async () => {
+      return runRequest(requestContext(this), async () => {
         const { data: course } = await courseApi.create(data)
         this.courses.push(course)
         return course
@@ -53,11 +41,7 @@ export const useCourseStore = defineStore('course', {
     },
 
     async updateCourse(courseId: string, data: CourseUpdate) {
-      const ctx = {
-        setLoading: (v: boolean) => { this.isLoading = v },
-        setError: (e: string | null) => { this.error = e },
-      }
-      return runRequest(ctx, async () => {
+      return runRequest(requestContext(this), async () => {
         const { data: course } = await courseApi.update(courseId, data)
         const index = this.courses.findIndex((c) => c.courseId === courseId)
         if (index !== -1) {
@@ -71,11 +55,7 @@ export const useCourseStore = defineStore('course', {
     },
 
     async deleteCourse(courseId: string) {
-      const ctx = {
-        setLoading: (v: boolean) => { this.isLoading = v },
-        setError: (e: string | null) => { this.error = e },
-      }
-      await runRequest(ctx, async () => {
+      await runRequest(requestContext(this), async () => {
         await courseApi.delete(courseId)
         this.courses = this.courses.filter((c) => c.courseId !== courseId)
       }, 'Failed to delete course')
