@@ -424,3 +424,14 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **V10 offen:** Die englischen Ersatztexte in `runRequest`-Aufrufen (`'Failed to …'`) stehen weiter im Store-Feld `error`, das außer in `CoursesView` (nur als Boolean) niemand anzeigt. Der Credentials-Store speichert jetzt nur noch die Backend-Meldung; für die übrigen Stores ist das mit Schritt 11 zu entscheiden, wenn die App-Views über den Store laufen.
 - **D18 geklärt (Schritt 5):** Das Backend kennt zwei Regeln — *einsehen* (`can_view_deployment_owner`: Admin, Owner, Lehrkraft des Kurses) und *bedienen* (`can_operate_deployment`: nur Admin oder Owner). Das Frontend hatte beides unter „Staff oder Owner“ zusammengelegt; eine Lehrkraft sah bei fremden Deployments Löschen/Pausieren/Redeploy und bekam 403. `useDeploymentOwnerView` liefert jetzt zusätzlich `canOperate`.
 - **Schritt 5, sichtbar:** Deployment-Liste, Task-Historie und Task-Detail zeigen den Status übersetzt statt als Rohwert (`success` → „erfolgreich“); die Status-Badge der Liste hat jetzt die kompakte Größe der Historie. Die Vorschau auf der Create-Seite zeigt dasselbe Icon wie der Katalog.
+
+## 6. Übergabe — hier weitermachen
+
+**Stand:** Schritte 0–5 sind abgeschlossen und committet (Branch `refactor/second_review`, nicht gepusht). **Nächster Schritt: 6 (UI-Bausteine)** aus Abschnitt 4.
+
+Regeln für jede KI oder Person, die hier weiterarbeitet:
+
+1. Vor Beginn diesen Abschnitt und Abschnitt 5 lesen, dann mit dem hier genannten nächsten Schritt weitermachen.
+2. Pro Schritt wie in Abschnitt 4 beschrieben: erst Charakterisierungstests (eigener Commit), dann Umbau; nach jedem Commit `vitest --run`, `eslint .` und `vue-tsc -b` im Container `frontend-dev` grün.
+3. **Nach jedem abgeschlossenen Schritt — und bevor die Arbeit unterbrochen wird — diesen Abschnitt aktualisieren:** Was ist erledigt, wo genau wurde aufgehört (Schritt, Teilpunkt, ggf. halb fertige Dateien) und womit geht es als Nächstes weiter. Die Tabelle in Abschnitt 5 um die neuen Commits ergänzen. Commit-Hashes aus `git log` übernehmen, nie aus dem Gedächtnis.
+4. Offene Entscheidungen (Ende von Abschnitt 4 und Nachträge in Abschnitt 5) nicht selbst treffen, sondern nachfragen.
