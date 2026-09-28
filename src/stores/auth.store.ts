@@ -33,7 +33,6 @@ export const useAuthStore = defineStore('auth', {
     // an LTI session cannot be renewed, only launched again.
     isLtiSession: () => ltiSession.isActive(),
 
-    isAdmin: (state) => state.user?.role === 'admin',
 
     userId: (state) => state.user?.userId || null,
   },

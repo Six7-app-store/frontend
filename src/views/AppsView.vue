@@ -14,14 +14,16 @@ import {
   Globe, Inbox, Plus, Lock
 } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
-import { iconForAppName } from '@/services/app-presentation.service'
+import { iconForAppName, storeApprovalState } from '@/services/app-presentation.service'
 import { useAuthStore } from '@/stores/auth.store'
+import { useRole } from '@/composables/useRole'
 import type { AppVersionApproval } from '@/types'
 
 const { t, locale } = useI18n()
 const toast = useToast()
 const router = useRouter()
 const authStore = useAuthStore()
+const { isAdmin } = useRole()
 
 const isLoading = ref(false)
 const apps = ref<any[]>([])
@@ -31,7 +33,7 @@ const approvalsMap = ref<Record<string, AppVersionApproval[]>>({})
 const visibilityFilter = ref<'all' | 'public' | 'private'>('all')
 
 const filteredApps = computed(() => {
-  if (!authStore.isAdmin || visibilityFilter.value === 'all') return apps.value
+  if (!isAdmin.value || visibilityFilter.value === 'all') return apps.value
   if (visibilityFilter.value === 'private') return apps.value.filter(a => a.is_private)
   return apps.value.filter(a => !a.is_private)
 })
@@ -44,9 +46,7 @@ const badgeStatusForApp = (app: any) => {
   if (!isOwnApp(app)) return null
   if (app.is_private) return 'private'
   const approvals = approvalsMap.value[app.appId] ?? []
-  if (approvals.some(a => a.status === 'approved')) return 'published'
-  if (approvals.some(a => a.status === 'pending')) return 'pending'
-  return 'new'
+  return ({ approved: 'published', pending: 'pending', none: 'new' } as const)[storeApprovalState(approvals)]
 }
 
 const fetchApps = async () => {
@@ -89,7 +89,7 @@ onMounted(() => {
     <PageHeader :title="$t('AppsView.title')" :subtitle="$t('AppsView.subtitle')">
       <template #actions>
         <!-- Admin-only visibility filter -->
-        <div v-if="authStore.isAdmin" class="flex items-center bg-line/[.07] rounded-lg p-1 gap-1 text-sm">
+        <div v-if="isAdmin" class="flex items-center bg-line/[.07] rounded-lg p-1 gap-1 text-sm">
           <button
             @click="visibilityFilter = 'all'"
             class="px-3 py-1.5 rounded-md font-medium transition-colors"

@@ -15,3 +15,16 @@ export function iconForAppName(appName: string | null | undefined) {
   if (name.includes('security') || name.includes('pen')) return Shield
   return Layers
 }
+
+/**
+ * Where an app stands in the store, from its version approvals: one
+ * approved version publishes it, otherwise an open submission counts,
+ * otherwise nothing has been submitted.
+ */
+export function storeApprovalState(
+  approvals: ReadonlyArray<{ status: string }>,
+): 'approved' | 'pending' | 'none' {
+  if (approvals.some((a) => a.status === 'approved')) return 'approved'
+  if (approvals.some((a) => a.status === 'pending')) return 'pending'
+  return 'none'
+}

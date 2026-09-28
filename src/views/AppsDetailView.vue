@@ -18,7 +18,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRole } from '@/composables/useRole'
 import { formatDate } from '@/utils/format'
 import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
-import { iconForAppName } from '@/services/app-presentation.service'
+import { iconForAppName, storeApprovalState } from '@/services/app-presentation.service'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
@@ -79,14 +79,10 @@ const isOwner = computed(() =>
   !!app.value && String(app.value.userId) === String(authStore.userId)
 )
 
-// App edit/delete/version-management is "owner or admin". Mirrors the backend
-// ``capabilities.can_edit_app`` so the UI doesn't offer actions that would 403.
-const canDelete = computed(() =>
+// Editing, deleting and managing versions is "owner or admin". Mirrors the
+// backend ``capabilities.can_edit_app`` so the UI doesn't offer actions that would 403.
+const canEditApp = computed(() =>
   !!app.value && (isAdmin.value || isOwner.value)
-)
-
-const canManageVersions = computed(() =>
-  !!app.value && (isOwner.value || isAdmin.value)
 )
 
 // ----------------------------------------------------------------
@@ -94,9 +90,8 @@ const canManageVersions = computed(() =>
 // ----------------------------------------------------------------
 const appBannerStatus = computed<'none' | 'no_submission' | 'pending' | 'approved'>(() => {
   if (!app.value || app.value.is_private) return 'none'
-  if (approvals.value.some(a => a.status === 'approved')) return 'approved'
-  if (approvals.value.some(a => a.status === 'pending')) return 'pending'
-  return 'no_submission'
+  const state = storeApprovalState(approvals.value)
+  return state === 'none' ? 'no_submission' : state
 })
 
 // ----------------------------------------------------------------
@@ -384,7 +379,7 @@ const confirmDelete = async () => {
 
 onMounted(async () => {
   await fetchAppDetails()
-  if (canManageVersions.value) await fetchApprovals()
+  if (canEditApp.value) await fetchApprovals()
 })
 </script>
 
@@ -431,11 +426,11 @@ onMounted(async () => {
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <BaseButton v-if="canDelete" @click="openEditModal" class="flex items-center gap-2 px-4 py-2" variant="ghost">
+              <BaseButton v-if="canEditApp" @click="openEditModal" class="flex items-center gap-2 px-4 py-2" variant="ghost">
                 <Pencil :size="18" />
                 <span class="font-medium">{{ $t('AppsDetailView.editApp') }}</span>
               </BaseButton>
-              <BaseButton v-if="canDelete" @click="showDeleteModal = true" class="flex items-center gap-2 px-4 py-2" variant="red">
+              <BaseButton v-if="canEditApp" @click="showDeleteModal = true" class="flex items-center gap-2 px-4 py-2" variant="red">
                 <Trash2 :size="18" />
                 <span class="font-medium">{{ $t('AppsDetailView.deleteApp') }}</span>
               </BaseButton>
@@ -457,7 +452,7 @@ onMounted(async () => {
           {{ $t('AppsDetailView.tabOverview') }}
         </button>
         <button
-          v-if="canManageVersions"
+          v-if="canEditApp"
           @click="activeTab = 'store'"
           class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px"
           :class="activeTab === 'store'
