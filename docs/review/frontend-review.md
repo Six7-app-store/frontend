@@ -431,7 +431,7 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand:** Schritte 0–5 sind abgeschlossen, Schritt 6 ist zu 2 von 9 Bausteinen erledigt (`BaseButton`, `ConfirmModal`); alles committet, Branch `refactor/second_review`, nicht gepusht. Arbeitsbaum sauber, keine halb fertigen Dateien.
+**Stand:** Schritte 0–5 sind abgeschlossen, Schritt 6 ist zu 2 von 9 Bausteinen erledigt (`BaseButton`, `ConfirmModal`); alles committet und auf `origin` (Six7-app-store) gepusht, Branch `refactor/second_review`. Vor dem Weitermachen `git pull`. Arbeitsbaum sauber, keine halb fertigen Dateien.
 
 **Hier weitermachen: Schritt 6, `ReasonModal` (T6).**
 - Nutzer: Reject- und Revoke-Dialog in `AdminAppsView.vue` (Begründung Pflicht), Submit-Dialog in `AppsDetailView.vue` (Notiz optional, darunter die Marker-Fehler aus einer 422).
