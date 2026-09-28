@@ -17,7 +17,7 @@ import { useI18n } from 'vue-i18n'
 import type { DeploymentResource } from '@/types'
 import { deploymentApi } from '@/api/deployment.api'
 import { openStackFailure } from '@/utils/http-error'
-import { formatUptime, pillToneClass } from '@/composables/useVmPresentation'
+import { formatUptime, lifecyclePillClass } from '@/composables/useVmPresentation'
 import {
   X,
   RefreshCw,
@@ -77,17 +77,7 @@ onMounted(load)
 // unmounting the panel.
 watch(() => props.address, load)
 
-// --- Lifecycle pill colour (matches InfrastructureVmCard) ---
-const lifecycleTone = computed<'green' | 'red' | 'amber' | 'gray'>(() => {
-  const s = detail.value?.lifecycle?.status
-  if (!s) return 'gray'
-  if (s === 'ACTIVE') return 'green'
-  if (s === 'ERROR') return 'red'
-  if (s === 'BUILD' || s === 'REBUILD') return 'amber'
-  return 'gray'
-})
-
-const lifecyclePillClass = computed(() => pillToneClass(lifecycleTone.value))
+const pillClass = computed(() => lifecyclePillClass(detail.value?.lifecycle?.status))
 
 const uptime = computed(() => formatUptime(detail.value?.hardware?.launched_at))
 
@@ -222,7 +212,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <span
               v-if="detail.lifecycle.status"
               class="ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border"
-              :class="lifecyclePillClass"
+              :class="pillClass"
             >
               {{ detail.lifecycle.status }}
             </span>

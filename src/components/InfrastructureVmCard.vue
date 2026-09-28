@@ -19,7 +19,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeploymentResource } from '@/types'
-import { formatUptime, pillToneClass } from '@/composables/useVmPresentation'
+import { formatUptime, lifecyclePillClass } from '@/composables/useVmPresentation'
 import { RefreshCcw, AlertTriangle, Cpu, Network } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -57,17 +57,7 @@ const pillText = computed(() => {
   return base
 })
 
-const pillTone = computed<'green' | 'amber' | 'red' | 'grey'>(() => {
-  const status = props.resource.lifecycle?.status
-  if (!status) return 'grey'
-  if (status === 'ACTIVE') return 'green'
-  if (status === 'ERROR') return 'red'
-  if (status === 'BUILD' || status === 'REBUILD') return 'amber'
-  // SHUTOFF / PAUSED / SUSPENDED / MIGRATING / ... — neutral
-  return 'grey'
-})
-
-const pillClass = computed(() => pillToneClass(pillTone.value))
+const pillClass = computed(() => lifecyclePillClass(props.resource.lifecycle?.status))
 
 // --- Drift banner ---
 // Three states, only two visible: ``in_sync`` shows nothing,
