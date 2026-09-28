@@ -303,14 +303,14 @@ describe('NewDeploymentTeamsView.vue', () => {
 
       const zone = wrapper.find('[data-testid="group-dropzone-0"]')
       await zone.trigger('dragenter')
-      expect(zone.classes()).toContain('bg-emerald-50')
+      expect(zone.classes()).toContain('bg-line/[.07]')
 
       // Ein Studentenkaertchen innerhalb der Zone.
       const child = zone.element.querySelector('div')
       expect(child).not.toBeNull()
 
       await zone.trigger('dragleave', { relatedTarget: child })
-      expect(zone.classes()).toContain('bg-emerald-50')
+      expect(zone.classes()).toContain('bg-line/[.07]')
     })
 
     it('gibt die Hervorhebung frei, wenn der Zeiger die Zone wirklich verlaesst', async () => {
@@ -319,10 +319,10 @@ describe('NewDeploymentTeamsView.vue', () => {
 
       const zone = wrapper.find('[data-testid="group-dropzone-0"]')
       await zone.trigger('dragenter')
-      expect(zone.classes()).toContain('bg-emerald-50')
+      expect(zone.classes()).toContain('bg-line/[.07]')
 
       await zone.trigger('dragleave', { relatedTarget: document.body })
-      expect(zone.classes()).toContain('bg-gray-50')
+      expect(zone.classes()).toContain('bg-line/[.04]')
     })
 
     it('haelt auch die Unassigned-Spalte ueber ihren Kindern hervorgehoben', async () => {
@@ -331,16 +331,16 @@ describe('NewDeploymentTeamsView.vue', () => {
 
       const zone = wrapper.find('[data-testid="unassigned-dropzone"]')
       await zone.trigger('dragenter')
-      expect(zone.classes()).toContain('bg-gray-200')
+      expect(zone.classes()).toContain('bg-line/[.12]')
 
       const child = zone.element.querySelector('div')
       expect(child).not.toBeNull()
 
       await zone.trigger('dragleave', { relatedTarget: child })
-      expect(zone.classes()).toContain('bg-gray-200')
+      expect(zone.classes()).toContain('bg-line/[.12]')
 
       await zone.trigger('dragleave', { relatedTarget: document.body })
-      expect(zone.classes()).not.toContain('bg-gray-200')
+      expect(zone.classes()).not.toContain('bg-line/[.12]')
     })
 
     // Die Karte darf sich beim Ueberfahren nicht vergroessern -- genau das

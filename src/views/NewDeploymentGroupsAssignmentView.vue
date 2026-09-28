@@ -488,6 +488,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
               </div>
               
               <div 
+                data-testid="unassigned-dropzone"
                 class="flex-grow p-3 overflow-y-auto bg-line/[.04]"
                 :class="dragOverUnassigned ? 'bg-line/[.12] ring-4 ring-accent/30' : ''"
                 @dragover="handleDragOver"
@@ -533,7 +534,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
                 :key="index"
                 class="flex flex-col bg-panel rounded-xl border-2 shadow-lg overflow-hidden transition-all"
                 :class="dragOverGroup === index 
-                  ? 'border-accent ring-4 ring-accent/30 shadow-2xl scale-[1.02]' 
+                  ? 'border-accent ring-4 ring-accent/30 shadow-2xl'
                   : 'border-subtle hover:border-strong hover:shadow-xl'">
                 
                 <!-- Team Header -->
@@ -554,6 +555,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
 
                 <!-- Drop Zone -->
                 <div 
+                  :data-testid="`group-dropzone-${index}`"
                   class="flex-grow p-3 min-h-[200px] overflow-y-auto"
                   :class="dragOverGroup === index ? 'bg-line/[.07]' : 'bg-line/[.04]'"
                   @dragover="handleDragOver"
