@@ -159,6 +159,7 @@ export default {
 
   DashboardView: {
     title: "Willkommen zurück zu Six7!",
+    statsLoadError: "Die Übersichtszahlen konnten nicht geladen werden.",
     subtitle: "Willkommen zurück in deiner Deployment-Umgebung.",
     timeGreetings: {
       morning: "Guten Morgen",
