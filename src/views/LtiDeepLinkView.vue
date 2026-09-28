@@ -112,13 +112,13 @@ onMounted(async () => {
   <div class="flex flex-col items-center justify-center min-h-screen px-4">
     <div class="max-w-md w-full text-center flex flex-col items-center gap-4">
       <div v-if="state === 'loading'" class="flex flex-col items-center gap-4">
-        <Loader2 class="animate-spin text-primary" :size="48" />
-        <p class="text-gray-600">Apps werden geladen…</p>
+        <Loader2 class="animate-spin text-icon" :size="48" />
+        <p class="text-fg-muted">Apps werden geladen…</p>
       </div>
 
       <div v-else-if="state === 'sending'" class="flex flex-col items-center gap-4">
-        <Loader2 class="animate-spin text-primary" :size="48" />
-        <p class="text-gray-600">Auswahl wird an Moodle übergeben…</p>
+        <Loader2 class="animate-spin text-icon" :size="48" />
+        <p class="text-fg-muted">Auswahl wird an Moodle übergeben…</p>
       </div>
 
       <div
@@ -126,16 +126,16 @@ onMounted(async () => {
         data-testid="deeplink-form"
         class="flex flex-col items-center gap-4 w-full"
       >
-        <Link2 class="text-primary" :size="48" />
+        <Link2 class="text-icon" :size="48" />
         <div>
           <p class="font-semibold">Welche App soll diese Aktivität öffnen?</p>
-          <p class="text-sm text-gray-600 mt-2">
+          <p class="text-sm text-fg-muted mt-2">
             Studierende landen beim Klick direkt in ihrer Umgebung dieser App —
             ohne Umweg über eine Liste.
           </p>
         </div>
 
-        <div v-if="apps.length === 0" data-testid="deeplink-empty" class="text-sm text-gray-600">
+        <div v-if="apps.length === 0" data-testid="deeplink-empty" class="text-sm text-fg-muted">
           Es gibt noch keine Apps, auf die diese Aktivität zeigen könnte.
         </div>
 
@@ -143,7 +143,7 @@ onMounted(async () => {
           v-else
           v-model="selected"
           data-testid="deeplink-app"
-          class="w-full px-3 py-2 rounded-md border border-gray-300 bg-white"
+          class="field w-full px-3 py-2"
         >
           <option value="" disabled>App wählen…</option>
           <option v-for="app in apps" :key="app.appId" :value="app.appId">
@@ -154,13 +154,13 @@ onMounted(async () => {
         <button
           data-testid="deeplink-submit"
           :disabled="!selected"
-          class="px-4 py-2 rounded-md bg-primary text-white hover:opacity-90 disabled:opacity-50"
+          class="btn-primary px-4 py-2 rounded-control font-semibold disabled:opacity-50"
           @click="choose"
         >
           Übernehmen
         </button>
 
-        <p class="text-xs text-gray-500">
+        <p class="text-xs text-fg-muted">
           Die Zuordnung steckt danach in der Moodle-Aktivität. Welche Umgebung
           jemand öffnet, wird bei jedem Klick neu bestimmt.
         </p>
@@ -169,7 +169,7 @@ onMounted(async () => {
       <div
         v-else
         data-testid="deeplink-error"
-        class="flex flex-col items-center gap-4 text-red-500"
+        class="flex flex-col items-center gap-4 text-danger"
       >
         <AlertCircle :size="48" />
         <div>

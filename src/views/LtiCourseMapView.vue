@@ -178,8 +178,8 @@ onMounted(async () => {
       </div>
 
       <div v-else-if="state === 'importing'" class="flex flex-col items-center gap-4">
-        <Loader2 class="animate-spin text-primary" :size="48" />
-        <p class="text-gray-600">Teilnehmende werden aus Moodle geholt…</p>
+        <Loader2 class="animate-spin text-icon" :size="48" />
+        <p class="text-fg-muted">Teilnehmende werden aus Moodle geholt…</p>
       </div>
 
       <div
@@ -187,12 +187,12 @@ onMounted(async () => {
         data-testid="import-success"
         class="flex flex-col items-center gap-4 w-full"
       >
-        <CheckCircle2 class="text-green-600" :size="48" />
+        <CheckCircle2 class="text-success" :size="48" />
         <div>
           <p class="font-semibold">
             Studiengruppe „{{ report.courseName }}" angelegt
           </p>
-          <p class="text-sm text-gray-600 mt-2">
+          <p class="text-sm text-fg-muted mt-2">
             {{ report.students }} Studierende, {{ report.teachers }} Dozierende
             übernommen — davon {{ report.created }} neu und
             {{ report.matched }} bereits bekannt.
@@ -202,16 +202,16 @@ onMounted(async () => {
         <div
           v-if="report.skipped.length"
           data-testid="import-skipped"
-          class="w-full text-left rounded-md border border-amber-200 bg-amber-50 p-3"
+          class="w-full text-left rounded-md border border-warning-dot/30 bg-warning-dot/10 p-3"
         >
-          <p class="text-sm font-medium text-amber-900">
+          <p class="text-sm font-medium text-warning">
             {{ report.skipped.length }} nicht übernommen
           </p>
           <ul class="mt-2 flex flex-col gap-2">
             <li
               v-for="(skip, i) in report.skipped"
               :key="i"
-              class="text-xs text-amber-900"
+              class="text-xs text-warning"
             >
               <span class="font-medium">{{ skip.name || skip.email || 'Unbekannt' }}</span>
               — {{ skipLabel(skip.reason) }}
@@ -220,7 +220,7 @@ onMounted(async () => {
         </div>
 
         <button
-          class="px-4 py-2 rounded-md bg-primary text-white hover:opacity-90"
+          class="btn-primary px-4 py-2 rounded-control font-semibold"
           @click="skip"
         >
           Weiter zu den Deployments
@@ -279,21 +279,21 @@ onMounted(async () => {
         <!-- The other way round: no Studiengruppe to point at yet, so
              make it from what Moodle already knows about the course. -->
         <div class="w-full flex items-center gap-3 pt-2">
-          <span class="h-px flex-1 bg-gray-200" />
-          <span class="text-xs text-gray-400">oder</span>
-          <span class="h-px flex-1 bg-gray-200" />
+          <span class="h-px flex-1 bg-line/[.12]" />
+          <span class="text-xs text-fg-muted">oder</span>
+          <span class="h-px flex-1 bg-line/[.12]" />
         </div>
 
         <button
           data-testid="map-import"
           :disabled="state === 'saving'"
-          class="flex items-center gap-2 px-4 py-2 rounded-md border border-primary text-primary hover:bg-primary/5 disabled:opacity-50"
+          class="flex items-center gap-2 px-4 py-2 btn-secondary rounded-control font-semibold disabled:opacity-50"
           @click="importFromMoodle"
         >
           <DownloadCloud :size="18" />
           Studiengruppe aus Moodle anlegen
         </button>
-        <p class="text-xs text-gray-500 -mt-2">
+        <p class="text-xs text-fg-muted -mt-2">
           Legt „{{ moodleName }}" als neue Studiengruppe an und übernimmt die
           Teilnehmenden aus Moodle.
         </p>
