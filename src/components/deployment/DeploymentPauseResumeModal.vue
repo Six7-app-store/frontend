@@ -4,15 +4,14 @@
  * and confirm button switch on ``action`` so there is one dialog instead
  * of two near-identical ones.
  */
-import BaseButton from '@/components/ui/BaseButton.vue'
-import Modal from '@/components/ui/Modal.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import type { PauseResumeAction } from '@/services/deployment-lifecycle.service'
 
 defineProps<{
   show: boolean
   action: PauseResumeAction | null
   deploymentName: string
-  /** Disables the confirm button while the request is in flight. */
+  /** Disables the dialog while the request is in flight. */
   busy: boolean
 }>()
 
@@ -23,37 +22,27 @@ defineEmits<{
 </script>
 
 <template>
-  <Modal :show="show" @close="$emit('close')">
-    <template #title>
-      {{ action === 'pause'
-        ? $t('DeploymentDetailView.confirmPauseTitle')
-        : $t('DeploymentDetailView.confirmResumeTitle') }}
-    </template>
-    <template #body>
-      <i18n-t
-        :keypath="action === 'pause'
-          ? 'DeploymentDetailView.confirmPauseMessage'
-          : 'DeploymentDetailView.confirmResumeMessage'"
-        tag="p"
-        class="text-fg"
-      >
-        <template #name><strong>{{ deploymentName }}</strong></template>
-      </i18n-t>
-    </template>
-    <template #footer>
-      <div class="flex justify-end gap-3">
-        <BaseButton variant="ghost" @click="$emit('close')">
-          {{ $t('DeploymentDetailView.cancelButton') }}
-        </BaseButton>
-        <BaseButton
-          :variant="action === 'pause' ? 'primary' : 'secondary'"
-          @click="$emit('confirm')"
-          :disabled="busy">
-          {{ action === 'pause'
-            ? $t('DeploymentDetailView.deploymentPause')
-            : $t('DeploymentDetailView.deploymentResume') }}
-        </BaseButton>
-      </div>
-    </template>
-  </Modal>
+  <ConfirmModal
+    :show="show"
+    :busy="busy"
+    :variant="action === 'pause' ? 'primary' : 'secondary'"
+    :title="action === 'pause'
+      ? $t('DeploymentDetailView.confirmPauseTitle')
+      : $t('DeploymentDetailView.confirmResumeTitle')"
+    :confirm-label="action === 'pause'
+      ? $t('DeploymentDetailView.deploymentPause')
+      : $t('DeploymentDetailView.deploymentResume')"
+    @close="$emit('close')"
+    @confirm="$emit('confirm')"
+  >
+    <i18n-t
+      :keypath="action === 'pause'
+        ? 'DeploymentDetailView.confirmPauseMessage'
+        : 'DeploymentDetailView.confirmResumeMessage'"
+      tag="p"
+      class="text-fg"
+    >
+      <template #name><strong>{{ deploymentName }}</strong></template>
+    </i18n-t>
+  </ConfirmModal>
 </template>

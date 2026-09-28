@@ -13,6 +13,7 @@ import Card from '@/components/ui/Card.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import Modal from '@/components/ui/Modal.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
 
@@ -230,32 +231,23 @@ const goToDetail = (courseId: string) => {
       </template>
     </Modal>
 
-    <Modal :show="showDeleteModal" @close="closeDeleteModal">
-      <template #header>
-        <h2 class="text-xl font-semibold text-danger">{{ $t('CoursesView.deleteModal.title') }}</h2>
-      </template>
-
-      <template #body>
-        <div class="space-y-3">
-          <i18n-t keypath="CoursesView.deleteModal.confirmPrompt" tag="p" class="text-fg">
-            <template #name><strong>{{ courseToDelete?.name }}</strong></template>
-          </i18n-t>
-          <p class="text-sm text-fg-muted">
-            {{ $t('CoursesView.deleteModal.warning') }}
-          </p>
-        </div>
-      </template>
-
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <BaseButton variant="ghost" @click="closeDeleteModal" :disabled="isDeleting">
-            {{ $t('CoursesView.deleteModal.cancel') }}
-          </BaseButton>
-          <BaseButton variant="danger" @click="confirmDelete" :disabled="isDeleting">
-            {{ isDeleting ? $t('CoursesView.deleteModal.deleting') : $t('CoursesView.deleteModal.delete') }}
-          </BaseButton>
-        </div>
-      </template>
-    </Modal>
+    <ConfirmModal
+      :show="showDeleteModal"
+      :busy="isDeleting"
+      :title="$t('CoursesView.deleteModal.title')"
+      :confirm-label="$t('CoursesView.deleteModal.delete')"
+      :busy-label="$t('CoursesView.deleteModal.deleting')"
+      @close="closeDeleteModal"
+      @confirm="confirmDelete"
+    >
+      <div class="space-y-3">
+        <i18n-t keypath="CoursesView.deleteModal.confirmPrompt" tag="p" class="text-fg">
+          <template #name><strong>{{ courseToDelete?.name }}</strong></template>
+        </i18n-t>
+        <p class="text-sm text-fg-muted">
+          {{ $t('CoursesView.deleteModal.warning') }}
+        </p>
+      </div>
+    </ConfirmModal>
   </div>
 </template>

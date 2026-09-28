@@ -21,6 +21,7 @@ import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file
 import { iconForAppName, storeApprovalState } from '@/services/app-presentation.service'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
@@ -708,26 +709,20 @@ onMounted(async () => {
     </div>
 
     <!-- Delete modal -->
-    <Modal v-if="app" :show="showDeleteModal" @close="showDeleteModal = false">
-      <template #title>{{ $t('AppsDetailView.confirmDeleteTitle') }}</template>
-      <template #body>
-        <div class="space-y-3">
-          <i18n-t keypath="AppsDetailView.confirmDeleteMessage" tag="p" class="text-fg">
-            <template #name><strong>{{ app.name }}</strong></template>
-          </i18n-t>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <BaseButton variant="ghost" @click="showDeleteModal = false" :disabled="isDeleting">
-            {{ $t('AppsDetailView.cancelButton') }}
-          </BaseButton>
-          <BaseButton variant="danger" @click="confirmDelete" :disabled="isDeleting">
-            {{ isDeleting ? $t('AppsDetailView.deletingButton') : $t('AppsDetailView.confirmButton') }}
-          </BaseButton>
-        </div>
-      </template>
-    </Modal>
+    <ConfirmModal
+      v-if="app"
+      :show="showDeleteModal"
+      :busy="isDeleting"
+      :title="$t('AppsDetailView.confirmDeleteTitle')"
+      :confirm-label="$t('AppsDetailView.confirmButton')"
+      :busy-label="$t('AppsDetailView.deletingButton')"
+      @close="showDeleteModal = false"
+      @confirm="confirmDelete"
+    >
+      <i18n-t keypath="AppsDetailView.confirmDeleteMessage" tag="p" class="text-fg">
+        <template #name><strong>{{ app.name }}</strong></template>
+      </i18n-t>
+    </ConfirmModal>
 
     <!-- Edit modal: name / description / image. git_link is intentionally
          immutable (backend rejects it; AppUpdate schema drops it). Privacy

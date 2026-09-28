@@ -4,8 +4,7 @@
  * state address so the user can sanity-check which instance is about to
  * be recreated.
  */
-import BaseButton from '@/components/ui/BaseButton.vue'
-import Modal from '@/components/ui/Modal.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 
 defineProps<{
   show: boolean
@@ -20,30 +19,21 @@ defineEmits<{
 </script>
 
 <template>
-  <Modal :show="show" @close="$emit('close')">
-    <template #title>
-      VM neu erstellen?
-    </template>
-    <template #body>
-      <div class="space-y-3">
-        <p class="text-fg">
-          Diese VM wird zerstört und identisch neu erstellt.
-          Andere VMs in diesem Deployment bleiben unangetastet.
-        </p>
-        <p v-if="address" class="text-xs font-mono text-fg-muted bg-line/[.04] border border-subtle rounded-lg px-3 py-2 break-all">
-          {{ address }}
-        </p>
-      </div>
-    </template>
-    <template #footer>
-      <div class="flex justify-end gap-3">
-        <BaseButton variant="ghost" @click="$emit('close')">
-          {{ $t('DeploymentDetailView.cancelButton') }}
-        </BaseButton>
-        <BaseButton variant="danger" @click="$emit('confirm')">
-          Redeploy
-        </BaseButton>
-      </div>
-    </template>
-  </Modal>
+  <ConfirmModal
+    :show="show"
+    title="VM neu erstellen?"
+    confirm-label="Redeploy"
+    @close="$emit('close')"
+    @confirm="$emit('confirm')"
+  >
+    <div class="space-y-3">
+      <p class="text-fg">
+        Diese VM wird zerstört und identisch neu erstellt.
+        Andere VMs in diesem Deployment bleiben unangetastet.
+      </p>
+      <p v-if="address" class="text-xs font-mono text-fg-muted bg-line/[.04] border border-subtle rounded-lg px-3 py-2 break-all">
+        {{ address }}
+      </p>
+    </div>
+  </ConfirmModal>
 </template>

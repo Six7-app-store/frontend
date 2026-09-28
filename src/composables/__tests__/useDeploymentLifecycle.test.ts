@@ -107,6 +107,21 @@ describe('useDeploymentLifecycle', () => {
     expect(api.showDeleteModal.value).toBe(false)
   })
 
+  it('sends one DELETE even when confirmed again while the first is in flight', async () => {
+    let resolve!: (v: { status: number }) => void
+    h.deploymentApi.delete.mockReturnValue(new Promise((r) => { resolve = r }))
+    const { api } = setup()
+
+    const first = api.confirmDelete()
+    expect(api.deleteBusy.value).toBe(true)
+    await api.confirmDelete()
+    resolve({ status: 204 })
+    await first
+
+    expect(h.deploymentApi.delete).toHaveBeenCalledTimes(1)
+    expect(api.deleteBusy.value).toBe(false)
+  })
+
   it('leaves an unknown machine code out of the delete toast', async () => {
     h.deploymentApi.delete.mockRejectedValue(httpError(412, { reason: 'openstack_credentials_missing' }))
     const { api, toasts, t } = setup()

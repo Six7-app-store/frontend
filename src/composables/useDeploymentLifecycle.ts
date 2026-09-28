@@ -61,6 +61,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
   const pauseResumeAction = computed<PauseResumeAction | null>(() => pauseResumeActionFor(deployment.value?.status))
 
   const showDeleteModal = ref(false)
+  const deleteBusy = ref(false)
   const showPauseResumeModal = ref(false)
   const pauseResumeBusy = ref(false)
 
@@ -138,7 +139,8 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
   }
 
   const confirmDelete = async () => {
-    if (!deploymentId) return
+    if (!deploymentId || deleteBusy.value) return
+    deleteBusy.value = true
     try {
       const response = await deploymentStore.deleteDeployment(deploymentId)
       if (response?.status === 202) {
@@ -157,6 +159,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     } catch (err) {
       toast.error(failureMessage(t('DeploymentDetailView.deleteErrorToast'), err))
     } finally {
+      deleteBusy.value = false
       showDeleteModal.value = false
     }
   }
@@ -199,6 +202,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     canPauseOrResume,
     pauseResumeAction,
     showDeleteModal,
+    deleteBusy,
     showPauseResumeModal,
     pauseResumeBusy,
     confirmDelete,

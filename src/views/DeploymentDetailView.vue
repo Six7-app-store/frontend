@@ -180,6 +180,7 @@ const {
     canPauseOrResume,
     pauseResumeAction,
     showDeleteModal,
+    deleteBusy,
     showPauseResumeModal,
     pauseResumeBusy,
     confirmDelete,
@@ -345,6 +346,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
         <DeploymentDeleteModal
             :show="showDeleteModal"
             :deployment-name="deployment.name"
+            :busy="deleteBusy"
             @close="showDeleteModal = false"
             @confirm="confirmDelete"
         />

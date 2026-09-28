@@ -970,7 +970,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
     const wrapper = await mountLoaded()
 
     await buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))!.trigger('click')
-    await buttonWithText(wrapper, t('DeploymentDetailView.cancelButton'))!.trigger('click')
+    await buttonWithText(wrapper, t('action.cancel'))!.trigger('click')
 
     expect(wrapper.find('.fixed').exists()).toBe(false)
     expect(h.deploymentApi.delete).not.toHaveBeenCalled()

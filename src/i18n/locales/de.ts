@@ -39,6 +39,7 @@ export default {
 
   action: {
     back: "Zurück",
+    cancel: "Abbrechen",
   },
 
   markdownEditor: {
@@ -92,7 +93,6 @@ export default {
       title: "Kurs löschen",
       confirmPrompt: "Soll der Kurs {name} wirklich gelöscht werden?",
       warning: "Mitgliedschaften werden entfernt, die Benutzer-Konten bleiben bestehen.",
-      cancel: "Abbrechen",
       deleting: "Lösche...",
       delete: "Löschen"
     },
@@ -140,7 +140,6 @@ export default {
       title: "Mitglied entfernen",
       confirmPrompt: "Soll {username} wirklich aus diesem Kurs entfernt werden?",
       warning: "Das Benutzer-Konto bleibt bestehen — nur die Kurszuordnung wird aufgehoben.",
-      cancel: "Abbrechen",
       removing: "Entferne...",
       remove: "Entfernen"
     },
@@ -370,7 +369,6 @@ export default {
     pauseFailedAsyncToast: "Pausieren fehlgeschlagen — das Deployment läuft weiter. Details siehe Logs unten.",
     resumeFailedAsyncToast: "Fortsetzen fehlgeschlagen — das Deployment ist im vorherigen Zustand. Details siehe Logs unten.",
     confirmButton: "Löschen",
-    cancelButton: "Abbrechen",
     deleteStartedToast: "Lösche Deployment — siehe Live-Fortschritt unten.",
     deleteSuccessToast: "Deployment erfolgreich gelöscht.",
     deleteErrorToast: "Fehler beim Löschen des Deployments",

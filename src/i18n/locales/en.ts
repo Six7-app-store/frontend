@@ -38,6 +38,7 @@ export default {
 
   action: {
     back: "Back",
+    cancel: "Cancel",
   },
 
   markdownEditor: {
@@ -91,7 +92,6 @@ export default {
       title: "Delete Course",
       confirmPrompt: "Are you sure you want to delete the course {name}?",
       warning: "Memberships will be removed, but user accounts will remain.",
-      cancel: "Cancel",
       deleting: "Deleting...",
       delete: "Delete"
     },
@@ -139,7 +139,6 @@ export default {
       title: "Remove member",
       confirmPrompt: "Are you sure you want to remove {username} from this course?",
       warning: "The user account will remain — only the course assignment will be removed.",
-      cancel: "Cancel",
       removing: "Removing...",
       remove: "Remove"
     },
@@ -369,7 +368,6 @@ export default {
     resumeErrorToast: "Error resuming deployment",
     pauseFailedAsyncToast: "Pause failed — your deployment is still running. See the logs below for details.",
     resumeFailedAsyncToast: "Resume failed — your deployment is still in the previous state. See the logs below for details.",
-    cancelButton: "Cancel",
     confirmButton: "Delete",
     deleteStartedToast: "Deleting — see live progress below.",
     deleteSuccessToast: "Deployment deleted.",
