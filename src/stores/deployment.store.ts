@@ -3,6 +3,7 @@ import { deploymentApi } from '@/api/deployment.api'
 import { runRequest, type RequestContext } from './_request'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import { isMultiImagePackerLayout as detectMultiImagePackerLayout } from '@/services/deployment-variables.service'
+import { distributeEvenly, fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
 
 import type {
   Deployment,
@@ -155,14 +156,7 @@ export const useDeploymentStore = defineStore('deployment', {
         throw new Error("App und Name sind Pflichtfelder")
       }
 
-      const rawTag: any = this.draft.releaseTag
-      let finalVersion = 'latest'
-
-      if (rawTag && typeof rawTag === 'object') {
-        finalVersion = rawTag.version || rawTag.name || 'latest'
-      } else if (typeof rawTag === 'string' && rawTag.trim() !== '') {
-        finalVersion = rawTag
-      }
+      const finalVersion = releaseVersion(this.draft.releaseTag)
 
       // Teams: Array<{ name: string, userIds: string[] }>
       let teams: Array<{ name: string; userIds: string[] }> = []
@@ -176,22 +170,10 @@ export const useDeploymentStore = defineStore('deployment', {
 
       // Fallback: if no teams are defined, auto-create teams based on studentIds.
       if (teams.length === 0 && this.draft.studentIds.length > 0) {
-        // Create teams based on groupCount.
-        const groupCount = this.draft.groupCount
-        const studentsPerGroup = Math.floor(this.draft.studentIds.length / groupCount)
-        const remainder = this.draft.studentIds.length % groupCount
-        
-        teams = []
-        let currentIndex = 0
-        for (let i = 0; i < groupCount; i++) {
-          const groupSize = studentsPerGroup + (i < remainder ? 1 : 0)
-          const groupStudents = this.draft.studentIds.slice(currentIndex, currentIndex + groupSize)
-          teams.push({
-            name: this.draft.groupNames[i] || `Team-${i + 1}`,
-            userIds: groupStudents
-          })
-          currentIndex += groupSize
-        }
+        teams = distributeEvenly(this.draft.studentIds, this.draft.groupCount).map((userIds, i) => ({
+          name: this.draft.groupNames[i] || fallbackTeamName(i),
+          userIds,
+        }))
       }
 
       // Ensure all userIds are formatted as UUID strings.

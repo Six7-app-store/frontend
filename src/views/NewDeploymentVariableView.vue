@@ -11,6 +11,7 @@ import VariableInput from '@/components/VariableInput.vue'
 import ScopeBadge from '@/components/ui/ScopeBadge.vue'
 import { effectiveVariableScope } from '@/services/deployment-variables.service'
 import { isBool, isList, isNumber, splitCsv } from '@/services/variable-types'
+import { fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
 import {
   ArrowRight,
   ArrowLeft,
@@ -158,7 +159,7 @@ const wizardTeams = computed<WizardTeam[]>(() => {
   const assignments = deploymentStore.draft.assignments || {}
   const out: WizardTeam[] = []
   groupNames.forEach((rawName, idx) => {
-    const teamName = rawName || `Team-${idx + 1}`
+    const teamName = rawName || fallbackTeamName(idx)
     const memberIds: string[] = (assignments as any)[idx] || []
     const members: WizardTeamMember[] = memberIds.map((uid) => {
       const cached = deploymentStore.studentCache.get(String(uid))
@@ -353,9 +354,7 @@ onMounted(async () => {
   isLoading.value = true
 
   try {
-    const rawTag: any = deploymentStore.draft.releaseTag
-    const version = (typeof rawTag === 'object' && rawTag.version) ? rawTag.version : rawTag || 'latest'
-    
+    const version = releaseVersion(deploymentStore.draft.releaseTag)
     const rawVariables = await appStore.fetchAppVariables(deploymentStore.draft.appId, version)
     
     const uniqueVariablesMap = new Map<string, AppVariable>()

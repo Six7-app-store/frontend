@@ -24,6 +24,7 @@ import type { OsResourceType } from '@/api/openstack-resources.api'
 import { formatBytes } from '@/utils/format'
 import { splitCsv } from '@/services/variable-types'
 import { userDisplayName } from '@/utils/user-display'
+import { releaseVersion } from '@/services/deployment-draft.service'
 import {
   ensureLoaded as ensureOsCacheLoaded,
   getDisplayName as getOsDisplayName,
@@ -54,13 +55,7 @@ const selectedApp = computed(() => {
   return appStore.apps.find(a => a.appId === deploymentStore.draft.appId)
 })
 
-// Version Display
-const versionDisplay = computed(() => {
-  const rawTag: any = deploymentStore.draft.releaseTag
-  if (rawTag && typeof rawTag === 'object' && rawTag.version) return rawTag.version
-  if (typeof rawTag === 'string' && rawTag.trim() !== '') return rawTag
-  return 'latest'
-})
+const version = computed(() => releaseVersion(deploymentStore.draft.releaseTag))
 
 // Group Mode Display
 const groupModeDisplay = computed(() => {
@@ -373,22 +368,13 @@ const fetchAndSyncVariables = async () => {
   isLoadingVariables.value = true
 
   try {
-    // A. Ensure version (string vs object fix)
-    const rawTag: any = deploymentStore.draft.releaseTag
-    let versionString = 'latest'
-    if (rawTag && typeof rawTag === 'object' && rawTag.version) {
-      versionString = rawTag.version
-    } else if (typeof rawTag === 'string' && rawTag.trim() !== '') {
-      versionString = rawTag
-    }
-
-    // B. Load API variables — only reached when the cache from step 3 was
+    // A. Load API variables — only reached when the cache from step 3 was
     // empty. The backend endpoint sparse-clones the app repo and parses
     // variables.tf, which can take a few seconds. This fetch is the fallback
     // for deep-link / reload.
     let variables: AppVariable[] = []
     try {
-      variables = await appStore.fetchAppVariables(selectedApp.value.appId, versionString)
+      variables = await appStore.fetchAppVariables(selectedApp.value.appId, version.value)
       deploymentStore.draft.variableDefinitions = variables
     } catch (varError: any) {
       console.warn('Could not load variables:', varError)
@@ -550,7 +536,7 @@ const handleBack = () => {
           </div>
           <div class="bg-panel rounded-lg p-4 border border-strong">
             <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.versionLabel') }}</p>
-            <p class="text-lg font-bold text-fg">{{ versionDisplay }}</p>
+            <p class="text-lg font-bold text-fg">{{ version }}</p>
           </div>
         </div>
           <div class="mt-4 bg-panel rounded-lg p-4 border border-strong">

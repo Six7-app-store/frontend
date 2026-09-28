@@ -7,6 +7,7 @@ import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import { userDisplayName } from '@/utils/user-display'
+import { distributeEvenly } from '@/services/deployment-draft.service'
 import { Plus, Minus, Users, ArrowLeft, ArrowRight, GripVertical, Trash2, UserPlus, Shuffle, X } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -354,16 +355,10 @@ const shuffleStudents = () => {
     allStudents[j] = temp ?? ''
   }
   
-  const studentsPerGroup = Math.floor(allStudents.length / store.draft.groupCount)
-  const remainder = allStudents.length % store.draft.groupCount
-  
   const assignments = store.draft.assignments as string[][]
-  let currentIndex = 0
-  for (let i = 0; i < store.draft.groupCount; i++) {
-    const groupSize = studentsPerGroup + (i < remainder ? 1 : 0)
-    assignments[i] = allStudents.slice(currentIndex, currentIndex + groupSize)
-    currentIndex += groupSize
-  }
+  distributeEvenly(allStudents, store.draft.groupCount).forEach((group, i) => {
+    assignments[i] = group
+  })
 }
 
 const clearAllAssignments = () => {
