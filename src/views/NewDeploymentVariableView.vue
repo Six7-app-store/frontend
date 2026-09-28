@@ -10,6 +10,7 @@ import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import VariableInput from '@/components/VariableInput.vue'
 import ScopeBadge from '@/components/ui/ScopeBadge.vue'
 import { effectiveVariableScope } from '@/services/deployment-variables.service'
+import { isBool, isList, isNumber, splitCsv } from '@/services/variable-types'
 import {
   ArrowRight,
   ArrowLeft,
@@ -32,11 +33,6 @@ const isLoading = ref(false)
 const variables = ref<AppVariable[]>([])
 const formValues = ref<Record<string, any>>({})
 const activeTooltip = ref<string | null>(null)
-
-// --- Helper: Type Checks ---
-const isBool = (type: string) => ['bool', 'boolean'].includes(type.toLowerCase())
-const isNumber = (type: string) => ['number', 'int', 'integer'].includes(type.toLowerCase())
-const isList = (type: string) => type.toLowerCase().startsWith('list') || type.toLowerCase().startsWith('set') || type.toLowerCase().startsWith('array')
 
 // Does the variable have value-help metadata (osType)? The picker takes
 // precedence over type-based input, including ``list(string)`` variables.
@@ -276,7 +272,7 @@ const normalizeValue = (val: any, type: string) => {
     if (Array.isArray(val)) {
       arr = val
     } else if (typeof val === 'string') {
-      arr = val.split(',').map(s => s.trim()).filter(s => s !== '')
+      arr = splitCsv(val)
     } else {
       arr = [String(val)]
     }
@@ -478,7 +474,7 @@ const handleNext = () => {
             if (typeof raw === 'string' && raw.trim() === '') continue
             let val: any = raw
             if (isList(v.type) && typeof raw === 'string') {
-              val = raw.split(',').map((s) => s.trim()).filter((s) => s !== '')
+              val = splitCsv(raw)
             } else if (isNumber(v.type) && raw !== '') {
               val = Number(raw)
             }
@@ -507,7 +503,7 @@ const handleNext = () => {
 
       let valueToSave: any = currentValueRaw
       if (isList(v.type) && typeof currentValueRaw === 'string') {
-        valueToSave = currentValueRaw.split(',').map(s => s.trim()).filter(s => s !== '')
+        valueToSave = splitCsv(currentValueRaw)
       } else if (isNumber(v.type) && currentValueRaw !== '') {
         valueToSave = Number(currentValueRaw)
       }

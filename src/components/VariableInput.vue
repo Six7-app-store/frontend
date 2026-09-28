@@ -14,6 +14,7 @@
  */
 import OpenStackResourcePicker from '@/components/OpenStackResourcePicker.vue'
 import { useI18n } from 'vue-i18n'
+import { isBool, isList, isNumber } from '@/services/variable-types'
 import type { AppVariable } from '@/types'
 import type { OsResourceType } from '@/api/openstack-resources.api'
 
@@ -39,13 +40,6 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void
 }>()
-
-const isBool = (type: string) => ['bool', 'boolean'].includes(type.toLowerCase())
-const isNumber = (type: string) => ['number', 'int', 'integer'].includes(type.toLowerCase())
-const isList = (type: string) =>
-  type.toLowerCase().startsWith('list') ||
-  type.toLowerCase().startsWith('set') ||
-  type.toLowerCase().startsWith('array')
 
 // The picker takes precedence over type-based inputs, including list(...)
 // variables, since it handles multi itself. File variables are rendered by the

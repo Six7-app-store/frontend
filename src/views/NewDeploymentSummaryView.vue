@@ -22,6 +22,7 @@ import {
 import type { AppVariable } from '@/types'
 import type { OsResourceType } from '@/api/openstack-resources.api'
 import { formatBytes } from '@/utils/format'
+import { splitCsv } from '@/services/variable-types'
 import {
   ensureLoaded as ensureOsCacheLoaded,
   getDisplayName as getOsDisplayName,
@@ -292,7 +293,7 @@ function renderOsValue(
     parts = val.map((v) => String(v).trim()).filter(Boolean)
   } else if (typeof val === 'string') {
     parts = isMulti
-      ? val.split(',').map((s) => s.trim()).filter(Boolean)
+      ? splitCsv(val)
       : [val.trim()].filter(Boolean)
   } else {
     parts = [String(val)]

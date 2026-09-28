@@ -47,6 +47,7 @@ import {
   X,
 } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import { splitCsv } from '@/services/variable-types'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import {
   openstackResourcesApi,
@@ -246,7 +247,7 @@ const selectedKeys = computed<Set<string>>(() => {
   if (props.multi) {
     if (Array.isArray(v)) return new Set(v.map(toKey).filter(Boolean))
     if (typeof v === 'string' && v.trim()) {
-      return new Set(v.split(',').map((s) => s.trim()).filter(Boolean))
+      return new Set(splitCsv(v))
     }
     return new Set()
   }
@@ -421,11 +422,7 @@ onMounted(() => {
   // as a comma-separated string, so normalize once on mount (multi mode only)
   // so the parent can consistently work with an array.
   if (props.multi && typeof props.modelValue === 'string' && props.modelValue.trim()) {
-    const parts = props.modelValue
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-    emit('update:modelValue', parts)
+    emit('update:modelValue', splitCsv(props.modelValue))
   }
   load()
   // Feed the cache when this is a non-filtered picker, so other
@@ -458,7 +455,7 @@ function onFreeTextInput(val: string) {
     // matches ``toggle()`` / ``removeChip()``. Splits on comma so
     // the user can type "uuid-1, uuid-2" and have it land as
     // ``["uuid-1", "uuid-2"]`` instead of a raw CSV string.
-    emit('update:modelValue', val.split(',').map((s) => s.trim()).filter(Boolean))
+    emit('update:modelValue', splitCsv(val))
   } else {
     emit('update:modelValue', val.trim())
   }
