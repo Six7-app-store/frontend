@@ -27,7 +27,7 @@ vi.mock('@/composables/useToast', () => ({
 }))
 
 vi.mock('@/stores/auth.store', () => ({
-    useAuthStore: () => ({ userId: 'other-user-id', isTeacherOrAdmin: false })
+    useAuthStore: () => ({ userId: 'other-user-id' })
 }))
 
 vi.mock('@/api/app.api', () => ({

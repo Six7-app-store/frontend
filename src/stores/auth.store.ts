@@ -32,16 +32,9 @@ export const useAuthStore = defineStore('auth', {
     // difference matters wherever the Keycloak path would redirect:
     // an LTI session cannot be renewed, only launched again.
     isLtiSession: () => ltiSession.isActive(),
-    
-    userRole: (state): UserRole | null => state.user?.role || null,
-    
-    isStudent: (state) => state.user?.role === 'student',
-    isTeacher: (state) => state.user?.role === 'teacher',
+
     isAdmin: (state) => state.user?.role === 'admin',
-    
-    isTeacherOrAdmin: (state) => 
-      state.user?.role === 'teacher' || state.user?.role === 'admin',
-    
+
     userId: (state) => state.user?.userId || null,
   },
 
@@ -158,10 +151,6 @@ export const useAuthStore = defineStore('auth', {
         // logout must not block the user, so only log it.
         console.error('Logout failed:', error)
       }
-    },
-
-    hasRole(role: UserRole): boolean {
-      return this.user?.role === role
     },
 
     hasAnyRole(...roles: UserRole[]): boolean {

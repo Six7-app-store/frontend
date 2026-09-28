@@ -10,7 +10,7 @@ import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
 import { roleBadgeVariant, roleLabelKey } from '@/i18n/role-labels'
 import { badgeVariantClasses } from '@/components/ui/badge-variants'
-import { useI18n } from 'vue-i18n' // <-- i18n importieren
+import { useI18n } from 'vue-i18n'
 import Card from '@/components/ui/Card.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
@@ -29,7 +29,7 @@ const toast = useToast()
 // membership. We approximate with ``isStaff`` because the legacy view
 // already did, and the API will still reject non-teachers.
 const { isStaff } = useRole()
-const { t } = useI18n() // <-- i18n initialisieren
+const { t } = useI18n()
 
 const courseId = computed(() => String(route.params.id))
 

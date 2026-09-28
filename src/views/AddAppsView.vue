@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetailMessage, getErrorStatus, getErrorStatusText, hasErrorResponse } from '@/utils/http-error'
 import { appApi } from '@/api/app.api'
-import { useI18n } from 'vue-i18n' // <-- i18n Import hinzugefügt
+import { useI18n } from 'vue-i18n'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'

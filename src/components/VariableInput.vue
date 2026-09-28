@@ -11,11 +11,6 @@
  * File-typed variables are NOT handled here — the wizard renders the
  * ``FileDropZone`` block separately because file uploads travel through
  * a different draft channel (``fileUploads``) than scalar inputs.
- *
- * The visual styling (border / focus colors) is sourced from the
- * ``accent`` prop so both wizard sections (Packer = blue, Terraform =
- * purple) stay visually distinct without duplicating five separate
- * input variants per color.
  */
 import OpenStackResourcePicker from '@/components/OpenStackResourcePicker.vue'
 import { useI18n } from 'vue-i18n'
@@ -31,9 +26,6 @@ defineProps<{
    *  picker. Caller supplies it because cross-variable lookups live
    *  in the wizard's variables list, not in this component. */
   filterNetworkId?: string | null
-  /** Accent color used for borders + focus ring; the wizard's two
-   *  sections (Packer / Terraform) drive different palettes. */
-  accent?: 'blue' | 'purple'
   /** DOM ``id`` to put on the underlying input. The single-input
    *  variant uses the variable name verbatim for ``<label>``
    *  click-targeting; scope-iterated variants pass a suffixed id so
@@ -69,10 +61,6 @@ const pickerOsType = (v: AppVariable): OsResourceType => v.osType as OsResourceT
 
 const update = (value: any) => emit('update:modelValue', value)
 
-// Explicit class maps — Tailwind's JIT can't read class names assembled
-// from template-literal segments. Listing both palettes here keeps
-// every utility visible to the content scanner.
-// Both accents share the token look; the prop only picked a hue before.
 const borderClass = 'border-subtle focus:border-accent/60'
 </script>
 

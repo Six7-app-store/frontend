@@ -570,7 +570,6 @@ export default {
     submitButton: "Zur Prüfung einreichen",
     resubmitButton: "Erneut einreichen",
     withdrawButton: "Einreichung zurückziehen",
-    submittingButton: "Wird eingereicht...",
     rejectionReasonLabel: "Ablehnungsgrund:",
     submitModal: {
       title: "Version einreichen",

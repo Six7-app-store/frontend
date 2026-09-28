@@ -60,7 +60,6 @@ const editFileInputRef = ref<HTMLInputElement | null>(null)
 
 // Version approval state
 const approvals = ref<AppVersionApproval[]>([])
-const submittingVersion = ref<string | null>(null)
 const withdrawingVersion = ref<string | null>(null)
 const isTogglingPrivacy = ref(false)
 
@@ -673,11 +672,10 @@ onMounted(async () => {
                       <button
                         v-if="isOwner"
                         @click="openSubmitModal(ver)"
-                        :disabled="submittingVersion === ver"
-                        class="text-xs text-accent-fg hover:underline flex items-center gap-1 disabled:opacity-50"
+                        class="text-xs text-accent-fg hover:underline flex items-center gap-1"
                       >
                         <Send :size="12" />
-                        {{ submittingVersion === ver ? $t('AppsDetailView.submittingButton') : $t('AppsDetailView.resubmitButton') }}
+                        {{ $t('AppsDetailView.resubmitButton') }}
                       </button>
                     </div>
                     <!-- Pending: withdraw button -->
@@ -694,11 +692,10 @@ onMounted(async () => {
                     <button
                       v-else-if="!approvalByVersion[ver] && isOwner"
                       @click="openSubmitModal(ver)"
-                      :disabled="submittingVersion === ver"
-                      class="text-xs text-success hover:underline flex items-center gap-1 disabled:opacity-50"
+                      class="text-xs text-success hover:underline flex items-center gap-1"
                     >
                       <Send :size="12" />
-                      {{ submittingVersion === ver ? $t('AppsDetailView.submittingButton') : $t('AppsDetailView.submitButton') }}
+                      {{ $t('AppsDetailView.submitButton') }}
                     </button>
                   </td>
                 </tr>

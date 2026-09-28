@@ -15,7 +15,6 @@ import {
 
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth.store'
-import { useAuth } from '@/composables/useAuth'
 import { useRouteAccess } from '@/composables/useRouteAccess'
 import { useRole } from '@/composables/useRole'
 import { ROUTE_NAMES } from '@/router/route-names'
@@ -27,7 +26,6 @@ import logo from '@/assets/Six7-white-withoutBackground.png'
 
 const { locale, t } = useI18n()
 const authStore = useAuthStore()
-const { logout } = useAuth()
 const { canAccess } = useRouteAccess()
 // Role visibility comes from the route table via ``canAccess``; this is
 // only needed for the one label that differs by role.
@@ -212,7 +210,7 @@ const navItems = computed(() => [
                 </RouterLink>
                 <div class="my-1 border-t" />
                 <button
-                  @click="logout(); userMenuOpen = false"
+                  @click="authStore.logout(); userMenuOpen = false"
                   class="menu-item w-full flex items-center gap-2.5 px-4 py-2 text-sm text-danger"
                 >
                   <LogOut :size="15" />

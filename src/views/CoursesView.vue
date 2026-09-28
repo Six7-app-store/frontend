@@ -8,7 +8,7 @@ import { useToast } from '@/composables/useToast'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
 import { courseApi } from '@/api/course.api'
-import { useI18n } from 'vue-i18n' // <-- i18n importiert
+import { useI18n } from 'vue-i18n'
 import Card from '@/components/ui/Card.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
@@ -24,7 +24,7 @@ const toast = useToast()
 // ``can.createCourse`` / ``can.deleteCourse`` semantics.
 const { isStaff } = useRole()
 const router = useRouter()
-const { t } = useI18n() // <-- i18n initialisiert
+const { t } = useI18n()
 
 const showModal = ref(false)
 const formData = ref({ name: '' })

@@ -64,7 +64,6 @@ vi.mock('@/stores/openstack-credentials.store', () => ({
 
 vi.mock('@/stores/auth.store', () => ({
     useAuthStore: () => ({
-        isTeacherOrAdmin: false,
         userId: 'user-1'
     })
 }))

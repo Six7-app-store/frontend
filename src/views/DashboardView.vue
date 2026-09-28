@@ -112,7 +112,7 @@ onMounted(() => {
       </RouterLink>
 
       <!-- Courses tile: students have no courses access (staff-only route),
-           so hide the tile via RoleGate instead of 404 on click. -->
+           so hide the tile via canAccess instead of 404 on click. -->
       <template v-if="canAccess({ name: ROUTE_NAMES.courses })">
       <div class="kpi-divider" />
 

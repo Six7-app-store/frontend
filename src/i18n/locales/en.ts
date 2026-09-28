@@ -567,7 +567,6 @@ export default {
     submitButton: "Submit for review",
     resubmitButton: "Resubmit",
     withdrawButton: "Withdraw submission",
-    submittingButton: "Submitting...",
     rejectionReasonLabel: "Rejection reason:",
     submitModal: {
       title: "Submit version",

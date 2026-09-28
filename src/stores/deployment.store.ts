@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
-import { useAppStore } from './app.store'
-import { useAuthStore } from './auth.store'
 import { runRequest, type RequestContext } from './_request'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import { isMultiImagePackerLayout as detectMultiImagePackerLayout } from '@/services/deployment-variables.service'
@@ -58,28 +56,10 @@ export const useDeploymentStore = defineStore('deployment', {
     // The wizard state (draft).
     draft: JSON.parse(JSON.stringify(defaultDraft)) as DeploymentDraft,
 
-    // Global cache for students and courses (userId/courseId → object).
+    // Global cache for students (userId → object).
     studentCache: new Map<string, any>(),
-    courseCache: new Map<string, any>(),
   }),
 
-  getters: {
-    myDeployments: (state) => {
-      const authStore = useAuthStore()
-      return state.deployments.filter((d) => d.userId === authStore.userId)
-    },
-
-    deploymentsByStatus: (state) => {
-      return (status: DeploymentStatus) =>
-        state.deployments.filter((d) => d.status === status)
-    },
-
-    draftAppDetails: (state) => {
-      const appStore = useAppStore()
-      if (!state.draft.appId) return null
-      return appStore.apps.find(a => a.appId === state.draft.appId) || null
-    }
-  },
   actions: {
     async fetchDeployments(params?: { userId?: string; appId?: string; status?: DeploymentStatus }) {
       await runRequest(requestContext(this), async () => {

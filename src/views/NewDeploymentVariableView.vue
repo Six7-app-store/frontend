@@ -17,7 +17,6 @@ import {
   Box,
   Layers,
   AlertTriangle,
-  // Plus - removed
 } from 'lucide-vue-next'
 import type { AppVariable, DeploymentFile } from '@/types'
 import FileDropZone from '@/components/FileDropZone.vue'
@@ -125,7 +124,7 @@ const fileAcceptFor = (v: AppVariable): string => {
 }
 
 // Subnet filter
-const findNetworkValueForSubnet = (_subnet: AppVariable): string | null => {
+const findNetworkValueForSubnet = (): string | null => {
   const networkVar = variables.value.find(
     (v) => v.osType === 'network' && v.osMode === 'id',
   )
@@ -780,8 +779,7 @@ watch(
                   :variable="variable"
                   :model-value="formValues[packerFormKey(variable)]"
                   @update:modelValue="(v) => (formValues[packerFormKey(variable)] = v)"
-                  :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet(variable) : null"
-                  accent="blue"
+                  :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
                   :input-id="packerFormKey(variable)"
                 />
                 <div v-else class="space-y-3">
@@ -818,8 +816,7 @@ watch(
                           :variable="variable"
                           :model-value="getScopedValue(packerFormKey(variable), userSlotKey(team.name, member.username))"
                           @update:modelValue="(v) => setScopedValue(packerFormKey(variable), userSlotKey(team.name, member.username), v)"
-                          :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet(variable) : null"
-                          accent="blue"
+                          :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
                           :input-id="`${packerFormKey(variable)}__${userSlotKey(team.name, member.username)}`"
                         />
                       </div>
@@ -844,8 +841,7 @@ watch(
                         :variable="variable"
                         :model-value="getScopedValue(packerFormKey(variable), slotKey)"
                         @update:modelValue="(v) => setScopedValue(packerFormKey(variable), slotKey, v)"
-                        :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet(variable) : null"
-                        accent="blue"
+                        :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
                         :input-id="`${packerFormKey(variable)}__${slotKey}`"
                       />
                     </div>
@@ -988,8 +984,7 @@ watch(
                   :variable="variable"
                   :model-value="formValues[variable.name]"
                   @update:modelValue="(v) => (formValues[variable.name] = v)"
-                  :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet(variable) : null"
-                  accent="purple"
+                  :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
                   :input-id="variable.name"
                 />
                 <div v-else class="space-y-3">
@@ -1026,8 +1021,7 @@ watch(
                           :variable="variable"
                           :model-value="getScopedValue(variable.name, userSlotKey(team.name, member.username))"
                           @update:modelValue="(v) => setScopedValue(variable.name, userSlotKey(team.name, member.username), v)"
-                          :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet(variable) : null"
-                          accent="purple"
+                          :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
                           :input-id="`${variable.name}__${userSlotKey(team.name, member.username)}`"
                         />
                       </div>
@@ -1052,8 +1046,7 @@ watch(
                         :variable="variable"
                         :model-value="getScopedValue(variable.name, slotKey)"
                         @update:modelValue="(v) => setScopedValue(variable.name, slotKey, v)"
-                        :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet(variable) : null"
-                        accent="purple"
+                        :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
                         :input-id="`${variable.name}__${slotKey}`"
                       />
                     </div>

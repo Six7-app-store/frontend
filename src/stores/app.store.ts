@@ -11,13 +11,6 @@ export const useAppStore = defineStore('app', {
     error: null as string | null,
   }),
 
-  getters: {
-    myApps: (state) => {
-      const authStore = useAuthStore()
-      return state.apps.filter((app) => app.userId === authStore.userId)
-    },
-  },
-
   actions: {
     async fetchApps(userId?: string) {
       const ctx = {
@@ -85,5 +78,3 @@ export const useAppStore = defineStore('app', {
     }
   },
 })
-
-import { useAuthStore } from './auth.store'
