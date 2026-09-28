@@ -110,11 +110,11 @@ describe('AddAppsView.vue', () => {
 
     // --- 2. Dynamische Vorschau (Computed Properties) ---
 
-    it('ändert das Preview-Icon und die Farbe basierend auf dem App-Namen', async () => {
+    it('zeigt in der Vorschau dasselbe Icon wie der Katalog', async () => {
         const wrapper = mountComponent()
         const nameInput = wrapper.findAll('input[type="text"]')[0]!
 
-        await nameInput.setValue('Kali Linux')
+        await nameInput.setValue('Security Scanner')
         expect(wrapper.findComponent(Shield).exists()).toBe(true)
         expect(wrapper.findComponent(Shield).classes()).toContain('text-icon')
 

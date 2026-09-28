@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import { iconForAppName } from '@/services/app-presentation.service'
 import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
 
 // Icons
@@ -16,10 +17,6 @@ import {
   IdCard,
   MessageSquare,
   Link as LinkIcon,
-  Server,
-  Layers,
-  Shield,
-  Box,
   Info,
   Image as ImageIcon,
   Globe,
@@ -58,13 +55,8 @@ onMounted(async () => {
   }
 })
 
-const previewIcon = computed(() => {
-  const name = form.value.name.toLowerCase()
-  if (name.includes('kali') || name.includes('hack') || name.includes('security')) return Shield
-  if (name.includes('node')) return Server
-  if (name.includes('python')) return Box
-  return Layers
-})
+// Same icon the catalogue card will show for this name.
+const previewIcon = computed(() => iconForAppName(form.value.name))
 
 const triggerFileInput = () => {
   fileInputRef.value?.click()
