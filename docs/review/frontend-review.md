@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 734 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 757 Tests.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -406,7 +406,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 2 Toter Code | erledigt | `77fdcb4` |
 | 3 Reine Helfer | erledigt | `561b8d6` (D3, D4), `8cc62c0` (D10), `55e14bc` (Charakterisierungstests `submitDraft`), `a43fc76` (D1, D7, D8), `13db0ae` (D2), `2fe8cf1` (D5, D33), `eec4dca` (D16, D17), `c694e40` (D24), `c401b18` (D31 teilweise, D32 teilweise) |
 | 4 Einheitliche Fehlerbehandlung | erledigt | `fc9fd16` (V9), `2a3f738` (V7), `1c1150a` (D26, V8), `2dbcde8` (D25), `05f6dac` (D27) |
-| 5–16 | offen | — |
+| 5 Single Source of Truth Status/Rollen | erledigt | `3451e95` (Lifecycle-Buttons nur für Owner/Admin), `34d6247` (D15, T13), `8d11e85` (D14), `9a40bf8` (Charakterisierung Router), `64c7478` (D28, V17), `4d91fc9` (D18 App-Teil, D19, D20), `ee19486` (D22) |
+| 6–16 | offen | — |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -421,3 +422,5 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **D32 offen:** Die RAM-Umrechnungen (`InfrastructureVmCard`, `useQuotas`, `formatRam` im Picker) runden weiterhin unterschiedlich.
 - **Schritt 4, Verhaltensänderungen (gewollt):** Toasts und Fehlertexte zeigen keine Maschinencodes (`deployment_busy`) und keine rohen axios-Texte („Request failed with status code 500“) mehr, sondern die Meldung des Backends oder den übersetzten Text der jeweiligen Stelle. Der Schlüssel `redeployBusy` heißt jetzt `lifecycleBusy`, weil er auch für Löschen/Pausieren gilt.
 - **V10 offen:** Die englischen Ersatztexte in `runRequest`-Aufrufen (`'Failed to …'`) stehen weiter im Store-Feld `error`, das außer in `CoursesView` (nur als Boolean) niemand anzeigt. Der Credentials-Store speichert jetzt nur noch die Backend-Meldung; für die übrigen Stores ist das mit Schritt 11 zu entscheiden, wenn die App-Views über den Store laufen.
+- **D18 geklärt (Schritt 5):** Das Backend kennt zwei Regeln — *einsehen* (`can_view_deployment_owner`: Admin, Owner, Lehrkraft des Kurses) und *bedienen* (`can_operate_deployment`: nur Admin oder Owner). Das Frontend hatte beides unter „Staff oder Owner“ zusammengelegt; eine Lehrkraft sah bei fremden Deployments Löschen/Pausieren/Redeploy und bekam 403. `useDeploymentOwnerView` liefert jetzt zusätzlich `canOperate`.
+- **Schritt 5, sichtbar:** Deployment-Liste, Task-Historie und Task-Detail zeigen den Status übersetzt statt als Rohwert (`success` → „erfolgreich“); die Status-Badge der Liste hat jetzt die kompakte Größe der Historie. Die Vorschau auf der Create-Seite zeigt dasselbe Icon wie der Katalog.
