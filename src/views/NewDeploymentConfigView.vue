@@ -457,16 +457,16 @@ onMounted(async () => {
               <div class="bg-line/[.04] rounded-lg overflow-hidden border-2 border-subtle max-h-[350px] overflow-y-auto">
                 <div 
                   v-for="student in filteredStudents"
-                  :key="student.keycloak_id"
-                  @click="toggleStudent(student.keycloak_id)"
-                  :data-testid="`student-${student.keycloak_id}`"
+                  :key="student.userId"
+                  @click="toggleStudent(student.userId)"
+                  :data-testid="`student-${student.userId}`"
                   class="flex items-center gap-3 px-4 py-3 cursor-pointer border-b last:border-b-0 border-subtle transition-colors select-none"
-                  :class="store.draft.studentIds.includes(student.keycloak_id) ? 'bg-line/[.07]' : 'hover:bg-line/[.07]'"
+                  :class="store.draft.studentIds.includes(student.userId) ? 'bg-line/[.07]' : 'hover:bg-line/[.07]'"
                 >
                   <div class="w-6 h-6 flex items-center justify-center rounded border transition-colors"
-                       :class="store.draft.studentIds.includes(student.keycloak_id) ? 'bg-accent border-accent' : 'border-strong bg-panel'"
+                       :class="store.draft.studentIds.includes(student.userId) ? 'bg-accent border-accent' : 'border-strong bg-panel'"
                   >
-                     <Check v-if="store.draft.studentIds.includes(student.keycloak_id)" :size="16" class="text-on-accent" />
+                     <Check v-if="store.draft.studentIds.includes(student.userId)" :size="16" class="text-on-accent" />
                   </div>
                   <span class="text-fg font-medium">
                     {{ (student.firstName || student.lastName) 
@@ -495,7 +495,7 @@ onMounted(async () => {
               <div v-else class="space-y-2">
                 <div
                   v-for="student in selectedStudents"
-                  :key="student.keycloak_id"
+                  :key="student.userId"
                   class="flex items-center justify-between bg-panel p-3 rounded-lg border border-subtle"
                 >
                   <span class="text-fg font-medium">
@@ -504,7 +504,7 @@ onMounted(async () => {
                         : (student.username || student.email || student.name || student.userId) }}
                   </span>
                   <button 
-                    @click="toggleStudent(student.keycloak_id)" 
+                    @click="toggleStudent(student.userId)" 
                     class="text-danger hover:text-danger font-bold text-lg leading-none"
                     :title="t('CourseDetailView.removeModal.remove')"
                     :data-testid="`remove-${student.userId}`"
