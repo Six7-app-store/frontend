@@ -412,7 +412,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 8 `NewDeploymentSummaryView` + `WizardStepLayout` | erledigt bis auf `WizardStepLayout` (wartet auf UX-Entscheidung) | `1974c36` (Charakterisierung), `1db8c9c` (Services `deployment-summary`, `deployment-submit-error`), `b22131f` (T3 `SummaryVariableCard`, V19 Datei-Karte), `5c7d659` (leerer Wert als „-“) |
 | 9 `submitDraft` → `buildDeploymentPayload` | erledigt | `55e14bc` (Charakterisierung), `6cd3114` (reine Funktion in `services/deployment-draft.service.ts`) |
 | 10 Team-Assignment + Config | erledigt | `ddfde0d` (Charakterisierung), `4ca75c8` (`team-assignment.service`, `useTeamAssignment`, `useStudentDirectory`, Karten), `27d3181` (`useUserSearch`, `useCourseStudents`, auch `CourseDetailView`), `fe0dea9` (Config-Komponenten) |
-| 11–16 | offen | — |
+| 11 App-Views über Composables | erledigt | `32ffc83` (`useAppCatalog`, `useNewApp`, `useAppDetail`, `useAppApprovals`; ungenutzte `appStore`-Aktionen entfernt; D21), `3fea790` (`useCourseMemberCounts`) |
+| 12–16 | offen | — |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -442,17 +443,17 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Schritt 8:** `NewDeploymentSummaryView` von 737 auf ~430 Zeilen; Zeilen-Aufbereitung in `services/deployment-summary.service.ts`, Fehlertexte beim Absenden in `services/deployment-submit-error.service.ts` (beide mit Tests), `components/deployment-wizard/SummaryVariableCard.vue` für die zwei gleichen Spalten. **Sichtbar:** Die Datei-Karte ist übersetzt; ein leerer Variablenwert erscheint als „-“ statt als leere Zelle (Fehlerbehebung, `5c7d659`). **Offen:** `WizardStepLayout` (T4) — die vier Schritte haben drei Kopf-Designs, vier Breiten und vier verschiedene Fußleisten (Fortschritt, Pflichtfeld-Warnung, Deploy-Spinner). Eine Vereinheitlichung ändert die Optik und ist offene Frage 2 aus Abschnitt 4; nicht ohne Entscheidung umsetzen.
 - **Schritt 9:** `deployment.store.ts` von 327 auf 148 Zeilen; `submitDraft` prüft nur noch App/Name und sendet `buildDeploymentPayload(draft)`. Die Meldung „App und Name sind Pflichtfelder“ bleibt vorerst hartkodiert (V19): Der Router-Guard verhindert den Fall, sie ist nur ein Programmierfehler-Schutz; beim i18n-Schritt 15 mit erledigen.
 - **Schritt 10:** `NewDeploymentGroupsAssignmentView` 612 → ~270, `NewDeploymentConfigView` 533 → ~270 Zeilen. D11 erledigt: Es gibt nur noch `deploymentStore.studentCache` (die Pinia-Map ist schon reaktiv), Zugriff über `useStudentDirectory`. D12 erledigt: `useUserSearch` für Config und `CourseDetailView`. Beide Wizard-Views und `CourseDetailView` rufen `userApi`/`courseApi` nicht mehr direkt (V12 dort erledigt). **Kleine Verhaltensänderungen (nur Fehler-/Randpfade, im Commit `27d3181` beschrieben):** Eine fehlgeschlagene Suche im Config-Schritt leert die Trefferliste und ersetzt ihren alten Fehler-Toast; auf der Kursseite zeigt eine geleerte Suche die schon geladene Startliste, statt sie neu zu holen. Die Drag-Handler bleiben bewusst in der View (UI-Zustand, `relatedTarget`-Schutz).
+- **Schritt 11:** Keine View ruft mehr `appApi` direkt. **Abweichung vom Plan:** Die ungenutzten `appStore`-Aktionen (`fetchAppById`, `createApp`, `updateApp`, `deleteApp`, `currentApp`) sind **gelöscht statt verdrahtet** — die App-Seiten halten seitenlokalen Zustand, den nichts anderes liest, und ihre Specs mocken auf API-Ebene ohne Pinia. Die Composables werfen, die Views entscheiden über den Toast. D21: Die ID-Fallbacks `app.id`/`app._id` sind weg; drei Test-Fixtures nutzten noch `id` und sind auf `appId` umgestellt. Direkte API-Importe gibt es danach nur noch in `LtiCourseMapView` (`courseApi.list`, gehört zu Schritt 15), `InfrastructureVmDrawer` (Schritt 14) und `OpenStackResourcePicker` (Schritt 13); `ltiApi` in den LTI-Views ebenfalls Schritt 15.
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–10 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
+**Stand (29.09.):** Schritte 0–11 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
 
-**Hier weitermachen: Schritt 11 — App-Views über Store/Composable (V12, D20–D22).**
-- Direkte `appApi`-Aufrufe noch in `AppsView`, `AddAppsView`, `AppsDetailView`, `AdminAppsView`, `LtiDeepLinkView` (`grep -rn "@/api/" src/views`). Die vorhandenen, bisher ungenutzten Aktionen in `app.store.ts` nutzen; neu `useAppDetail(appId)` und `useAppApprovals()`.
-- ID-Fallback `appId || id || _id` (D21) einmal im Mapper von `api/app.api.ts` normalisieren.
-- Die Specs mocken `appApi`; sie bleiben stabil, solange der Store dieselben API-Funktionen ruft. Vorher `app.store.test.ts` um die genutzten Aktionen ergänzen.
+**Hier weitermachen: Schritt 12 — `AppsDetailView` und `AdminAppsView` zerlegen (2.2, 2.7).**
+- Die Daten laufen schon über `useAppDetail` / `useAppApprovals` (Schritt 11). Offen sind die Versions-Aufbereitung (`versionOptions`, `versionInfo`, `appBannerStatus` → `services/app-presentation.service.ts`) und das Template: `AppDetailHeader`, `AppOverviewTab`, `AppDeploySidebar`, `AppStoreTab`, `AppEditModal`, `SubmitVersionModal`, geteilte `VersionApprovalTable`, `ApprovalAccordionItem`.
+- Vorher `AppsDetailView.spec.ts` um Store-Tab-Fälle ergänzen; `AdminAppsView.spec.ts` existiert inzwischen (approve, reject, revoke, Filter).
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
