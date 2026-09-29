@@ -5,21 +5,16 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
-import { 
-  BarChart3, 
-  Search,
-  Check,
-  Users,
-  BookOpen,
-  UserPlus
-} from 'lucide-vue-next'
+import { BarChart3, BookOpen, UserPlus } from 'lucide-vue-next'
+import CoursePickerList from '@/components/deployment-wizard/CoursePickerList.vue'
+import SelectedStudentsPanel from '@/components/deployment-wizard/SelectedStudentsPanel.vue'
+import StudentSearchList from '@/components/deployment-wizard/StudentSearchList.vue'
 import { useToast } from '@/composables/useToast'
 import { useCourseStudents } from '@/composables/useCourseStudents'
 import { useStudentDirectory } from '@/composables/useStudentDirectory'
 import { useUserSearch } from '@/composables/useUserSearch'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
-import { userDisplayName } from '@/utils/user-display'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 import TabBar from '@/components/ui/TabBar.vue'
 
@@ -222,104 +217,25 @@ onMounted(async () => {
           
           <div>
             <div v-if="activeTab === 'courses'">
-              <h3 class="text-lg font-semibold text-fg mb-4">{{ t('CoursesView.title') }}</h3>
-              <div class="space-y-3 max-h-[400px] overflow-y-auto">
-                <div 
-                  v-for="course in courses"
-                  :key="course.courseId"
-                  @click="toggleCourse(course.courseId)"
-                  :data-testid="`course-${course.courseId}`"
-                  class="flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all"
-                  :class="isCourseSelected(course.courseId) 
-                    ? 'bg-line/[.07] border-strong' 
-                    : 'bg-line/[.04] border-subtle hover:border-strong'"
-                >
-                  <div class="w-6 h-6 flex items-center justify-center rounded border transition-colors"
-                       :class="isCourseSelected(course.courseId) ? 'bg-accent border-accent' : 'border-strong bg-panel'"
-                  >
-                     <Check v-if="isCourseSelected(course.courseId)" :size="16" class="text-on-accent" />
-                  </div>
-                  <div class="flex-grow">
-                    <div class="font-semibold text-fg">{{ course.name }}</div>
-                    <div class="text-sm text-fg-muted">
-                      <span v-if="loadingCourseStudents.has(course.courseId)">{{ t('CoursesView.loading') }}</span>
-                      <span v-else>{{ t('DeploymentDetailView.deploymentStudentCount', memberCount(course.courseId)) }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <CoursePickerList
+                :courses="courses"
+                :loading="loadingCourseStudents"
+                :is-selected="isCourseSelected"
+                :count-of="memberCount"
+                @toggle="toggleCourse" />
             </div>
 
             <div v-if="activeTab === 'individuals'">
-              <h3 class="text-lg font-semibold text-fg mb-4">{{ t('deployment.config.studentsLabel') }}</h3>
-              
-              <div class="relative mb-4">
-                <Search class="absolute left-4 top-1/2 transform -translate-y-1/2 text-icon" :size="20" />
-                <input 
-                  v-model="studentSearchQuery"
-                  type="text"
-                  :placeholder="t('deployment.config.searchPlaceholder')"
-                  data-testid="student-search"
-                  class="field w-full pl-12 pr-4 py-3 focus:border-accent/60 transition-all"
-                />
-              </div>
-
-              <div class="bg-line/[.04] rounded-lg overflow-hidden border-2 border-subtle max-h-[350px] overflow-y-auto">
-                <div 
-                  v-for="student in filteredStudents"
-                  :key="student.userId"
-                  @click="toggleStudent(student.userId)"
-                  :data-testid="`student-${student.userId}`"
-                  class="flex items-center gap-3 px-4 py-3 cursor-pointer border-b last:border-b-0 border-subtle transition-colors select-none"
-                  :class="store.draft.studentIds.includes(student.userId) ? 'bg-line/[.07]' : 'hover:bg-line/[.07]'"
-                >
-                  <div class="w-6 h-6 flex items-center justify-center rounded border transition-colors"
-                       :class="store.draft.studentIds.includes(student.userId) ? 'bg-accent border-accent' : 'border-strong bg-panel'"
-                  >
-                     <Check v-if="store.draft.studentIds.includes(student.userId)" :size="16" class="text-on-accent" />
-                  </div>
-                  <span class="text-fg font-medium">
-                    {{ userDisplayName(student, student.userId) }}
-                  </span>
-                </div>
-                
-                <div v-if="filteredStudents.length === 0" class="p-4 text-fg-muted text-center">
-                  {{ t('CourseDetailView.addModal.noUsersFound') }}
-                </div>
-              </div>
+              <StudentSearchList
+                v-model:query="studentSearchQuery"
+                :students="filteredStudents"
+                :selected-ids="store.draft.studentIds"
+                @toggle="toggleStudent" />
             </div>
           </div>
 
           <div>
-            <h3 class="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-              <Users :size="20" />
-              {{ t('deployment.groups.studentsSelected', { count: selectedStudents.length }) }}
-            </h3>
-            
-            <div class="bg-line/[.04] rounded-lg border-2 border-subtle p-4 max-h-[400px] overflow-y-auto">
-              <div v-if="selectedStudents.length === 0" class="text-fg-muted text-center py-8">
-                {{ t('deployment.assignment.noStudents') }}
-              </div>
-              <div v-else class="space-y-2">
-                <div
-                  v-for="student in selectedStudents"
-                  :key="student.userId"
-                  class="flex items-center justify-between bg-panel p-3 rounded-lg border border-subtle"
-                >
-                  <span class="text-fg font-medium">
-                    {{ userDisplayName(student, student.userId) }}
-                  </span>
-                  <button 
-                    @click="toggleStudent(student.userId)" 
-                    class="text-danger hover:text-danger font-bold text-lg leading-none"
-                    :title="t('CourseDetailView.removeModal.remove')"
-                    :data-testid="`remove-${student.userId}`"
-                  >
-                    ×
-                  </button>
-                </div>
-              </div>
-            </div>
+            <SelectedStudentsPanel :students="selectedStudents" @remove="toggleStudent" />
 
             <div class="mt-4 p-4 bg-line/[.04] border border-subtle rounded-lg">
               <p class="text-sm text-fg">
