@@ -2,6 +2,7 @@ import axios, { type AxiosError } from 'axios'
 import { useKeycloak } from '@/composables/useKeycloak'
 import { useLtiSession } from '@/composables/useLtiSession'
 import { env } from '@/env'
+import { USER_STORAGE_KEY } from '@/utils/storage-keys'
 
 const api = axios.create({
   baseURL: env.API_URL,
@@ -61,7 +62,7 @@ export async function handleUnauthorized(): Promise<void> {
 
   if (!hasValidToken) {
     // Clear any stored data
-    localStorage.removeItem('user')
+    localStorage.removeItem(USER_STORAGE_KEY)
 
     // Redirect to login if not already there
     if (window.location.pathname !== '/login') {

@@ -14,6 +14,7 @@ import {
 } from 'lucide-vue-next'
 
 import { useI18n } from 'vue-i18n'
+import { LOCALE_STORAGE_KEY } from '@/utils/storage-keys'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouteAccess } from '@/composables/useRouteAccess'
 import { useRole } from '@/composables/useRole'
@@ -60,7 +61,7 @@ const pageTitle = computed(() => {
 
 const changeLocale = (lang: string) => {
   locale.value = lang
-  localStorage.setItem('locale', lang)
+  localStorage.setItem(LOCALE_STORAGE_KEY, lang)
 }
 
 // Which item is highlighted: the section a route belongs to, taken from its

@@ -58,8 +58,3 @@ export function formatBytes(n: number): string {
   return `${(n / 1024 ** 3).toFixed(1)} GB`
 }
 
-/**
- * Maximum accepted size (in bytes) for an uploaded app logo/image. Shared by the
- * app create + detail views so the client-side size check stays consistent.
- */
-export const MAX_IMAGE_BYTES = 2 * 1024 * 1024
