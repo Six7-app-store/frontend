@@ -7,6 +7,7 @@
 import { computed, ref } from 'vue'
 import { CircleArrowLeft, Users } from 'lucide-vue-next'
 import type { DeploymentGroup } from '@/services/deployment-input.service'
+import DetailSection from '@/components/ui/DetailSection.vue'
 
 const props = defineProps<{
   groups: DeploymentGroup[]
@@ -30,11 +31,7 @@ const currentGroup = computed(() => {
 </script>
 
 <template>
-  <div class="bg-panel rounded-xl border border-subtle p-6 shadow-sm" v-if="groups.length > 0">
-    <h2 class="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
-      <Users :size="20" class="text-icon" />
-      {{ $t('DeploymentDetailView.deploymentGroups') }}
-    </h2>
+  <DetailSection v-if="groups.length > 0" :icon="Users" :title="$t('DeploymentDetailView.deploymentGroups')">
 
     <Transition mode="out-in" enter-active-class="transition-all duration-200 ease-out"
       enter-from-class="opacity-0 translate-x-2" enter-to-class="opacity-100 translate-x-0"
@@ -89,5 +86,5 @@ const currentGroup = computed(() => {
         </div>
       </div>
     </Transition>
-  </div>
+  </DetailSection>
 </template>

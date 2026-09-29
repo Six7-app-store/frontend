@@ -11,6 +11,7 @@
 import { AlertCircle, Network, RefreshCw, Server, Shield } from 'lucide-vue-next'
 import InfrastructureVmCard from '@/components/InfrastructureVmCard.vue'
 import type { DeploymentResource } from '@/types'
+import DetailSection from '@/components/ui/DetailSection.vue'
 
 defineProps<{
   resourcesLoading: boolean
@@ -34,14 +35,8 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="bg-panel rounded-xl border border-subtle p-6 shadow-sm mb-8">
-    <div class="flex items-center justify-between mb-5 gap-3 flex-wrap">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-line/[.07] rounded-lg">
-          <Server :size="20" class="text-icon" />
-        </div>
-        <span class="text-lg font-semibold text-fg">{{ $t('DeploymentDetailView.infrastructure') }}</span>
-      </div>
+  <DetailSection :icon="Server" :title="$t('DeploymentDetailView.infrastructure')">
+    <template #actions>
       <button
         @click="$emit('refresh')"
         :disabled="resourcesLoading"
@@ -49,9 +44,9 @@ defineEmits<{
         :title="$t('DeploymentDetailView.refreshLiveStatus')"
       >
         <RefreshCw :size="13" :class="resourcesLoading ? 'animate-spin' : ''" />
-        Aktualisieren
+        {{ $t('vm.actions.refresh') }}
       </button>
-    </div>
+    </template>
 
     <div
       v-if="resourcesError"
@@ -156,5 +151,5 @@ defineEmits<{
         </li>
       </ul>
     </section>
-  </div>
+  </DetailSection>
 </template>

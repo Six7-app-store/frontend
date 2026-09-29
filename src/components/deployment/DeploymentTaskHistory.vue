@@ -15,6 +15,7 @@ import { formatDateTime } from '@/utils/format'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import type { Task } from '@/types'
+import DetailSection from '@/components/ui/DetailSection.vue'
 
 defineProps<{
   isOwnerView: boolean
@@ -36,38 +37,25 @@ const showTaskLogsTrace = ref(false)
 </script>
 
 <template>
-  <div v-if="!isOwnerView" class="bg-panel rounded-xl border border-subtle p-6 shadow-sm">
-    <div class="flex items-center gap-3 mb-3">
-      <div class="p-2 bg-line/[.07] rounded-lg">
-        <Terminal :size="20" class="text-icon" />
-      </div>
-      <span class="text-lg font-semibold text-fg">{{ $t('DeploymentDetailView.tasksAndLogs') }}</span>
-    </div>
+  <DetailSection v-if="!isOwnerView" :icon="Terminal" :title="$t('DeploymentDetailView.tasksAndLogs')">
     <div class="text-sm text-fg-muted flex items-start gap-2 px-2">
       <AlertCircle :size="16" class="text-icon mt-0.5 flex-shrink-0" />
       <span>{{ $t('DeploymentDetailView.tasksOwnerOnly') }}</span>
     </div>
-  </div>
-  <div v-else class="bg-panel rounded-xl border border-subtle p-6 shadow-sm">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-line/[.07] rounded-lg">
-          <Terminal :size="20" class="text-icon" />
-        </div>
-        <span class="text-lg font-semibold text-fg">
-          {{ isStreamRelevant ? $t('DeploymentDetailView.taskHistory') : $t('DeploymentDetailView.tasksAndLogs') }}
-        </span>
-        <span v-if="historyTasks.length > 0"
-          class="px-2 py-0.5 bg-line/[.07] text-fg-muted text-xs font-bold rounded">
-          {{ historyTasks.length }}
-        </span>
-      </div>
+  </DetailSection>
+  <DetailSection
+    v-else
+    :icon="Terminal"
+    :title="isStreamRelevant ? $t('DeploymentDetailView.taskHistory') : $t('DeploymentDetailView.tasksAndLogs')"
+    :count="historyTasks.length"
+  >
+    <template #actions>
       <button v-if="selectedTask" @click="$emit('deselect')"
         class="flex items-center gap-2 text-fg hover:text-accent-fg transition-colors text-sm">
         <CircleArrowLeft :size="16" />
         <span>{{ $t('DeploymentDetailView.backToTaskList') }}</span>
       </button>
-    </div>
+    </template>
 
     <!-- Task List View -->
     <div v-if="!selectedTask">
@@ -106,5 +94,5 @@ const showTaskLogsTrace = ref(false)
       :active-data-task="activeDataTask"
       :show-task-logs-trace="showTaskLogsTrace"
       @toggle-trace="showTaskLogsTrace = !showTaskLogsTrace" />
-  </div>
+  </DetailSection>
 </template>
