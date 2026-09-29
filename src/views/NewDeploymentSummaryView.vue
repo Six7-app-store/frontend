@@ -6,13 +6,9 @@ import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
 import { useToast } from '@/composables/useToast'
-import {
-  effectiveVariableScope,
-  isMultiImagePackerLayout as detectMultiImagePackerLayout,
-  storedPackerValue,
-  templateKeyOf,
-} from '@/services/deployment-variables.service'
-import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
+import { getErrorStatus } from '@/utils/http-error'
+import { fileSummaries, packerRows, terraformRows, type SummaryContext } from '@/services/deployment-summary.service'
+import { formatSubmitError } from '@/services/deployment-submit-error.service'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import {
@@ -24,8 +20,6 @@ import {
 } from 'lucide-vue-next'
 import type { AppVariable } from '@/types'
 import type { OsResourceType } from '@/api/openstack-resources.api'
-import { formatBytes } from '@/utils/format'
-import { splitCsv } from '@/services/variable-types'
 import { userDisplayName } from '@/utils/user-display'
 import { releaseVersion } from '@/services/deployment-draft.service'
 import { parseUserInputVar } from '@/services/deployment-input.service'
@@ -69,248 +63,22 @@ const groupModeDisplay = computed(() => {
   return t('deployment.groups.custom')
 })
 
-// Separate lists for Packer and Terraform variables. Display-name reactivity
-// comes from ``getDisplayName``, which reads ``cacheVersion.value`` so Vue
-// re-computes once the cache is populated.
-//
-// Multi-image Packer is the tricky case: step 3 writes such apps' Packer values
-// nested under ``draft.variables.packer[<tkey>][<name>]`` instead of flat under
-// ``draft.variables[<name>]``, so we mirror that nesting here to avoid falling
-// back to ``apiDef.default``. Detection: ``draft.variables.packer`` is a
-// non-empty object whose every top-level element is itself an object (a
-// ``tkey`` bucket). A false positive would at worst render one skewed line.
-const isMultiImagePackerLayout = computed<boolean>(() =>
-  detectMultiImagePackerLayout(deploymentStore.draft.variables)
-)
-
-const _resolvePackerValue = (apiDef: AppVariable): any => {
-  const stored = storedPackerValue(deploymentStore.draft.variables, apiDef, isMultiImagePackerLayout.value)
-  return stored !== undefined ? stored : apiDef.default
+// Display names come from the OpenStack cache; reading it inside these
+// computeds makes them re-run once the cache is filled (see
+// ``useOpenStackResourceCache``).
+const summaryContext: SummaryContext = {
+  t,
+  osName: (osType, mode, value) => getOsDisplayName(osType as OsResourceType, mode, value)?.name ?? null,
 }
 
-const packerVars = computed(() => {
-  const defs = appVariables.value || []
-  const result: Array<{label: string, value: string, raw?: string}> = []
-  defs.forEach((apiDef: AppVariable) => {
-    if (apiDef.source !== 'packer') return
-    const val = _resolvePackerValue(apiDef)
-    // In multi-image mode prepend the template key so users can tell
-    // which image the value belongs to — three packer entries called
-    // "region" with no qualifier would be confusing.
-    if (isMultiImagePackerLayout.value) {
-      const tkey = templateKeyOf(apiDef)
-      const entry = toSummaryEntry(apiDef, val)
-      result.push({ ...entry, label: `[${tkey}] ${entry.label}` })
-    } else {
-      result.push(toSummaryEntry(apiDef, val))
-    }
-  })
-  return result
-})
+const packerVars = computed(() =>
+  packerRows(appVariables.value || [], deploymentStore.draft.variables, summaryContext))
 
-const terraformVars = computed(() => {
-  const currentVars = deploymentStore.draft.variables || {}
-  const defs = appVariables.value || []
-  const result: Array<{label: string, value: string, raw?: string}> = []
-  defs.forEach((apiDef: AppVariable) => {
-    // File variables have a separate renderer below; skip them here so the
-    // summary doesn't show their ``default = {}`` instead of the uploaded files.
-    if (apiDef.osType === 'file') return
-    if (apiDef.source === 'terraform') {
-      const val = currentVars[apiDef.name] !== undefined ? currentVars[apiDef.name] : apiDef.default
-      result.push(toSummaryEntry(apiDef, val))
-    }
-  })
-  return result
-})
+const terraformVars = computed(() =>
+  terraformRows(appVariables.value || [], deploymentStore.draft.variables, summaryContext))
 
-/**
- * Translate a backend submit-error into a user-facing toast string.
- *
- * The backend signals size / extension / encoding violations with
- * HTTP 413 or 422 and a structured detail body:
- *   { reason: "file_too_large" | "deployment_files_too_large"
- *           | "file_extension_rejected" | "file_b64_invalid"
- *           | "file_size_mismatch",
- *     variable, slot, filename?, limit_bytes?, actual_bytes?, allowed? }
- *
- * Every known reason maps to a dedicated i18n key with the size
- * numbers the user needs to act on. Unknown reasons fall back to the
- * generic submitError string so an unexpected payload still surfaces
- * something rather than ``[object Object]`` (which is what the
- * previous "stringify the detail object" code produced).
- */
-function _formatSubmitError(err: any): string {
-  const detail = getErrorDetail(err) as any
-  const fallback = (typeof detail === 'string' ? detail : null)
-    ?? err?.message
-    ?? t('deployment.summary.submitError')
-
-  if (!detail || typeof detail !== 'object' || !detail.reason) {
-    return fallback
-  }
-
-  // Filename: prefer the explicit field; fall back to "<variable>/<slot>"
-  // so the user can at least identify which input failed when the
-  // variable definition omitted the filename (older backend versions).
-  const filename = String(
-    detail.filename
-      ?? (detail.variable && detail.slot ? `${detail.variable}/${detail.slot}` : ''),
-  )
-  // Bytes-to-MB with one decimal — the user thinks in MB, the API
-  // returns bytes; rendering with 1 decimal makes "2.7 MB > 2 MB"
-  // useful (an integer "2 MB > 2 MB" would confuse).
-  const mb = (b: number) => (Number(b || 0) / (1024 * 1024)).toFixed(1)
-
-  switch (detail.reason) {
-    case 'file_too_large':
-      return t('deployment.summary.errors.fileTooLarge', {
-        filename,
-        actualMb: mb(detail.actual_bytes),
-        limitMb: mb(detail.limit_bytes),
-      })
-    case 'deployment_files_too_large':
-      return t('deployment.summary.errors.deploymentFilesTooLarge', {
-        limitMb: mb(detail.limit_bytes),
-      })
-    case 'file_extension_rejected':
-      return t('deployment.summary.errors.fileExtensionRejected', {
-        filename,
-        allowed: Array.isArray(detail.allowed) ? detail.allowed.join(', ') : '',
-      })
-    case 'file_b64_invalid':
-      return t('deployment.summary.errors.fileB64Invalid', { filename })
-    case 'file_size_mismatch':
-      return t('deployment.summary.errors.fileSizeMismatch', { filename })
-    default:
-      return fallback
-  }
-}
-
-
-/**
- * Files section of the summary. One card per ``@openstack:file:*`` variable,
- * with a chip list of uploaded slots showing filename + size (never the base64
- * content). Size is formatted in KB/MB.
- */
-const fileVarSummaries = computed(() => {
-  const defs = appVariables.value || []
-  const uploads = deploymentStore.draft.fileUploads || {}
-  const out: Array<{
-    name: string
-    scope: 'all' | 'team' | 'user'
-    chips: Array<{ slot: string; filename: string; size: string }>
-  }> = []
-  defs.forEach((apiDef: AppVariable) => {
-    if (apiDef.osType !== 'file') return
-    const slotMap = uploads[apiDef.name] || {}
-    const chips: Array<{ slot: string; filename: string; size: string }> = []
-    for (const [slotKey, file] of Object.entries(slotMap)) {
-      if (!file) continue
-      chips.push({
-        slot: slotKey,
-        filename: file.name,
-        size: formatBytes(file.size || 0),
-      })
-    }
-    out.push({
-      name: apiDef.name,
-      scope: (apiDef.osScope || 'all') as 'all' | 'team' | 'user',
-      chips,
-    })
-  })
-  return out
-})
-
-/**
- * Builds the summary row for a variable.
- *
- * - Marker variables (osType set): always show the display name from the
- *   frontend cache. In id-mode the raw value (UUID) is added as a ``title``
- *   tooltip, but the submitted value goes to the backend unchanged.
- * - Plain variables: format the raw value.
- */
-function toSummaryEntry(def: AppVariable, val: any): {label: string, value: string, raw?: string} {
-  // Scoped variables (``varScope``/``osScope`` = team|user) arrive as a map
-  // (slotKey → value). Render as ``"slotKey: value"`` lines so the
-  // summary makes the per-recipient configuration obvious — same
-  // detail level the wizard step shows.
-  if (effectiveVariableScope(def) !== 'all' && def.osType !== 'file') {
-    if (!val || typeof val !== 'object' || Array.isArray(val)) {
-      return { label: def.name, value: '-' }
-    }
-    const entries = Object.entries(val)
-    if (entries.length === 0) return { label: def.name, value: '-' }
-    const lines = entries.map(([slot, raw]) => {
-      let display: string
-      if (def.osType) {
-        const mode = def.osMode || 'name'
-        display = renderOsValue(def.osType, mode, raw, !!def.osMulti)
-      } else {
-        display = formatValue(raw)
-      }
-      return `${slot}: ${display}`
-    })
-    return { label: def.name, value: lines.join(' · ') }
-  }
-
-  if (def.osType) {
-    const mode = def.osMode || 'name'
-    const display = renderOsValue(def.osType, mode, val, !!def.osMulti)
-    const rawString = formatValue(val)
-    return {
-      label: def.name,
-      value: display,
-      // Only pass raw if it differs from the display, to avoid a duplicate tooltip.
-      raw: display !== rawString ? rawString : undefined,
-    }
-  }
-  return { label: def.name, value: formatValue(val) }
-}
-
-/**
- * Display string for an OS-marker value. Single → one name; multi → comma-
- * separated names. Falls back to the raw value when the cache has no display
- * name yet.
- */
-function renderOsValue(
-  osType: NonNullable<AppVariable['osType']>,
-  mode: 'id' | 'name',
-  val: any,
-  isMulti: boolean,
-): string {
-  if (val === null || val === undefined || val === '') return '-'
-
-  // Split the value — may be a string, CSV, or array. Same as in the picker.
-  let parts: string[] = []
-  if (Array.isArray(val)) {
-    parts = val.map((v) => String(v).trim()).filter(Boolean)
-  } else if (typeof val === 'string') {
-    parts = isMulti
-      ? splitCsv(val)
-      : [val.trim()].filter(Boolean)
-  } else {
-    parts = [String(val)]
-  }
-
-  if (parts.length === 0) return '-'
-
-  const names = parts.map((p) => {
-    const cached = getOsDisplayName(asOsResourceType(osType), mode, p)
-    if (cached) return cached.name
-    return p
-  })
-  return names.join(', ')
-}
-
-// Helper to format the values.
-const formatValue = (val: any): string => {
-  if (typeof val === 'boolean') return val ? t('deployment.summary.yes') : t('deployment.summary.no')
-  if (Array.isArray(val)) return val.map(item => String(item).replace(/^"|"$/g, '')).join(', ')
-  if (typeof val === 'string') return val.replace(/^["'\[]+|["'\]]+$/g, '')
-  if (val === null || val === undefined || val === '') return '-'
-  return String(val)
-}
+const fileVarSummaries = computed(() =>
+  fileSummaries(appVariables.value || [], deploymentStore.draft.fileUploads))
 
 /**
  * Ensures the display cache is loaded for all OS resource types present in the
@@ -452,8 +220,7 @@ const handleDeploy = async () => {
       // Backend returns ``{detail: {reason, variable, slot, limit_bytes,
       // actual_bytes, ...}}`` for size/extension/encoding violations (413/422).
       // Branch on ``reason`` and format a localized message with the size numbers.
-      const message = _formatSubmitError(err)
-      toast.error(message)
+      toast.error(formatSubmitError(err, t))
       return
     }
 
