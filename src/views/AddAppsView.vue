@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import { iconForAppName } from '@/services/app-presentation.service'
 import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
 
@@ -284,17 +285,11 @@ const handleSubmit = async () => {
           <div class="font-bold text-fg w-48 pl-2">{{ $t('AppsCreateView.form.submitAllLabel') }}</div>
           <div class="flex-1 mx-2 flex items-center justify-between">
             <p class="text-sm text-fg-muted">{{ $t('AppsCreateView.form.submitAllHint') }}</p>
-            <button
-              type="button"
-              @click="form.submitAllVersions = !form.submitAllVersions"
-              class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border p-px transition-colors duration-200 ml-4"
-              :class="form.submitAllVersions ? 'toggle-on' : 'toggle-off'"
-            >
-              <span
-                class="toggle-knob inline-block h-5 w-5 transform rounded-full transition duration-200"
-                :class="form.submitAllVersions ? 'translate-x-5' : 'translate-x-0'"
-              />
-            </button>
+            <ToggleSwitch
+              v-model="form.submitAllVersions"
+              :label="$t('AppsCreateView.form.submitAllLabel')"
+              class="ml-4"
+            />
           </div>
         </div>
 

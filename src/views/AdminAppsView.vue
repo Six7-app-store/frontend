@@ -7,6 +7,7 @@ import {
   Check, X, RotateCcw, Inbox, ExternalLink,
 } from 'lucide-vue-next'
 import ReasonModal from '@/components/ui/ReasonModal.vue'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
@@ -234,16 +235,11 @@ onMounted(loadAll)
              rather than hard-wired). -->
         <div class="flex items-center gap-2 text-sm">
           <span class="text-fg-muted">{{ $t('AdminAppsView.filterLabel') }}</span>
-          <button
-            @click="onlyWithSubmissions = !onlyWithSubmissions"
-            class="relative inline-flex h-5 w-10 flex-shrink-0 items-center rounded-full border p-px transition-colors duration-200"
-            :class="onlyWithSubmissions ? 'toggle-on' : 'toggle-off'"
-          >
-            <span
-              class="toggle-knob inline-block h-4 w-4 transform rounded-full transition duration-200"
-              :class="onlyWithSubmissions ? 'translate-x-5' : 'translate-x-0'"
-            />
-          </button>
+          <ToggleSwitch
+            v-model="onlyWithSubmissions"
+            size="sm"
+            :label="$t('AdminAppsView.filterOnlySubmissions')"
+          />
           <span class="text-fg font-medium">{{ $t('AdminAppsView.filterOnlySubmissions') }}</span>
         </div>
       </template>

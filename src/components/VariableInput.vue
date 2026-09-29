@@ -13,6 +13,7 @@
  * a different draft channel (``fileUploads``) than scalar inputs.
  */
 import OpenStackResourcePicker from '@/components/OpenStackResourcePicker.vue'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import { useI18n } from 'vue-i18n'
 import { isBool, isList, isNumber } from '@/services/variable-types'
 import type { AppVariable } from '@/types'
@@ -74,18 +75,12 @@ const borderClass = 'border-subtle focus:border-accent/60'
   />
 
   <div v-else-if="isBool(variable.type)" class="flex items-center gap-3">
-    <button
-      type="button"
+    <ToggleSwitch
+      :model-value="!!modelValue"
+      :label="variable.name"
       :disabled="disabled"
-      @click="update(!modelValue)"
-      class="relative inline-flex h-6 w-11 items-center rounded-full border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      :class="modelValue ? 'toggle-on' : 'toggle-off'"
-    >
-      <span
-        class="toggle-knob inline-block h-4 w-4 transform rounded-full transition-transform"
-        :class="modelValue ? 'translate-x-6' : 'translate-x-1'"
-      />
-    </button>
+      @update:model-value="update"
+    />
     <span class="text-sm font-medium text-fg">
       {{ modelValue ? t('variableInput.on') : t('variableInput.off') }}
     </span>

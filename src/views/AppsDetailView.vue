@@ -23,6 +23,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import ReasonModal from '@/components/ui/ReasonModal.vue'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
@@ -618,17 +619,14 @@ onMounted(async () => {
                 </p>
               </div>
             </div>
-            <button
-              @click="togglePrivacy"
+            <!-- On = public. The switch only asks; togglePrivacy saves and
+                 flips ``is_private`` once the backend has accepted it. -->
+            <ToggleSwitch
+              :model-value="!app.is_private"
+              :label="$t('AppsDetailView.storeVisibilityTitle')"
               :disabled="isTogglingPrivacy"
-              class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border p-px transition-colors duration-200 disabled:opacity-50"
-              :class="app.is_private ? 'toggle-off' : 'toggle-on'"
-            >
-              <span
-                class="toggle-knob inline-block h-5 w-5 transform rounded-full transition duration-200"
-                :class="app.is_private ? 'translate-x-0' : 'translate-x-5'"
-              />
-            </button>
+              @update:model-value="togglePrivacy"
+            />
           </div>
         </div>
 
