@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ROUTE_NAMES } from '@/router/route-names'
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   ChevronDown, ChevronRight,
@@ -12,10 +12,9 @@ import Spinner from '@/components/ui/Spinner.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
-import { appApi } from '@/api/app.api'
+import { useAppApprovals } from '@/composables/useAppApprovals'
 import { useToast } from '@/composables/useToast'
 import { formatDate } from '@/utils/format'
-import type { App, AppVersionApproval } from '@/types'
 
 const { t } = useI18n()
 const toast = useToast()
@@ -23,20 +22,13 @@ const toast = useToast()
 // ----------------------------------------------------------------
 // State
 // ----------------------------------------------------------------
-const isLoading = ref(true)
-const apps = ref<App[]>([])
-// appId → pending count (from initial pending queue load)
-const pendingCountMap = ref<Record<string, number>>({})
-// appId → total submission count (any status)
-const submissionCountMap = ref<Record<string, number>>({})
-// appId → loaded approvals (lazy)
-const approvalsMap = ref<Record<string, AppVersionApproval[]>>({})
-// appId → currently loading
-const loadingMap = ref<Record<string, boolean>>({})
+const {
+  apps, isLoading, pendingCount: pendingCountMap,
+  approvals: approvalsMap, loading: loadingMap, onlyWithSubmissions, sortedApps,
+  loadAll: loadQueue, loadApprovals, approve, reject, revoke,
+} = useAppApprovals()
 // which app is expanded
 const expandedAppId = ref<string | null>(null)
-// filter: true = only apps with submissions
-const onlyWithSubmissions = ref(true)
 
 // Reject modal (single version only)
 const showRejectModal = ref(false)
@@ -53,62 +45,11 @@ const isRevoking = ref(false)
 // Per-version action loading
 const actingOn = ref<string | null>(null) // `${appId}:${versionTag}`
 
-// ----------------------------------------------------------------
-// Computed
-// ----------------------------------------------------------------
-const sortedApps = computed(() => {
-  const filtered = onlyWithSubmissions.value
-    ? apps.value.filter(a => (submissionCountMap.value[a.appId] ?? 0) > 0)
-    : apps.value
-  return [...filtered].sort((a, b) => {
-    const pa = pendingCountMap.value[a.appId] ?? 0
-    const pb = pendingCountMap.value[b.appId] ?? 0
-    return pb - pa
-  })
-})
-
-// ----------------------------------------------------------------
-// Load
-// ----------------------------------------------------------------
 const loadAll = async () => {
-  isLoading.value = true
   try {
-    const [appsRes, pendingRes] = await Promise.all([
-      appApi.list(),
-      appApi.admin.listPendingApprovals(),
-    ])
-    apps.value = appsRes.data
-
-    // Build pending + submission count maps from the pending queue
-    const pending: Record<string, number> = {}
-    const submissions: Record<string, number> = {}
-    for (const item of pendingRes.data) {
-      pending[item.appId] = (pending[item.appId] ?? 0) + 1
-      submissions[item.appId] = (submissions[item.appId] ?? 0) + 1
-    }
-    pendingCountMap.value = pending
-    submissionCountMap.value = submissions
+    await loadQueue()
   } catch {
     toast.error(t('AdminAppsView.loadError'))
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const loadApprovals = async (appId: string) => {
-  if (approvalsMap.value[appId] !== undefined) return
-  loadingMap.value[appId] = true
-  try {
-    const res = await appApi.listVersionApprovals(appId)
-    approvalsMap.value[appId] = res.data
-    // Update submission count now that we have the full picture
-    submissionCountMap.value[appId] = res.data.length
-    pendingCountMap.value[appId] = res.data.filter(a => a.status === 'pending').length
-  } catch {
-    // Treat unloadable approvals as none; the row stays usable.
-    approvalsMap.value[appId] = []
-  } finally {
-    loadingMap.value[appId] = false
   }
 }
 
@@ -127,17 +68,8 @@ const toggleApp = async (appId: string) => {
 const handleApprove = async (appId: string, versionTag: string) => {
   actingOn.value = `${appId}:${versionTag}`
   try {
-    await appApi.admin.approveVersion(appId, versionTag)
+    await approve(appId, versionTag)
     toast.success(t('AdminAppsView.approveSuccess'))
-    // Update local state
-    const list = approvalsMap.value[appId]
-    if (list) {
-      const entry = list.find(a => a.version_tag === versionTag)
-      if (entry) entry.status = 'approved'
-    }
-    if (pendingCountMap.value[appId]) {
-      pendingCountMap.value[appId] = Math.max(0, pendingCountMap.value[appId] - 1)
-    }
   } catch {
     toast.error(t('AdminAppsView.approveError'))
   } finally {
@@ -151,59 +83,39 @@ const openRejectModal = (appId: string, appName: string, versionTag: string) => 
   showRejectModal.value = true
 }
 
-// Shared logic behind reject and revoke: both validate a target + reason,
-// flip a loading flag, call an admin API method, mark the matching version
-// entry as rejected with the given reason, close the modal, and clear the
-// loading flag. Only the API method, the target, the i18n keys, the loading
-// flag, the modal, and the optional pending-count decrement differ.
+// Reject and revoke both need a target and a reason and close their modal
+// on success; only the decision, the texts and the busy flag differ.
 const submitRejection = async (params: {
   target: { appId: string; versionTag: string } | null
   reason: string
-  apiCall: (appId: string, versionTag: string, reason: string) => Promise<unknown>
-  setLoading: (value: boolean) => void
-  closeModal: () => void
+  decide: (appId: string, versionTag: string, reason: string) => Promise<void>
+  busy: Ref<boolean>
+  modal: Ref<boolean>
   successKey: string
   errorKey: string
-  decrementPending: boolean
 }) => {
   if (!params.target || !params.reason.trim()) return
-  const { appId, versionTag } = params.target
-  const reason = params.reason.trim()
-  params.setLoading(true)
+  params.busy.value = true
   try {
-    await params.apiCall(appId, versionTag, reason)
+    await params.decide(params.target.appId, params.target.versionTag, params.reason.trim())
     toast.success(t(params.successKey))
-    const list = approvalsMap.value[appId]
-    if (list) {
-      const entry = list.find(a => a.version_tag === versionTag)
-      if (entry) {
-        entry.status = 'rejected'
-        entry.rejection_reason = reason
-      }
-    }
-    if (params.decrementPending && pendingCountMap.value[appId]) {
-      pendingCountMap.value[appId] = Math.max(0, pendingCountMap.value[appId] - 1)
-    }
-    params.closeModal()
+    params.modal.value = false
   } catch {
     toast.error(t(params.errorKey))
   } finally {
-    params.setLoading(false)
+    params.busy.value = false
   }
 }
 
-const handleReject = async () => {
-  await submitRejection({
-    target: rejectTarget.value,
-    reason: rejectionReason.value,
-    apiCall: appApi.admin.rejectVersion,
-    setLoading: value => { isRejecting.value = value },
-    closeModal: () => { showRejectModal.value = false },
-    successKey: 'AdminAppsView.rejectSuccess',
-    errorKey: 'AdminAppsView.rejectError',
-    decrementPending: true,
-  })
-}
+const handleReject = () => submitRejection({
+  target: rejectTarget.value,
+  reason: rejectionReason.value,
+  decide: reject,
+  busy: isRejecting,
+  modal: showRejectModal,
+  successKey: 'AdminAppsView.rejectSuccess',
+  errorKey: 'AdminAppsView.rejectError',
+})
 
 const openRevokeModal = (appId: string, versionTag: string) => {
   revokeTarget.value = { appId, versionTag }
@@ -211,18 +123,15 @@ const openRevokeModal = (appId: string, versionTag: string) => {
   showRevokeModal.value = true
 }
 
-const handleRevoke = async () => {
-  await submitRejection({
-    target: revokeTarget.value,
-    reason: revokeReason.value,
-    apiCall: appApi.admin.revokeVersion,
-    setLoading: value => { isRevoking.value = value },
-    closeModal: () => { showRevokeModal.value = false },
-    successKey: 'AdminAppsView.revokeSuccess',
-    errorKey: 'AdminAppsView.revokeError',
-    decrementPending: false,
-  })
-}
+const handleRevoke = () => submitRejection({
+  target: revokeTarget.value,
+  reason: revokeReason.value,
+  decide: revoke,
+  busy: isRevoking,
+  modal: showRevokeModal,
+  successKey: 'AdminAppsView.revokeSuccess',
+  errorKey: 'AdminAppsView.revokeError',
+})
 
 onMounted(loadAll)
 </script>

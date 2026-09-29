@@ -8,7 +8,7 @@ import EntityListState from '@/components/ui/EntityListState.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import { useRouter } from 'vue-router'
-import { appApi } from '@/api/app.api'
+import { useAppCatalog } from '@/composables/useAppCatalog'
 import { useI18n } from 'vue-i18n'
 import {
   Globe, Inbox, Plus, Lock
@@ -17,7 +17,6 @@ import { useToast } from '@/composables/useToast'
 import { iconForAppName, storeApprovalState } from '@/services/app-presentation.service'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRole } from '@/composables/useRole'
-import type { AppVersionApproval } from '@/types'
 
 const { t, locale } = useI18n()
 const toast = useToast()
@@ -25,9 +24,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { isAdmin } = useRole()
 
-const isLoading = ref(false)
-const apps = ref<any[]>([])
-const approvalsMap = ref<Record<string, AppVersionApproval[]>>({})
+const { apps, approvals: approvalsMap, isLoading, load } = useAppCatalog()
 
 // Admin-only filter
 const visibilityFilter = ref<'all' | 'public' | 'private'>('all')
@@ -50,33 +47,16 @@ const badgeStatusForApp = (app: any) => {
 }
 
 const fetchApps = async () => {
-  isLoading.value = true
   try {
-    const response = await appApi.list()
-    apps.value = (response.data && Array.isArray(response.data)) ? response.data : []
-    const ownApps = apps.value.filter(isOwnApp)
-    await Promise.allSettled(
-      ownApps.map(async (app) => {
-        try {
-          const res = await appApi.listVersionApprovals(app.appId)
-          approvalsMap.value[app.appId] = res.data
-        } catch {
-          // Without approvals the card just shows no approval badge.
-          approvalsMap.value[app.appId] = []
-        }
-      })
-    )
+    await load({ approvalsFor: isOwnApp })
   } catch (error) {
     console.error('Fehler beim Laden der Apps:', error)
     toast.error(t('AppsView.loadError'))
-    apps.value = []
-  } finally {
-    isLoading.value = false
   }
 }
 
 const handleDeploy = (app: any) => {
-  router.push({ name: ROUTE_NAMES.appsDetail, params: { id: app.id || app._id || app.appId } })
+  router.push({ name: ROUTE_NAMES.appsDetail, params: { id: app.appId } })
 }
 
 onMounted(() => {
@@ -143,7 +123,7 @@ onMounted(() => {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card
           v-for="app in filteredApps"
-          :key="app.appId || app.id"
+          :key="app.appId"
           class="flex flex-col group h-full relative cursor-pointer hover:border-strong"
           @click="handleDeploy(app)"
         >

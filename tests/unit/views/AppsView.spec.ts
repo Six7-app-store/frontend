@@ -113,7 +113,7 @@ describe('AppsView.vue', () => {
     })
 
     it('navigiert zur Detailseite, wenn auf "Details" geklickt wird', async () => {
-        const mockApps = [{ id: 'app-999', name: 'Test App' }]
+        const mockApps = [{ appId: 'app-999', name: 'Test App' }]
         ;(appApi.list as any).mockResolvedValue({ data: mockApps })
 
         const wrapper = mountComponent()

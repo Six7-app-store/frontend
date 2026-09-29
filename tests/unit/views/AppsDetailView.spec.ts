@@ -83,7 +83,7 @@ describe('AppsDetailView.vue', () => {
         // Standard-Antwort der API
         ;(appApi.getById as any).mockResolvedValue({
             data: {
-                id: 'app-123',
+                appId: 'app-123',
                 name: 'Test App',
                 description: 'Detail Beschreibung',
                 userId: 'user-1',
@@ -160,7 +160,7 @@ describe('AppsDetailView.vue', () => {
     it('deaktiviert den Deploy-Button und warnt (Fallback), wenn keine Version ausgewählt ist', async () => {
         // API liefert App OHNE Versionen
         ;(appApi.getById as any).mockResolvedValue({
-            data: { id: 'app-123', name: 'Leere App', versions: [] }
+            data: { appId: 'app-123', name: 'Leere App', versions: [] }
         })
 
         const wrapper = mountComponent()
@@ -198,7 +198,7 @@ describe('AppsDetailView.vue', () => {
     it('rendert den App-Namen im Lösch-Modal als Text, nicht als HTML', async () => {
         const evilName = '<img src=x onerror="alert(1)">'
         ;(appApi.getById as any).mockResolvedValue({
-            data: { id: 'app-123', name: evilName, description: '', userId: 'user-1', versions: [] }
+            data: { appId: 'app-123', name: evilName, description: '', userId: 'user-1', versions: [] }
         })
         const wrapper = mountComponent()
         await flushPromises()

@@ -2,7 +2,7 @@
 import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { appApi } from '@/api/app.api'
+import { useAppDetail } from '@/composables/useAppDetail'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetail, getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
 import { useI18n } from 'vue-i18n'
@@ -44,8 +44,11 @@ const router = useRouter()
 const toast = useToast()
 const { t, locale } = useI18n()
 
-const isLoading = ref(false)
-const app = ref<any>(null)
+const appId = computed(() => route.params.id as string)
+const {
+  app, approvals, isLoading,
+  load, loadApprovals, submitVersion, withdrawVersion: withdraw, setPrivate, update, remove,
+} = useAppDetail(appId)
 const selectedVersion = ref('')
 const activeTab = ref<'overview' | 'store'>('overview')
 // The store tab (submissions, visibility) is only for those who may edit the app.
@@ -78,7 +81,6 @@ const {
 } = useImageUpload()
 
 // Version approval state
-const approvals = ref<AppVersionApproval[]>([])
 const withdrawingVersion = ref<string | null>(null)
 const isTogglingPrivacy = ref(false)
 
@@ -92,8 +94,6 @@ const submitMarkerErrors = ref<AppVariableMarkerError[]>([])
 // ----------------------------------------------------------------
 // Computed permissions
 // ----------------------------------------------------------------
-const appId = computed(() => route.params.id as string)
-
 const isOwner = computed(() =>
   !!app.value && String(app.value.userId) === String(authStore.userId)
 )
@@ -170,30 +170,14 @@ const getIconForApp = (appName: string) => iconForAppName(appName)
 // API calls
 // ----------------------------------------------------------------
 const fetchAppDetails = async () => {
-  if (!appId.value) return
-  isLoading.value = true
   try {
-    const response = await appApi.getById(appId.value, false)
-    app.value = response.data
+    await load()
     if (versionOptions.value.length > 0 && !selectedVersion.value) {
       selectedVersion.value = versionOptions.value[0]
     }
   } catch {
     toast.error(t('AppsDetailView.toasts.loadError'))
     if (!app.value) router.push({ name: ROUTE_NAMES.apps })
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const fetchApprovals = async () => {
-  if (!appId.value) return
-  try {
-    const res = await appApi.listVersionApprovals(appId.value)
-    approvals.value = res.data
-  } catch {
-    // Without approvals the version list just shows no approval state.
-    approvals.value = []
   }
 }
 
@@ -203,7 +187,7 @@ const handleDeploy = () => {
     return
   }
   deploymentStore.resetDraft()
-  deploymentStore.draft.appId = app.value.appId || app.value.id
+  deploymentStore.draft.appId = app.value.appId
   deploymentStore.draft.releaseTag = selectedVersion.value
   toast.success(t('AppsDetailView.toasts.preparingConfig', { name: app.value.name }))
   router.push({ name: ROUTE_NAMES.deploymentConfig })
@@ -220,10 +204,9 @@ const confirmSubmit = async () => {
   if (!submitTargetVersion.value) return
   isSubmitting.value = true
   try {
-    await appApi.submitVersion(appId.value, submitTargetVersion.value, undefined, submitNotes.value.trim() || undefined)
+    await submitVersion(submitTargetVersion.value, submitNotes.value.trim() || undefined)
     toast.success(t('AppsDetailView.toasts.submitSuccess'))
     showSubmitModal.value = false
-    await fetchApprovals()
   } catch (err: any) {
     const s = getErrorStatus(err)
     if (s === 409) {
@@ -246,9 +229,8 @@ const confirmSubmit = async () => {
 const withdrawVersion = async (versionTag: string) => {
   withdrawingVersion.value = versionTag
   try {
-    await appApi.withdrawVersion(appId.value, versionTag)
+    await withdraw(versionTag)
     toast.success(t('AppsDetailView.toasts.withdrawSuccess'))
-    await fetchApprovals()
   } catch {
     toast.error(t('AppsDetailView.toasts.withdrawError'))
   } finally {
@@ -260,8 +242,7 @@ const togglePrivacy = async () => {
   if (!app.value) return
   isTogglingPrivacy.value = true
   try {
-    await appApi.update(app.value.appId, { is_private: !app.value.is_private })
-    app.value.is_private = !app.value.is_private
+    await setPrivate(!app.value.is_private)
     toast.success(app.value.is_private
       ? t('AppsDetailView.toasts.setPrivate')
       : t('AppsDetailView.toasts.setPublic')
@@ -321,10 +302,7 @@ const submitEdit = async () => {
 
   isSavingEdit.value = true
   try {
-    const { data } = await appApi.update(app.value.appId, payload)
-    // Refresh from server response so image/description/name reflect
-    // what the backend actually stored.
-    app.value = { ...app.value, ...data }
+    await update(payload)
     toast.success(t('AppsDetailView.toasts.editSuccess'))
     showEditModal.value = false
   } catch {
@@ -336,12 +314,9 @@ const submitEdit = async () => {
 
 const confirmDelete = async () => {
   if (!app.value) return
-  const safeId = app.value.appId || app.value.id || app.value._id
-  if (!safeId) { toast.error(t('AppsDetailView.deleteErrorToast')); return }
-
   isDeleting.value = true
   try {
-    await appApi.delete(safeId)
+    await remove()
     toast.success(t('AppsDetailView.deleteSuccessToast'))
     showDeleteModal.value = false
     router.push({ name: ROUTE_NAMES.apps })
@@ -355,7 +330,7 @@ const confirmDelete = async () => {
 
 onMounted(async () => {
   await fetchAppDetails()
-  if (canEditApp.value) await fetchApprovals()
+  if (canEditApp.value) await loadApprovals()
 })
 </script>
 

@@ -4,7 +4,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetailMessage, getErrorStatus, getErrorStatusText, hasErrorResponse } from '@/utils/http-error'
-import { appApi } from '@/api/app.api'
+import { useNewApp } from '@/composables/useNewApp'
 import { useI18n } from 'vue-i18n'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -14,7 +14,6 @@ import PageHeader from '@/components/ui/PageHeader.vue'
 import { iconForAppName } from '@/services/app-presentation.service'
 import ImageDropZone from '@/components/ui/ImageDropZone.vue'
 import { useImageUpload } from '@/composables/useImageUpload'
-import { readFileAsDataUrl } from '@/utils/file'
 
 // Icons
 import {
@@ -33,6 +32,8 @@ const router = useRouter()
 const toast = useToast()
 const isLoading = ref(false)
 
+const { githubAppInstallUrl, loadGithubAppInstallUrl, create } = useNewApp()
+
 const form = ref({
   name: '',
   description: '',
@@ -48,18 +49,7 @@ const {
   remove: removeLogo,
 } = useImageUpload()
 
-// Every installation runs its own GitHub App, so the link comes from the
-// backend. Stays null when none is configured; the hint then has no link.
-const githubAppInstallUrl = ref<string | null>(null)
-
-onMounted(async () => {
-  try {
-    const { data } = await appApi.getGithubApp()
-    githubAppInstallUrl.value = data.install_url
-  } catch {
-    githubAppInstallUrl.value = null
-  }
-})
+onMounted(loadGithubAppInstallUrl)
 
 // Same icon the catalogue card will show for this name.
 const previewIcon = computed(() => iconForAppName(form.value.name))
@@ -67,11 +57,6 @@ const previewIcon = computed(() => iconForAppName(form.value.name))
 const isValidGitUrl = (url: string) => {
   const regex = /^(https?:\/\/|git@)[\w.-]+[\/:].+/
   return regex.test(url)
-}
-
-const fileToDataUrl = (file: File | null): Promise<string | null> => {
-  if (!file) return Promise.resolve(null)
-  return readFileAsDataUrl(file)
 }
 
 const handleSubmit = async () => {
@@ -87,16 +72,7 @@ const handleSubmit = async () => {
 
   isLoading.value = true
   try {
-    const imageDataUrl = await fileToDataUrl(logoFile.value)
-
-    await appApi.create({
-      name: form.value.name,
-      description: form.value.description,
-      git_link: form.value.repoUrl,
-      image: imageDataUrl,
-      is_private: form.value.isPrivate,
-      submit_all_versions: !form.value.isPrivate && form.value.submitAllVersions,
-    })
+    await create(form.value, logoFile.value)
 
     toast.success(t('AppsCreateView.messages.success'))
     router.push({ name: ROUTE_NAMES.apps })

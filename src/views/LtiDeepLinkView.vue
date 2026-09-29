@@ -21,9 +21,8 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ltiApi } from '@/api/lti.api'
-import { appApi } from '@/api/app.api'
+import { useAppCatalog } from '@/composables/useAppCatalog'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
-import type { App } from '@/types'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { Loader2, Link2, AlertCircle } from 'lucide-vue-next'
 
@@ -33,7 +32,7 @@ type State = 'loading' | 'ready' | 'sending' | 'error'
 
 const state = ref<State>('loading')
 const error = ref<string | null>(null)
-const apps = ref<App[]>([])
+const { apps, load: loadApps } = useAppCatalog()
 const handle = ref<string | null>(null)
 const selected = ref<string>('')
 
@@ -100,8 +99,7 @@ onMounted(async () => {
   }
 
   try {
-    const { data } = await appApi.list()
-    apps.value = data
+    await loadApps()
     state.value = 'ready'
   } catch (err) {
     console.error('Loading apps for the deep link failed:', err)
