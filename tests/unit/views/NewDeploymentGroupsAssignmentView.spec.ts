@@ -291,6 +291,98 @@ describe('NewDeploymentTeamsView.vue', () => {
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployment.config' })
   })
 
+  describe('Verteilen und Verschieben', () => {
+    const buttonWith = (wrapper: any, text: string) =>
+      wrapper.findAll('button').find((b: any) => b.text().includes(text))
+
+    it('mischt mit Fisher-Yates und verteilt gleichmaessig', async () => {
+      const random = vi.spyOn(Math, 'random').mockReturnValue(0)
+      const wrapper = createWrapper({ studentIds: ['u1', 'u2', 'u3'], assignments: [[], []] })
+      await flushPromises()
+      const store = useDeploymentStore()
+
+      await buttonWith(wrapper, 'deployment.assignment.shuffle').trigger('click')
+      random.mockRestore()
+
+      expect(store.draft.assignments).toEqual([['u2', 'u3'], ['u1']])
+    })
+
+    it('leert beim Zuruecksetzen alle Teams', async () => {
+      const wrapper = createWrapper({ assignments: [['u1'], ['u2']] })
+      await flushPromises()
+      const store = useDeploymentStore()
+
+      await buttonWith(wrapper, 'deployment.assignment.reset').trigger('click')
+
+      expect(store.draft.assignments).toEqual([[], []])
+    })
+
+    it('verschiebt eine Person per Drag aus einem Team in ein anderes', async () => {
+      const wrapper = createWrapper({ assignments: [['u1', 'u2'], []] })
+      await flushPromises()
+      const store = useDeploymentStore()
+
+      const card = wrapper.find('[data-testid="group-dropzone-0"] [draggable="true"]')
+      await card.trigger('dragstart')
+      await wrapper.find('[data-testid="group-dropzone-1"]').trigger('drop')
+
+      expect(store.draft.assignments).toEqual([['u2'], ['u1']])
+    })
+
+    it('legt eine Person per Drag zurueck in den Pool', async () => {
+      const wrapper = createWrapper({ assignments: [['u1'], ['u2']] })
+      await flushPromises()
+      const store = useDeploymentStore()
+
+      const card = wrapper.find('[data-testid="group-dropzone-1"] [draggable="true"]')
+      await card.trigger('dragstart')
+      await wrapper.find('[data-testid="unassigned-dropzone"]').trigger('drop')
+
+      expect(store.draft.assignments).toEqual([['u1'], []])
+      expect(wrapper.find('[data-testid="unassigned-dropzone"]').text()).toContain('Jane Smith')
+    })
+
+    it('macht aus einem Team beim Wechsel auf "custom" zwei und behaelt eigene Namen', async () => {
+      const wrapper = createWrapper({
+        groupMode: 'one', groupCount: 1, groupNames: ['Meins'], assignments: [['u1', 'u2']],
+      })
+      await flushPromises()
+      const store = useDeploymentStore()
+
+      await buttonWith(wrapper, 'deployment.groups.custom').trigger('click')
+      await flushPromises()
+
+      expect(store.draft.groupMode).toBe('custom')
+      expect(store.draft.groupCount).toBe(2)
+      expect(store.draft.groupNames).toEqual(['Meins', 'Team 2'])
+    })
+
+    it('behaelt beim Wechsel auf "one" einen eigenen Teamnamen', async () => {
+      const wrapper = createWrapper({ groupNames: ['Meins', 'Team 2'], assignments: [['u1'], ['u2']] })
+      await flushPromises()
+      const store = useDeploymentStore()
+
+      await buttonWith(wrapper, 'deployment.groups.one').trigger('click')
+      await flushPromises()
+
+      expect(store.draft.groupCount).toBe(1)
+      expect(store.draft.assignments[0]).toEqual(['u1', 'u2'])
+      expect(store.draft.groupNames).toEqual(['Meins'])
+    })
+
+    it('gibt bei "eachUser" jeder Person ein eigenes Team mit Standardnamen', async () => {
+      const wrapper = createWrapper({ groupNames: ['Meins', 'Team 2'] })
+      await flushPromises()
+      const store = useDeploymentStore()
+
+      await buttonWith(wrapper, 'deployment.groups.eachUser').trigger('click')
+      await flushPromises()
+
+      expect(store.draft.assignments).toEqual([['u1'], ['u2']])
+      expect(store.draft.groupNames).toEqual(['Team 1', 'Team 2'])
+    })
+  })
+
   // `dragenter`/`dragleave` bubble, so the student cards inside a drop zone
   // fire them too. Clearing the highlight on those used to make the zone
   // resize under a stationary cursor, which fired the pair again and hung the
