@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 798 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 801 Tests.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -407,7 +407,7 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 3 Reine Helfer | erledigt | `561b8d6` (D3, D4), `8cc62c0` (D10), `55e14bc` (Charakterisierungstests `submitDraft`), `a43fc76` (D1, D7, D8), `13db0ae` (D2), `2fe8cf1` (D5, D33), `eec4dca` (D16, D17), `c694e40` (D24), `c401b18` (D31 teilweise, D32 teilweise) |
 | 4 Einheitliche Fehlerbehandlung | erledigt | `fc9fd16` (V9), `2a3f738` (V7), `1c1150a` (D26, V8), `2dbcde8` (D25), `05f6dac` (D27) |
 | 5 Single Source of Truth Status/Rollen | erledigt | `3451e95` (Lifecycle-Buttons nur für Owner/Admin), `34d6247` (D15, T13), `8d11e85` (D14), `9a40bf8` (Charakterisierung Router), `64c7478` (D28, V17), `4d91fc9` (D18 App-Teil, D19, D20), `ee19486` (D22) |
-| 6 UI-Bausteine | **in Arbeit** (8 von 9) | `60db13c` (V18 `BaseButton`), `817e3d6` (T5, V15 `ConfirmModal`), `7198eb3` (Charakterisierung Begründungs-Dialoge), `a2b7257` (T6 `ReasonModal`), `7b9bb7d` (Charakterisierung Schalter), `7695cdf` (T7 `ToggleSwitch`), `ffcc2ed` (T9 `TabBar`), `dbee14d` (Charakterisierung Bild-Upload), `c05fab9` (T8, D23 `ImageDropZone` + `useImageUpload`), `6bde16f` (T19 `CopyButton`), `a9f4308` (T12 `BackLink`), `37d2648` (T12 `PageHeader` mit Icon) |
+| 6 UI-Bausteine | erledigt | `60db13c` (V18 `BaseButton`), `817e3d6` (T5, V15 `ConfirmModal`), `7198eb3` (Charakterisierung Begründungs-Dialoge), `a2b7257` (T6 `ReasonModal`), `7b9bb7d` (Charakterisierung Schalter), `7695cdf` (T7 `ToggleSwitch`), `ffcc2ed` (T9 `TabBar`), `dbee14d` (Charakterisierung Bild-Upload), `c05fab9` (T8, D23 `ImageDropZone` + `useImageUpload`), `6bde16f` (T19 `CopyButton`), `a9f4308` (T12 `BackLink`), `37d2648` (T12 `PageHeader` mit Icon), `fb7462d` (T11 `Spinner` + `EntityListState` mit Fehlerzustand) |
 | 7–16 | offen | — |
 
 **Nachträge zum Befund:**
@@ -433,18 +433,18 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Schritt 6, `ImageDropZone` + `useImageUpload` (T8, D23):** Logo auf der Create-Seite und Bild im Bearbeiten-Dialog laufen über `composables/useImageUpload.ts` (Zustand, Validierung, Freigabe nur selbst erzeugter Object-URLs) und `components/ui/ImageDropZone.vue`. Die Fehlertexte heißen jetzt `image.onlyImages` / `image.tooLarge` (vorher doppelt unter `AppsCreateView.messages.*` und `AppsDetailView.toasts.*`). **Sichtbar:** Das Logo-Feld der Create-Seite zeigt jetzt wie der Dialog ein Vorschaubild mit Entfernen-Button. `FileDropZone` (Deployment-Dateien) bleibt getrennt.
 - **Schritt 6, `CopyButton` (T19):** Die zwei beschrifteten Kopier-Buttons in `DeploymentTaskDetail` und die drei Icon-Buttons in `DeploymentMemberAccess` laufen über `components/ui/CopyButton.vue` (holt sich den geteilten Zustand selbst per `injectCopyToClipboard`). Snapshots ändern sich nur um `type="button"`.
 - **Schritt 6, Seitenkopf (T12):** Statt `PageHeader` um einen `back`-Prop zu erweitern (die Köpfe von App-, Kurs- und Deployment-Detail passen mit Bild, Aktionen und Zähler nicht in `PageHeader`), gibt es `components/ui/BackLink.vue` für die drei Zurück-Links; der `<button>` im `RouterLink` des Deployment-Headers ist damit weg. `PageHeader` hat ein optionales `icon` und wird jetzt auch von `HelpView`, `SettingsOpenStackView` und `AddAppsView` genutzt. **Sichtbar:** Deployment-Detail hat „Zurück zur Liste“ als Text-Link über dem Titel statt des runden Icon-Buttons; die Überschriften von Hilfe, OpenStack-Einstellungen und App-Anlegen haben jetzt die einheitliche Größe. `UserLayout` behält seinen eigenen Topbar-Zurück-Link.
+- **Schritt 6, Lade-/Fehlerzustände (T11):** `components/ui/Spinner.vue` ist der eine Spinner (lucide `Loader2`); die fünf CSS-Ring-Spinner sind ersetzt. `EntityListState` hat jetzt `isError`/`errorMessage` + Slot `error-action`; `DeploymentDetailView` zeigt Laden und Ladefehler darüber. **Sichtbar:** Die fünf Spinner sind jetzt das Icon statt des Rings; der Lade-/Fehlerbereich der Deployment-Seite hat den Abstand der Listen. Nicht angefasst: der Spinner im „Deploy“-Button der Summary (Button-Zustand) und die reinen Text-Ladezustände (`CourseDetailView`, `UserView`, `SettingsOpenStackView`, `InfrastructureVmDrawer`) — die fallen mit den Zerlegungen in Schritt 10/12/14/16 an.
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–5 abgeschlossen, Schritt 6 zu 8 von 9 Bausteinen erledigt (`BaseButton`, `ConfirmModal`, `ReasonModal`, `ToggleSwitch`, `TabBar`, `ImageDropZone`, `CopyButton`, Seitenkopf). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Arbeitsbaum sauber, keine halb fertigen Dateien. Der Container `frontend-dev` wurde allein gestartet (`docker start frontend-dev`); der übrige Dev-Stack läuft nicht.
+**Stand (29.09.):** Schritte 0–6 abgeschlossen. Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Arbeitsbaum sauber, keine halb fertigen Dateien. Der Container `frontend-dev` wurde allein gestartet (`docker start frontend-dev`); der übrige Dev-Stack läuft nicht.
 
-**Hier weitermachen: Schritt 6, `EntityListState` mit `isError` (T11) — letzter Baustein von Schritt 6.**
-- Heute: drei Spinner-Stile (lucide `Loader2`, CSS-Kreis `animate-spin rounded-full border-b-2`, nur Text) und handgebaute Leer-/Fehlerzustände; Detailseiten bauen Laden/Fehler selbst (z. B. `DeploymentDetailView` Zeilen mit `loadFailed`, `AppsDetailView` Spinner). Liste der Stellen: Bericht T11.
-- Vorgehen: `components/ui/Spinner.vue` (ein Stil, Größe per Prop) und `EntityListState` um `isError` + `errorMessage` (optional Retry-Slot) erweitern; zuerst die CSS-Kreis-Spinner in `AppsDetailView`, `NewDeploymentSummaryView`, `NewDeploymentVariableView`, `AdminAppsView`, `OpenStackResourcePicker` auf `Spinner` umstellen. Die Ladetexte bleiben, wo sie sind. Snapshots prüfen.
-- Danach ist Schritt 6 fertig; weiter mit **Schritt 7** (`NewDeploymentVariableView` zerlegen, siehe Abschnitt 2.1 und 4): zuerst die Charakterisierungsfälle für `NewDeploymentVariableView.spec.ts` (Rehydrierung single/multi image, Scoped-Seed, `handleNext`-Snapshot von `draft.variables`/`userInputVar`, Required-Gating, Team-Rename).
-- Ungeprüft im Browser: 6a–6h sind nur über Tests abgesichert.
+**Hier weitermachen: Schritt 7 — `NewDeploymentVariableView` zerlegen** (Befund 2.1, Plan Abschnitt 4).
+- **Zuerst Charakterisierungstests (eigener Commit)** in `tests/unit/views/NewDeploymentVariableView.spec.ts`: Rehydrierung aus dem Draft (single image und multi image), Scoped-Seed (Team/User-Default auf alle Slots), `handleNext` → exakter Stand von `draft.variables` und `draft.userInputVar`, Required-Gating (Weiter gesperrt + Liste der fehlenden Felder), Team-Umbenennung (verworfene Slots + Toast). Die Helfer aus Schritt 3 (`services/variable-types`, `deployment-draft.service`, `deployment-variables.service`) sind schon da.
+- Dann: reine Funktionen nach `services/variable-form.service.ts` (hydrate, serialize, missingRequired, slotKeysFor, seedScopedDefault, reconcileSlots), Zustand nach `composables/useVariableForm.ts`, `wizardTeams` nach `composables/useWizardTeams.ts`; Template: `VariableFieldCard.vue` für die fast identischen Packer-/Terraform-Karten (T1, ~190 Zeilen doppelt), `ScopedVariableInputs.vue`, `FileVariableSlots.vue`.
+- Ungeprüft im Browser: Schritt 6 ist nur über Tests abgesichert (Stack lief nicht).
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
