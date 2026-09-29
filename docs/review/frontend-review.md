@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 849 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 852 Tests.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -410,7 +410,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 6 UI-Bausteine | erledigt | `60db13c` (V18 `BaseButton`), `817e3d6` (T5, V15 `ConfirmModal`), `7198eb3` (Charakterisierung Begründungs-Dialoge), `a2b7257` (T6 `ReasonModal`), `7b9bb7d` (Charakterisierung Schalter), `7695cdf` (T7 `ToggleSwitch`), `ffcc2ed` (T9 `TabBar`), `dbee14d` (Charakterisierung Bild-Upload), `c05fab9` (T8, D23 `ImageDropZone` + `useImageUpload`), `6bde16f` (T19 `CopyButton`), `a9f4308` (T12 `BackLink`), `37d2648` (T12 `PageHeader` mit Icon), `fb7462d` (T11 `Spinner` + `EntityListState` mit Fehlerzustand) |
 | 7 `NewDeploymentVariableView` zerlegen | erledigt | `9b38a5b` (Charakterisierung), `5c5783a` (Logik → `services/variable-form.service`, `useVariableForm`, `useWizardTeams`), `15e3b56` (T1, T2 `VariableFieldCard`) |
 | 8 `NewDeploymentSummaryView` + `WizardStepLayout` | erledigt bis auf `WizardStepLayout` (wartet auf UX-Entscheidung) | `1974c36` (Charakterisierung), `1db8c9c` (Services `deployment-summary`, `deployment-submit-error`), `b22131f` (T3 `SummaryVariableCard`, V19 Datei-Karte), `5c7d659` (leerer Wert als „-“) |
-| 9–16 | offen | — |
+| 9 `submitDraft` → `buildDeploymentPayload` | erledigt | `55e14bc` (Charakterisierung), `6cd3114` (reine Funktion in `services/deployment-draft.service.ts`) |
+| 10–16 | offen | — |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -438,16 +439,18 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Schritt 6, Lade-/Fehlerzustände (T11):** `components/ui/Spinner.vue` ist der eine Spinner (lucide `Loader2`); die fünf CSS-Ring-Spinner sind ersetzt. `EntityListState` hat jetzt `isError`/`errorMessage` + Slot `error-action`; `DeploymentDetailView` zeigt Laden und Ladefehler darüber. **Sichtbar:** Die fünf Spinner sind jetzt das Icon statt des Rings; der Lade-/Fehlerbereich der Deployment-Seite hat den Abstand der Listen. Nicht angefasst: der Spinner im „Deploy“-Button der Summary (Button-Zustand) und die reinen Text-Ladezustände (`CourseDetailView`, `UserView`, `SettingsOpenStackView`, `InfrastructureVmDrawer`) — die fallen mit den Zerlegungen in Schritt 10/12/14/16 an.
 - **Schritt 7:** `NewDeploymentVariableView` von 1 101 auf ~165 Zeilen; Logik in `services/variable-form.service.ts` (reine Funktionen mit Tests), `composables/useVariableForm.ts`, `composables/useWizardTeams.ts`; die Karte je Variable in `components/deployment-wizard/VariableFieldCard.vue`. **Sichtbar:** Der Hinweis „keine Teams konfiguriert“ erscheint bei Datei-Variablen jetzt über statt unter der (leeren) Liste. Nebenbei: Der Vergleich eines Listenwerts mit dem Default sortiert das Array der Eingabe nicht mehr in place. Offen und bewusst nicht angefasst: `formatSlotLabel` baut die Slot-Beschriftung „Team „x“ → y“ weiter auf Deutsch ohne i18n (V19) und `Image:` im Kopf der Template-Gruppe.
 - **Schritt 8:** `NewDeploymentSummaryView` von 737 auf ~430 Zeilen; Zeilen-Aufbereitung in `services/deployment-summary.service.ts`, Fehlertexte beim Absenden in `services/deployment-submit-error.service.ts` (beide mit Tests), `components/deployment-wizard/SummaryVariableCard.vue` für die zwei gleichen Spalten. **Sichtbar:** Die Datei-Karte ist übersetzt; ein leerer Variablenwert erscheint als „-“ statt als leere Zelle (Fehlerbehebung, `5c7d659`). **Offen:** `WizardStepLayout` (T4) — die vier Schritte haben drei Kopf-Designs, vier Breiten und vier verschiedene Fußleisten (Fortschritt, Pflichtfeld-Warnung, Deploy-Spinner). Eine Vereinheitlichung ändert die Optik und ist offene Frage 2 aus Abschnitt 4; nicht ohne Entscheidung umsetzen.
+- **Schritt 9:** `deployment.store.ts` von 327 auf 148 Zeilen; `submitDraft` prüft nur noch App/Name und sendet `buildDeploymentPayload(draft)`. Die Meldung „App und Name sind Pflichtfelder“ bleibt vorerst hartkodiert (V19): Der Router-Guard verhindert den Fall, sie ist nur ein Programmierfehler-Schutz; beim i18n-Schritt 15 mit erledigen.
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–8 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Arbeitsbaum sauber. Container `frontend-dev` läuft allein.
+**Stand (29.09.):** Schritte 0–9 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
 
-**Hier weitermachen: Schritt 9 — `deployment.store.submitDraft` → `buildDeploymentPayload`.**
-- Absicherung liegt schon vor: die Charakterisierungstests `submitDraft payload` in `src/stores/__tests__/deployment.store.test.ts` (`55e14bc`).
-- Vorgehen: den Payload-Aufbau (Version, Teams inkl. Fallback, Packer/Terraform-Aufteilung inkl. Multi-Image, leere Werte überspringen, gefüllte Datei-Slots) als reine Funktion `buildDeploymentPayload(draft)` nach `services/deployment-draft.service.ts`; `submitDraft` prüft nur noch App/Name und ruft `createDeployment(buildDeploymentPayload(this.draft))`. Die hartkodierte deutsche Fehlermeldung „App und Name sind Pflichtfelder“ (V19) dabei ersetzen — die Views rufen `submitDraft` nur nach dem Router-Guard auf, der App/Name schon prüft.
+**Hier weitermachen: Schritt 10 — Team-Assignment und Config zerlegen (2.5, 2.6).**
+- Zuerst die Specs `NewDeploymentGroupsAssignmentView.spec.ts` / `NewDeploymentConfigView.spec.ts` um Shuffle-Verteilung und Moduswechsel ergänzen (eigener Commit).
+- Dann reine Funktionen nach `services/team-assignment.service.ts` (`moveStudent`, `removeStudent`, `shuffleInto` mit injizierbarem `random`, `unassigned`, `canProceed`) mit Tests; `distributeEvenly` liegt schon in `deployment-draft.service.ts`.
+- Danach Composables `useStudentDirectory` (ein Cache statt drei, D11), `useUserSearch` (D12, auch `CourseDetailView`), `useCourseStudents`; die Views rufen `userApi`/`courseApi` dann nicht mehr direkt (V12).
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
