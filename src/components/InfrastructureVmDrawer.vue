@@ -9,14 +9,13 @@
  * sections, with tinted (``bg-line/[.04]``) sub-cards per data group (Identity, Lifecycle,
  * Hardware, Addresses, Ports, SGs, Volumes, Metadata).
  *
- * The component owns its own fetch/loading/error state; the parent mounts it
- * with a target address and listens for ``close`` to collapse the panel.
+ * Purely presentational: the parent loads the detail (see
+ * ``useDeploymentResources``), passes it in with its load state and listens
+ * for ``reload`` and ``close``.
  */
-import { onMounted, ref, watch, computed } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeploymentResource } from '@/types'
-import { deploymentApi } from '@/api/deployment.api'
-import { openStackFailure } from '@/utils/http-error'
 import { formatUptime, lifecyclePillClass } from '@/composables/useVmPresentation'
 import {
   X,
@@ -34,52 +33,21 @@ import {
 const { t } = useI18n()
 
 const props = defineProps<{
-  deploymentId: string
+  /** Terraform state address of the VM, shown until its detail has a name. */
   address: string
+  detail: DeploymentResource | null
+  isLoading: boolean
+  errorMessage: string | null
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
+  (e: 'reload'): void
 }>()
 
-const isLoading = ref(false)
-const detail = ref<DeploymentResource | null>(null)
-const errorMessage = ref<string | null>(null)
+const pillClass = computed(() => lifecyclePillClass(props.detail?.lifecycle?.status))
 
-const load = async () => {
-  isLoading.value = true
-  errorMessage.value = null
-  try {
-    const response = await deploymentApi.getResourceDetail(
-      props.deploymentId,
-      props.address,
-    )
-    detail.value = response.data
-  } catch (err) {
-    // Not found: the resource was removed since the list was rendered.
-    // Missing credentials: the user lost them between mount and click.
-    // Both are surfaced inline; the page-level toast is reserved for
-    // harder errors.
-    const messageKey = {
-      not_found: 'vm.drawer.errors.notFound',
-      credentials_missing: 'vm.drawer.errors.missingCredentials',
-      unavailable: 'vm.drawer.errors.unreachable',
-      other: 'vm.drawer.errors.generic',
-    }[openStackFailure(err)]
-    errorMessage.value = t(messageKey)
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(load)
-// Re-fetch when the parent swaps which VM we look at without
-// unmounting the panel.
-watch(() => props.address, load)
-
-const pillClass = computed(() => lifecyclePillClass(detail.value?.lifecycle?.status))
-
-const uptime = computed(() => formatUptime(detail.value?.hardware?.launched_at))
+const uptime = computed(() => formatUptime(props.detail?.hardware?.launched_at))
 
 // --- Map network IDs / fixed IPs to the human-friendly network name.
 // The Stage-2 ``ports`` block only carries the ``network_id`` (UUID).
@@ -88,7 +56,7 @@ const uptime = computed(() => formatUptime(detail.value?.hardware?.launched_at))
 // fixed_ip for that network. So we walk addresses to build two cheap
 // lookups: by-fixed-ip first, then by-mac as fallback.
 const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }): string | null => {
-  const addrs = detail.value?.addresses
+  const addrs = props.detail?.addresses
   if (!addrs || addrs.length === 0) return null
   if (port.fixed_ip) {
     const m = addrs.find((a) => a.fixed_ip === port.fixed_ip)
@@ -134,7 +102,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
       </div>
       <div class="flex items-center gap-1 shrink-0">
         <button
-          @click="load"
+          @click="emit('reload')"
           :disabled="isLoading"
           class="p-2 text-fg-muted hover:text-fg hover:bg-line/[.07] rounded-lg disabled:opacity-50 transition-colors"
           :title="t('vm.actions.refresh')"

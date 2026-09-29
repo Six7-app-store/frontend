@@ -85,6 +85,10 @@ const {
     securityResources,
     redeployInFlight,
     openDrawerAddress,
+    drawerDetail,
+    drawerLoading,
+    drawerError,
+    loadDrawerDetail,
     showRedeployModal,
     redeployTargetAddress,
     loadResources,
@@ -334,10 +338,13 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
                 class="w-full xl:w-[420px] xl:shrink-0 xl:sticky xl:top-0 xl:self-start xl:max-h-[calc(100vh-3.5rem)] xl:flex xl:flex-col"
             >
                 <InfrastructureVmDrawer
-                    :deployment-id="deploymentId"
                     :address="openDrawerAddress"
+                    :detail="drawerDetail"
+                    :is-loading="drawerLoading"
+                    :error-message="drawerError"
                     class="xl:flex-1 xl:min-h-0"
                     @close="closeVmDrawer"
+                    @reload="loadDrawerDetail"
                 />
             </aside>
         </div>
