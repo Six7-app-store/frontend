@@ -7,7 +7,7 @@ import { useCourseStore } from '@/stores/course.store'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
-import { courseApi } from '@/api/course.api'
+import { useCourseMemberCounts } from '@/composables/useCourseMemberCounts'
 import { useI18n } from 'vue-i18n'
 import Card from '@/components/ui/Card.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -33,22 +33,7 @@ const formData = ref({ name: '' })
 const showDeleteModal = ref(false)
 const courseToDelete = ref<{ courseId: string; name: string } | null>(null)
 const isDeleting = ref(false)
-const memberCounts = ref<Record<string, number>>({})
-
-const fetchMemberCounts = async () => {
-  const entries = await Promise.all(
-      courseStore.courses.map(async (c) => {
-        try {
-          const { data } = await courseApi.listMembers(c.courseId)
-          return [c.courseId, data.length] as const
-        } catch {
-          // An unloadable member list only affects the counter on the card.
-          return [c.courseId, 0] as const
-        }
-      })
-  )
-  memberCounts.value = Object.fromEntries(entries)
-}
+const { counts: memberCounts, load: loadMemberCounts } = useCourseMemberCounts()
 
 onMounted(async () => {
   try {
@@ -60,7 +45,7 @@ onMounted(async () => {
       return
     }
     if (isStaff.value) {
-      await fetchMemberCounts()
+      await loadMemberCounts(courseStore.courses.map((c) => c.courseId))
     }
   } catch {
     toast.error(t('CoursesView.toasts.loadError'))
