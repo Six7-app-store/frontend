@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { distributeEvenly, fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
+import { buildDeploymentPayload, distributeEvenly, fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
+import type { DeploymentDraft } from '@/types'
 
 describe('releaseVersion', () => {
   it('passes a tag string through', () => {
@@ -41,5 +42,31 @@ describe('distributeEvenly', () => {
 
   it('leaves groups empty when there are more groups than ids', () => {
     expect(distributeEvenly(['a'], 3)).toEqual([['a'], [], []])
+  })
+})
+
+describe('buildDeploymentPayload', () => {
+  const draft = (over: Partial<DeploymentDraft>): DeploymentDraft => ({
+    appId: 'app-1', name: 'Lab', releaseTag: 'v1', courseIds: [], studentIds: [], groupMode: 'one',
+    groupCount: 1, assignments: [], version: 'latest', variables: {}, userInputVar: {}, groupNames: [],
+    variableDefinitions: [], fileUploads: {}, ...over,
+  }) as DeploymentDraft
+
+  it('sends all values as terraform when the definitions are missing', () => {
+    const payload = buildDeploymentPayload(draft({ variableDefinitions: undefined as never, variables: { a: 1 } }))
+    expect(payload.userInputVar).toEqual({ packer: {}, terraform: { a: 1 } })
+  })
+
+  it('leaves out a scoped variable without a filled slot', () => {
+    const payload = buildDeploymentPayload(draft({
+      variableDefinitions: [{ name: 'login', source: 'terraform', type: 'string', varScope: 'user' } as never],
+      variables: { login: {} },
+    }))
+    expect(payload.userInputVar).toEqual({ packer: {}, terraform: {} })
+  })
+
+  it('omits files when no slot holds content', () => {
+    const payload = buildDeploymentPayload(draft({ fileUploads: { cert: { all: { name: 'a', size: 1 } as never } } }))
+    expect(payload).not.toHaveProperty('files')
   })
 })

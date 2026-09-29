@@ -2,12 +2,7 @@ import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
 import { requestContext, runRequest } from './_request'
 import { getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
-import {
-  isMultiImagePackerLayout as detectMultiImagePackerLayout,
-  storedPackerValue,
-  templateKeyOf,
-} from '@/services/deployment-variables.service'
-import { distributeEvenly, fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
+import { buildDeploymentPayload } from '@/services/deployment-draft.service'
 
 import type {
   Deployment,
@@ -140,138 +135,15 @@ export const useDeploymentStore = defineStore('deployment', {
       this.draft = JSON.parse(JSON.stringify(defaultDraft))
     },
 
+    /**
+     * Submit the current draft (see ``buildDeploymentPayload``) and return
+     * the created deployment.
+     */
     async submitDraft() {
-      /**
-       * Prepare and submit the current draft as a DeploymentCreate payload.
-       * - Normalizes `releaseTag` which may come as string or object from UI
-       * - Packs wizard selections (courses, groups, variables) into `userInputVar`
-       * - Delegates creation to the API and returns the created deployment
-       */
       if (!this.draft.appId || !this.draft.name) {
         throw new Error("App und Name sind Pflichtfelder")
       }
-
-      const finalVersion = releaseVersion(this.draft.releaseTag)
-
-      // Teams: Array<{ name: string, userIds: string[] }>
-      let teams: Array<{ name: string; userIds: string[] }> = []
-      if (Array.isArray(this.draft.groupNames) && Array.isArray(this.draft.assignments)) {
-        // assignments: Record<number, string[]>; groupNames: string[]
-        teams = this.draft.groupNames.map((name: string, idx: number) => ({
-          name,
-          userIds: Array.isArray((this.draft.assignments as any)[idx]) ? (this.draft.assignments as any)[idx] : []
-        }))
-      }
-
-      // Fallback: if no teams are defined, auto-create teams based on studentIds.
-      if (teams.length === 0 && this.draft.studentIds.length > 0) {
-        teams = distributeEvenly(this.draft.studentIds, this.draft.groupCount).map((userIds, i) => ({
-          name: this.draft.groupNames[i] || fallbackTeamName(i),
-          userIds,
-        }))
-      }
-
-      // Ensure all userIds are formatted as UUID strings.
-      teams = teams.map(team => ({
-        name: team.name,
-        userIds: team.userIds.map(id => typeof id === 'string' ? id : String(id))
-      }))
-
-      // userInputVar: { packer: {...}, terraform: {...} }
-      const userInputVarObj: any = { packer: {}, terraform: {} }
-      if (this.draft.variables && typeof this.draft.variables === 'object') {
-        // Multi-image apps store Packer values nested per template (see
-        // ``storedPackerValue``). Unlike the summary, no HCL default is
-        // filled in here: an unset value must reach the backend as unset.
-        const draftVars = this.draft.variables as Record<string, any>
-        const isMultiImagePackerLayout = detectMultiImagePackerLayout(draftVars)
-
-        const resolveValue = (def: AppVariable): any =>
-          def.source === 'packer'
-            ? storedPackerValue(draftVars, def, isMultiImagePackerLayout)
-            : draftVars[def.name]
-
-        // variableDefinitions carries whether each var is packer/terraform.
-        if (Array.isArray(this.draft.variableDefinitions)) {
-          for (const def of this.draft.variableDefinitions) {
-            // File-typed variables travel through ``files`` instead of
-            // ``userInputVar``. Skipping them here keeps the variables
-            // dict free of accidental ``undefined`` entries that would
-            // confuse the backend's terraform encoder.
-            if (def.osType === 'file') continue
-            const val = resolveValue(def)
-            // Skip empty / undefined values — they would otherwise be
-            // forwarded to Terraform as ``-var=name=null`` and bypass
-            // the variable's HCL ``default = ...``. Critical for any
-            // variable whose default is structurally non-trivial
-            // (e.g. ``map(object(...))``) — the user not touching it
-            // must mean "use the default", not "set to null". An
-            // empty string is also treated as "no input".
-            if (val === undefined || val === null) continue
-            if (typeof val === 'string' && val.trim() === '') continue
-            // Scoped variables (``varScope = team|user``) arrive as a
-            // map. An empty map means no slot was filled — same logic
-            // applies: ship nothing so the HCL default wins.
-            if (
-              typeof val === 'object'
-              && !Array.isArray(val)
-              && (def.varScope === 'team' || def.varScope === 'user')
-              && Object.keys(val).length === 0
-            ) {
-              continue
-            }
-            if (def.source === 'packer') {
-              // Multi-image: nest under the template key so the worker
-              // finds it at ``user_vars["packer"][template_key][name]``
-              // (siehe worker/app/tasks.py). Single-image/legacy stays
-              // flat at ``user_vars["packer"][name]``.
-              if (isMultiImagePackerLayout) {
-                const tkey = templateKeyOf(def)
-                ;(userInputVarObj.packer[tkey] ??= {})[def.name] = val
-              } else {
-                userInputVarObj.packer[def.name] = val
-              }
-            }
-            else if (def.source === 'terraform') userInputVarObj.terraform[def.name] = val
-          }
-        } else {
-          // Fallback: alles in terraform
-          userInputVarObj.terraform = { ...this.draft.variables }
-        }
-      }
-
-      // Drop empty file-variable entries — the wizard may have rendered
-      // a slot that the user never filled (optional file with default
-      // ``{}``). Sending it would still hit the backend's ``file_var_empty``
-      // guard with a confusing error.
-      const fileUploads: Record<string, Record<string, any>> = {}
-      if (this.draft.fileUploads) {
-        for (const [varName, slotMap] of Object.entries(this.draft.fileUploads)) {
-          const filledSlots: Record<string, any> = {}
-          for (const [slotKey, file] of Object.entries(slotMap || {})) {
-            if (file && file.content_b64) {
-              filledSlots[slotKey] = file
-            }
-          }
-          if (Object.keys(filledSlots).length > 0) {
-            fileUploads[varName] = filledSlots
-          }
-        }
-      }
-
-      const payload: any = {
-        name: this.draft.name,
-        appId: this.draft.appId,
-        releaseTag: finalVersion,
-        userInputVar: userInputVarObj,
-        teams
-      }
-      if (Object.keys(fileUploads).length > 0) {
-        payload.files = fileUploads
-      }
-
-      const response = await this.createDeployment(payload as DeploymentCreate)
-      return response
+      return this.createDeployment(buildDeploymentPayload(this.draft))
     }
   }
 })
