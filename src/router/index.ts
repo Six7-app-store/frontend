@@ -297,7 +297,7 @@ router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 
   if (authStore.isLoading) {
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await authStore.whenSettled()
   }
 
   // The two callback routes finish their own sign-in and must not be

@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
     isLoading: false,
     isAuthenticated: false,
     initialize: vi.fn(),
+    whenSettled: vi.fn(),
     hasAnyRole(...roles: string[]) {
       return !!h.auth.user && roles.includes(h.auth.user.role)
     },
@@ -59,6 +60,17 @@ describe('Navigations-Guard', () => {
     expect(route.name).toBe('login')
     expect(route.query.returnUrl).toBe('/apps?tab=mine')
     expect(h.auth.initialize).toHaveBeenCalled()
+  })
+
+  it('wartet eine laufende Anmeldung ab, bevor es entscheidet', async () => {
+    h.auth.isLoading = true
+    h.auth.whenSettled.mockImplementation(async () => {
+      signIn('teacher')
+      h.auth.isLoading = false
+    })
+
+    expect((await go('/courses')).name).toBe('courses')
+    expect(h.auth.whenSettled).toHaveBeenCalledTimes(1)
   })
 
   it('initialisiert auf den Callback-Routen nicht', async () => {

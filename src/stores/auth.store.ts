@@ -16,6 +16,16 @@ const ltiSession = useLtiSession()
 let initializePromise: Promise<void> | null = null
 let fetchMePromise: Promise<void> | null = null
 
+// Sign-in work still running (initialize, callback). The router guard
+// waits for it instead of guessing how long it takes.
+const inFlight = new Set<Promise<unknown>>()
+function track<T>(promise: Promise<T>): Promise<T> {
+  inFlight.add(promise)
+  const done = () => { inFlight.delete(promise) }
+  promise.then(done, done)
+  return promise
+}
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
@@ -40,7 +50,7 @@ export const useAuthStore = defineStore('auth', {
   actions: {
     async initialize() {
       if (initializePromise) return initializePromise
-      initializePromise = (async () => {
+      initializePromise = track((async () => {
         this.isLoading = true
         try {
           // A launched session already has its token; running the
@@ -70,7 +80,7 @@ export const useAuthStore = defineStore('auth', {
         } finally {
           this.isLoading = false
         }
-      })()
+      })())
       return initializePromise
     },
 
@@ -84,11 +94,15 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    async handleCallback() {
-      /**
-       * Finalize the Authorization Code + PKCE flow.
-       * Resolves return URL from Keycloak, then loads the current user from backend.
-       */
+    /**
+     * Finalize the Authorization Code + PKCE flow.
+     * Resolves return URL from Keycloak, then loads the current user from backend.
+     */
+    handleCallback() {
+      return track(this.finishCallback())
+    },
+
+    async finishCallback() {
       this.isLoading = true
       this.error = null
       
@@ -104,6 +118,11 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    /** Resolves once no sign-in work is running; never rejects. */
+    async whenSettled() {
+      await Promise.allSettled([...inFlight])
     },
 
     async fetchMe() {
