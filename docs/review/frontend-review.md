@@ -391,9 +391,14 @@ Grundsätze für jeden Schritt:
 1. **Schritt 5:** Darf bei Deployments „Admin oder Owner“ bedienen oder „Staff oder Owner“ (D18)? Maßgeblich ist das Backend.
 2. **Schritt 8:** Sollen die Wizard-Schritte eine einheitliche Breite und einen einheitlichen Kopf
    bekommen? Das ist eine UX-Änderung und gehört nicht in das Refactoring.
+   **Entschieden (29.09.): ja, vereinheitlichen** — `WizardStepLayout` für alle vier Schritte mit einer Breite, dazu `DetailSection` für die Detailseite. Sichtbare Snapshot-Änderungen sind gewollt.
 3. **Schritt 15:** Sind die LTI-Views bewusst nur deutsch?
+   **Entschieden (29.09.): nein, übersetzen** — `lti.*`-Schlüssel (de/en), `StatusScreen`.
 4. **Fachlich:** Ist die `DeploymentGroupsCard` neben der `DeploymentTeamsCard` redundant?
 5. **Schritt 16:** Sollen Tests künftig unter `tests/unit/` oder neben dem Code liegen?
+   **Entschieden (29.09.): so lassen wie heute** und in AGENTS.md festhalten; keine Massen-Verschiebung.
+
+Push: Die lokalen Commits bleiben **ungepusht**, bis die Nutzerin selbst geprüft hat (Entscheidung 29.09.).
 
 ## 5. Umsetzungsstand
 

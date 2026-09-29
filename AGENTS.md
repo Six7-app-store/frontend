@@ -55,6 +55,14 @@ ein direkter Keycloak-Login funktioniert aber **nur** unter
 Deshalb zeigt `LTI_LINK_REDIRECT_URL` bewusst auf `localhost`. Unter HTTPS
 in Produktion fällt die Unterscheidung weg.
 
+## Wo Tests liegen
+
+- Views und Komponenten: `tests/unit/views/`, `tests/unit/components/` usw.
+- Services, Composables, Stores und Utils: neben dem Code in
+  `__tests__/` (z. B. `src/services/__tests__/`).
+
+Neue Tests folgen dieser Aufteilung; bestehende werden nicht verschoben.
+
 ## Definition of Done
 
 - `vue-tsc -b` und `vitest --run` grün
