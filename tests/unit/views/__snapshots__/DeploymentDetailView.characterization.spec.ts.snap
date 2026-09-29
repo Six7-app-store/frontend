@@ -189,7 +189,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
                      first seconds of a fresh task, before any phase
                      info is available — neither the SSE stream nor
                      the DB-seeded \`\`current_phase\`\` is set yet.
-                     \`\`streamCurrentPhaseIndex\`\` carries either the
+                     \`\`live.phaseIndex\`\` carries either the
                      authoritative live value or the percent-derived
                      guess from the DB seed, so checking it alone is
                      enough to decide whether to render the stepper. -->
@@ -200,7 +200,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               <div class="meter-fill-low h-2 rounded-tag transition-all duration-500 ease-out" style="width: 45%;"></div>
             </div>
           </div>
-          <!-- Phase stepper. Renders \`\`phaseStepCount\`\` dots based
+          <!-- Phase stepper. Renders \`\`live.stepCount\`\` dots based
                          on the live \`\`totalPhases\`\`, with labels picked by
                          the live total (matches deploy/destroy presets).
                          Generous \`\`py-3\`\` padding prevents the active
@@ -252,7 +252,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
             </div>
             <!--v-if-->
           </div>
-          <!-- Live log tail. \`\`streamTotalLogCount\`\` keeps
+          <!-- Live log tail. \`\`live.totalLogCount\`\` keeps
                      growing past the visible buffer (capped at 100
                      lines via the ring buffer in the composable),
                      so the user sees that the worker is still

@@ -133,22 +133,12 @@ onMounted(async () => {
 // Stream wiring, DB seed and stepper values live in
 // ``useDeploymentLiveStream``.
 //
-// Refs are destructured out of the composable so Vue's template
-// auto-unwrap recognises them as top-level setup bindings — without
-// destructuring, ``stream.currentPhase`` in the template would be the
-// ref *object*, not the string, and downstream calls like
-// ``phase.split(...)`` would crash.
+// ``live`` is a reactive object, so the card reads plain values from it;
+// the refs used elsewhere in this script are destructured.
 const {
-    progress: streamProgress,
-    currentPhase: streamCurrentPhase,
-    currentPhaseIndex: streamCurrentPhaseIndex,
-    liveLogs: streamLiveLogs,
-    totalLogCount: streamTotalLogCount,
     connectionState: streamConnectionState,
     isStreamRelevant,
-    phaseStepCount,
-    phaseStepLabel,
-    activeStepIndex: currentPhaseIndex,
+    live,
 } = useDeploymentLiveStream({
     deploymentId,
     isOwnerView,
@@ -262,22 +252,13 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
         <DeploymentActiveTaskCard
             v-if="isStreamRelevant && activeTask"
             :active-task="activeTask"
-            :stream-connection-state="streamConnectionState"
-            :stream-current-phase-index="streamCurrentPhaseIndex"
-            :stream-current-phase="streamCurrentPhase"
-            :stream-progress="streamProgress"
-            :phase-step-count="phaseStepCount"
-            :phase-step-label="phaseStepLabel"
-            :current-phase-index="currentPhaseIndex"
-            :stream-live-logs="streamLiveLogs"
-            :stream-total-log-count="streamTotalLogCount"
+            :live="live"
         />
 
         <!-- Teams & Members section — appears above Infrastructure so
              the human-readable view (who has access to what) precedes
              the technical resource listing. -->
         <DeploymentTeamsCard
-            :teams="deployment.teams"
             :enriched-teams="enrichedTeams"
             :is-owner-view="isOwnerView"
             :current-user-id="authStore.userId"

@@ -12,12 +12,9 @@ import DeploymentMemberAccess from '@/components/deployment/DeploymentMemberAcce
 import DeploymentResendAccessButton from '@/components/deployment/DeploymentResendAccessButton.vue'
 import type { EnrichedTeam } from '@/services/deployment-account-matching.service'
 import type { ResendState } from '@/composables/useResendAccess'
-import type { DeploymentTeam } from '@/types'
 
 defineProps<{
-  /** Raw teams of the deployment; the card is hidden without any. */
-  teams: DeploymentTeam[] | undefined
-  /** Teams with matched accounts (``useDeploymentCredentials``). */
+  /** The deployment's teams with matched accounts (``useDeploymentCredentials``); the card is hidden without any. */
   enrichedTeams: EnrichedTeam[]
   isOwnerView: boolean
   currentUserId: string | null
@@ -38,7 +35,7 @@ const togglePasswordVisibility = (key: string | number) => {
 </script>
 
 <template>
-  <div v-if="teams && teams.length > 0"
+  <div v-if="enrichedTeams.length > 0"
     class="bg-panel rounded-xl border border-subtle p-6 shadow-sm mb-8">
     <div class="flex items-center gap-3 mb-5">
       <div class="p-2 bg-line/[.07] rounded-lg">
@@ -48,7 +45,7 @@ const togglePasswordVisibility = (key: string | number) => {
         {{ $t('DeploymentDetailView.teamsAndMembers') }}
       </span>
       <span class="px-2 py-0.5 bg-line/[.07] text-fg-muted text-xs font-bold rounded">
-        {{ teams.length }}
+        {{ enrichedTeams.length }}
       </span>
     </div>
 
