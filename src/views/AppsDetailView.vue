@@ -22,6 +22,7 @@ import { iconForAppName, storeApprovalState } from '@/services/app-presentation.
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
+import ReasonModal from '@/components/ui/ReasonModal.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
@@ -815,26 +816,23 @@ onMounted(async () => {
     </Modal>
 
     <!-- Submit modal (with optional notes) -->
-    <Modal :show="showSubmitModal" @close="showSubmitModal = false">
-      <template #title>{{ $t('AppsDetailView.submitModal.title') }}</template>
-      <template #body>
-        <div class="space-y-4">
-          <p class="text-sm text-fg-muted">
-            {{ $t('AppsDetailView.submitModal.description') }}
-            <span class="font-mono bg-line/[.07] px-1.5 py-0.5 rounded text-xs ml-1">{{ submitTargetVersion }}</span>
-          </p>
-          <div>
-            <label class="block text-sm font-medium text-fg mb-1.5">
-              {{ $t('AppsDetailView.submitModal.notesLabel') }}
-            </label>
-            <textarea
-              v-model="submitNotes"
-              :placeholder="$t('AppsDetailView.submitModal.notesPlaceholder')"
-              rows="3"
-              class="field w-full px-3 py-2 text-sm focus:border-accent/60 resize-none"
-            />
-          </div>
+    <ReasonModal
+      v-model="submitNotes"
+      :show="showSubmitModal"
+      :title="$t('AppsDetailView.submitModal.title')"
+      :label="$t('AppsDetailView.submitModal.notesLabel')"
+      :placeholder="$t('AppsDetailView.submitModal.notesPlaceholder')"
+      :confirm-label="$t('AppsDetailView.submitModal.submit')"
+      :busy="isSubmitting"
+      @close="showSubmitModal = false"
+      @confirm="confirmSubmit"
+    >
+      <p class="text-sm text-fg-muted">
+        {{ $t('AppsDetailView.submitModal.description') }}
+        <span class="font-mono bg-line/[.07] px-1.5 py-0.5 rounded text-xs ml-1">{{ submitTargetVersion }}</span>
+      </p>
 
+      <template #after>
           <!-- Marker-Fehler -->
           <div v-if="submitMarkerErrors.length" class="rounded-lg border border-danger-dot/30 bg-danger-dot/10 p-3">
             <p class="text-xs font-semibold text-danger mb-2">{{ $t('AppsDetailView.submitModal.markerErrorTitle') }}</p>
@@ -847,19 +845,8 @@ onMounted(async () => {
               </li>
             </ul>
           </div>
-        </div>
       </template>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <BaseButton variant="ghost" @click="showSubmitModal = false" :disabled="isSubmitting">
-            {{ $t('AppsDetailView.cancelButton') }}
-          </BaseButton>
-          <BaseButton variant="primary" @click="confirmSubmit" :disabled="isSubmitting">
-            {{ isSubmitting ? '...' : $t('AppsDetailView.submitModal.submit') }}
-          </BaseButton>
-        </div>
-      </template>
-    </Modal>
+    </ReasonModal>
 
   </div>
 </template>

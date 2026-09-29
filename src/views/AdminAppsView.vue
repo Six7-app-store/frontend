@@ -6,8 +6,7 @@ import {
   ChevronDown, ChevronRight,
   Check, X, RotateCcw, Inbox, ExternalLink,
 } from 'lucide-vue-next'
-import BaseButton from '@/components/ui/BaseButton.vue'
-import Modal from '@/components/ui/Modal.vue'
+import ReasonModal from '@/components/ui/ReasonModal.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
@@ -455,84 +454,41 @@ onMounted(loadAll)
       </div>
     </EntityListState>
 
-    <!-- Reject Modal -->
-    <Modal :show="showRejectModal" @close="showRejectModal = false">
-      <template #title>
-        <span class="text-danger">{{ $t('AdminAppsView.rejectModal.title') }}</span>
-      </template>
-      <template #body>
-        <div class="space-y-5">
-          <p class="text-sm text-fg-muted">
-            <span class="font-mono bg-line/[.07] px-1.5 py-0.5 rounded text-xs">{{ rejectTarget?.versionTag }}</span>
-            &nbsp;—&nbsp;{{ rejectTarget?.appName }}
-          </p>
-          <div>
-            <label class="block text-sm font-medium text-fg mb-1.5">
-              {{ $t('AdminAppsView.rejectModal.reasonLabel') }}
-            </label>
-            <textarea
-              v-model="rejectionReason"
-              :placeholder="$t('AdminAppsView.rejectModal.reasonPlaceholder')"
-              rows="4"
-              class="field w-full px-3 py-2 text-sm focus:border-accent/60 resize-none"
-            />
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <BaseButton variant="ghost" @click="showRejectModal = false" :disabled="isRejecting">
-            {{ $t('AdminAppsView.rejectModal.cancel') }}
-          </BaseButton>
-          <BaseButton
-            variant="danger"
-            @click="handleReject"
-            :disabled="!rejectionReason.trim() || isRejecting"
-          >
-            {{ isRejecting ? '...' : $t('AdminAppsView.rejectModal.submit') }}
-          </BaseButton>
-        </div>
-      </template>
-    </Modal>
+    <ReasonModal
+      v-model="rejectionReason"
+      :show="showRejectModal"
+      :title="$t('AdminAppsView.rejectModal.title')"
+      :label="$t('AdminAppsView.rejectModal.reasonLabel')"
+      :placeholder="$t('AdminAppsView.rejectModal.reasonPlaceholder')"
+      :confirm-label="$t('AdminAppsView.rejectModal.submit')"
+      variant="danger"
+      required
+      :busy="isRejecting"
+      @close="showRejectModal = false"
+      @confirm="handleReject"
+    >
+      <p class="text-sm text-fg-muted">
+        <span class="font-mono bg-line/[.07] px-1.5 py-0.5 rounded text-xs">{{ rejectTarget?.versionTag }}</span>
+        &nbsp;—&nbsp;{{ rejectTarget?.appName }}
+      </p>
+    </ReasonModal>
 
-    <!-- Revoke Modal -->
-    <Modal :show="showRevokeModal" @close="showRevokeModal = false">
-      <template #title>
-        <span class="text-fg">{{ $t('AdminAppsView.revokeModal.title') }}</span>
-      </template>
-      <template #body>
-        <div class="space-y-5">
-          <p class="text-sm text-fg-muted">
-            <span class="font-mono bg-line/[.07] px-1.5 py-0.5 rounded text-xs">{{ revokeTarget?.versionTag }}</span>
-          </p>
-          <div>
-            <label class="block text-sm font-medium text-fg mb-1.5">
-              {{ $t('AdminAppsView.revokeModal.reasonLabel') }}
-            </label>
-            <textarea
-              v-model="revokeReason"
-              :placeholder="$t('AdminAppsView.revokeModal.reasonPlaceholder')"
-              rows="4"
-              class="field w-full px-3 py-2 text-sm focus:border-accent/60 resize-none"
-            />
-          </div>
-        </div>
-      </template>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <BaseButton variant="ghost" @click="showRevokeModal = false" :disabled="isRevoking">
-            {{ $t('AdminAppsView.revokeModal.cancel') }}
-          </BaseButton>
-          <BaseButton
-            variant="primary"
-            @click="handleRevoke"
-            :disabled="!revokeReason.trim() || isRevoking"
-          >
-            {{ isRevoking ? '...' : $t('AdminAppsView.revokeModal.submit') }}
-          </BaseButton>
-        </div>
-      </template>
-    </Modal>
+    <ReasonModal
+      v-model="revokeReason"
+      :show="showRevokeModal"
+      :title="$t('AdminAppsView.revokeModal.title')"
+      :label="$t('AdminAppsView.revokeModal.reasonLabel')"
+      :placeholder="$t('AdminAppsView.revokeModal.reasonPlaceholder')"
+      :confirm-label="$t('AdminAppsView.revokeModal.submit')"
+      required
+      :busy="isRevoking"
+      @close="showRevokeModal = false"
+      @confirm="handleRevoke"
+    >
+      <p class="text-sm text-fg-muted">
+        <span class="font-mono bg-line/[.07] px-1.5 py-0.5 rounded text-xs">{{ revokeTarget?.versionTag }}</span>
+      </p>
+    </ReasonModal>
 
   </div>
 </template>

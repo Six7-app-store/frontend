@@ -16,11 +16,14 @@ const props = withDefaults(defineProps<{
   cancelLabel?: string
   variant?: ButtonVariant
   busy?: boolean
+  /** Keeps confirm disabled, e.g. until a required input is filled. */
+  confirmDisabled?: boolean
 }>(), {
   busyLabel: undefined,
   cancelLabel: undefined,
   variant: 'danger',
   busy: false,
+  confirmDisabled: false,
 })
 
 const emit = defineEmits<{
@@ -44,7 +47,7 @@ const close = () => {
         <BaseButton variant="ghost" :disabled="busy" @click="close">
           {{ cancelLabel ?? $t('action.cancel') }}
         </BaseButton>
-        <BaseButton :variant="variant" :disabled="busy" @click="emit('confirm')">
+        <BaseButton :variant="variant" :disabled="busy || confirmDisabled" @click="emit('confirm')">
           {{ busy && busyLabel ? busyLabel : confirmLabel }}
         </BaseButton>
       </div>
