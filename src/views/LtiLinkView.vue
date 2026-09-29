@@ -14,13 +14,17 @@
  */
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth.store'
 import { useLtiLink } from '@/composables/useLtiLink'
 import { getErrorCode } from '@/utils/http-error'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import { Loader2, Link2, CheckCircle2, AlertCircle } from 'lucide-vue-next'
+import StatusPage from '@/components/ui/StatusPage.vue'
+import StatusScreen from '@/components/ui/StatusScreen.vue'
+import { Link2, CheckCircle2, AlertCircle } from 'lucide-vue-next'
 
 const route = useRoute()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const ltiLink = useLtiLink()
 
@@ -30,22 +34,21 @@ const state = ref<State>('working')
 const error = ref<string | null>(null)
 const challenge = ref<string | null>(null)
 
-const RELAUNCH_HINT = 'Bitte die Aktivität in Moodle erneut öffnen.'
+/** ``key``'s text followed by the hint to relaunch from Moodle. */
+const withRelaunch = (key: string) => `${t(key)} ${t('lti.relaunchHint')}`
 
 function describe(err: unknown): string {
-  const code = getErrorCode(err)
-
-  switch (code) {
+  switch (getErrorCode(err)) {
     case 'lti_link_challenge_spent':
-      return `Diese Verknüpfungs-Anfrage wurde bereits verwendet. ${RELAUNCH_HINT}`
+      return withRelaunch('lti.link.errors.spent')
     case 'lti_link_challenge_invalid':
-      return `Die Verknüpfungs-Anfrage ist abgelaufen. ${RELAUNCH_HINT}`
+      return withRelaunch('lti.link.errors.invalid')
     case 'lti_identity_taken':
-      return 'Dieses Moodle-Konto ist bereits mit einem anderen Konto im App Store verknüpft.'
+      return t('lti.link.errors.identityTaken')
     case 'direct_login_required':
-      return 'Für diesen Schritt ist eine direkte Anmeldung nötig — eine aus Moodle gestartete Sitzung reicht nicht.'
+      return t('lti.link.errors.directLoginRequired')
     default:
-      return `Die Verknüpfung ist fehlgeschlagen. ${RELAUNCH_HINT}`
+      return withRelaunch('lti.link.errors.generic')
   }
 }
 
@@ -85,7 +88,7 @@ onMounted(async () => {
   const value = fromUrl ?? ltiLink.pending()
 
   if (!value) {
-    error.value = `Es liegt keine offene Verknüpfung vor. ${RELAUNCH_HINT}`
+    error.value = withRelaunch('lti.link.errors.noPending')
     state.value = 'error'
     return
   }
@@ -111,55 +114,36 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen px-4">
-    <div class="max-w-md w-full text-center flex flex-col items-center gap-4">
-      <div v-if="state === 'working'" class="flex flex-col items-center gap-4">
-        <Loader2 class="animate-spin text-icon" :size="48" />
-        <p class="text-fg-muted">Moodle-Konto wird verknüpft…</p>
-      </div>
+  <StatusPage>
+    <StatusScreen v-if="state === 'working'" loading :text="$t('lti.link.working')" />
 
-      <div v-else-if="state === 'needs-login'" class="flex flex-col items-center gap-4">
-        <Link2 class="text-icon" :size="48" />
-        <div>
-          <p class="font-semibold">Konto bestätigen</p>
-          <p class="text-sm text-fg-muted mt-2">
-            Diese E-Mail-Adresse gehört bereits zu einem Konto im App Store.
-            Melde dich einmal direkt an — danach ist dein Moodle-Zugang mit
-            diesem Konto verknüpft und der Start aus Moodle funktioniert
-            ohne weitere Schritte.
-          </p>
-        </div>
-        <BaseButton data-testid="link-login" size="sm" @click="signIn">
-          Jetzt anmelden und verknüpfen
-        </BaseButton>
-      </div>
+    <StatusScreen
+      v-else-if="state === 'needs-login'"
+      :icon="Link2"
+      :title="$t('lti.link.confirmTitle')"
+      :text="$t('lti.link.confirmText')"
+    >
+      <BaseButton data-testid="link-login" size="sm" @click="signIn">
+        {{ $t('lti.link.signIn') }}
+      </BaseButton>
+    </StatusScreen>
 
-      <div
-        v-else-if="state === 'linked'"
-        data-testid="link-success"
-        class="flex flex-col items-center gap-4"
-      >
-        <CheckCircle2 class="text-success" :size="48" />
-        <div>
-          <p class="font-semibold">Moodle-Konto verknüpft</p>
-          <p class="text-sm text-fg-muted mt-2">
-            Ab jetzt meldet dich der Start aus Moodle direkt an.
-            {{ RELAUNCH_HINT }}
-          </p>
-        </div>
-      </div>
+    <StatusScreen
+      v-else-if="state === 'linked'"
+      data-testid="link-success"
+      :icon="CheckCircle2"
+      tone="success"
+      :title="$t('lti.link.linkedTitle')"
+      :text="`${$t('lti.link.linkedText')} ${$t('lti.relaunchHint')}`"
+    />
 
-      <div
-        v-else
-        data-testid="link-error"
-        class="flex flex-col items-center gap-4 text-danger"
-      >
-        <AlertCircle :size="48" />
-        <div>
-          <p class="font-semibold">Verknüpfung nicht möglich</p>
-          <p class="text-sm mt-2">{{ error }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
+    <StatusScreen
+      v-else
+      data-testid="link-error"
+      :icon="AlertCircle"
+      tone="danger"
+      :title="$t('lti.link.errorTitle')"
+      :text="error ?? ''"
+    />
+  </StatusPage>
 </template>

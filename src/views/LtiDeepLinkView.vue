@@ -20,13 +20,17 @@
  */
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useAppCatalog } from '@/composables/useAppCatalog'
 import { useLtiDeepLink } from '@/composables/useLtiDeepLink'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import { Loader2, Link2, AlertCircle } from 'lucide-vue-next'
+import StatusPage from '@/components/ui/StatusPage.vue'
+import StatusScreen from '@/components/ui/StatusScreen.vue'
+import { Link2, AlertCircle } from 'lucide-vue-next'
 
 const route = useRoute()
+const { t } = useI18n()
 
 type State = 'loading' | 'ready' | 'sending' | 'error'
 
@@ -40,19 +44,11 @@ const selected = ref<string>('')
 function describe(err: unknown): string {
   const code = getErrorCode(err)
   const status = getErrorStatus(err)
-  if (code === 'lti_deep_link_expired') {
-    return 'Diese Auswahl ist nicht mehr offen. Lege die Aktivität in Moodle noch einmal an.'
-  }
-  if (code === 'lti_deep_link_foreign') {
-    return 'Diese Auswahl gehört zu einem anderen Konto.'
-  }
-  if (status === 403) {
-    return 'Dafür fehlen dir die Rechte.'
-  }
-  if (status === 404) {
-    return 'Diese App gibt es nicht mehr.'
-  }
-  return 'Die Auswahl konnte nicht an Moodle übergeben werden.'
+  if (code === 'lti_deep_link_expired') return t('lti.deepLink.errors.expired')
+  if (code === 'lti_deep_link_foreign') return t('lti.deepLink.errors.foreign')
+  if (status === 403) return t('lti.deepLink.errors.forbidden')
+  if (status === 404) return t('lti.deepLink.errors.notFound')
+  return t('lti.deepLink.errors.generic')
 }
 
 /**
@@ -94,7 +90,7 @@ onMounted(async () => {
   handle.value = typeof route.query.dl === 'string' ? route.query.dl : null
 
   if (!handle.value) {
-    error.value = 'Es wurde keine Moodle-Anfrage übergeben. Lege die Aktivität in Moodle erneut an.'
+    error.value = t('lti.deepLink.errors.noRequest')
     state.value = 'error'
     return
   }
@@ -104,81 +100,59 @@ onMounted(async () => {
     state.value = 'ready'
   } catch (err) {
     console.error('Loading apps for the deep link failed:', err)
-    error.value = 'Die Apps konnten nicht geladen werden.'
+    error.value = t('lti.deepLink.errors.loadApps')
     state.value = 'error'
   }
 })
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen px-4">
-    <div class="max-w-md w-full text-center flex flex-col items-center gap-4">
-      <div v-if="state === 'loading'" class="flex flex-col items-center gap-4">
-        <Loader2 class="animate-spin text-icon" :size="48" />
-        <p class="text-fg-muted">Apps werden geladen…</p>
+  <StatusPage>
+    <StatusScreen v-if="state === 'loading'" loading :text="$t('lti.deepLink.loading')" />
+    <StatusScreen v-else-if="state === 'sending'" loading :text="$t('lti.deepLink.sending')" />
+
+    <StatusScreen
+      v-else-if="state === 'ready'"
+      data-testid="deeplink-form"
+      :icon="Link2"
+      :title="$t('lti.deepLink.question')"
+      :text="$t('lti.deepLink.intro')"
+    >
+      <div v-if="apps.length === 0" data-testid="deeplink-empty" class="text-sm text-fg-muted">
+        {{ $t('lti.deepLink.empty') }}
       </div>
 
-      <div v-else-if="state === 'sending'" class="flex flex-col items-center gap-4">
-        <Loader2 class="animate-spin text-icon" :size="48" />
-        <p class="text-fg-muted">Auswahl wird an Moodle übergeben…</p>
-      </div>
-
-      <div
-        v-else-if="state === 'ready'"
-        data-testid="deeplink-form"
-        class="flex flex-col items-center gap-4 w-full"
-      >
-        <Link2 class="text-icon" :size="48" />
-        <div>
-          <p class="font-semibold">Welche App soll diese Aktivität öffnen?</p>
-          <p class="text-sm text-fg-muted mt-2">
-            Studierende landen beim Klick direkt in ihrer Umgebung dieser App —
-            ohne Umweg über eine Liste.
-          </p>
-        </div>
-
-        <div v-if="apps.length === 0" data-testid="deeplink-empty" class="text-sm text-fg-muted">
-          Es gibt noch keine Apps, auf die diese Aktivität zeigen könnte.
-        </div>
-
-        <select
-          v-else
-          v-model="selected"
-          data-testid="deeplink-app"
-          class="field w-full px-3 py-2"
-        >
-          <option value="" disabled>App wählen…</option>
-          <option v-for="app in apps" :key="app.appId" :value="app.appId">
-            {{ app.name }}
-          </option>
-        </select>
-
-        <BaseButton
-          data-testid="deeplink-submit"
-          size="sm"
-          :disabled="!selected"
-          @click="choose"
-        >
-          Übernehmen
-        </BaseButton>
-
-        <p class="text-xs text-fg-muted">
-          Die Zuordnung steckt danach in der Moodle-Aktivität. Welche Umgebung
-          jemand öffnet, wird bei jedem Klick neu bestimmt.
-        </p>
-      </div>
-
-      <div
+      <select
         v-else
-        data-testid="deeplink-error"
-        class="flex flex-col items-center gap-4 text-danger"
+        v-model="selected"
+        data-testid="deeplink-app"
+        class="field w-full px-3 py-2"
       >
-        <AlertCircle :size="48" />
-        <div>
-          <p class="font-semibold">Auswahl nicht möglich</p>
-          <p class="text-sm mt-2">{{ error }}</p>
-        </div>
-      </div>
-    </div>
-  </div>
+        <option value="" disabled>{{ $t('lti.deepLink.choose') }}</option>
+        <option v-for="app in apps" :key="app.appId" :value="app.appId">
+          {{ app.name }}
+        </option>
+      </select>
+
+      <BaseButton
+        data-testid="deeplink-submit"
+        size="sm"
+        :disabled="!selected"
+        @click="choose"
+      >
+        {{ $t('lti.deepLink.submit') }}
+      </BaseButton>
+
+      <p class="text-xs text-fg-muted">{{ $t('lti.deepLink.footnote') }}</p>
+    </StatusScreen>
+
+    <StatusScreen
+      v-else
+      data-testid="deeplink-error"
+      :icon="AlertCircle"
+      tone="danger"
+      :title="$t('lti.deepLink.errorTitle')"
+      :text="error ?? ''"
+    />
+  </StatusPage>
 </template>
