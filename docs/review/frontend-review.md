@@ -402,7 +402,7 @@ Push: Die lokalen Commits bleiben **ungepusht**, bis die Nutzerin selbst geprüf
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 939 Tests, Coverage 91 / 86 / 73 / 91 %.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 939 Tests in 84 Dateien, Coverage 91 / 86 / 73 / 91 %.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -421,7 +421,7 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 12 `AppsDetailView` + `AdminAppsView` zerlegen | erledigt | `d03c012` (Charakterisierung), `dd832f8` (Versions-Service + 6 Komponenten in `components/app/`), `11ea62a` (`ApprovalAccordionItem`, T16) |
 | 13 `OpenStackResourcePicker` zerlegen | erledigt | `041487a` (neue Charakterisierungs-Spec), `2c3cc3f` (`listOsResources` D13, Service, `useOsResourceList`, `useFloatingDropdown`), `9572205` (Panel-/Auswahl-Komponenten) |
 | 14 Deployment-Detail entschlacken | erledigt; `DetailSection` nachgezogen in `67ba833` | `607e14f` (Drawer-Fetch nach `useDeploymentResources`, V13), `1405dd6` (`live`-Objekt statt neun Stream-Props, `teams`-Prop weg, V14) |
-| 15 LTI-Views und i18n | erledigt bis auf V20 (fremde i18n-Namespaces) | `8816b43` (`lti.*`/`auth.callback.*`, `StatusPage`/`StatusScreen`, T14), `96aacd5` (Profilmenü, Live-Karte, `UserView`-Fallbacks übersetzt), `4e1ec6c` (`useLtiCourseMapping`, `useLtiDeepLink`) |
+| 15 LTI-Views und i18n | erledigt; V20 in `1572cc3` (`common.*`), Slot-Labels in `87a012d` | `8816b43` (`lti.*`/`auth.callback.*`, `StatusPage`/`StatusScreen`, T14), `96aacd5` (Profilmenü, Live-Karte, `UserView`-Fallbacks übersetzt), `4e1ec6c` (`useLtiCourseMapping`, `useLtiDeepLink`) |
 | 16 Rest und Aufräumen | erledigt; Test-Ablageort in AGENTS.md festgehalten (`5881116`) | `a93250c` (D30 Storage-Keys, V31), `585ac80` (V16 `whenSettled` statt `setTimeout`), `2efb8fa` (Credential-Form-Service, `ConfirmModal`), `dbb44d3` (Coverage-Ratsche 89/84/71/89), `9203aaf` (V17), `19dcccd` (AGENTS.md-Regel) |
 
 **Nachträge zum Befund:**
@@ -462,14 +462,17 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **D31 erledigt** (`2861c09`): Datumsangaben folgen der gewählten Sprache (de-DE bzw. en-GB); die Sprache wird aus `localStorage` gelesen, nicht aus der i18n-Instanz, weil ein Import von `@/i18n` in `utils/format` alle Specs bricht, die `vue-i18n` mocken.
 - **Prüf-Falle:** Nicht nur die Zeile `Tests … passed` ansehen, sondern auch `Test Files` — eine Spec, die schon beim Laden scheitert, taucht in der Testzahl einfach nicht auf (so fielen 113 Tests unbemerkt weg). Befehl: `npx vitest --run 2>&1 | grep -E "×|Test Files|Tests |FAIL"`.
 - **Nach den Entscheidungen vom 29.09.:** `WizardStepLayout` rahmt alle vier Wizard-Schritte (eine Breite `max-w-7xl`, ein Kopf, eine Fußleiste mit Status-Slot); `DetailSection` ist die Hülle aller fünf Abschnitte der Deployment-Detailseite. Die LTI- und Callback-Seiten sind übersetzt (deutscher Wortlaut unverändert) und nutzen `StatusPage`/`StatusScreen`. Alle drei Änderungen sind **sichtbar** und nur in Tests/Snapshots geprüft — **im Browser noch nicht angesehen** (braucht einen Keycloak-Login); das sollte ein Mensch vor dem Push einmal durchklicken.
+- **Kleine Reste:** D32 erledigt (`65f4466`, `formatMegabytes`: die VM-Karte zeigt 1536 MB jetzt als „1.5 GB“ wie der Picker statt „2 GB“). V20 erledigt: Seiten lesen keine Schlüssel fremder Seiten mehr, geteilte Texte stehen unter `common.*`. **V10 bewusst gelassen:** Die englischen `Failed to …`-Ersatztexte der Stores werden nirgends angezeigt; nur `CoursesView` prüft `courseStore.error` als Flag. Ebenso bleibt „App und Name sind Pflichtfelder“ im Store (Programmierfehler-Schutz hinter dem Router-Guard, nie sichtbar).
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Alle 16 Schritte des Plans sind umgesetzt, die offenen Fragen 2, 3 und 5 entschieden und umgesetzt. Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** — Entscheidung der Nutzerin: erst selbst prüfen.
+**Stand (29.09.):** Alle 16 Schritte umgesetzt, offene Fragen 2, 3 und 5 entschieden und umgesetzt, die kleinen Reste (D31, D32, V20, Slot-Labels) erledigt. Checks: 84 Testdateien / 939 Tests grün, ESLint und `vue-tsc` sauber, Coverage 91 / 86 / 73 / 91 % über der Ratsche. Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** — Entscheidung der Nutzerin: erst selbst prüfen.
 
-**Noch offen (klein, ohne Entscheidung machbar):** V20 (i18n-Schlüssel fremder Views wie `CourseDetailView.*` in anderen Views → gemeinsame Schlüssel), D32 (eine Rundungsregel für RAM/Bytes), V10 (englische `Failed to …`-Ersatztexte in den Stores), `formatSlotLabel`/„Image:“, „App und Name sind Pflichtfelder“. **Braucht eine Entscheidung:** Frage 4 (`DeploymentGroupsCard` neben `DeploymentTeamsCard` redundant?). **Vor dem Push:** die sichtbaren Änderungen (Wizard, Detailseite, LTI-Seiten, Live-Karte) einmal im Browser ansehen.
+**Hier weitermachen:**
+1. Die sichtbaren Änderungen einmal im Browser ansehen (braucht Keycloak-Login unter `localhost:5173`): die vier Wizard-Schritte (`WizardStepLayout`), die Deployment-Detailseite (`DetailSection`, Live-Karte), die Moodle-Seiten (`StatusPage`/`StatusScreen`), OpenStack-Einstellungen (Lösch-Dialog). Danach pusht die Nutzerin.
+2. Offen und nur mit Entscheidung: Frage 4 — ist die `DeploymentGroupsCard` neben der `DeploymentTeamsCard` redundant?
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
