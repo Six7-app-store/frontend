@@ -234,3 +234,158 @@ describe('NewDeploymentVariableView.vue', () => {
     expect(toastErrorMock).toHaveBeenCalledWith('deployment.summary.fetchVarsError')
   })
 })
+
+describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
+  let push: ReturnType<typeof vi.fn>
+  let toastInfo: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    push = vi.fn()
+    vi.mocked(useRouter).mockReturnValue({ push, replace: vi.fn() } as any)
+    toastInfo = vi.fn()
+    vi.mocked(useToast).mockReturnValue({
+      error: vi.fn(), info: toastInfo, warning: vi.fn(), success: vi.fn(), clear: vi.fn(),
+    } as any)
+  })
+
+  const mountView = (draft: Record<string, unknown>, fetched: any[] = [], studentCache = new Map()) => {
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        deployment: {
+          studentCache,
+          draft: {
+            appId: 'app-1', name: 'Lab', releaseTag: 'v1', variables: {}, userInputVar: '',
+            variableDefinitions: [], fileUploads: {}, groupNames: ['Rot'], assignments: { 0: ['u1'] },
+            ...draft,
+          },
+        },
+      },
+    })
+    useAppStore(pinia).fetchAppVariables = vi.fn().mockResolvedValue(fetched)
+    return mount(DeploymentVariables, {
+      global: {
+        plugins: [pinia],
+        stubs: { DeploymentProgressBar: true, VariableInput: true, FileDropZone: true, ScopeBadge: true },
+      },
+    })
+  }
+
+  /** inputId → modelValue of every rendered VariableInput. */
+  const inputs = (wrapper: ReturnType<typeof mountView>) =>
+    Object.fromEntries(wrapper.findAllComponents(VariableInput).map((c) => [c.props('inputId'), c.props('modelValue')]))
+
+  const input = (wrapper: ReturnType<typeof mountView>, id: string) =>
+    wrapper.findAllComponents(VariableInput).find((c) => c.props('inputId') === id)!
+
+  const next = async (wrapper: ReturnType<typeof mountView>) => {
+    await wrapper.findAll('button').find((b) => b.text().includes('deployment.actions.next'))!.trigger('click')
+  }
+
+  it('stellt Werte aus dem Draft wieder her (single image), Listen als Kommatext', async () => {
+    const wrapper = mountView({
+      variableDefinitions: [
+        { name: 'region', source: 'packer', type: 'string', default: 'us' },
+        { name: 'tags', source: 'terraform', type: 'list(string)' },
+        { name: 'debug', source: 'terraform', type: 'bool', default: false },
+      ],
+      variables: { region: 'eu', tags: ['a', 'b'] },
+    })
+    await flushPromises()
+
+    expect(inputs(wrapper)).toEqual({ region: 'eu', tags: 'a, b', debug: false })
+  })
+
+  it('stellt Packer-Werte pro Template wieder her und speichert sie verschachtelt (multi image)', async () => {
+    const wrapper = mountView({
+      variableDefinitions: [
+        { name: 'size', source: 'packer', type: 'string', template_key: 'web', default: 'm' },
+        { name: 'size', source: 'packer', type: 'string', template_key: 'db', default: 'l' },
+      ],
+      variables: { packer: { web: { size: 's' } } },
+    })
+    await flushPromises()
+    expect(inputs(wrapper)).toEqual({ 'web.size': 's', 'db.size': 'l' })
+
+    await next(wrapper)
+    const store = useDeploymentStore()
+    expect(store.draft.variables).toEqual({ packer: { web: { size: 's' }, db: { size: 'l' } } })
+    expect(JSON.parse(store.draft.userInputVar as string)).toEqual({ packer: { web: { size: 's' } } })
+  })
+
+  it('verteilt den Default einer Team-Variable auf alle Teams und speichert die Slot-Map', async () => {
+    const wrapper = mountView(
+      { groupNames: ['Rot', 'Blau'], assignments: { 0: ['u1'], 1: ['u2'] } },
+      [{ name: 'quota', source: 'terraform', type: 'number', varScope: 'team', default: 5 }],
+    )
+    await flushPromises()
+    expect(inputs(wrapper)).toEqual({ quota__Rot: 5, quota__Blau: 5 })
+
+    await next(wrapper)
+    const store = useDeploymentStore()
+    expect(store.draft.variables).toEqual({ quota: { Rot: 5, Blau: 5 } })
+    expect(JSON.parse(store.draft.userInputVar as string)).toEqual({ quota: { Rot: 5, Blau: 5 } })
+  })
+
+  it('wandelt Listen und Zahlen beim Speichern um und merkt nur Abweichungen vom Default', async () => {
+    const wrapper = mountView({}, [
+      { name: 'tags', source: 'terraform', type: 'list(string)' },
+      { name: 'port', source: 'terraform', type: 'number', default: 22 },
+      { name: 'host', source: 'terraform', type: 'string', default: 'localhost' },
+    ])
+    await flushPromises()
+
+    await input(wrapper, 'tags').vm.$emit('update:modelValue', ' a, b ,')
+    await input(wrapper, 'port').vm.$emit('update:modelValue', '8080')
+    await next(wrapper)
+
+    const store = useDeploymentStore()
+    expect(store.draft.variables).toEqual({ tags: ['a', 'b'], port: 8080, host: 'localhost' })
+    expect(JSON.parse(store.draft.userInputVar as string)).toEqual({ tags: ['a', 'b'], port: 8080 })
+    expect(push).toHaveBeenCalledWith({ name: 'deployment.summary' })
+  })
+
+  it('verlangt eine Pflicht-Variable pro Person und nennt die fehlenden Slots', async () => {
+    const wrapper = mountView(
+      { groupNames: ['Rot'], assignments: { 0: ['u1'] } },
+      [{ name: 'login', source: 'terraform', type: 'string', varScope: 'user', required: true }],
+      new Map([['u1', { userId: 'u1', username: 'anna' }]]),
+    )
+    await flushPromises()
+
+    expect(Object.keys(inputs(wrapper))).toEqual(['login__Rot-anna'])
+    expect(wrapper.text()).toContain('login (Rot-anna)')
+    await input(wrapper, 'login__Rot-anna').vm.$emit('update:modelValue', 'anna01')
+    expect(wrapper.text()).not.toContain('deployment.variables.missingRequiredTitle')
+  })
+
+  it('verwirft Slot-Werte umbenannter Teams und meldet das', async () => {
+    const wrapper = mountView(
+      { groupNames: ['Rot'], assignments: { 0: ['u1'] } },
+      [{ name: 'login', source: 'terraform', type: 'string', varScope: 'user' }],
+      new Map([['u1', { userId: 'u1', username: 'anna' }]]),
+    )
+    await flushPromises()
+    await input(wrapper, 'login__Rot-anna').vm.$emit('update:modelValue', 'anna01')
+
+    const store = useDeploymentStore()
+    store.draft.groupNames = ['Blau']
+    await flushPromises()
+
+    expect(Object.keys(inputs(wrapper))).toEqual(['login__Blau-anna'])
+    expect(toastInfo).toHaveBeenCalledWith('deployment.variables.teamRenameToast')
+  })
+
+  it('lässt Datei-Variablen aus den Werten heraus', async () => {
+    const wrapper = mountView({}, [
+      { name: 'cert', source: 'terraform', type: 'map(string)', osType: 'file', default: {} },
+      { name: 'host', source: 'terraform', type: 'string', default: 'x' },
+    ])
+    await flushPromises()
+    await next(wrapper)
+
+    expect(useDeploymentStore().draft.variables).toEqual({ host: 'x' })
+  })
+})
+
