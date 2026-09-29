@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 930 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 937 Tests, Coverage 91 / 86 / 73 / 91 %.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -416,7 +416,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 12 `AppsDetailView` + `AdminAppsView` zerlegen | erledigt | `d03c012` (Charakterisierung), `dd832f8` (Versions-Service + 6 Komponenten in `components/app/`), `11ea62a` (`ApprovalAccordionItem`, T16) |
 | 13 `OpenStackResourcePicker` zerlegen | erledigt | `041487a` (neue Charakterisierungs-Spec), `2c3cc3f` (`listOsResources` D13, Service, `useOsResourceList`, `useFloatingDropdown`), `9572205` (Panel-/Auswahl-Komponenten) |
 | 14 Deployment-Detail entschlacken | erledigt bis auf `DetailSection` (T17, UX) | `607e14f` (Drawer-Fetch nach `useDeploymentResources`, V13), `1405dd6` (`live`-Objekt statt neun Stream-Props, `teams`-Prop weg, V14) |
-| 15–16 | offen | — |
+| 15 LTI-Views und i18n | teilweise: Datenfluss und V19 außerhalb LTI erledigt; LTI-Texte/`StatusScreen` warten auf offene Frage 3 | `96aacd5` (Profilmenü, Live-Karte, `UserView`-Fallbacks übersetzt), `4e1ec6c` (`useLtiCourseMapping`, `useLtiDeepLink`) |
+| 16 Rest und Aufräumen | erledigt bis auf den Test-Ablageort (offene Frage 5) | `a93250c` (D30 Storage-Keys, V31), `585ac80` (V16 `whenSettled` statt `setTimeout`), `2efb8fa` (Credential-Form-Service, `ConfirmModal`), `dbb44d3` (Coverage-Ratsche 89/84/71/89), `9203aaf` (V17), `19dcccd` (AGENTS.md-Regel) |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -451,17 +452,16 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Schritt 13:** Picker 849 → ~330 Zeilen. D13 erledigt: `api/openstack-resource-list.ts` ist die einzige Typ→Endpunkt-Weiche (als eigene Datei, damit Specs, die `openstackResourcesApi` mocken, die Weiche mittesten). Totes Emit `credentials-missing` entfernt. **Fehlerbehebung nebenbei:** Scrollte der Trigger aus dem Bild, blieben vier Listener am `window`/`document` hängen (altes `isOpen = false` ohne `close()`); `useFloatingDropdown` schließt jetzt immer über `close()`.
 - **Schritt 14:** Der VM-Drawer ist rein präsentational; eine verspätete Antwort für eine nicht mehr offene VM wird jetzt verworfen (vorher konnte sie die neuere überschreiben). `DeploymentActiveTaskCard` bekommt `live: LiveTaskView` (reaktiv, aus `useDeploymentLiveStream`); der 0-basierte Index heißt durchgehend `activeStepIndex`. Ein Snapshot wurde aktualisiert — **nur** drei HTML-Kommentare (im Dev-Modus gerendert) nennen die neuen Feldnamen, das Markup ist gleich. **Bewusst nicht gemacht:** `DetailSection` (T17) — die fünf Abschnittsköpfe unterscheiden sich (Inline-Icon im `h2` vs. Icon-Kachel, `mb-3/4/5`, Zähler, Aktion); eine Vereinheitlichung ändert die Optik und gehört zur UX-Frage 2. Die 7 Props der `DeploymentInfrastructureSection` und die 3 durchgereichten Props `TaskHistory → TaskDetail` bleiben: reine Daten aus je einem Composable, ein Bündeln brächte kaum etwas.
 - **Test-Falle:** `beforeEach(() => mock.mockReset())` gibt den Mock zurück, und Vitest ruft eine zurückgegebene Funktion als Cleanup auf. Ist der Mock auf `mockRejectedValue` gestellt, schlägt der Test mit dem Fehlerobjekt fehl. Immer mit Block-Body schreiben: `beforeEach(() => { mock.mockReset() })`.
+- **Schritt 15:** Seit `4e1ec6c` importiert keine View und keine Komponente mehr ein API-Modul (außer Typen) — V12 ist vollständig erledigt. Sichtbare Änderung in `96aacd5`: Die Live-Karte zeigt auf Deutsch „läuft seit“, „Wartet“ (statt `idle`) und „Warte auf die erste Logzeile …“; der Snapshot ändert sich genau in diesen drei Texten. **Offen:** die deutschen Texte der fünf LTI-Views und `CallbackView` (V6), `StatusScreen` (T14), fremde i18n-Namespaces (V20), `formatSlotLabel`/„Image:“, „App und Name sind Pflichtfelder“ (nur Programmierfehler-Schutz).
+- **Schritt 16:** Der Router wartet über `authStore.whenSettled()` auf laufende Anmeldungen (vorher 100 ms geraten; bei langsamem Token-Check landete ein Angemeldeter auf dem Login). `handleCallback` wickelt jetzt `finishCallback` ein. Löschen der OpenStack-Credentials fragt per `ConfirmModal` statt `confirm()`, neuer Schlüssel `SettingsOpenStackView.confirmDeleteTitle`. Die Coverage-Schwelle steht knapp unter dem Ist-Wert und darf nur steigen.
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–14 abgeschlossen, außer `WizardStepLayout` (Schritt 8) und `DetailSection` (Schritt 14) — beide warten auf die UX-Entscheidung (offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
+**Stand (29.09.):** Der Plan ist bis auf vier Punkte umgesetzt, die jeweils auf eine Entscheidung warten: `WizardStepLayout` (Schritt 8) und `DetailSection` (Schritt 14) → offene Frage 2 (UX); LTI-Texte, `StatusScreen` → offene Frage 3; Test-Ablageort → offene Frage 5. Außerdem offen aus dem Bericht: D31 (Datumsformat fest `de-DE`), D32 (Rundung RAM/Bytes), V10 (englische Ersatztexte in den Stores), Frage 4 (`DeploymentGroupsCard` redundant?). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage).
 
-**Hier weitermachen: Schritt 15 — LTI-Views und i18n (V6, V19, V20, T14).**
-- Offene Frage 3 zuerst klären lassen: Sind die LTI-Views bewusst nur deutsch? Davon hängt ab, ob `lti.*`-Schlüssel angelegt werden.
-- Unabhängig davon machbar: `LtiCourseMapView` ruft noch `courseApi.list` direkt (V12-Rest), die LTI-Views lesen Fehler schon über `getErrorCode`/`getErrorStatus`; `StatusScreen`-Komponente für die sechs Status-Bildschirme (T14); die LTI-Specs prüfen teils deutsche Texte → vorher auf i18n-Schlüssel oder `data-testid` umstellen.
-- Hartkodierte Texte außerhalb LTI (V19): u. a. `AppLayout` (`Profil`/`Abmelden`), `DeploymentActiveTaskCard` (`running since`, `Waiting for first log line…`), `InfrastructureVm*`, `UserView` (`N/A`), `deployment.store` („App und Name sind Pflichtfelder“), `formatSlotLabel`.
+**Hier weitermachen:** zuerst die offenen Fragen klären lassen, dann den jeweiligen Rest umsetzen. Ohne Entscheidung ist als Nächstes D31 machbar (`utils/format.ts` nach der i18n-Sprache richten; betrifft Snapshots mit Datumsangaben — vorher prüfen, welche Specs `de-DE`-Formate erwarten).
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
