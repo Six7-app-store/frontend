@@ -41,6 +41,7 @@ vi.mock('@/api/app.api', () => ({
         getById: vi.fn(),
         delete: vi.fn(),
         submitVersion: vi.fn(),
+        update: vi.fn(),
         listVersionApprovals: vi.fn(),
     }
 }))
@@ -293,5 +294,24 @@ describe('AppsDetailView.vue', () => {
             expect(wrapper.text()).toContain('variables.tf:3')
             expect(mockToastError).not.toHaveBeenCalled()
         })
+    })
+
+    it('schaltet die Sichtbarkeit im Store-Tab um', async () => {
+        ;(appApi.getById as any).mockResolvedValue({
+            data: { appId: 'app-123', name: 'Test App', userId: 'user-1', is_private: false, versions: ['v1.0'] },
+        })
+        ;(appApi.update as any).mockResolvedValue({ data: {} })
+        const wrapper = mountComponent()
+        await flushPromises()
+        await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.tabStore'))!.trigger('click')
+
+        const toggle = (w: { findAll: (s: string) => any[] }) =>
+      w.findAll('button').find((b: any) => b.find('.toggle-knob').exists())!
+        await toggle(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(appApi.update).toHaveBeenCalledWith('app-123', { is_private: true })
+        expect(mockToastSuccess).toHaveBeenCalledWith('AppsDetailView.toasts.setPrivate')
+        expect(wrapper.text()).toContain('AppsDetailView.visibilityPrivate')
     })
 })

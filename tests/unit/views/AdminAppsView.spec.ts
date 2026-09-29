@@ -115,4 +115,22 @@ describe('AdminAppsView.vue', () => {
     expect(appApi.admin.revokeVersion).toHaveBeenCalledWith('a1', 'v1.0.0', 'Sicherheitslücke')
     expect(dialog(wrapper).exists()).toBe(false)
   })
+
+  it('zeigt über den Filter-Schalter auch Apps ohne Einreichung', async () => {
+    ;(appApi.list as any).mockResolvedValue({
+      data: [
+        { appId: 'a1', name: 'Jupyter Lab', is_private: false },
+        { appId: 'a2', name: 'Ohne Einreichung', is_private: false },
+      ],
+    })
+    const wrapper = mountView()
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('Ohne Einreichung')
+
+    const toggle = (w: { findAll: (s: string) => any[] }) =>
+    w.findAll('button').find((b: any) => b.find('.toggle-knob').exists())!
+    await toggle(wrapper).trigger('click')
+
+    expect(wrapper.text()).toContain('Ohne Einreichung')
+  })
 })

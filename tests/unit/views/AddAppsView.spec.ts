@@ -268,4 +268,21 @@ describe('AddAppsView.vue', () => {
             expect(wrapper.html()).not.toContain('github.com/six7clickndeploy')
         })
     })
+
+    it('reicht mit "alle Versionen einreichen" ein, wenn der Schalter an ist', async () => {
+        ;(appApi.create as any).mockResolvedValue({ data: {} })
+        const wrapper = mountComponent()
+        const textInputs = wrapper.findAll('input[type="text"]')
+        await textInputs[0]!.setValue('Super App')
+        await textInputs[1]!.setValue('https://github.com/user/repo')
+
+        const toggle = (w: { findAll: (s: string) => any[] }) =>
+      w.findAll('button').find((b: any) => b.find('.toggle-knob').exists())!
+        await toggle(wrapper).trigger('click')
+        const buttons = wrapper.findAll('button')
+        await buttons[buttons.length - 1]!.trigger('click')
+        await flushPromises()
+
+        expect(appApi.create).toHaveBeenCalledWith(expect.objectContaining({ submit_all_versions: true }))
+    })
 })
