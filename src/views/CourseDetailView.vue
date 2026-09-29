@@ -4,8 +4,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { GraduationCap, UserMinus, UserPlus, Search, X, Loader2, Edit2, Check, X as CloseIcon, Info } from 'lucide-vue-next'
 import { useCourseStore } from '@/stores/course.store'
-import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
+import { useUserSearch } from '@/composables/useUserSearch'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
 import { roleBadgeVariant, roleLabelKey } from '@/i18n/role-labels'
@@ -66,9 +66,9 @@ const saveName = async () => {
 // Modal States (Mitglieder)
 // ----------------------------------------------------------------
 const showAddModal = ref(false)
-const searchQuery = ref('')
-const searchResults = ref<User[]>([])
-const isSearching = ref(false)
+const {
+  query: searchQuery, results: searchResults, isLoading: isSearching, loadInitial,
+} = useUserSearch({ searchLimit: 10, initialLimit: 100 })
 const selectedToAdd = ref<Map<string, User>>(new Map())
 const isAddingMembers = ref(false)
 
@@ -97,43 +97,15 @@ watch(courseId, loadCourse)
 // ----------------------------------------------------------------
 // User search & selection
 // ----------------------------------------------------------------
+// A failed search just shows no results; the user can retype.
 const loadAvailableUsers = async () => {
-  isSearching.value = true
   try {
-    const { data } = await userApi.list({ role: 'student', limit: 100 })
-    searchResults.value = data
+    await loadInitial()
   } catch {
     searchResults.value = []
     toast.error(t('CourseDetailView.toasts.loadUsersError'))
-  } finally {
-    isSearching.value = false
   }
 }
-
-let searchTimer: number | null = null
-watch(searchQuery, (q) => {
-  if (searchTimer) window.clearTimeout(searchTimer)
-  const query = q.trim()
-
-  if (query.length === 0) {
-    loadAvailableUsers()
-    return
-  }
-  if (query.length < 2) return
-
-  searchTimer = window.setTimeout(async () => {
-    isSearching.value = true
-    try {
-      const { data } = await userApi.search(query, 10)
-      searchResults.value = data
-    } catch {
-      // A failed search just shows no results; the user can retype.
-      searchResults.value = []
-    } finally {
-      isSearching.value = false
-    }
-  }, 300) as unknown as number
-})
 
 const isAlreadyMember = (userId: string) =>
     courseStore.currentMembers.some((m) => m.userId === userId)

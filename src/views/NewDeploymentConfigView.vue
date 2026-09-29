@@ -13,9 +13,10 @@ import {
   BookOpen,
   UserPlus
 } from 'lucide-vue-next'
-import { courseApi } from '@/api/course.api'
-import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
+import { useCourseStudents } from '@/composables/useCourseStudents'
+import { useStudentDirectory } from '@/composables/useStudentDirectory'
+import { useUserSearch } from '@/composables/useUserSearch'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { userDisplayName } from '@/utils/user-display'
@@ -27,153 +28,55 @@ const router = useRouter()
 const store = useDeploymentStore()
 const toast = useToast()
 const credStore = useOpenStackCredentialsStore()
-
-const courses = ref<any[]>([])
-
-// Two separate lists: cache (initial) + current view (search/filter).
-const allStudents = ref<any[]>([])
-const students = ref<any[]>([])
-
-// Cache map for every student ever seen, keyed by ``userId``.
-//
-// Deliberately not ``keycloak_id``: a student who arrives through a Moodle
-// LTI launch never passes Keycloak, so that column stays NULL for them. Key
-// on it and the whole wizard drops them silently — the course still reports
-// its member count, but the picker beside it stays empty, which reads like a
-// loading bug rather than a filter. ``userId`` is this application's own
-// primary key and is there for everybody, whichever way they signed in.
-const studentCache = ref(new Map<string, any>())
-
-const studentSearchQuery = ref('')
-const loadingCourses = ref(false)
-const loadingStudents = ref(false)
-const coursesError = ref<string | null>(null)
-const studentsError = ref<string | null>(null)
+const directory = useStudentDirectory()
+const {
+  courses, loadingCounts: loadingCourseStudents, loadCourses, memberIds, memberCount,
+  loadCounts, isFullySelected, fullySelectedCourseIds,
+} = useCourseStudents()
+const {
+  query: studentSearchQuery, results: searchResults, error: searchError, loadInitial,
+} = useUserSearch({ searchLimit: 50, initialLimit: 1000 })
 
 // Selection tab: 'courses' or 'individuals'.
 const activeTab = ref<'courses' | 'individuals'>('courses')
 
-// Helper: store students in the cache (keyed by userId). Only overwrite
-// when the new object has more info (e.g. firstName).
-function cacheStudents(list: any[]) {
-  for (const s of list || []) {
-    if (!s?.userId || typeof s.userId !== 'string' || !s.userId.trim()) continue
-    const existing = studentCache.value.get(s.userId)
-    if (!existing || (s.firstName && !existing.firstName) || (s.lastName && !existing.lastName)) {
-      studentCache.value.set(s.userId, s)
-      store.studentCache.set(s.userId, s)
-    }
-  }
-}
+// Every student the search turns up goes into the directory, so the
+// selection and the later steps can show their names.
+watch(searchResults, (users) => directory.remember(users))
 
-// Filtered list for individual search: shows search results, always returning
-// the cached object when present.
+// Search results, each resolved to its directory entry when there is one.
+// An empty query lists nobody: students are picked by searching.
+//
+// Note this searches *Keycloak*, so it finds nobody who exists only here —
+// a student provisioned by a Moodle launch has no Keycloak account. Those
+// are reachable through their course in the other tab, which reads the
+// local member list. Making the search find them too means searching this
+// application's own users, which is a separate change.
 const filteredStudents = computed(() => {
-  // Base: empty query → empty list (no students without a search).
-  if (!studentSearchQuery.value.trim()) {
-    return []
-  }
-  // The backend already filtered by username/email/firstName/lastName (Keycloak
-  // Admin API ``/users?search=…``), so we pass its response through and only use
-  // the cached object when present (prevents duplicates).
-  //
-  // Note this searches *Keycloak*, so it finds nobody who exists only here —
-  // a student provisioned by a Moodle launch has no Keycloak account. Those
-  // are reachable through their course in the other tab, which reads the
-  // local member list. Making the search find them too means searching this
-  // application's own users, which is a separate change.
-  return students.value.map((s: any) => {
-    const cached = s?.userId ? studentCache.value.get(s.userId) : undefined
-    return cached || s
-  }).filter(Boolean)
-})
-
-// Selected students: always resolved from the cache (stable, keyed by userId).
-const selectedStudents = computed(() => {
-  return store.draft.studentIds
-    .map((kid: string) => studentCache.value.get(kid))
+  if (!studentSearchQuery.value.trim()) return []
+  return searchResults.value
+    .map((s: any) => (s?.userId && directory.studentOf(s.userId)) || s)
     .filter(Boolean)
 })
 
-// Cache for students per course (lazy loading).
-const courseStudentsCache = ref(new Map<string, any[]>())
+// Selected students, resolved from the directory (keyed by userId).
+const selectedStudents = computed(() =>
+  store.draft.studentIds
+    .map((id: string) => directory.studentOf(id))
+    .filter(Boolean) as any[]
+)
 
-// Helper: return all student IDs of a course (lazy loading). Returns ``null``
-// when the list could not be loaded, so callers can tell a failed request from
-// a course without students.
-async function getStudentIdsForCourse(courseId: string): Promise<string[] | null> {
-  // Check the cache.
-  if (courseStudentsCache.value.has(courseId)) {
-    const students = courseStudentsCache.value.get(courseId)!
-    return students.map((s: any) => s.userId)
-  }
+const isCourseSelected = (courseId: string) => isFullySelected(courseId, store.draft.studentIds)
 
-  // Load students for this course.
-  try {
-    const res = await courseApi.getById(courseId)
-    const students = res.data.users || []
-    courseStudentsCache.value.set(courseId, students)
-    // Also cache in studentCache.
-    cacheStudents(students)
-    return students.map((s: any) => s.userId)
-  } catch (err) {
-    // Deliberately silent here: the caller decides what to show (the count
-    // stays at 0, a click reports the failed load).
-    console.error(`Failed to load students for course ${courseId}:`, err)
-    return null
-  }
+// Courses whose students are all selected count as selected courses.
+function syncCourseSelection() {
+  store.draft.courseIds = fullySelectedCourseIds(store.draft.studentIds)
 }
 
-// Loading states for courses.
-const loadingCourseStudents = ref(new Set<string>())
-
-// At most this many course member lists are fetched at the same time. The
-// course list can hold up to 200 entries, and firing all of them at once
-// hammers the backend.
-const MAX_PARALLEL_COURSE_LOADS = 5
-
-// Helper: return the student count per course (read-only; the lists are
-// loaded by ``loadCourseStudentCounts`` after the course list arrives).
-function getStudentCountForCourse(courseId: string) {
-  return courseStudentsCache.value.get(courseId)?.length ?? 0
-}
-
-// Load the member list of every course that isn't cached yet, at most
-// ``MAX_PARALLEL_COURSE_LOADS`` at a time. Called once after the courses are
-// there — never from the render, which used to start one request per
-// rendered course.
-async function loadCourseStudentCounts() {
-  const queue = courses.value
-    .map((course: any) => course.courseId as string)
-    .filter((courseId) => courseId && !courseStudentsCache.value.has(courseId))
-  queue.forEach((courseId) => loadingCourseStudents.value.add(courseId))
-
-  const worker = async () => {
-    while (queue.length > 0) {
-      const courseId = queue.shift()!
-      // ``getStudentIdsForCourse`` handles its own errors; the marker is
-      // cleared either way.
-      await getStudentIdsForCourse(courseId)
-      loadingCourseStudents.value.delete(courseId)
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(MAX_PARALLEL_COURSE_LOADS, queue.length) }, worker)
-  )
-}
-
-// Course checkbox: checked when all students of the course are selected.
-function isCourseSelected(courseId: string) {
-  if (!courseStudentsCache.value.has(courseId)) {
-    return false // not loaded yet
-  }
-  const studentIds = courseStudentsCache.value.get(courseId)!.map((s: any) => s.userId)
-  return studentIds.length > 0 && studentIds.every((id) => store.draft.studentIds.includes(id))
-}
-
-// Course checkbox toggle: select/deselect all students of the course.
+// Course checkbox: select all its students, or deselect them when all are
+// selected already.
 const toggleCourse = async (courseId: string) => {
-  const studentIds = await getStudentIdsForCourse(courseId)
+  const studentIds = await memberIds(courseId)
   if (studentIds === null) {
     toast.error(t('CourseDetailView.toasts.loadUsersError'))
     return
@@ -182,20 +85,14 @@ const toggleCourse = async (courseId: string) => {
     toast.warning(t('CourseDetailView.addModal.noUsersFound'))
     return
   }
-  const allSelected = studentIds.length > 0 && studentIds.every((id) => store.draft.studentIds.includes(id))
-  if (allSelected) {
-    // Deselect: remove all students of this course from the selection.
+  if (isCourseSelected(courseId)) {
     store.draft.studentIds = store.draft.studentIds.filter((id: string) => !studentIds.includes(id))
   } else {
-    // Select: add all students of this course to the selection (no duplicates).
-    const set = new Set([...store.draft.studentIds, ...studentIds])
-    store.draft.studentIds = Array.from(set)
+    store.draft.studentIds = Array.from(new Set([...store.draft.studentIds, ...studentIds]))
   }
-  // Sync the course-selection list.
   syncCourseSelection()
 }
 
-// Toggle a student checkbox (for individual selection).
 const toggleStudent = (studentUserId: string) => {
   if (!studentUserId || typeof studentUserId !== 'string' || !studentUserId.trim()) return
   const index = store.draft.studentIds.indexOf(studentUserId)
@@ -204,23 +101,7 @@ const toggleStudent = (studentUserId: string) => {
   } else {
     store.draft.studentIds.push(studentUserId)
   }
-  // After each toggle: sync the course selection.
   syncCourseSelection()
-}
-
-// Sync store.draft.courseIds with the current student selection state.
-async function syncCourseSelection() {
-  // For each course: if all students are selected, include it in courseIds.
-  const newCourseIds: string[] = []
-  for (const course of courses.value) {
-    if (courseStudentsCache.value.has(course.courseId)) {
-      const studentIds = courseStudentsCache.value.get(course.courseId)!.map((s: any) => s.userId)
-      if (studentIds.length > 0 && studentIds.every((id) => store.draft.studentIds.includes(id))) {
-        newCourseIds.push(course.courseId)
-      }
-    }
-  }
-  store.draft.courseIds = newCourseIds
 }
 
 const handleNext = () => {
@@ -229,14 +110,10 @@ const handleNext = () => {
     toast.warning(t('AppsDetailView.missingCredsTitle'))
     return
   }
-
-  // Check that the name is filled in.
   if (!store.draft.name || store.draft.name.trim() === '') {
     toast.warning(t('deployment.errors.missingName'))
     return
   }
-
-  // Check that at least one student is selected.
   if (store.draft.studentIds.length === 0) {
     toast.warning(t('deployment.errors.missingStudents'))
     return
@@ -253,93 +130,38 @@ const handleBack = () => {
   }
 }
 
-// Load courses.
-async function loadCourses() {
-  loadingCourses.value = true
-  coursesError.value = null
-  try {
-    const res = await courseApi.list(0, 200)
-    courses.value = res.data || []
-  } catch {
-    coursesError.value = t('CoursesView.toasts.loadError')
-    toast.error(coursesError.value)
-  } finally {
-    loadingCourses.value = false
-  }
-}
-
-// Load the initial student list (cached).
-async function loadAllStudents() {
-  loadingStudents.value = true
-  studentsError.value = null
-  try {
-    const res = await userApi.list({ role: 'student', limit: 1000 })
-    allStudents.value = res.data || []
-    students.value = allStudents.value
-    cacheStudents(allStudents.value)
-  } catch {
-    studentsError.value = t('CourseDetailView.toasts.loadUsersError')
-    toast.error(studentsError.value)
-  } finally {
-    loadingStudents.value = false
-  }
-}
-
-// Search with debouncing.
-let searchTimer: number | undefined
 // Id of the toast the last failed search produced. Only this one is dismissed
 // when the next search runs — ``toast.clear()`` would also drop unrelated
 // toasts (e.g. the missing-credentials warning).
 let searchErrorToastId: string | null = null
-const dismissSearchError = () => {
+watch(searchError, (err: any) => {
   if (searchErrorToastId !== null) {
     toast.remove(searchErrorToastId)
     searchErrorToastId = null
   }
-}
-watch(studentSearchQuery, (val) => {
-  if (searchTimer) window.clearTimeout(searchTimer)
-  searchTimer = window.setTimeout(async () => {
-    const q = val?.trim() || ''
-
-    // Empty query: show the initial list (no extra API call).
-    if (!q) {
-      students.value = allStudents.value
-      dismissSearchError()
-      return
-    }
-
-    // Query too short: keep the current list (no flicker).
-    if (q.length < 2) {
-      dismissSearchError()
-      return
-    }
-
-    // Perform the search.
-    try {
-      loadingStudents.value = true
-      const res = await userApi.search(q, 50)
-      dismissSearchError()
-      students.value = res.data || []
-      cacheStudents(students.value) // Cache new students (keyed by userId)
-    } catch (err) {
-      console.error('User search error:', err)
-      const e: any = err
-      const msg = getErrorDetailMessage(e) || e?.message || t('CourseDetailView.toasts.loadUsersError')
-      searchErrorToastId = toast.error(msg)
-    } finally {
-      loadingStudents.value = false
-    }
-  }, 300)
+  if (!err) return
+  console.error('User search error:', err)
+  searchErrorToastId = toast.error(
+    getErrorDetailMessage(err) || err?.message || t('CourseDetailView.toasts.loadUsersError'),
+  )
 })
 
-// On mount, load courses + the initial students.
 onMounted(async () => {
   // Ensure cred state is fresh; banner branch shows when missing
   if (!credStore.status) await credStore.fetch()
-  await loadCourses()
-  loadCourseStudentCounts()
-  await loadAllStudents()
+  try {
+    await loadCourses()
+  } catch {
+    toast.error(t('CoursesView.toasts.loadError'))
+  }
+  loadCounts()
+  // The initial list is never shown (an empty query lists nobody); it fills
+  // the directory so selected students resolve to names.
+  try {
+    directory.remember(await loadInitial())
+  } catch {
+    toast.error(t('CourseDetailView.toasts.loadUsersError'))
+  }
 })
 </script>
 
@@ -421,7 +243,7 @@ onMounted(async () => {
                     <div class="font-semibold text-fg">{{ course.name }}</div>
                     <div class="text-sm text-fg-muted">
                       <span v-if="loadingCourseStudents.has(course.courseId)">{{ t('CoursesView.loading') }}</span>
-                      <span v-else>{{ t('DeploymentDetailView.deploymentStudentCount', getStudentCountForCourse(course.courseId)) }}</span>
+                      <span v-else>{{ t('DeploymentDetailView.deploymentStudentCount', memberCount(course.courseId)) }}</span>
                     </div>
                   </div>
                 </div>
