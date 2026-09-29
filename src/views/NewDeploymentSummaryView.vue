@@ -141,14 +141,14 @@ const fetchAndSyncVariables = async () => {
     // for deep-link / reload.
     let variables: AppVariable[] = []
     try {
-      variables = await appStore.fetchAppVariables(selectedApp.value.appId, version.value)
+      variables = (await appStore.fetchAppVariables(selectedApp.value.appId, version.value)) ?? []
       deploymentStore.draft.variableDefinitions = variables
     } catch (varError: any) {
       console.warn('Could not load variables:', varError)
       // Re-throw so the outer catch block shows the toast.
       throw varError
     }
-    appVariables.value = variables || []
+    appVariables.value = variables
 
     // C. Parse user input.
     let userOverrides: Record<string, any> = {}
