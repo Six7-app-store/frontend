@@ -31,16 +31,9 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  AlertTriangle,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  Pencil,
-  RefreshCw,
-  Search,
-  X,
-} from 'lucide-vue-next'
+import { AlertTriangle, ChevronDown, ChevronUp, Pencil, RefreshCw } from 'lucide-vue-next'
+import ResourcePickerPanel from '@/components/openstack-picker/ResourcePickerPanel.vue'
+import ResourcePickerSelection from '@/components/openstack-picker/ResourcePickerSelection.vue'
 import { useToast } from '@/composables/useToast'
 import { useFloatingDropdown } from '@/composables/useFloatingDropdown'
 import { useOsResourceList } from '@/composables/useOsResourceList'
@@ -51,7 +44,6 @@ import {
   selectedKeysOf,
   type ResourceItem,
 } from '@/services/openstack-resource-presentation.service'
-import Spinner from '@/components/ui/Spinner.vue'
 import type { OsResourceType } from '@/api/openstack-resources.api'
 
 type Mode = 'id' | 'name'
@@ -86,14 +78,12 @@ const freeTextValue = ref('')
 
 const triggerEl = ref<HTMLElement | null>(null)
 const dropdownEl = ref<HTMLElement | null>(null)
-const searchInputEl = ref<HTMLInputElement | null>(null)
 const {
   isOpen,
   popupStyle,
   close: closeDropdown,
   toggle: toggleDropdown,
 } = useFloatingDropdown(triggerEl, dropdownEl, {
-  onOpen: () => searchInputEl.value?.focus(),
   onClose: () => { searchQuery.value = '' },
 })
 
@@ -293,61 +283,11 @@ const placeholderText = computed(() => {
             type="button"
             class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border-2 border-subtle bg-panel hover:border-strong transition focus:border-accent/60 text-left"
           >
-            <div class="flex flex-wrap items-center gap-1.5 flex-grow min-w-0">
-              <!-- Single -->
-              <template v-if="!multi">
-                <template v-if="selectedDisplay.length === 0">
-                  <span class="text-fg-muted text-sm">{{ placeholderText }}</span>
-                </template>
-                <template v-else>
-                  <!-- Selection pill: same accent as the highlight row in the
-                       dropdown, so it reads clearly as a selected value. -->
-                  <span
-                    class="inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded bg-line/[.07] text-fg border border-strong"
-                    :title="selectedDisplay[0]?.value"
-                  >
-                    <Check :size="12" class="text-icon flex-shrink-0" />
-                    <span class="font-medium text-sm truncate">
-                      {{ selectedDisplay[0]?.displayName }}
-                    </span>
-                  </span>
-                  <!-- Subtle hint when the value isn't in the currently loaded
-                       list (e.g. a default UUID of a deleted resource or not-yet
-                       -loaded items). Shown as a grey, tooltip-capable pill. -->
-                  <span
-                    v-if="!selectedDisplay[0]?.known"
-                    class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-line/[.07] text-fg-muted border border-subtle"
-                    :title="t('openstackPicker.notInList')"
-                  >
-                    {{ t('openstackPicker.externalBadge') }}
-                  </span>
-                </template>
-              </template>
-
-              <!-- Multi: Chips -->
-              <template v-else>
-                <template v-if="selectedDisplay.length === 0">
-                  <span class="text-fg-muted text-sm">{{ placeholderText }}</span>
-                </template>
-                <span
-                  v-for="(entry, i) in selectedDisplay"
-                  :key="i"
-                  class="inline-flex items-center gap-1 bg-line/[.07] text-fg px-2 py-0.5 rounded text-xs font-medium border border-strong"
-                  :class="entry.known ? '' : 'border-warning-dot/30 bg-warning-dot/10 text-warning'"
-                  :title="entry.value"
-                  @click.stop
-                >
-                  <span class="truncate max-w-[160px]">{{ entry.displayName }}</span>
-                  <button
-                    @click.stop="removeChip(entry.value)"
-                    type="button"
-                    class="hover:text-accent-fg"
-                  >
-                    <X :size="12" />
-                  </button>
-                </span>
-              </template>
-            </div>
+            <ResourcePickerSelection
+              :selected="selectedDisplay"
+              :multi="multi"
+              :placeholder="placeholderText"
+              @remove="removeChip" />
             <component :is="isOpen ? ChevronUp : ChevronDown" :size="16" class="text-fg-muted flex-shrink-0" />
           </button>
         </div>
@@ -373,127 +313,20 @@ const placeholderText = computed(() => {
         class="border-2 border-subtle rounded-lg bg-panel shadow-2xl overflow-hidden flex flex-col"
         @mousedown.stop
       >
-        <!-- Search -->
-        <div class="relative border-b border-subtle p-2 flex-shrink-0">
-          <Search :size="14" class="absolute left-4 top-1/2 -translate-y-1/2 text-icon" />
-          <input
-            ref="searchInputEl"
-            v-model="searchQuery"
-            type="text"
-            :placeholder="t('openstackPicker.searchPlaceholder', { type: osTypeLabel() })"
-            class="field w-full pl-7 pr-2 py-1.5 text-sm border-transparent focus:border-accent/60"
-          />
-        </div>
-
-        <!-- Loading -->
-        <div v-if="isLoading" class="p-6 text-center text-fg-muted text-sm">
-          <Spinner :size="20" class="inline-block mb-2" />
-          <p>{{ t('openstackPicker.loading', { type: osTypeLabel() }) }}</p>
-        </div>
-
-        <!-- Error: OpenStack down -->
-        <div v-else-if="errorReason === 'unavailable'" class="p-4">
-          <div class="flex items-start gap-2 text-warning mb-2">
-            <AlertTriangle :size="16" class="flex-shrink-0 mt-0.5" />
-            <div class="text-sm">
-              <p class="font-medium">{{ t('openstackPicker.unreachable') }}</p>
-              <p class="text-xs text-warning mt-1">{{ errorMessage }}</p>
-            </div>
-          </div>
-          <div class="flex gap-2 mt-2">
-            <button
-              @click="handleRefresh"
-              type="button"
-              class="text-xs px-2 py-1 rounded bg-line/[.07] text-fg hover:bg-line/[.12]"
-            >
-              {{ t('openstackPicker.retry') }}
-            </button>
-            <button
-              v-if="allowFreeText"
-              @click="enableFreeText"
-              type="button"
-              class="text-xs px-2 py-1 rounded bg-line/[.07] text-fg hover:bg-line/[.12]"
-            >
-              {{ t('openstackPicker.enterManually') }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Empty -->
-        <div v-else-if="filteredItems.length === 0" class="p-6 text-center text-fg-muted text-sm">
-          <p v-if="searchQuery">{{ t('openstackPicker.noHits', { query: searchQuery }) }}</p>
-          <template v-else>
-            <p class="mb-2">{{ t('openstackPicker.emptyProject', { type: osTypeLabel() }) }}</p>
-            <button
-              v-if="allowFreeText"
-              @click="enableFreeText"
-              type="button"
-              class="text-xs text-accent-fg hover:text-accent-fg underline inline-flex items-center gap-1"
-            >
-              <Pencil :size="12" /> {{ t('openstackPicker.enterManually') }}
-            </button>
-          </template>
-        </div>
-
-        <!-- Items — flex-grow + overflow-auto so max-height from popupStyle
-             bounds the scrolling region -->
-        <ul v-else class="flex-grow overflow-y-auto divide-y">
-          <li
-            v-for="item in filteredItems"
-            :key="item.id || item.name"
-            @click="toggle(item)"
-            class="flex items-center gap-3 px-3 py-2 hover:bg-line/[.07] cursor-pointer transition"
-            :class="isSelected(item) ? 'bg-line/[.07]' : ''"
-          >
-            <div
-              class="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 border"
-              :class="
-                isSelected(item)
-                  ? 'bg-accent border-accent'
-                  : 'bg-panel border-strong'
-              "
-            >
-              <Check v-if="isSelected(item)" :size="12" class="text-on-accent" />
-            </div>
-
-            <div class="flex-grow min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="font-medium text-fg text-sm truncate">{{ item.name || t('openstackPicker.unnamed') }}</span>
-                <span
-                  v-if="item.tertiary"
-                  class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-line/[.07] text-fg-muted font-medium flex-shrink-0"
-                >
-                  {{ item.tertiary }}
-                </span>
-              </div>
-              <div v-if="item.secondary" class="text-xs text-fg-muted truncate">
-                {{ item.secondary }}
-              </div>
-              <!-- Show the ID in id-mode as a secondary disambiguation hint;
-                   the ``name`` remains the main label. -->
-              <div v-if="osMode === 'id' && item.id" class="text-[10px] text-fg-muted font-mono truncate">
-                {{ item.id }}
-              </div>
-            </div>
-          </li>
-        </ul>
-
-        <!-- Footer with mode hint -->
-        <div class="border-t border-subtle px-3 py-1.5 bg-line/[.04] flex items-center justify-between text-[11px] text-fg-muted flex-shrink-0">
-          <span>
-            <template v-if="osMode === 'id'">{{ t('openstackPicker.hints.storesUuid') }}</template>
-            <template v-else>{{ t('openstackPicker.hints.storesName') }}</template>
-            <template v-if="multi"> · {{ t('openstackPicker.hints.multiSelect') }}</template>
-          </span>
-          <button
-            v-if="allowFreeText"
-            @click="enableFreeText"
-            type="button"
-            class="text-fg hover:text-accent-fg inline-flex items-center gap-1"
-          >
-            <Pencil :size="10" /> {{ t('openstackPicker.enterManuallyShort') }}
-          </button>
-        </div>
+        <ResourcePickerPanel
+          v-model:search="searchQuery"
+          :items="filteredItems"
+          :is-selected="isSelected"
+          :is-loading="isLoading"
+          :error-reason="errorReason"
+          :error-message="errorMessage"
+          :type-label="osTypeLabel()"
+          :os-mode="osMode"
+          :multi="multi"
+          :allow-free-text="allowFreeText"
+          @toggle="toggle"
+          @refresh="handleRefresh"
+          @free-text="enableFreeText" />
       </div>
     </Teleport>
   </div>
