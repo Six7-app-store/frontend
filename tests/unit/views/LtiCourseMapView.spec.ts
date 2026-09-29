@@ -135,7 +135,7 @@ describe('LtiCourseMapView', () => {
 
     await wrapper.find('[data-testid="map-skip"]').trigger('click')
 
-    expect(replace).toHaveBeenCalledWith('/deployments')
+    expect(replace).toHaveBeenCalledWith({ name: 'deployments.list' })
     expect(mapContext).not.toHaveBeenCalled()
   })
 

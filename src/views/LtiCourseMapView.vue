@@ -19,6 +19,7 @@
  */
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ROUTE_NAMES } from '@/router/route-names'
 import type { LtiRosterSkipReason } from '@/api/lti.api'
 import { useLtiCourseMapping } from '@/composables/useLtiCourseMapping'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
@@ -128,7 +129,7 @@ async function save() {
 function skip() {
   // Skipping is a valid answer. Without a mapping a student launch
   // still works, it just lands on the list instead of one environment.
-  router.replace('/deployments')
+  router.replace({ name: ROUTE_NAMES.deploymentsList })
 }
 
 onMounted(async () => {
