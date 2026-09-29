@@ -119,7 +119,7 @@ describe('UserView.vue', () => {
         // Die Komponente ist so programmiert, dass sie 6 Mal 'N/A' anzeigt
         // (Vorname, Nachname, E-Mail, Kurs, UserID, KeycloakID) + 1x fürs Datum = 7x N/A
         const text = wrapper.text()
-        expect(text).toContain('N/A')
+        expect(text).toContain('UserView.notAvailable')
 
         // Testen wir explizit, ob der Administrator-Label korrekt gerendert wurde
         expect(text).toContain('Administrator')

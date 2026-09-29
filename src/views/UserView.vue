@@ -21,7 +21,7 @@ const roleBadgeVariant = computed(() => roleBadgeVariantFor(user.value?.role))
 const roleLabel = computed(() => t(roleLabelKey(user.value?.role)))
 
 const createdDate = computed(() => {
-  if (!user.value?.created_at) return 'N/A'
+  if (!user.value?.created_at) return t('UserView.notAvailable')
   return formatDateTime(user.value.created_at, { year: 'numeric', month: 'long', day: 'numeric' })
 })
 
@@ -47,7 +47,7 @@ const createdDate = computed(() => {
 
           <div>
             <div class="font-semibold text-fg text-lg">
-              {{ user.username || 'N/A' }}
+              {{ user.username || t('UserView.notAvailable') }}
             </div>
             <Badge :variant="roleBadgeVariant">{{ roleLabel }}</Badge>
           </div>
@@ -60,7 +60,7 @@ const createdDate = computed(() => {
           <div>
             <div class="text-sm text-fg-muted mb-1">{{ t('UserView.fields.firstName') }}</div>
             <div class="font-medium" :class="user.firstName ? 'text-fg' : 'text-fg-muted'">
-              {{ user.firstName || 'N/A' }}
+              {{ user.firstName || t('UserView.notAvailable') }}
             </div>
           </div>
           <Contact :size="20" class="text-icon" />
@@ -70,7 +70,7 @@ const createdDate = computed(() => {
           <div>
             <div class="text-sm text-fg-muted mb-1">{{ t('UserView.fields.lastName') }}</div>
             <div class="font-medium" :class="user.lastName ? 'text-fg' : 'text-fg-muted'">
-              {{ user.lastName || 'N/A' }}
+              {{ user.lastName || t('UserView.notAvailable') }}
             </div>
           </div>
           <Contact :size="20" class="text-icon" />
@@ -80,7 +80,7 @@ const createdDate = computed(() => {
           <div>
             <div class="text-sm text-fg-muted mb-1">{{ t('UserView.fields.email') }}</div>
             <div class="font-medium" :class="user.email ? 'text-fg' : 'text-fg-muted'">
-              {{ user.email || 'N/A' }}
+              {{ user.email || t('UserView.notAvailable') }}
             </div>
           </div>
           <Mail :size="20" class="text-icon" />
@@ -90,7 +90,7 @@ const createdDate = computed(() => {
           <div>
             <div class="text-sm text-fg-muted mb-1">{{ t('UserView.fields.course') }}</div>
             <div class="font-medium" :class="user.course?.name ? 'text-fg' : 'text-fg-muted'">
-              {{ user.course?.name || 'N/A' }}
+              {{ user.course?.name || t('UserView.notAvailable') }}
             </div>
           </div>
           <BookOpen :size="20" class="text-icon" />
@@ -108,7 +108,7 @@ const createdDate = computed(() => {
           <div>
             <div class="text-sm text-fg-muted mb-1">{{ t('UserView.fields.userId') }}</div>
             <div class="font-mono text-xs" :class="user.userId ? 'text-fg-muted' : 'text-fg-muted'">
-              {{ user.userId || 'N/A' }}
+              {{ user.userId || t('UserView.notAvailable') }}
             </div>
           </div>
           <User :size="20" class="text-icon" />
@@ -126,7 +126,7 @@ const createdDate = computed(() => {
           <div>
             <div class="text-sm text-fg-muted mb-1">{{ t('UserView.fields.keycloakId') }}</div>
             <div class="font-mono text-xs" :class="user.keycloak_id ? 'text-fg-muted' : 'text-fg-muted'">
-              {{ user.keycloak_id || 'N/A' }}
+              {{ user.keycloak_id || t('UserView.notAvailable') }}
             </div>
           </div>
           <Key :size="20" class="text-icon" />

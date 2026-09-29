@@ -34,8 +34,8 @@ defineProps<{
               <span class="text-sm font-semibold text-fg capitalize">{{ activeTask.type
               }}</span>
               <span class="text-xs font-medium text-fg-muted">·</span>
-              <span class="text-xs text-fg-muted">running since {{ formatDateTime(activeTask.started_at ||
-                activeTask.created_at) }}</span>
+              <span class="text-xs text-fg-muted">{{ $t('DeploymentDetailView.runningSince', {
+                time: formatDateTime(activeTask.started_at || activeTask.created_at) }) }}</span>
             </div>
             <div class="text-xs text-fg-muted font-mono mt-0.5">{{ activeTask.taskId }}</div>
           </div>
@@ -45,7 +45,7 @@ defineProps<{
           : live.connectionState === 'reconnecting'
             ? 'bg-warning-dot/10 text-warning border border-warning-dot/30'
             : 'bg-line/[.07] text-fg-muted border border-subtle'">
-          {{ live.connectionState === 'live' ? $t('DeploymentDetailView.streamLive') : live.connectionState }}
+          {{ $t(`DeploymentDetailView.streamState.${live.connectionState}`) }}
         </span>
       </div>
     </div>
@@ -139,7 +139,7 @@ defineProps<{
         </div>
       </div>
       <div v-else class="bg-line/[.04] border border-subtle rounded-md p-4 text-center text-xs text-fg-muted">
-        Waiting for first log line…
+        {{ $t('DeploymentDetailView.waitingForLogs') }}
       </div>
     </div>
   </div>

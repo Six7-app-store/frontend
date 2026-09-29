@@ -30,6 +30,8 @@ export default {
     help: "Help",
     config: "Configuration",
     approvals: "Approvals",
+    profile: "Profile",
+    logout: "Log out",
   },
 
   theme: {
@@ -316,6 +318,16 @@ export default {
     email: 'Email',
     noUserInfo: 'No user information available',
     streamLive: 'Stream live',
+    streamState: {
+      idle: 'Waiting',
+      connecting: 'Connecting…',
+      live: 'Stream live',
+      reconnecting: 'Reconnecting…',
+      ended: 'Ended',
+      error: 'Disconnected',
+    },
+    runningSince: 'running since {time}',
+    waitingForLogs: 'Waiting for first log line…',
     workerStarting: 'Worker is starting up…',
     phaseStarting: 'Starting…',
     liveOutput: 'Live output',

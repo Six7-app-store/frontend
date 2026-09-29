@@ -31,6 +31,8 @@ export default {
     help: "Hilfe",
     config: "Konfiguration",
     approvals: "Freigaben",
+    profile: "Profil",
+    logout: "Abmelden",
   },
 
   theme: {
@@ -316,6 +318,16 @@ export default {
     email: 'E-Mail',
     noUserInfo: 'Keine Benutzerinformationen verfügbar',
     streamLive: 'Stream live',
+    streamState: {
+      idle: 'Wartet',
+      connecting: 'Verbindet …',
+      live: 'Stream live',
+      reconnecting: 'Verbindet neu …',
+      ended: 'Beendet',
+      error: 'Getrennt',
+    },
+    runningSince: 'läuft seit {time}',
+    waitingForLogs: 'Warte auf die erste Logzeile …',
     workerStarting: 'Worker startet …',
     phaseStarting: 'Startet …',
     liveOutput: 'Live-Ausgabe',
@@ -861,6 +873,7 @@ export default {
   UserView: {
     title: 'Profil',
     subtitle: 'Deine Benutzerinformationen',
+    notAvailable: 'k. A.',
     loading: 'Lade Benutzerdaten...',
     fields: {
       firstName: 'Vorname',

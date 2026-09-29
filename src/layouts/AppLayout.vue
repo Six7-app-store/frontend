@@ -206,7 +206,7 @@ const navItems = computed(() => [
                   class="menu-item flex items-center gap-2.5 px-4 py-2 text-sm text-fg"
                 >
                   <User :size="15" class="text-icon" />
-                  Profil
+                  {{ t('nav.profile') }}
                 </RouterLink>
                 <div class="my-1 border-t" />
                 <button
@@ -214,7 +214,7 @@ const navItems = computed(() => [
                   class="menu-item w-full flex items-center gap-2.5 px-4 py-2 text-sm text-danger"
                 >
                   <LogOut :size="15" />
-                  Abmelden
+                  {{ t('nav.logout') }}
                 </button>
               </div>
             </Transition>

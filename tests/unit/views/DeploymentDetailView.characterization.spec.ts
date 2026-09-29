@@ -1162,9 +1162,9 @@ describe('DeploymentDetailView — Live-Stream', () => {
     expect(stream.currentPhaseIndex.value).toBe(5)
 
     const text = wrapper.text()
-    expect(text).toContain('running since 08.06.2026, 13:00:00')
+    expect(text).toContain(t('DeploymentDetailView.runningSince', { time: '08.06.2026, 13:00:00' }))
     expect(text).toContain('task-run')
-    expect(text).toContain('idle')
+    expect(text).toContain(t('DeploymentDetailView.streamState.idle'))
     expect(text).toContain('Terraform Plan')
     expect(text).toMatch(/45\s*%/)
     expect(stepLabels(wrapper)).toEqual([
@@ -1172,7 +1172,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
       'Packer Validate', 'Packer Build', 'Terraform Init', 'Terraform Plan', 'Terraform Apply',
       'Outputs And Cleanup',
     ])
-    expect(text).toContain('Waiting for first log line…')
+    expect(text).toContain(t('DeploymentDetailView.waitingForLogs'))
     // History hides the active task.
     expect(text).toContain(t('DeploymentDetailView.taskHistory'))
     // Busy deployment → resend disabled.
