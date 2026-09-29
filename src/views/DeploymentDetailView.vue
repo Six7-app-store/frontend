@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { Loader2 } from 'lucide-vue-next'
+import EntityListState from '@/components/ui/EntityListState.vue'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { ROUTE_NAMES } from '@/router/route-names'
@@ -378,16 +378,17 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
         />
     </div>
 
-    <!-- Load error: the deployment could not be loaded -->
-    <div v-else-if="loadFailed" class="flex flex-col items-center justify-center py-20 gap-3 text-center">
-        <p class="text-fg-muted">{{ $t('DeploymentDetailView.loadError') }}</p>
-        <RouterLink :to="{ name: ROUTE_NAMES.deploymentsList }" class="text-sm font-medium text-accent-fg hover:underline">
-            {{ $t('DeploymentDetailView.backToList') }}
-        </RouterLink>
-    </div>
-
-    <!-- Loading State -->
-    <div v-else class="flex items-center justify-center py-20">
-        <Loader2 class="animate-spin text-icon" :size="40" />
-    </div>
+    <!-- Still loading, or the deployment could not be loaded -->
+    <EntityListState
+        v-else
+        :is-loading="!loadFailed"
+        :is-error="loadFailed"
+        :error-message="$t('DeploymentDetailView.loadError')"
+    >
+        <template #error-action>
+            <RouterLink :to="{ name: ROUTE_NAMES.deploymentsList }" class="text-sm font-medium text-accent-fg hover:underline">
+                {{ $t('DeploymentDetailView.backToList') }}
+            </RouterLink>
+        </template>
+    </EntityListState>
 </template>

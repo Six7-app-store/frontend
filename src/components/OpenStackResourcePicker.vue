@@ -49,6 +49,7 @@ import {
 import { useToast } from '@/composables/useToast'
 import { splitCsv } from '@/services/variable-types'
 import { formatBytes } from '@/utils/format'
+import Spinner from '@/components/ui/Spinner.vue'
 import { getErrorDetailMessage, openStackFailure } from '@/utils/http-error'
 import {
   openstackResourcesApi,
@@ -735,7 +736,7 @@ onBeforeUnmount(() => {
 
         <!-- Loading -->
         <div v-if="isLoading" class="p-6 text-center text-fg-muted text-sm">
-          <div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-accent mb-2"></div>
+          <Spinner :size="20" class="inline-block mb-2" />
           <p>{{ t('openstackPicker.loading', { type: osTypeLabel() }) }}</p>
         </div>
 

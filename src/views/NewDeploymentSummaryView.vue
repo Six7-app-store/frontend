@@ -14,6 +14,7 @@ import {
 } from '@/services/deployment-variables.service'
 import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
+import Spinner from '@/components/ui/Spinner.vue'
 import {
   BarChart3,
   ArrowRight,
@@ -496,7 +497,7 @@ const handleBack = () => {
     </div>
 
     <div v-if="isLoadingVariables" class="flex flex-col items-center justify-center py-12 gap-3">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+      <Spinner />
       <span class="text-fg-muted text-sm">{{ t('deployment.summary.loadingConfig') }}</span>
     </div>
 

@@ -26,6 +26,7 @@ import ReasonModal from '@/components/ui/ReasonModal.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import TabBar from '@/components/ui/TabBar.vue'
 import BackLink from '@/components/ui/BackLink.vue'
+import Spinner from '@/components/ui/Spinner.vue'
 import ImageDropZone from '@/components/ui/ImageDropZone.vue'
 import { useImageUpload } from '@/composables/useImageUpload'
 import type { Tab } from '@/components/ui/tab'
@@ -369,7 +370,7 @@ onMounted(async () => {
     <!-- Loading -->
     <div v-if="isLoading" class="flex justify-center py-20">
       <div class="flex flex-col items-center gap-3">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+        <Spinner />
         <div class="text-fg-muted">{{ $t('AppsDetailView.loading') }}</div>
       </div>
     </div>

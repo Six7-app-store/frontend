@@ -7,6 +7,7 @@ import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
 import { useToast } from '@/composables/useToast'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
+import Spinner from '@/components/ui/Spinner.vue'
 import VariableInput from '@/components/VariableInput.vue'
 import ScopeBadge from '@/components/ui/ScopeBadge.vue'
 import { effectiveVariableScope, templateKeyOf } from '@/services/deployment-variables.service'
@@ -620,7 +621,7 @@ watch(
     <div class="flex-grow w-full max-w-7xl mx-auto mt-6">
       
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent mb-3"></div>
+        <Spinner class="mb-3" />
         <span class="text-fg-muted">{{ t('deployment.variables.loading') }}</span>
       </div>
 

@@ -8,6 +8,7 @@ import {
 } from 'lucide-vue-next'
 import ReasonModal from '@/components/ui/ReasonModal.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
+import Spinner from '@/components/ui/Spinner.vue'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
@@ -342,7 +343,7 @@ onMounted(loadAll)
 
           <!-- Loading approvals -->
           <div v-else-if="loadingMap[app.appId]" class="flex justify-center py-6">
-            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-accent"></div>
+            <Spinner :size="20" />
           </div>
 
           <!-- No entries -->

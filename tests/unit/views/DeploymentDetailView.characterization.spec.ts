@@ -374,7 +374,7 @@ describe('DeploymentDetailView — Laden', () => {
 
     expect(wrapper.find('h1').exists()).toBe(false)
     expect(wrapper.find('.animate-spin').exists()).toBe(true)
-    expect(wrapper.find('div.flex.items-center.justify-center.py-20').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain(t('DeploymentDetailView.loadError'))
   })
 
   it.each([
