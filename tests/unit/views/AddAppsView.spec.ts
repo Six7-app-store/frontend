@@ -141,7 +141,7 @@ describe('AddAppsView.vue', () => {
         })
         await fileInput.trigger('change')
 
-        expect(mockToastError).toHaveBeenCalledWith('AppsCreateView.messages.onlyImages')
+        expect(mockToastError).toHaveBeenCalledWith('image.onlyImages')
     })
 
     it('lehnt Bilder ab, die größer als 2MB sind', async () => {
@@ -154,7 +154,7 @@ describe('AddAppsView.vue', () => {
         Object.defineProperty(fileInput.element, 'files', { value: [hugeFile] })
         await fileInput.trigger('change')
 
-        expect(mockToastError).toHaveBeenCalledWith('AppsCreateView.messages.imageTooLarge_{"size":2}')
+        expect(mockToastError).toHaveBeenCalledWith('image.tooLarge_{"size":2}')
     })
 
     it('akzeptiert gültige Bilder und zeigt eine Vorschau an', async () => {
@@ -299,7 +299,7 @@ describe('AddAppsView.vue', () => {
         await fileInput.trigger('change')
         expect(wrapper.text()).toContain('logo.png')
 
-        await wrapper.findAll('span').find(s => s.text() === 'AppsCreateView.form.logoRemove')!.trigger('click')
+        await wrapper.findAll('button').find(b => b.text() === 'AppsCreateView.form.logoRemove')!.trigger('click')
         expect(wrapper.find('img').exists()).toBe(false)
 
         const buttons = wrapper.findAll('button')

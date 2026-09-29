@@ -41,6 +41,10 @@ export default {
     back: "Zurück",
     cancel: "Abbrechen",
   },
+  image: {
+    onlyImages: "Bitte lade nur Bilddateien hoch.",
+    tooLarge: "Bild zu groß (max. {size} MB).",
+  },
 
   markdownEditor: {
     tabEdit: "Bearbeiten",
@@ -481,8 +485,6 @@ export default {
       add: "Hinzufügen"
     },
     messages: {
-      onlyImages: "Bitte lade nur Bilddateien hoch.",
-      imageTooLarge: "Bild zu groß (max. {size} MB).",
       missingFields: "Bitte Namen und Repo-URL angeben.",
       invalidUrl: "Dies sieht nicht nach einer gültigen Git-URL aus (z.B. https://github.com/user/repo).",
       success: "App erfolgreich erstellt!",
@@ -545,8 +547,6 @@ export default {
       editSuccess: "App aktualisiert.",
       editError: "App konnte nicht aktualisiert werden.",
       nameRequired: "Name darf nicht leer sein.",
-      imageTooLarge: "Bild zu groß (max. {size} MB).",
-      onlyImages: "Bitte nur Bild-Dateien hochladen."
     },
     visibilityLabel: "Sichtbarkeit:",
     visibilityPublic: "Öffentlich",

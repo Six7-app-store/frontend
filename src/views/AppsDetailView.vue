@@ -10,14 +10,14 @@ import {
   Layers,
   Globe, ArrowLeft, GitBranch,
   Trash2, AlertCircle, Clock, Send, ShoppingBag, Lock, Undo2,
-  Pencil, Image as ImageIcon,
+  Pencil,
 } from 'lucide-vue-next'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRole } from '@/composables/useRole'
 import { formatDate } from '@/utils/format'
-import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
+import { readFileAsDataUrl } from '@/utils/file'
 import { iconForAppName, storeApprovalState } from '@/services/app-presentation.service'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Modal from '@/components/ui/Modal.vue'
@@ -25,6 +25,8 @@ import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import ReasonModal from '@/components/ui/ReasonModal.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import TabBar from '@/components/ui/TabBar.vue'
+import ImageDropZone from '@/components/ui/ImageDropZone.vue'
+import { useImageUpload } from '@/composables/useImageUpload'
 import type { Tab } from '@/components/ui/tab'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
@@ -62,14 +64,16 @@ const isDeleting = ref(false)
 const showEditModal = ref(false)
 const isSavingEdit = ref(false)
 const editForm = ref<{ name: string; description: string }>({ name: '', description: '' })
-// Image is tri-state on submit:
-// null         → user touched nothing → field omitted from payload
-// File         → new upload → encode as data-URL and send
-//   'remove'     → user explicitly cleared → send '' (backend clears)
-const editImage = ref<File | 'remove' | null>(null)
-const editImagePreview = ref<string | null>(null)
-const isEditDragging = ref(false)
-const editFileInputRef = ref<HTMLInputElement | null>(null)
+// Image on submit: a new file is sent as a data URL, a removed image as ''
+// (the backend clears it), an untouched one is left out of the payload.
+const {
+  file: editImageFile,
+  previewUrl: editImagePreview,
+  removed: editImageRemoved,
+  reset: resetEditImage,
+  choose: chooseEditImage,
+  remove: removeEditImage,
+} = useImageUpload()
 
 // Version approval state
 const approvals = ref<AppVersionApproval[]>([])
@@ -276,8 +280,7 @@ const openEditModal = () => {
     name: app.value.name || '',
     description: app.value.description || '',
   }
-  editImage.value = null
-  editImagePreview.value = app.value.image || null
+  resetEditImage(app.value.image || null)
   showEditModal.value = true
 }
 
@@ -285,48 +288,6 @@ const closeEditModal = () => {
   if (isSavingEdit.value) return
   showEditModal.value = false
 }
-
-const triggerEditFileInput = () => editFileInputRef.value?.click()
-
-const processEditFile = (file: File) => {
-  const problem = validateImageFile(file)
-  if (problem === 'not_image') {
-    toast.error(t('AppsDetailView.toasts.onlyImages'))
-    return
-  }
-  if (problem === 'too_large') {
-    toast.error(t('AppsDetailView.toasts.imageTooLarge', { size: MAX_IMAGE_MB }))
-    return
-  }
-  editImage.value = file
-  editImagePreview.value = URL.createObjectURL(file)
-}
-
-const handleEditFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (target.files && target.files.length > 0) {
-    const file = target.files[0]
-    if (file) processEditFile(file)
-  }
-  if (target) target.value = ''
-}
-
-const handleEditDrop = (event: DragEvent) => {
-  isEditDragging.value = false
-  if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-    const file = event.dataTransfer.files[0]
-    if (file) processEditFile(file)
-  }
-}
-
-const removeEditImage = () => {
-  editImage.value = 'remove'
-  editImagePreview.value = null
-}
-
-const editImageFile = computed<File | null>(() =>
-  editImage.value instanceof File ? editImage.value : null
-)
 
 const fileToDataUrl = async (file: File): Promise<string> => (await readFileAsDataUrl(file)) ?? ''
 
@@ -345,9 +306,9 @@ const submitEdit = async () => {
   if (editForm.value.description !== (app.value.description || '')) {
     payload.description = editForm.value.description
   }
-  if (editImage.value instanceof File) {
-    payload.image = await fileToDataUrl(editImage.value)
-  } else if (editImage.value === 'remove') {
+  if (editImageFile.value) {
+    payload.image = await fileToDataUrl(editImageFile.value)
+  } else if (editImageRemoved.value) {
     payload.image = ''
   }
 
@@ -753,41 +714,14 @@ onMounted(async () => {
             <label class="block text-sm font-medium text-fg mb-1.5">
               {{ $t('AppsDetailView.editModal.imageLabel') }}
             </label>
-            <div
-              class="bg-panel rounded-lg py-2 px-3 text-fg shadow-sm border-2 transition-all cursor-pointer flex items-center min-h-[60px]"
-              :class="isEditDragging ? 'border-success-dot bg-success-dot/10 border-dashed' : 'border-subtle hover:border-strong border-dashed'"
-              @dragover.prevent="isEditDragging = true"
-              @dragleave.prevent="isEditDragging = false"
-              @drop.prevent="handleEditDrop"
-              @click="triggerEditFileInput"
-            >
-              <input
-                ref="editFileInputRef"
-                type="file"
-                accept="image/*"
-                class="hidden"
-                @change="handleEditFileChange"
-              />
-              <div v-if="editImagePreview" class="flex justify-between items-center w-full">
-                <div class="flex items-center gap-3">
-                  <img :src="editImagePreview" :alt="editForm.name" class="w-10 h-10 object-contain rounded bg-line/[.04]" />
-                  <span class="text-sm text-fg">
-                    {{ editImageFile ? editImageFile.name : $t('AppsDetailView.editModal.currentImage') }}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  class="text-xs text-fg-muted hover:text-danger"
-                  @click.stop="removeEditImage"
-                >
-                  {{ $t('AppsDetailView.editModal.imageRemove') }}
-                </button>
-              </div>
-              <div v-else class="flex items-center gap-2 text-sm text-fg-muted">
-                <ImageIcon :size="18" />
-                <span>{{ $t('AppsDetailView.editModal.imageHint') }}</span>
-              </div>
-            </div>
+            <ImageDropZone
+              :preview-url="editImagePreview"
+              :caption="editImageFile ? editImageFile.name : $t('AppsDetailView.editModal.currentImage')"
+              :placeholder="$t('AppsDetailView.editModal.imageHint')"
+              :remove-label="$t('AppsDetailView.editModal.imageRemove')"
+              @select="chooseEditImage"
+              @remove="removeEditImage"
+            />
           </div>
         </div>
       </template>

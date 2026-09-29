@@ -11,7 +11,9 @@ import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import { iconForAppName } from '@/services/app-presentation.service'
-import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
+import ImageDropZone from '@/components/ui/ImageDropZone.vue'
+import { useImageUpload } from '@/composables/useImageUpload'
+import { readFileAsDataUrl } from '@/utils/file'
 
 // Icons
 import {
@@ -33,15 +35,17 @@ const isLoading = ref(false)
 const form = ref({
   name: '',
   description: '',
-  logo: null as File | null,
   repoUrl: '',
   isPrivate: false,
   submitAllVersions: false,
 })
 
-const imagePreviewUrl = ref<string | null>(null)
-const isDragging = ref(false)
-const fileInputRef = ref<HTMLInputElement | null>(null)
+const {
+  file: logoFile,
+  previewUrl: logoPreviewUrl,
+  choose: chooseLogo,
+  remove: removeLogo,
+} = useImageUpload()
 
 // Every installation runs its own GitHub App, so the link comes from the
 // backend. Stays null when none is configured; the hint then has no link.
@@ -58,51 +62,6 @@ onMounted(async () => {
 
 // Same icon the catalogue card will show for this name.
 const previewIcon = computed(() => iconForAppName(form.value.name))
-
-const triggerFileInput = () => {
-  fileInputRef.value?.click()
-}
-
-const processFile = (file: File) => {
-  const problem = validateImageFile(file)
-  if (problem === 'not_image') {
-    toast.error(t('AppsCreateView.messages.onlyImages'))
-    return
-  }
-  if (problem === 'too_large') {
-    // Pass the MB value to i18n.
-    toast.error(t('AppsCreateView.messages.imageTooLarge', { size: MAX_IMAGE_MB }))
-    return
-  }
-
-  if (imagePreviewUrl.value) {
-    URL.revokeObjectURL(imagePreviewUrl.value)
-  }
-
-  form.value.logo = file
-  imagePreviewUrl.value = URL.createObjectURL(file)
-}
-
-const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (target.files && target.files.length > 0) {
-    const file = target.files[0]
-    if (file) {
-      processFile(file)
-    }
-  }
-  if (target) target.value = ''
-}
-
-const handleDrop = (event: DragEvent) => {
-  isDragging.value = false
-  if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-    const file = event.dataTransfer.files[0]
-    if (file) {
-      processFile(file)
-    }
-  }
-}
 
 const isValidGitUrl = (url: string) => {
   const regex = /^(https?:\/\/|git@)[\w.-]+[\/:].+/
@@ -127,7 +86,7 @@ const handleSubmit = async () => {
 
   isLoading.value = true
   try {
-    const imageDataUrl = await fileToDataUrl(form.value.logo)
+    const imageDataUrl = await fileToDataUrl(logoFile.value)
 
     await appApi.create({
       name: form.value.name,
@@ -207,29 +166,15 @@ const handleSubmit = async () => {
             <ImageIcon class="text-icon" :size="28" />
           </div>
           <div class="font-bold text-fg w-48 pl-2">{{ $t('AppsCreateView.form.logoLabel') }}</div>
-          <div
-              class="flex-1 bg-panel rounded py-1.5 px-3 text-fg shadow-sm mx-2 border-2 transition-all cursor-pointer flex items-center min-h-[36px]"
-              :class="isDragging ? 'border-success-dot bg-success-dot/10 border-dashed' : 'border-transparent hover:border-strong border-dashed'"
-              @dragover.prevent="isDragging = true"
-              @dragleave.prevent="isDragging = false"
-              @drop.prevent="handleDrop"
-              @click="triggerFileInput"
-          >
-            <input
-                ref="fileInputRef"
-                type="file"
-                accept="image/*"
-                class="hidden"
-                @change="handleFileChange"
-            />
-            <span v-if="!imagePreviewUrl" class="text-sm text-fg-muted">
-              {{ $t('AppsCreateView.form.logoSelect') }}
-            </span>
-            <div v-else class="flex justify-between items-center w-full">
-              <span class="text-sm text-success font-medium truncate">{{ form.logo?.name }}</span>
-              <span class="text-xs text-fg-muted hover:text-danger ml-2" @click.stop="imagePreviewUrl = null; form.logo = null">{{ $t('AppsCreateView.form.logoRemove') }}</span>
-            </div>
-          </div>
+          <ImageDropZone
+              class="flex-1 mx-2"
+              :preview-url="logoPreviewUrl"
+              :caption="logoFile?.name ?? ''"
+              :placeholder="$t('AppsCreateView.form.logoSelect')"
+              :remove-label="$t('AppsCreateView.form.logoRemove')"
+              @select="chooseLogo"
+              @remove="removeLogo"
+          />
         </div>
         <div class="bg-line/[.07] rounded-lg p-3 flex items-center shadow-sm">
           <div class="p-2">
@@ -309,8 +254,8 @@ const handleSubmit = async () => {
             <!-- Icon/logo box, matching the overview -->
             <div class="bg-panel p-3 rounded-lg shadow-sm text-fg flex items-center justify-center w-[56px] h-[56px] flex-shrink-0">
               <img
-                  v-if="imagePreviewUrl"
-                  :src="imagePreviewUrl"
+                  v-if="logoPreviewUrl"
+                  :src="logoPreviewUrl"
                   :alt="$t('AppsCreateView.preview.logoAlt')"
                   class="w-full h-full object-contain"
               />

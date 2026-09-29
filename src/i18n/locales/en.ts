@@ -40,6 +40,10 @@ export default {
     back: "Back",
     cancel: "Cancel",
   },
+  image: {
+    onlyImages: "Please upload image files only.",
+    tooLarge: "Image too large (max. {size} MB).",
+  },
 
   markdownEditor: {
     tabEdit: "Edit",
@@ -479,8 +483,6 @@ export default {
       add: "Add"
     },
     messages: {
-      onlyImages: "Please upload image files only.",
-      imageTooLarge: "Image too large (max. {size} MB).",
       missingFields: "Please provide a name and a repo URL.",
       invalidUrl: "This does not look like a valid Git URL (e.g., https://github.com/user/repo).",
       success: "App successfully created!",
@@ -542,8 +544,6 @@ export default {
       editSuccess: "App updated.",
       editError: "Failed to update app.",
       nameRequired: "Name must not be empty.",
-      imageTooLarge: "Image too large (max. {size} MB).",
-      onlyImages: "Please upload an image file."
     },
     visibilityLabel: "Visibility:",
     visibilityPublic: "Public",

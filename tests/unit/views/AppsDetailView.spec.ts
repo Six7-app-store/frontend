@@ -370,7 +370,7 @@ describe('AppsDetailView.vue', () => {
             const wrapper = await openEditDialog()
             await chooseFile(wrapper, new File(['x'], 'notes.txt', { type: 'text/plain' }))
 
-            expect(mockToastError).toHaveBeenCalledWith('AppsDetailView.toasts.onlyImages')
+            expect(mockToastError).toHaveBeenCalledWith('image.onlyImages')
             await save(wrapper)
             expect(appApi.update).not.toHaveBeenCalled()
         })
