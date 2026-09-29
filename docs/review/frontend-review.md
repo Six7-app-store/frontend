@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 778 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 786 Tests.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -407,7 +407,7 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 3 Reine Helfer | erledigt | `561b8d6` (D3, D4), `8cc62c0` (D10), `55e14bc` (Charakterisierungstests `submitDraft`), `a43fc76` (D1, D7, D8), `13db0ae` (D2), `2fe8cf1` (D5, D33), `eec4dca` (D16, D17), `c694e40` (D24), `c401b18` (D31 teilweise, D32 teilweise) |
 | 4 Einheitliche Fehlerbehandlung | erledigt | `fc9fd16` (V9), `2a3f738` (V7), `1c1150a` (D26, V8), `2dbcde8` (D25), `05f6dac` (D27) |
 | 5 Single Source of Truth Status/Rollen | erledigt | `3451e95` (Lifecycle-Buttons nur für Owner/Admin), `34d6247` (D15, T13), `8d11e85` (D14), `9a40bf8` (Charakterisierung Router), `64c7478` (D28, V17), `4d91fc9` (D18 App-Teil, D19, D20), `ee19486` (D22) |
-| 6 UI-Bausteine | **in Arbeit** (3 von 9) | `60db13c` (V18 `BaseButton`), `817e3d6` (T5, V15 `ConfirmModal`), `7198eb3` (Charakterisierung Begründungs-Dialoge), `a2b7257` (T6 `ReasonModal`) |
+| 6 UI-Bausteine | **in Arbeit** (4 von 9) | `60db13c` (V18 `BaseButton`), `817e3d6` (T5, V15 `ConfirmModal`), `7198eb3` (Charakterisierung Begründungs-Dialoge), `a2b7257` (T6 `ReasonModal`), `7b9bb7d` (Charakterisierung Schalter), `7695cdf` (T7 `ToggleSwitch`) |
 | 7–16 | offen | — |
 
 **Nachträge zum Befund:**
@@ -428,17 +428,18 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Schritt 6, `BaseButton` (V18):** Varianten heißen `primary | secondary | danger | ghost` (vorher `yellow`/`green`/`red`), neuer Prop `size` (`sm` = `px-4 py-2`, `md` = Standard). Die rohen `px-4 py-2`-Buttons in den drei LTI-Views und in `SettingsOpenStackView` laufen jetzt über `BaseButton size="sm"`; ihre Schrift ist dadurch `text-sm`. Aufrufer, die `BaseButton` per `class="px-4 py-2"` verkleinern wollten (`DeploymentDetailHeader`, `AppsDetailView`), sind unverändert — ob die Klasse dort überhaupt greift, hängt an der Tailwind-Reihenfolge und ist ungeprüft; bei Gelegenheit auf `size="sm"` umstellen und im Browser vergleichen.
 - **Schritt 6, `ConfirmModal` (T5, V15):** Alle sechs Ja/Nein-Dialoge laufen über `components/ui/ConfirmModal.vue`; während `busy` lässt sich der Dialog nicht schließen. Die drei `Deployment*Modal.vue` bleiben als dünne Hüllen (ihre Spec prüft sie direkt). **Fehlerbehebung:** Deployment löschen hatte keinen Busy-Schutz, ein Doppelklick schickte zwei DELETEs → `deleteBusy` in `useDeploymentLifecycle`. **Sichtbar:** Die Kurs-Dialoge (Kurs löschen, Mitglied entfernen) haben keinen roten, größeren Titel mehr. Neuer i18n-Schlüssel `action.cancel`; die verwaisten `CoursesView.deleteModal.cancel`, `CourseDetailView.removeModal.cancel`, `DeploymentDetailView.cancelButton` sind entfernt.
 - **Schritt 6, `ReasonModal` (T6):** Reject/Revoke (`AdminAppsView`) und Einreichen (`AppsDetailView`) laufen über `components/ui/ReasonModal.vue` (= `ConfirmModal` + Textarea; `ConfirmModal` hat dafür `confirmDisabled`). **Sichtbar:** Der Reject-Titel ist nicht mehr rot; während der Anfrage steht auf dem Button das normale Label statt `...`. Verwaiste Schlüssel `AdminAppsView.rejectModal.cancel` / `revokeModal.cancel` entfernt.
+- **Schritt 6, `ToggleSwitch` (T7):** Sichtbarkeit (`AppsDetailView`), „Alle Versionen einreichen“ (`AddAppsView`), Admin-Filter (`AdminAppsView`, `size="sm"`) und die Bool-Eingabe (`VariableInput`) laufen über `components/ui/ToggleSwitch.vue`, jetzt mit `role="switch"`/`aria-checked`/`aria-label`. **Sichtbar:** Die Bool-Eingabe im Variablen-Schritt hat jetzt die Standardgröße (größerer Knopf).
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–5 abgeschlossen, Schritt 6 zu 3 von 9 Bausteinen erledigt (`BaseButton`, `ConfirmModal`, `ReasonModal`). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Arbeitsbaum sauber, keine halb fertigen Dateien.
+**Stand (29.09.):** Schritte 0–5 abgeschlossen, Schritt 6 zu 4 von 9 Bausteinen erledigt (`BaseButton`, `ConfirmModal`, `ReasonModal`, `ToggleSwitch`). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Arbeitsbaum sauber, keine halb fertigen Dateien. Der Container `frontend-dev` wurde allein gestartet (`docker start frontend-dev`); der übrige Dev-Stack läuft nicht.
 
-**Hier weitermachen: Schritt 6, `ToggleSwitch` (T7).**
-- Nutzer: Sichtbarkeit in `AppsDetailView` (Store-Tab), „Alle Versionen einreichen“ in `AddAppsView`, Filter in `AdminAppsView` (kleinere Geometrie `h-5 w-10`), Bool-Eingabe in `VariableInput` (andere Knopf-Offsets, hat `disabled`).
-- Vorgehen: `components/ui/ToggleSwitch.vue` mit `v-model` (boolean), `size` (`sm` für den Admin-Filter), `disabled`, `aria-label`/`role="switch"` + `aria-checked` (fehlt heute überall). Erst prüfen, ob die bestehenden Specs die Schalter anklicken (AddApps: `submit_all_versions`; VariableInput über die Wizard-Specs); wo nicht, vorher Charakterisierungstests.
-- Danach in dieser Reihenfolge: `TabBar` (T9), `ImageDropZone` + `useImageUpload` (T8, D23), `CopyButton` (T19), `PageHeader` mit `back` (T12), `EntityListState` mit `isError` (T11).
-- Ungeprüft im Browser: 6a–6c sind nur über Tests abgesichert.
+**Hier weitermachen: Schritt 6, `TabBar` (T9).**
+- Nutzer: `AppsDetailView` (Übersicht/Store, mit Hinweis-Punkt am Store-Tab), `NewDeploymentConfigView` (Kurse/Einzelne — aktiv und inaktiv sehen dort gleich aus, nur die Unterstreichung unterscheidet), `SettingsOpenStackView` (App-Credential/Passwort, mit „empfohlen“-Zusatz), `MarkdownEditor` (Schreiben/Vorschau).
+- Vorgehen: `components/ui/TabBar.vue` mit `v-model` (aktiver Schlüssel) und `tabs: { key, label, icon? }[]`, Slot pro Tab für Zusätze (Punkt, „empfohlen“); `role="tablist"`/`role="tab"`/`aria-selected`. Vorher prüfen, welche Specs die Tabs klicken (AppsDetail: `tabStore` ja; Config: „switches tabs“ ja; Settings/MarkdownEditor prüfen), fehlende Fälle als Charakterisierungstests.
+- Danach: `ImageDropZone` + `useImageUpload` (T8, D23), `CopyButton` (T19), `PageHeader` mit `back` (T12), `EntityListState` mit `isError` (T11).
+- Ungeprüft im Browser: 6a–6d sind nur über Tests abgesichert.
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
