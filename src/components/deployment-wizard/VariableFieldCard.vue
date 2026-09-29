@@ -47,17 +47,20 @@ const fileAcceptFor = (v: AppVariable): string =>
 
 /** Label of a slot input: the team, or team and person. */
 const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
+  const teamLabel = (team: string) => t('deployment.variables.slotTeam', { team })
+  const memberLabel = (team: string, member: string) =>
+    t('deployment.variables.slotTeamMember', { team, member })
   const scope = effectiveScope(variable)
-  if (scope === 'team') return `Team „${slotKey}"`
+  if (scope === 'team') return teamLabel(slotKey)
   if (scope === 'user') {
     // Longest team name first, so "Team-10" is not read as "Team-1" + "0-…".
     const names = teams.value.map((team) => team.name).sort((a, b) => b.length - a.length)
     for (const team of names) {
-      if (slotKey === team) return `Team „${team}"`
-      if (slotKey.startsWith(team + '-')) return `Team „${team}" → ${slotKey.slice(team.length + 1)}`
+      if (slotKey === team) return teamLabel(team)
+      if (slotKey.startsWith(team + '-')) return memberLabel(team, slotKey.slice(team.length + 1))
     }
     const sep = slotKey.lastIndexOf('-')
-    if (sep > 0) return `Team „${slotKey.slice(0, sep)}" → ${slotKey.slice(sep + 1)}`
+    if (sep > 0) return memberLabel(slotKey.slice(0, sep), slotKey.slice(sep + 1))
   }
   return slotKey
 }

@@ -768,6 +768,8 @@ export default {
     },
 
     variables: {
+      slotTeam: 'Team "{team}"',
+      slotTeamMember: 'Team "{team}" → {member}',
       title: 'User-specific Variables',
       description: 'Optional parameters for the deployment.',
       label: 'USER INPUT VAR',
