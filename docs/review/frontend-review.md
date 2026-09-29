@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 852 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 877 Tests.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -411,7 +411,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 7 `NewDeploymentVariableView` zerlegen | erledigt | `9b38a5b` (Charakterisierung), `5c5783a` (Logik → `services/variable-form.service`, `useVariableForm`, `useWizardTeams`), `15e3b56` (T1, T2 `VariableFieldCard`) |
 | 8 `NewDeploymentSummaryView` + `WizardStepLayout` | erledigt bis auf `WizardStepLayout` (wartet auf UX-Entscheidung) | `1974c36` (Charakterisierung), `1db8c9c` (Services `deployment-summary`, `deployment-submit-error`), `b22131f` (T3 `SummaryVariableCard`, V19 Datei-Karte), `5c7d659` (leerer Wert als „-“) |
 | 9 `submitDraft` → `buildDeploymentPayload` | erledigt | `55e14bc` (Charakterisierung), `6cd3114` (reine Funktion in `services/deployment-draft.service.ts`) |
-| 10–16 | offen | — |
+| 10 Team-Assignment + Config | erledigt | `ddfde0d` (Charakterisierung), `4ca75c8` (`team-assignment.service`, `useTeamAssignment`, `useStudentDirectory`, Karten), `27d3181` (`useUserSearch`, `useCourseStudents`, auch `CourseDetailView`), `fe0dea9` (Config-Komponenten) |
+| 11–16 | offen | — |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -440,17 +441,18 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Schritt 7:** `NewDeploymentVariableView` von 1 101 auf ~165 Zeilen; Logik in `services/variable-form.service.ts` (reine Funktionen mit Tests), `composables/useVariableForm.ts`, `composables/useWizardTeams.ts`; die Karte je Variable in `components/deployment-wizard/VariableFieldCard.vue`. **Sichtbar:** Der Hinweis „keine Teams konfiguriert“ erscheint bei Datei-Variablen jetzt über statt unter der (leeren) Liste. Nebenbei: Der Vergleich eines Listenwerts mit dem Default sortiert das Array der Eingabe nicht mehr in place. Offen und bewusst nicht angefasst: `formatSlotLabel` baut die Slot-Beschriftung „Team „x“ → y“ weiter auf Deutsch ohne i18n (V19) und `Image:` im Kopf der Template-Gruppe.
 - **Schritt 8:** `NewDeploymentSummaryView` von 737 auf ~430 Zeilen; Zeilen-Aufbereitung in `services/deployment-summary.service.ts`, Fehlertexte beim Absenden in `services/deployment-submit-error.service.ts` (beide mit Tests), `components/deployment-wizard/SummaryVariableCard.vue` für die zwei gleichen Spalten. **Sichtbar:** Die Datei-Karte ist übersetzt; ein leerer Variablenwert erscheint als „-“ statt als leere Zelle (Fehlerbehebung, `5c7d659`). **Offen:** `WizardStepLayout` (T4) — die vier Schritte haben drei Kopf-Designs, vier Breiten und vier verschiedene Fußleisten (Fortschritt, Pflichtfeld-Warnung, Deploy-Spinner). Eine Vereinheitlichung ändert die Optik und ist offene Frage 2 aus Abschnitt 4; nicht ohne Entscheidung umsetzen.
 - **Schritt 9:** `deployment.store.ts` von 327 auf 148 Zeilen; `submitDraft` prüft nur noch App/Name und sendet `buildDeploymentPayload(draft)`. Die Meldung „App und Name sind Pflichtfelder“ bleibt vorerst hartkodiert (V19): Der Router-Guard verhindert den Fall, sie ist nur ein Programmierfehler-Schutz; beim i18n-Schritt 15 mit erledigen.
+- **Schritt 10:** `NewDeploymentGroupsAssignmentView` 612 → ~270, `NewDeploymentConfigView` 533 → ~270 Zeilen. D11 erledigt: Es gibt nur noch `deploymentStore.studentCache` (die Pinia-Map ist schon reaktiv), Zugriff über `useStudentDirectory`. D12 erledigt: `useUserSearch` für Config und `CourseDetailView`. Beide Wizard-Views und `CourseDetailView` rufen `userApi`/`courseApi` nicht mehr direkt (V12 dort erledigt). **Kleine Verhaltensänderungen (nur Fehler-/Randpfade, im Commit `27d3181` beschrieben):** Eine fehlgeschlagene Suche im Config-Schritt leert die Trefferliste und ersetzt ihren alten Fehler-Toast; auf der Kursseite zeigt eine geleerte Suche die schon geladene Startliste, statt sie neu zu holen. Die Drag-Handler bleiben bewusst in der View (UI-Zustand, `relatedTarget`-Schutz).
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–9 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
+**Stand (29.09.):** Schritte 0–10 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
 
-**Hier weitermachen: Schritt 10 — Team-Assignment und Config zerlegen (2.5, 2.6).**
-- Zuerst die Specs `NewDeploymentGroupsAssignmentView.spec.ts` / `NewDeploymentConfigView.spec.ts` um Shuffle-Verteilung und Moduswechsel ergänzen (eigener Commit).
-- Dann reine Funktionen nach `services/team-assignment.service.ts` (`moveStudent`, `removeStudent`, `shuffleInto` mit injizierbarem `random`, `unassigned`, `canProceed`) mit Tests; `distributeEvenly` liegt schon in `deployment-draft.service.ts`.
-- Danach Composables `useStudentDirectory` (ein Cache statt drei, D11), `useUserSearch` (D12, auch `CourseDetailView`), `useCourseStudents`; die Views rufen `userApi`/`courseApi` dann nicht mehr direkt (V12).
+**Hier weitermachen: Schritt 11 — App-Views über Store/Composable (V12, D20–D22).**
+- Direkte `appApi`-Aufrufe noch in `AppsView`, `AddAppsView`, `AppsDetailView`, `AdminAppsView`, `LtiDeepLinkView` (`grep -rn "@/api/" src/views`). Die vorhandenen, bisher ungenutzten Aktionen in `app.store.ts` nutzen; neu `useAppDetail(appId)` und `useAppApprovals()`.
+- ID-Fallback `appId || id || _id` (D21) einmal im Mapper von `api/app.api.ts` normalisieren.
+- Die Specs mocken `appApi`; sie bleiben stabil, solange der Store dieselben API-Funktionen ruft. Vorher `app.store.test.ts` um die genutzten Aktionen ergänzen.
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
