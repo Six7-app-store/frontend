@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 801 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 820 Tests.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -408,7 +408,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 4 Einheitliche Fehlerbehandlung | erledigt | `fc9fd16` (V9), `2a3f738` (V7), `1c1150a` (D26, V8), `2dbcde8` (D25), `05f6dac` (D27) |
 | 5 Single Source of Truth Status/Rollen | erledigt | `3451e95` (Lifecycle-Buttons nur für Owner/Admin), `34d6247` (D15, T13), `8d11e85` (D14), `9a40bf8` (Charakterisierung Router), `64c7478` (D28, V17), `4d91fc9` (D18 App-Teil, D19, D20), `ee19486` (D22) |
 | 6 UI-Bausteine | erledigt | `60db13c` (V18 `BaseButton`), `817e3d6` (T5, V15 `ConfirmModal`), `7198eb3` (Charakterisierung Begründungs-Dialoge), `a2b7257` (T6 `ReasonModal`), `7b9bb7d` (Charakterisierung Schalter), `7695cdf` (T7 `ToggleSwitch`), `ffcc2ed` (T9 `TabBar`), `dbee14d` (Charakterisierung Bild-Upload), `c05fab9` (T8, D23 `ImageDropZone` + `useImageUpload`), `6bde16f` (T19 `CopyButton`), `a9f4308` (T12 `BackLink`), `37d2648` (T12 `PageHeader` mit Icon), `fb7462d` (T11 `Spinner` + `EntityListState` mit Fehlerzustand) |
-| 7–16 | offen | — |
+| 7 `NewDeploymentVariableView` zerlegen | **in Arbeit** (Logik raus, Template offen) | `9b38a5b` (Charakterisierung), `5c5783a` (Logik → `services/variable-form.service`, `useVariableForm`, `useWizardTeams`) |
+| 8–16 | offen | — |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -439,12 +440,12 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–6 abgeschlossen. Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Arbeitsbaum sauber, keine halb fertigen Dateien. Der Container `frontend-dev` wurde allein gestartet (`docker start frontend-dev`); der übrige Dev-Stack läuft nicht.
+**Stand (29.09.):** Schritte 0–6 abgeschlossen, Schritt 7 zur Hälfte: Die Logik von `NewDeploymentVariableView` steckt jetzt in `services/variable-form.service.ts` (reine Funktionen, eigene Tests), `composables/useVariableForm.ts` und `composables/useWizardTeams.ts`; das Script der View hat noch ~100 Zeilen. Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Arbeitsbaum sauber. Container `frontend-dev` läuft allein.
 
-**Hier weitermachen: Schritt 7 — `NewDeploymentVariableView` zerlegen** (Befund 2.1, Plan Abschnitt 4).
-- **Zuerst Charakterisierungstests (eigener Commit)** in `tests/unit/views/NewDeploymentVariableView.spec.ts`: Rehydrierung aus dem Draft (single image und multi image), Scoped-Seed (Team/User-Default auf alle Slots), `handleNext` → exakter Stand von `draft.variables` und `draft.userInputVar`, Required-Gating (Weiter gesperrt + Liste der fehlenden Felder), Team-Umbenennung (verworfene Slots + Toast). Die Helfer aus Schritt 3 (`services/variable-types`, `deployment-draft.service`, `deployment-variables.service`) sind schon da.
-- Dann: reine Funktionen nach `services/variable-form.service.ts` (hydrate, serialize, missingRequired, slotKeysFor, seedScopedDefault, reconcileSlots), Zustand nach `composables/useVariableForm.ts`, `wizardTeams` nach `composables/useWizardTeams.ts`; Template: `VariableFieldCard.vue` für die fast identischen Packer-/Terraform-Karten (T1, ~190 Zeilen doppelt), `ScopedVariableInputs.vue`, `FileVariableSlots.vue`.
-- Ungeprüft im Browser: Schritt 6 ist nur über Tests abgesichert (Stack lief nicht).
+**Hier weitermachen: Schritt 7, Template (T1, T2).**
+- Die Packer-Karte (`v-for="variable in packerByTemplate[tkey]"`) und die Terraform-Karte (`v-for="variable in terraformVariables"`) im Template sind bis auf den Formularschlüssel identisch (~190 Zeilen). Ziel: `components/deployment-wizard/VariableFieldCard.vue` mit Prop `variable` und dem Formular aus `useVariableForm` (Typ `VariableForm`) — per Prop oder `provide`/`inject`; darin die Blöcke für Kopf/Tooltip/Marker-Fehler/Badges/Scope-Hinweis, Datei-Slots (`FileDropZone`) und Scoped-Eingaben (T2, 8× derselbe Warnkasten → ein Block).
+- Absicherung: die 14 Tests in `NewDeploymentVariableView.spec.ts` (7 davon Charakterisierung aus `9b38a5b`) müssen unverändert grün bleiben; sie finden Eingaben über `VariableInput`-Props `inputId`/`modelValue`.
+- Danach Schritt 8 (`NewDeploymentSummaryView` + `WizardStepLayout`).
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
