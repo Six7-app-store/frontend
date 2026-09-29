@@ -18,12 +18,18 @@ import { LOCALE_STORAGE_KEY } from '@/utils/storage-keys'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouteAccess } from '@/composables/useRouteAccess'
 import { useRole } from '@/composables/useRole'
+import { useTheme } from '@/composables/useTheme'
 import { ROUTE_NAMES } from '@/router/route-names'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
-import logo from '@/assets/Six7-white-withoutBackground.png'
+import logoDark from '@/assets/Logo.png'
+import logoLight from '@/assets/Logo_lightmode.png'
+import logoIcon from '@/assets/Logo-icon.png'
+
+const { isDark } = useTheme()
+const logo = computed(() => (isDark.value ? logoDark : logoLight))
 
 const { locale, t } = useI18n()
 const authStore = useAuthStore()
@@ -96,9 +102,14 @@ const navItems = computed(() => [
     >
 
       <!-- Logo area -->
-      <div class="logo-plate h-16 flex items-center px-3" style="overflow: visible;">
-        <RouterLink :to="{ name: ROUTE_NAMES.home }" class="block" style="height: 48px; width: 100%; overflow: visible;">
-          <img :src="logo" alt="SIX7 Click'n Deploy" style="position: relative; z-index: 30; height: 96px; margin-top: -24px; margin-left: -8px; max-width: none;" />
+      <div class="logo-plate h-16 flex items-center px-3">
+        <!-- Collapsed, the full wordmark would shrink to an unreadable strip, so only the emblem is shown. -->
+        <RouterLink :to="{ name: ROUTE_NAMES.home }" class="flex items-center justify-center h-10 w-full">
+          <img
+            :src="sidebarCollapsed ? logoIcon : logo"
+            alt="Click'n Deploy"
+            class="h-full max-w-full object-contain"
+          />
         </RouterLink>
       </div>
 

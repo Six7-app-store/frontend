@@ -536,6 +536,9 @@ export interface AppVariable {
   // Allowed file extensions for file variables; used as the FileDropZone
   // ``accept`` attribute. The backend rejects other extensions with 422.
   fileExtensions?: string[]
+  // Closed value set from ``validation { condition = contains([...], var.x) }``.
+  // Renders a dropdown instead of free text; the resource picker still wins.
+  allowedValues?: (string | number | boolean)[]
   // Marker error set by the backend when a variable's ``@openstack`` marker is
   // malformed. The frontend shows it as an inline banner and falls back to free text.
   markerError?: AppVariableMarkerError

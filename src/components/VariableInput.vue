@@ -21,7 +21,7 @@ import type { OsResourceType } from '@/api/openstack-resources.api'
 
 const { t } = useI18n()
 
-defineProps<{
+const props = defineProps<{
   variable: AppVariable
   modelValue: any
   /** Which Network's id-mode value to consult when this is a subnet
@@ -54,6 +54,15 @@ const hasOsPicker = (v: AppVariable): boolean =>
 // system's view of the same check.
 const pickerOsType = (v: AppVariable): OsResourceType => v.osType as OsResourceType
 
+// A closed value set from the template's ``validation`` block. The option
+// values are indices so numbers and bools survive the round trip through
+// the DOM, which only knows strings.
+const hasAllowedValues = (v: AppVariable): boolean => Boolean(v.allowedValues?.length)
+const selectedIndex = (v: AppVariable): number | '' => {
+  const i = (v.allowedValues ?? []).findIndex((opt) => String(opt) === String(props.modelValue))
+  return i === -1 ? '' : i
+}
+
 const update = (value: any) => emit('update:modelValue', value)
 
 const borderClass = 'border-subtle focus:border-accent/60'
@@ -73,6 +82,19 @@ const borderClass = 'border-subtle focus:border-accent/60'
     :model-value="modelValue"
     @update:modelValue="update"
   />
+
+  <select
+    v-else-if="hasAllowedValues(variable)"
+    :value="selectedIndex(variable)"
+    @change="update(variable.allowedValues![Number(($event.target as HTMLSelectElement).value)])"
+    :id="inputId || variable.name"
+    :disabled="disabled"
+    class="w-full px-3 py-2 rounded-lg border-2 outline-none transition-all font-medium text-gray-800 bg-white disabled:bg-gray-50 disabled:text-gray-500"
+    :class="borderClass"
+  >
+    <option value="" disabled>{{ t('variableInput.chooseValue') }}</option>
+    <option v-for="(opt, i) in variable.allowedValues" :key="i" :value="i">{{ opt }}</option>
+  </select>
 
   <div v-else-if="isBool(variable.type)" class="flex items-center gap-3">
     <ToggleSwitch

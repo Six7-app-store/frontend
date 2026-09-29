@@ -816,7 +816,7 @@ export default {
       editBtn: 'Edit',
       packerVars: 'Packer Variables',
       terraformVars: 'Terraform Variables',
-      noPackerVars: 'No Packer variables',
+      noPackerVars: 'No Packer variables',
       noTerraformVars: 'No Terraform variables',
       uploadedFiles: 'Uploaded files',
       fileScope: 'Scope: {scope}',
@@ -1146,6 +1146,7 @@ export default {
     listPlaceholder: 'Value 1, Value 2',
     defaultPlaceholder: 'Default: {value}',
     enterValue: 'Enter value...',
+    chooseValue: 'Choose a value...',
   },
 
   lti: {
