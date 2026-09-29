@@ -19,15 +19,9 @@
  */
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  ltiApi,
-  type LtiContext,
-  type LtiRosterImport,
-  type LtiRosterSkipReason,
-} from '@/api/lti.api'
-import { courseApi } from '@/api/course.api'
+import type { LtiRosterSkipReason } from '@/api/lti.api'
+import { useLtiCourseMapping } from '@/composables/useLtiCourseMapping'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
-import type { Course } from '@/types'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import {
   Loader2,
@@ -51,10 +45,8 @@ type State =
 
 const state = ref<State>('loading')
 const error = ref<string | null>(null)
-const context = ref<LtiContext | null>(null)
-const courses = ref<Course[]>([])
+const { context, courses, report, load, map, importRoster } = useLtiCourseMapping()
 const selected = ref<string>('')
-const report = ref<LtiRosterImport | null>(null)
 
 /** What Moodle calls this course, with the short label as a fallback. */
 const moodleName = computed(
@@ -110,9 +102,7 @@ async function importFromMoodle() {
 
   state.value = 'importing'
   try {
-    const { data } = await ltiApi.importContext(context.value.ltiContextId)
-    report.value = data
-    context.value = data.context
+    await importRoster()
     state.value = 'imported'
   } catch (err) {
     console.error('Importing the Moodle roster failed:', err)
@@ -126,8 +116,7 @@ async function save() {
 
   state.value = 'saving'
   try {
-    const { data } = await ltiApi.mapContext(context.value.ltiContextId, selected.value)
-    context.value = data
+    await map(selected.value)
     state.value = 'saved'
   } catch (err) {
     console.error('Mapping the Moodle course failed:', err)
@@ -153,15 +142,8 @@ onMounted(async () => {
   }
 
   try {
-    // Both are needed before anything can be shown, and neither depends
-    // on the other.
-    const [ctxResp, courseResp] = await Promise.all([
-      ltiApi.getContext(ltiContextId),
-      courseApi.list(),
-    ])
-    context.value = ctxResp.data
-    courses.value = courseResp.data
-    selected.value = ctxResp.data.courseId ?? ''
+    await load(ltiContextId)
+    selected.value = context.value?.courseId ?? ''
     state.value = 'ready'
   } catch (err) {
     console.error('Loading the Moodle course failed:', err)

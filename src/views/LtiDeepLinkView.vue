@@ -20,8 +20,8 @@
  */
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { ltiApi } from '@/api/lti.api'
 import { useAppCatalog } from '@/composables/useAppCatalog'
+import { useLtiDeepLink } from '@/composables/useLtiDeepLink'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { Loader2, Link2, AlertCircle } from 'lucide-vue-next'
@@ -33,6 +33,7 @@ type State = 'loading' | 'ready' | 'sending' | 'error'
 const state = ref<State>('loading')
 const error = ref<string | null>(null)
 const { apps, load: loadApps } = useAppCatalog()
+const { select } = useLtiDeepLink()
 const handle = ref<string | null>(null)
 const selected = ref<string>('')
 
@@ -80,8 +81,8 @@ async function choose() {
 
   state.value = 'sending'
   try {
-    const { data } = await ltiApi.selectDeepLink(handle.value, selected.value)
-    postToMoodle(data.returnUrl, data.jwt)
+    const { returnUrl, jwt } = await select(handle.value, selected.value)
+    postToMoodle(returnUrl, jwt)
   } catch (err) {
     console.error('Deep link selection failed:', err)
     error.value = describe(err)
