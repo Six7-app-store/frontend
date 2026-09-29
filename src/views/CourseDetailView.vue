@@ -2,7 +2,7 @@
 import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { GraduationCap, ArrowLeft, UserMinus, UserPlus, Search, X, Loader2, Edit2, Check, X as CloseIcon, Info } from 'lucide-vue-next'
+import { GraduationCap, UserMinus, UserPlus, Search, X, Loader2, Edit2, Check, X as CloseIcon, Info } from 'lucide-vue-next'
 import { useCourseStore } from '@/stores/course.store'
 import { userApi } from '@/api/user.api'
 import { useToast } from '@/composables/useToast'
@@ -12,6 +12,7 @@ import { roleBadgeVariant, roleLabelKey } from '@/i18n/role-labels'
 import { badgeVariantClasses } from '@/components/ui/badge-variants'
 import { useI18n } from 'vue-i18n'
 import Card from '@/components/ui/Card.vue'
+import BackLink from '@/components/ui/BackLink.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import Modal from '@/components/ui/Modal.vue'
@@ -236,13 +237,7 @@ const roleClass = (role: string | undefined) => badgeVariantClasses(roleBadgeVar
 
 <template>
   <div class="p-6 max-w-5xl mx-auto">
-    <button
-        @click="router.push({ name: ROUTE_NAMES.courses })"
-        class="flex items-center gap-2 text-fg-muted hover:text-fg mb-4 text-sm"
-    >
-      <ArrowLeft :size="16" />
-      {{ $t('CourseDetailView.back') }}
-    </button>
+    <BackLink :to="{ name: ROUTE_NAMES.courses }" :label="$t('CourseDetailView.back')" class="mb-4" />
 
     <div v-if="courseStore.isLoading && !courseStore.currentCourse" class="text-center py-16 text-fg-muted">
       {{ $t('CourseDetailView.loading') }}

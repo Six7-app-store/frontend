@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import { ref } from 'vue'
 
 import CourseDetailView from '@/views/CourseDetailView.vue'
@@ -113,6 +113,7 @@ describe('CourseDetailView.vue', () => {
                     $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
                 },
                 stubs: {
+                    RouterLink: RouterLinkStub,
                     Card: { template: '<div class="stub-card"><slot /></div>' },
                     BaseButton: { template: '<button><slot /></button>' },
                     BaseInput: {
@@ -147,6 +148,15 @@ describe('CourseDetailView.vue', () => {
 
         expect(mockToastError).toHaveBeenCalledWith('CourseDetailView.toasts.loadError')
         expect(mockPush).toHaveBeenCalledWith({ name: 'courses' })
+    })
+
+    it('verlinkt "Zurück" auf die Kursliste', async () => {
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        const back = wrapper.findComponent(RouterLinkStub)
+        expect(back.text()).toContain('CourseDetailView.back')
+        expect(back.props('to')).toEqual({ name: 'courses' })
     })
 
     // --- 2. Inline-Editing (Kursnamen bearbeiten) ---

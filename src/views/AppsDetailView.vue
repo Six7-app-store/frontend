@@ -8,7 +8,7 @@ import { getErrorDetail, getErrorDetailMessage, getErrorStatus } from '@/utils/h
 import { useI18n } from 'vue-i18n'
 import {
   Layers,
-  Globe, ArrowLeft, GitBranch,
+  Globe, GitBranch,
   Trash2, AlertCircle, Clock, Send, ShoppingBag, Lock, Undo2,
   Pencil,
 } from 'lucide-vue-next'
@@ -25,6 +25,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import ReasonModal from '@/components/ui/ReasonModal.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import TabBar from '@/components/ui/TabBar.vue'
+import BackLink from '@/components/ui/BackLink.vue'
 import ImageDropZone from '@/components/ui/ImageDropZone.vue'
 import { useImageUpload } from '@/composables/useImageUpload'
 import type { Tab } from '@/components/ui/tab'
@@ -362,12 +363,7 @@ onMounted(async () => {
 
     <!-- Back -->
     <div class="mb-6">
-      <button
-        @click="router.back()"
-        class="flex items-center text-fg-muted hover:text-fg transition-colors"
-      >
-        <ArrowLeft :size="20" class="mr-2" /> {{ $t('AppsDetailView.backToOverview') }}
-      </button>
+      <BackLink :label="$t('AppsDetailView.backToOverview')" />
     </div>
 
     <!-- Loading -->
