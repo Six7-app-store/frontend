@@ -9,13 +9,12 @@
  * ``protocol`` in its terraform output, so a Windows VM gets an RDP
  * address instead of an ssh command it could not answer.
  *
- * Copy buttons share the page-wide "just copied" state
- * (``injectCopyToClipboard``); password visibility is owned by the
- * Teams card and toggled via ``toggle-password``.
+ * Password visibility is owned by the Teams card and toggled via
+ * ``toggle-password``.
  */
 import { computed } from 'vue'
-import { Check, Copy, Eye, EyeOff } from 'lucide-vue-next'
-import { injectCopyToClipboard } from '@/composables/useCopyToClipboard'
+import { Eye, EyeOff } from 'lucide-vue-next'
+import CopyButton from '@/components/ui/CopyButton.vue'
 import { connectionFor, type AccountMatch } from '@/services/deployment-account-matching.service'
 import type { TeamVm } from '@/services/deployment-outputs.service'
 
@@ -29,8 +28,6 @@ const props = defineProps<{
 defineEmits<{
   (e: 'toggle-password'): void
 }>()
-
-const { copiedKey, copyToClipboard } = injectCopyToClipboard()
 
 /** The one access line for this account, or ``null`` when the app
  * ships no reachable endpoint. */
@@ -57,12 +54,8 @@ const copyTitleKey = computed(() => {
       class="flex items-center gap-1.5 bg-line/[.04] px-2 py-1 rounded border border-subtle">
       <span class="text-fg-muted font-sans text-[10px] uppercase tracking-wider flex-shrink-0">User:</span>
       <span>{{ account.data.username }}</span>
-      <button
-        @click="copyToClipboard(account.data.username, 'user-' + account.key)"
-        class="text-fg-muted hover:text-warning p-0.5 rounded hover:bg-line/[.12] transition-colors flex-shrink-0"
-        :title="copiedKey === 'user-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyUsername')">
-        <component :is="copiedKey === 'user-' + account.key ? Check : Copy" :size="12" />
-      </button>
+      <CopyButton :text="account.data.username" :copy-key="'user-' + account.key"
+        :title="$t('DeploymentDetailView.copyUsername')" />
     </div>
 
     <!-- Connection pill. ``web`` renders a link, everything else plain
@@ -73,12 +66,8 @@ const copyTitleKey = computed(() => {
       <a v-if="connection.href" :href="connection.href" target="_blank" rel="noopener noreferrer"
         class="text-accent-fg hover:underline truncate">{{ connection.value }}</a>
       <span v-else class="truncate">{{ connection.value }}</span>
-      <button
-        @click="copyToClipboard(connection.href ?? connection.value, 'conn-' + account.key)"
-        class="text-fg-muted hover:text-warning p-0.5 rounded hover:bg-line/[.12] transition-colors flex-shrink-0"
-        :title="copiedKey === 'conn-' + account.key ? $t('DeploymentDetailView.copied') : $t(copyTitleKey)">
-        <component :is="copiedKey === 'conn-' + account.key ? Check : Copy" :size="12" />
-      </button>
+      <CopyButton :text="connection.href ?? connection.value" :copy-key="'conn-' + account.key"
+        :title="$t(copyTitleKey)" />
     </div>
 
     <div v-if="account.data.auth"
@@ -97,13 +86,8 @@ const copyTitleKey = computed(() => {
           <component :is="passwordVisible ? EyeOff : Eye"
             :size="12" />
         </button>
-        <button
-          @click="copyToClipboard(account.data.auth, 'auth-' + account.key)"
-          class="text-fg-muted hover:text-warning p-0.5 rounded hover:bg-line/[.12] transition-colors"
-          :title="copiedKey === 'auth-' + account.key ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyPassword')">
-          <component :is="copiedKey === 'auth-' + account.key ? Check : Copy"
-            :size="12" />
-        </button>
+        <CopyButton :text="account.data.auth" :copy-key="'auth-' + account.key"
+          :title="$t('DeploymentDetailView.copyPassword')" />
       </div>
     </div>
 

@@ -5,12 +5,11 @@
  * terraform state, each with a copy button.
  *
  * ``showTaskLogsTrace`` is owned by the parent so the toggle survives
- * switching between tasks; copy buttons share the page-wide "just
- * copied" state (``injectCopyToClipboard``).
+ * switching between tasks.
  */
 import { computed } from 'vue'
-import { AlertCircle, Check, Copy, Loader2, Settings, Terminal } from 'lucide-vue-next'
-import { injectCopyToClipboard } from '@/composables/useCopyToClipboard'
+import { AlertCircle, Loader2, Settings, Terminal } from 'lucide-vue-next'
+import CopyButton from '@/components/ui/CopyButton.vue'
 import { formatDateTime } from '@/utils/format'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { prettyJson, highlightJson } from '@/utils/json-display'
@@ -28,8 +27,6 @@ const props = defineProps<{
 defineEmits<{
   (e: 'toggle-trace'): void
 }>()
-
-const { copiedKey, copyToClipboard } = injectCopyToClipboard()
 
 // Counts the resources in the selected task's state for the header
 // sub-headline (``countTfResources`` in ``utils/task-logs``).
@@ -118,15 +115,8 @@ const taskLogsSplit = computed(() => {
                 {{ logEntryCount }} {{ $t('DeploymentDetailView.logEntries') }}
               </span>
             </div>
-            <button @click="copyToClipboard(prettyJson(selectedTask.logs), 'logs')"
-              :title="copiedKey === 'logs' ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyToClipboard')"
-              class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors"
-              :class="copiedKey === 'logs'
-                ? 'status-success'
-                : 'bg-panel text-fg border-strong hover:bg-line/[.04]'">
-              <component :is="copiedKey === 'logs' ? Check : Copy" :size="13" />
-              {{ copiedKey === 'logs' ? $t('DeploymentDetailView.copiedShort') : $t('DeploymentDetailView.copyShort') }}
-            </button>
+            <CopyButton variant="labeled" :text="prettyJson(selectedTask.logs)" copy-key="logs"
+              :title="$t('DeploymentDetailView.copyToClipboard')" />
           </div>
           <div class="bg-line/[.04] p-4 overflow-y-auto max-h-[500px]">
             <div class="bg-panel rounded-lg border border-subtle p-4">
@@ -192,15 +182,8 @@ const taskLogsSplit = computed(() => {
               </div>
             </div>
 
-            <button @click="copyToClipboard(prettyJson(activeDataTask?.tf_state), 'tf_state')"
-              :title="copiedKey === 'tf_state' ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyToClipboard')"
-              class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors flex-shrink-0"
-              :class="copiedKey === 'tf_state'
-                ? 'status-success'
-                : 'bg-panel text-fg border-strong hover:bg-line/[.04]'">
-              <component :is="copiedKey === 'tf_state' ? Check : Copy" :size="13" />
-              {{ copiedKey === 'tf_state' ? $t('DeploymentDetailView.copiedShort') : $t('DeploymentDetailView.copyShort') }}
-            </button>
+            <CopyButton variant="labeled" :text="prettyJson(activeDataTask?.tf_state)" copy-key="tf_state"
+              :title="$t('DeploymentDetailView.copyToClipboard')" class="flex-shrink-0" />
           </div>
 
           <div class="bg-panel p-4 overflow-y-auto max-h-[500px]">
