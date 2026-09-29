@@ -14,27 +14,22 @@
  *  - osMode='id'   → stores the UUID(s)
  *  - osMode='name' → stores the name(s)
  *  - multi=false   → string
- *  - multi=true    → Array<String> or comma-separated string (echoes input)
+ *  - multi=true    → Array<String>; a comma-separated string is turned into
+ *                    an array on mount
  *
  * The UI always shows the display name even when the stored value is a UUID;
  * lookups go through ``composables/useOpenStackResourceCache``.
  *
- * The dropdown opens as a floating layer via ``<Teleport to="body">`` so other
- * wizard fields don't shift. Position is computed from the trigger's bounding
- * rect and recalibrated on scroll/resize; scrolling the trigger out of view
- * closes the dropdown.
- *
  * Edge cases handled:
- *  - 412 credentials missing → CTA banner instead of an empty list
- *  - 502 OpenStack down → banner + fallback to free-text input
+ *  - 412 credentials missing → compact hint instead of an empty list
+ *  - 502 OpenStack down → message + retry + free-text input
  *  - default value is a UUID whose name isn't cached yet → show the raw value
- *    with a "(manual)" tag until the cache loads
+ *    with an "external" badge until the cache loads
  *  - empty list → hint with free-text option
- *  - subnet filter: ``networkId`` prop can change at runtime → reactive reload
- *  - dropdown taller than space below → flips up
- *  - unmount with dropdown open → body teleport cleaned up
+ *  - subnet filter: ``filterNetworkId`` can change at runtime → reactive reload
+ *  - dropdown placement, flip-up and cleanup: ``useFloatingDropdown``
  */
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   AlertTriangle,
@@ -47,28 +42,18 @@ import {
   X,
 } from 'lucide-vue-next'
 import { useToast } from '@/composables/useToast'
+import { useFloatingDropdown } from '@/composables/useFloatingDropdown'
+import { useOsResourceList } from '@/composables/useOsResourceList'
+import { getDisplayName, ensureLoaded } from '@/composables/useOpenStackResourceCache'
 import { splitCsv } from '@/services/variable-types'
-import { formatBytes } from '@/utils/format'
+import {
+  filterResources,
+  selectedKeysOf,
+  type ResourceItem,
+} from '@/services/openstack-resource-presentation.service'
 import Spinner from '@/components/ui/Spinner.vue'
-import { getErrorDetailMessage, openStackFailure } from '@/utils/http-error'
-import {
-  openstackResourcesApi,
-  type OsResourceType,
-} from '@/api/openstack-resources.api'
-import {
-  prime as primeDisplayCache,
-  invalidate as invalidateDisplayCache,
-  getDisplayName,
-  ensureLoaded,
-} from '@/composables/useOpenStackResourceCache'
-// CredentialMissingBanner is not imported here — the parent
-// (NewDeploymentVariableView) renders the full banner once above the variables
-// grid when any picker emits ``credentials-missing``. Here we only show a
-// compact placeholder so banners don't stack.
+import type { OsResourceType } from '@/api/openstack-resources.api'
 
-// ----------------------------------------------------------------
-// Props / Emits
-// ----------------------------------------------------------------
 type Mode = 'id' | 'name'
 
 const props = defineProps<{
@@ -84,180 +69,38 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', val: string | string[]): void
-  // Fired when entering/leaving the ``credentials_missing`` state. The parent
-  // renders a single shared banner above the variables grid in response.
-  (e: 'credentials-missing', missing: boolean): void
 }>()
 
 const toast = useToast()
 const { t } = useI18n()
 
-// ----------------------------------------------------------------
-// State
-// ----------------------------------------------------------------
-type ResourceItem = {
-  id: string
-  name: string
-  secondary?: string
-  tertiary?: string
-  raw: any
-}
+const { items, isLoading, errorReason, errorMessage, load } = useOsResourceList(() => ({
+  type: props.osType,
+  networkId: props.filterNetworkId,
+  azService: props.azService,
+}))
 
-const items = ref<ResourceItem[]>([])
-const isLoading = ref(false)
-const errorReason = ref<'credentials_missing' | 'unavailable' | null>(null)
-const errorMessage = ref<string>('')
-const isOpen = ref(false)
 const searchQuery = ref('')
 const isFreeTextMode = ref(false)
 const freeTextValue = ref('')
 
-// Floating-layer anchor: live-tracked bounding rect of the trigger so the
-// teleport panel lands exactly below (or above) it.
 const triggerEl = ref<HTMLElement | null>(null)
 const dropdownEl = ref<HTMLElement | null>(null)
 const searchInputEl = ref<HTMLInputElement | null>(null)
-const popupStyle = ref<Record<string, string>>({})
-// 'down' | 'up' — flip when there isn't enough space below.
-const popupDir = ref<'down' | 'up'>('down')
-
-// ----------------------------------------------------------------
-// Resource-specific mappings
-// ----------------------------------------------------------------
-function fetchByType(): Promise<{ data: any[] }> {
-  switch (props.osType) {
-    case 'network':
-      return openstackResourcesApi.listNetworks()
-    case 'subnet':
-      return openstackResourcesApi.listSubnets(props.filterNetworkId || undefined)
-    case 'flavor':
-      return openstackResourcesApi.listFlavors()
-    case 'image':
-      return openstackResourcesApi.listImages('active')
-    case 'keypair':
-      return openstackResourcesApi.listKeypairs()
-    case 'security_group':
-      return openstackResourcesApi.listSecurityGroups()
-    case 'floating_ip_pool':
-      return openstackResourcesApi.listFloatingIpPools()
-    case 'volume':
-      return openstackResourcesApi.listVolumes()
-    case 'router':
-      return openstackResourcesApi.listRouters()
-    case 'availability_zone':
-      return openstackResourcesApi.listAvailabilityZones(props.azService || 'compute')
-  }
-}
-
-function adapt(raw: any): ResourceItem {
-  // Per-type display adaptation. Secondary = rough spec info.
-  switch (props.osType) {
-    case 'flavor':
-      return {
-        id: raw.id ?? '',
-        name: raw.name ?? '',
-        secondary: `${raw.vcpus ?? 0} vCPU · ${formatRam(raw.ram)} RAM · ${raw.disk ?? 0} GB Disk`,
-        tertiary: raw.is_public ? '' : t('openstackPicker.network.private'),
-        raw,
-      }
-    case 'image': {
-      const size = raw.size ? formatBytes(raw.size) : ''
-      return {
-        id: raw.id ?? '',
-        name: raw.name ?? '',
-        secondary: raw.disk_format ? `${raw.disk_format} · ${size}` : size,
-        tertiary: raw.status === 'active' ? '' : raw.status,
-        raw,
-      }
-    }
-    case 'network':
-      return {
-        id: raw.id ?? '',
-        name: raw.name ?? '',
-        secondary: raw.description || '',
-        tertiary: [raw.shared ? t('openstackPicker.network.shared') : '', raw.external ? t('openstackPicker.network.external') : ''].filter(Boolean).join(' · '),
-        raw,
-      }
-    case 'subnet':
-      return {
-        id: raw.id ?? '',
-        name: raw.name ?? '',
-        secondary: `${raw.cidr || '?'}  IPv${raw.ip_version ?? 4}`,
-        tertiary: raw.gateway_ip ? `${t('openstackPicker.network.gatewayPrefix')} ${raw.gateway_ip}` : '',
-        raw,
-      }
-    case 'keypair':
-      return {
-        id: raw.name ?? '',
-        name: raw.name ?? '',
-        secondary: raw.fingerprint ? raw.fingerprint.slice(0, 16) + '…' : '',
-        tertiary: raw.type || 'ssh',
-        raw,
-      }
-    case 'security_group':
-      return {
-        id: raw.id ?? '',
-        name: raw.name ?? '',
-        secondary: raw.description || '',
-        raw,
-      }
-    case 'floating_ip_pool':
-      return {
-        id: raw.id ?? '',
-        name: raw.name ?? '',
-        secondary: raw.description || '',
-        raw,
-      }
-    case 'volume':
-      return {
-        id: raw.id ?? '',
-        name: raw.name || t('openstackPicker.unnamed'),
-        secondary: `${raw.size ?? 0} GB · ${raw.volume_type || ''}`,
-        tertiary: [raw.bootable ? 'bootable' : '', raw.status].filter(Boolean).join(' · '),
-        raw,
-      }
-    case 'router':
-      return {
-        id: raw.id ?? '',
-        name: raw.name ?? '',
-        secondary: raw.status || '',
-        tertiary: raw.external_gateway_info ? t('openstackPicker.network.externalGateway') : '',
-        raw,
-      }
-    case 'availability_zone':
-      return {
-        id: raw.name ?? '',
-        name: raw.name ?? '',
-        secondary: raw.state || '',
-        raw,
-      }
-  }
-}
-
-// ----------------------------------------------------------------
-// Selection logic
-// ----------------------------------------------------------------
-const selectedKeys = computed<Set<string>>(() => {
-  const v = props.modelValue
-  // String-coerce: HCL defaults can arrive as number/boolean (``default = 2``),
-  // which would be invisible without coercion. ``null``/``undefined`` and the
-  // literal strings ``"null"``/``"undefined"`` are treated as empty.
-  const toKey = (x: unknown): string => {
-    if (x === null || x === undefined) return ''
-    const s = String(x)
-    if (s === 'null' || s === 'undefined') return ''
-    return s
-  }
-  if (props.multi) {
-    if (Array.isArray(v)) return new Set(v.map(toKey).filter(Boolean))
-    if (typeof v === 'string' && v.trim()) {
-      return new Set(splitCsv(v))
-    }
-    return new Set()
-  }
-  const key = toKey(v)
-  return new Set(key ? [key] : [])
+const {
+  isOpen,
+  popupStyle,
+  close: closeDropdown,
+  toggle: toggleDropdown,
+} = useFloatingDropdown(triggerEl, dropdownEl, {
+  onOpen: () => searchInputEl.value?.focus(),
+  onClose: () => { searchQuery.value = '' },
 })
+
+// ----------------------------------------------------------------
+// Selection
+// ----------------------------------------------------------------
+const selectedKeys = computed(() => selectedKeysOf(props.modelValue, !!props.multi))
 
 const valueOf = (item: ResourceItem): string =>
   props.osMode === 'id' ? item.id : item.name
@@ -271,58 +114,29 @@ const isSelected = (item: ResourceItem): boolean =>
  * marked ``known: false`` when neither has it.
  */
 const selectedDisplay = computed(() => {
-  const out: { value: string; displayName: string; known: boolean }[] = []
   const mode: Mode = props.osMode || 'name'
-  for (const key of selectedKeys.value) {
-    // Local items are the source of truth when loaded.
+  return [...selectedKeys.value].map((key) => {
     const local = items.value.find((it) => valueOf(it) === key)
-    if (local) {
-      out.push({ value: key, displayName: local.name, known: true })
-      continue
-    }
-    // Otherwise ask the shared display cache.
+    if (local) return { value: key, displayName: local.name, known: true }
     const cached = getDisplayName(props.osType, mode, key)
-    if (cached) {
-      out.push({ value: key, displayName: cached.name, known: cached.known })
-    } else {
-      out.push({ value: key, displayName: key, known: false })
-    }
-  }
-  return out
-})
-
-const filteredItems = computed<ResourceItem[]>(() => {
-  const q = searchQuery.value.trim().toLowerCase()
-  const base = q
-    ? items.value.filter(
-        (it) =>
-          it.name.toLowerCase().includes(q) ||
-          it.id.toLowerCase().includes(q) ||
-          (it.secondary || '').toLowerCase().includes(q),
-      )
-    : items.value
-  // Pull selected entries to the top so a set default is immediately visible in
-  // a long list. Relative order of selected items is preserved (stable sort).
-  return [...base].sort((a, b) => {
-    const sa = isSelected(a) ? 0 : 1
-    const sb = isSelected(b) ? 0 : 1
-    return sa - sb
+    if (cached) return { value: key, displayName: cached.name, known: cached.known }
+    return { value: key, displayName: key, known: false }
   })
 })
 
+const filteredItems = computed(() => filterResources(items.value, searchQuery.value, isSelected))
+
+// Multi-select always emits an Array, however the parent initialised
+// ``modelValue`` — the backend's ``list(string)`` HCL type requires one.
 function toggle(item: ResourceItem) {
   const key = valueOf(item)
   if (props.multi) {
     const current = new Set(selectedKeys.value)
     if (current.has(key)) current.delete(key)
     else current.add(key)
-    // Multi-select always emits an Array, regardless of how the parent
-    // initialised ``modelValue`` (the backend's ``map(list(string))`` HCL type
-    // requires an array).
     emit('update:modelValue', Array.from(current))
   } else {
-    const newVal = isSelected(item) ? '' : key
-    emit('update:modelValue', newVal)
+    emit('update:modelValue', isSelected(item) ? '' : key)
     closeDropdown()
   }
 }
@@ -334,82 +148,30 @@ function removeChip(value: string) {
   }
   const current = new Set(selectedKeys.value)
   current.delete(value)
-  // Multi-select always emits Array — see ``toggle`` above for the
-  // rationale.
   emit('update:modelValue', Array.from(current))
 }
 
 // ----------------------------------------------------------------
 // Loading / Refresh
 // ----------------------------------------------------------------
-async function load(opts: { forceRefresh?: boolean } = {}) {
-  isLoading.value = true
-  errorReason.value = null
-  errorMessage.value = ''
-  try {
-    if (opts.forceRefresh) {
-      try {
-        await openstackResourcesApi.refresh(props.osType)
-      } catch (err) {
-        // Best effort: the list load below still runs and reports its own
-        // error if the backend is really unavailable.
-        console.warn('[OsPicker] refresh failed:', err)
-      }
-      invalidateDisplayCache(props.osType)
-    }
-    const res = await fetchByType()
-    items.value = (res.data || []).map(adapt)
-    // Prime the display cache for other pickers / summary view, but only for an
-    // unfiltered load — a per-network subnet list must not pollute the global cache.
-    if (!props.filterNetworkId) {
-      primeDisplayCache(props.osType, res.data || [])
-    }
-  } catch (err) {
-    const failure = openStackFailure(err)
-    if (failure === 'credentials_missing') {
-      errorReason.value = 'credentials_missing'
-    } else if (failure === 'unavailable') {
-      errorReason.value = 'unavailable'
-      errorMessage.value = getErrorDetailMessage(err) ?? t('openstackPicker.osError')
-    } else {
-      errorReason.value = 'unavailable'
-      errorMessage.value = t('openstackPicker.loadError')
-    }
-    items.value = []
-  } finally {
-    isLoading.value = false
-  }
-}
-
 async function handleRefresh() {
-  // Snapshot the pre-refresh selection and its ``known`` flags so we can detect
-  // entries that disappeared after the reload (e.g. a flavor deleted in the
-  // project). We only warn for keys that were known before.
+  // Remember which selected entries were known before, to warn about the
+  // ones the reload no longer has (e.g. a flavor deleted in the project).
   const previouslyKnown = new Map<string, string>()
   for (const entry of selectedDisplay.value) {
     if (entry.known) previouslyKnown.set(entry.value, entry.displayName)
   }
   await load({ forceRefresh: true })
-  if (errorReason.value === null) {
-    const lost: string[] = []
-    for (const [key, name] of previouslyKnown) {
-      const stillThere = items.value.some((it) => valueOf(it) === key)
-      if (!stillThere) lost.push(name || key)
-    }
-    if (lost.length > 0) {
-      toast.warning(t('openstackPicker.toasts.removed', { label: lost.join(', ') }))
-    } else {
-      toast.success(t('openstackPicker.toasts.listRefreshed'))
-    }
+  if (errorReason.value !== null) return
+  const lost = [...previouslyKnown]
+    .filter(([key]) => !items.value.some((it) => valueOf(it) === key))
+    .map(([key, name]) => name || key)
+  if (lost.length > 0) {
+    toast.warning(t('openstackPicker.toasts.removed', { label: lost.join(', ') }))
+  } else {
+    toast.success(t('openstackPicker.toasts.listRefreshed'))
   }
 }
-
-// Credentials-missing bubble-up: the parent renders a single banner for all
-// pickers, so we emit on every change and the parent de-duplicates.
-watch(
-  () => errorReason.value === 'credentials_missing',
-  (missing) => emit('credentials-missing', missing),
-)
 
 // Reload when the subnet filter / AZ service / os type changes.
 watch(
@@ -420,22 +182,20 @@ watch(
 )
 
 onMounted(() => {
-  // CSV-to-array migration: some persisted ``list(string)`` variables arrive
-  // as a comma-separated string, so normalize once on mount (multi mode only)
-  // so the parent can consistently work with an array.
+  // Some persisted ``list(string)`` values arrive as a comma-separated
+  // string; normalise once so the parent works with an array.
   if (props.multi && typeof props.modelValue === 'string' && props.modelValue.trim()) {
     emit('update:modelValue', splitCsv(props.modelValue))
   }
   load()
-  // Feed the cache when this is a non-filtered picker, so other
-  // components (summary view) can read the name immediately.
+  // Feed the shared cache so other components (summary) have the names.
   if (!props.filterNetworkId) {
     ensureLoaded(props.osType)
   }
 })
 
 // ----------------------------------------------------------------
-// Free-Text-Fallback
+// Free-text fallback
 // ----------------------------------------------------------------
 function enableFreeText() {
   isFreeTextMode.value = true
@@ -452,28 +212,14 @@ function disableFreeText() {
 
 function onFreeTextInput(val: string) {
   freeTextValue.value = val
-  if (props.multi) {
-    // Multi-mode free-text: always emit an Array so the contract
-    // matches ``toggle()`` / ``removeChip()``. Splits on comma so
-    // the user can type "uuid-1, uuid-2" and have it land as
-    // ``["uuid-1", "uuid-2"]`` instead of a raw CSV string.
-    emit('update:modelValue', splitCsv(val))
-  } else {
-    emit('update:modelValue', val.trim())
-  }
+  // Multi mode splits on commas, so "uuid-1, uuid-2" lands as an array.
+  emit('update:modelValue', props.multi ? splitCsv(val) : val.trim())
 }
 
 // ----------------------------------------------------------------
-// Display-Helpers
+// Labels
 // ----------------------------------------------------------------
-function formatRam(mb: number | undefined | null): string {
-  if (!mb) return '0 MB'
-  if (mb < 1024) return `${mb} MB`
-  return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`
-}
-
-// Resource type as shown to the user (in placeholders, search field, empty
-// state). The keys mirror the ``OsResourceType`` values.
+// Resource type as shown to the user; keys mirror ``OsResourceType``.
 function osTypeLabel(): string {
   return t(`openstackPicker.types.${props.osType}`)
 }
@@ -483,101 +229,6 @@ const placeholderText = computed(() => {
   return props.multi
     ? t('openstackPicker.selectPlural', { type: osTypeLabel() })
     : t('openstackPicker.selectSingular', { type: osTypeLabel() })
-})
-
-// ----------------------------------------------------------------
-// Floating Dropdown — Position + Lifecycle
-// ----------------------------------------------------------------
-/**
- * Positions the dropdown panel relative to the trigger rect using
- * ``position: fixed`` + ``top``/``left``/``width``, with the body as anchor
- * (matches ``Teleport to="body"``). Flips up when the panel doesn't fit below.
- */
-function recalcPosition() {
-  const trigger = triggerEl.value
-  if (!trigger) return
-  const rect = trigger.getBoundingClientRect()
-  const viewportH = window.innerHeight
-  // Close the dropdown if the trigger scrolled out of the viewport, otherwise
-  // it would hang with no visible anchor.
-  if (rect.bottom < 0 || rect.top > viewportH) {
-    isOpen.value = false
-    return
-  }
-  const PANEL_MAX_H = 384 // Tailwind max-h-96
-  const GAP = 4
-  const spaceBelow = viewportH - rect.bottom
-  const spaceAbove = rect.top
-  const flipUp = spaceBelow < PANEL_MAX_H && spaceAbove > spaceBelow
-  popupDir.value = flipUp ? 'up' : 'down'
-
-  if (flipUp) {
-    popupStyle.value = {
-      position: 'fixed',
-      left: `${rect.left}px`,
-      width: `${rect.width}px`,
-      bottom: `${viewportH - rect.top + GAP}px`,
-      maxHeight: `${Math.max(spaceAbove - GAP - 8, 200)}px`,
-      zIndex: '60',
-    }
-  } else {
-    popupStyle.value = {
-      position: 'fixed',
-      left: `${rect.left}px`,
-      width: `${rect.width}px`,
-      top: `${rect.bottom + GAP}px`,
-      maxHeight: `${Math.max(spaceBelow - GAP - 8, 200)}px`,
-      zIndex: '60',
-    }
-  }
-}
-
-function openDropdown() {
-  isOpen.value = true
-  // nextTick: wait for the panel in the DOM, then position it and focus search.
-  nextTick(() => {
-    recalcPosition()
-    searchInputEl.value?.focus()
-  })
-  // Register listeners while the dropdown is open. ``capture: true`` on scroll
-  // so scrolling inside overflow containers (the wizard card) also reacts.
-  window.addEventListener('scroll', recalcPosition, true)
-  window.addEventListener('resize', recalcPosition)
-  document.addEventListener('mousedown', onDocumentMouseDown)
-  document.addEventListener('keydown', onKeydown)
-}
-
-function closeDropdown() {
-  if (!isOpen.value) return
-  isOpen.value = false
-  searchQuery.value = ''
-  window.removeEventListener('scroll', recalcPosition, true)
-  window.removeEventListener('resize', recalcPosition)
-  document.removeEventListener('mousedown', onDocumentMouseDown)
-  document.removeEventListener('keydown', onKeydown)
-}
-
-function toggleDropdown() {
-  if (isOpen.value) closeDropdown()
-  else openDropdown()
-}
-
-function onDocumentMouseDown(ev: MouseEvent) {
-  const target = ev.target as Node | null
-  if (!target) return
-  if (triggerEl.value?.contains(target)) return
-  if (dropdownEl.value?.contains(target)) return
-  closeDropdown()
-}
-
-function onKeydown(ev: KeyboardEvent) {
-  if (ev.key === 'Escape') closeDropdown()
-}
-
-// Guarantee listener removal on unmount, otherwise the body teleport panel
-// leaves a zombie listener if the user navigates away with the dropdown open.
-onBeforeUnmount(() => {
-  closeDropdown()
 })
 </script>
 
