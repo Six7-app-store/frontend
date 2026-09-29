@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
-import { formatBytes } from '@/utils/format'
+import { afterEach, describe, it, expect } from 'vitest'
+import { formatBytes, formatDate, formatDateTime } from '@/utils/format'
+import { LOCALE_STORAGE_KEY } from '@/utils/storage-keys'
 
 describe('formatBytes', () => {
   it.each([
@@ -13,5 +14,21 @@ describe('formatBytes', () => {
     [2.25 * 1024 ** 3, '2.3 GB'],
   ])('%d bytes → %s', (n, expected) => {
     expect(formatBytes(n)).toBe(expected)
+  })
+})
+
+describe('date locale', () => {
+  const at = new Date(2026, 5, 8, 13, 0, 0)
+
+  afterEach(() => localStorage.removeItem(LOCALE_STORAGE_KEY))
+
+  it('is German by default', () => {
+    expect(formatDate(at)).toBe('8.6.2026')
+  })
+
+  it('follows the language the user picked', () => {
+    localStorage.setItem(LOCALE_STORAGE_KEY, 'en')
+    expect(formatDate(at)).toBe('08/06/2026')
+    expect(formatDateTime(at)).toBe('08/06/2026, 13:00:00')
   })
 })

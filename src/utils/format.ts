@@ -1,8 +1,8 @@
 /**
  * Shared date formatting helpers.
  *
- * Consolidates the ``de-DE`` date formatting used across several views. Two
- * shapes are exposed:
+ * Dates follow the UI language the user picked (German ``dd.mm.yyyy``,
+ * English ``dd/mm/yyyy``). Two shapes are exposed:
  *
  * - :func:`formatDate` — date only (``dd.mm.yyyy``), for list/detail views.
  * - :func:`formatDateTime` — date + time, where the exact timestamp matters.
@@ -12,7 +12,24 @@
  * yields ``'-'`` for empty input.
  */
 
-const LOCALE = 'de-DE'
+import { LOCALE_STORAGE_KEY } from '@/utils/storage-keys'
+
+// UI language → date locale. English uses the British day-first order, which
+// reads the same way as the German one.
+const DATE_LOCALES: Record<string, string> = { de: 'de-DE', en: 'en-GB' }
+
+// The language the user picked (AppLayout stores it on every switch). Read
+// from storage rather than from the i18n instance, so this module stays free
+// of vue-i18n and works under specs that mock it.
+const dateLocale = (): string => {
+  let lang: string | null = null
+  try {
+    lang = localStorage.getItem(LOCALE_STORAGE_KEY)
+  } catch {
+    // Storage blocked: fall back to German, the app's default language.
+  }
+  return DATE_LOCALES[lang ?? 'de'] ?? 'de-DE'
+}
 
 /**
  * Date only (``dd.mm.yyyy``). Accepts a ``Date`` or a string; returns the
@@ -21,11 +38,11 @@ const LOCALE = 'de-DE'
  */
 export function formatDate(value?: string | Date | null): string {
   if (value instanceof Date) {
-    return isNaN(value.getTime()) ? String(value) : value.toLocaleDateString(LOCALE)
+    return isNaN(value.getTime()) ? String(value) : value.toLocaleDateString(dateLocale())
   }
   if (typeof value === 'string') {
     const d = new Date(value)
-    if (!isNaN(d.getTime())) return d.toLocaleDateString(LOCALE)
+    if (!isNaN(d.getTime())) return d.toLocaleDateString(dateLocale())
   }
   return value as string
 }
@@ -43,7 +60,7 @@ export function formatDateTime(
   },
 ): string {
   if (value === null || value === undefined || value === '') return '-'
-  return new Date(value).toLocaleString(LOCALE, options)
+  return new Date(value).toLocaleString(dateLocale(), options)
 }
 
 /**
