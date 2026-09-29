@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 926 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 930 Tests.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -415,7 +415,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 11 App-Views über Composables | erledigt | `32ffc83` (`useAppCatalog`, `useNewApp`, `useAppDetail`, `useAppApprovals`; ungenutzte `appStore`-Aktionen entfernt; D21), `3fea790` (`useCourseMemberCounts`) |
 | 12 `AppsDetailView` + `AdminAppsView` zerlegen | erledigt | `d03c012` (Charakterisierung), `dd832f8` (Versions-Service + 6 Komponenten in `components/app/`), `11ea62a` (`ApprovalAccordionItem`, T16) |
 | 13 `OpenStackResourcePicker` zerlegen | erledigt | `041487a` (neue Charakterisierungs-Spec), `2c3cc3f` (`listOsResources` D13, Service, `useOsResourceList`, `useFloatingDropdown`), `9572205` (Panel-/Auswahl-Komponenten) |
-| 14–16 | offen | — |
+| 14 Deployment-Detail entschlacken | erledigt bis auf `DetailSection` (T17, UX) | `607e14f` (Drawer-Fetch nach `useDeploymentResources`, V13), `1405dd6` (`live`-Objekt statt neun Stream-Props, `teams`-Prop weg, V14) |
+| 15–16 | offen | — |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -448,17 +449,19 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Schritt 11:** Keine View ruft mehr `appApi` direkt. **Abweichung vom Plan:** Die ungenutzten `appStore`-Aktionen (`fetchAppById`, `createApp`, `updateApp`, `deleteApp`, `currentApp`) sind **gelöscht statt verdrahtet** — die App-Seiten halten seitenlokalen Zustand, den nichts anderes liest, und ihre Specs mocken auf API-Ebene ohne Pinia. Die Composables werfen, die Views entscheiden über den Toast. D21: Die ID-Fallbacks `app.id`/`app._id` sind weg; drei Test-Fixtures nutzten noch `id` und sind auf `appId` umgestellt. Direkte API-Importe gibt es danach nur noch in `LtiCourseMapView` (`courseApi.list`, gehört zu Schritt 15), `InfrastructureVmDrawer` (Schritt 14) und `OpenStackResourcePicker` (Schritt 13); `ltiApi` in den LTI-Views ebenfalls Schritt 15.
 - **Schritt 12:** `AppsDetailView` 746 → ~320, `AdminAppsView` 400 → ~240 Zeilen. Versionsregeln (`appBannerStatus`, `versionOptions`, `findVersion`, `versionInfo`) als reine Funktionen in `app-presentation.service.ts`. `AppEditModal` hält das Formular selbst und emittiert nur geänderte Felder. Eine geteilte `VersionApprovalTable` gibt es **nicht**: Die Tabelle im Store-Tab (Owner: einreichen/zurückziehen) und die im Admin-Akkordeon (freigeben/ablehnen/widerrufen) haben andere Spalten und Aktionen; eine gemeinsame Komponente hätte nur Slots durchgereicht.
 - **Schritt 13:** Picker 849 → ~330 Zeilen. D13 erledigt: `api/openstack-resource-list.ts` ist die einzige Typ→Endpunkt-Weiche (als eigene Datei, damit Specs, die `openstackResourcesApi` mocken, die Weiche mittesten). Totes Emit `credentials-missing` entfernt. **Fehlerbehebung nebenbei:** Scrollte der Trigger aus dem Bild, blieben vier Listener am `window`/`document` hängen (altes `isOpen = false` ohne `close()`); `useFloatingDropdown` schließt jetzt immer über `close()`.
+- **Schritt 14:** Der VM-Drawer ist rein präsentational; eine verspätete Antwort für eine nicht mehr offene VM wird jetzt verworfen (vorher konnte sie die neuere überschreiben). `DeploymentActiveTaskCard` bekommt `live: LiveTaskView` (reaktiv, aus `useDeploymentLiveStream`); der 0-basierte Index heißt durchgehend `activeStepIndex`. Ein Snapshot wurde aktualisiert — **nur** drei HTML-Kommentare (im Dev-Modus gerendert) nennen die neuen Feldnamen, das Markup ist gleich. **Bewusst nicht gemacht:** `DetailSection` (T17) — die fünf Abschnittsköpfe unterscheiden sich (Inline-Icon im `h2` vs. Icon-Kachel, `mb-3/4/5`, Zähler, Aktion); eine Vereinheitlichung ändert die Optik und gehört zur UX-Frage 2. Die 7 Props der `DeploymentInfrastructureSection` und die 3 durchgereichten Props `TaskHistory → TaskDetail` bleiben: reine Daten aus je einem Composable, ein Bündeln brächte kaum etwas.
+- **Test-Falle:** `beforeEach(() => mock.mockReset())` gibt den Mock zurück, und Vitest ruft eine zurückgegebene Funktion als Cleanup auf. Ist der Mock auf `mockRejectedValue` gestellt, schlägt der Test mit dem Fehlerobjekt fehl. Immer mit Block-Body schreiben: `beforeEach(() => { mock.mockReset() })`.
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–13 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
+**Stand (29.09.):** Schritte 0–14 abgeschlossen, außer `WizardStepLayout` (Schritt 8) und `DetailSection` (Schritt 14) — beide warten auf die UX-Entscheidung (offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
 
-**Hier weitermachen: Schritt 14 — Deployment-Detail entschlacken (V13, V14).**
-- `InfrastructureVmDrawer` lädt selbst über `deploymentApi` → den Fetch nach `useDeploymentResources` (Test dort ergänzen), Drawer rein präsentational.
-- Prop-Drilling: `DeploymentActiveTaskCard` (10 Props, zwei Phasen-Indizes), `DeploymentInfrastructureSection`, `DeploymentTaskHistory` → `DeploymentTaskDetail`; `DeploymentTeamsCard` bekommt `teams` **und** `enrichedTeams` → `teams` streichen.
-- Absicherung: `DeploymentDetailView.characterization.spec.ts` muss **ohne Snapshot-Änderung** grün bleiben.
+**Hier weitermachen: Schritt 15 — LTI-Views und i18n (V6, V19, V20, T14).**
+- Offene Frage 3 zuerst klären lassen: Sind die LTI-Views bewusst nur deutsch? Davon hängt ab, ob `lti.*`-Schlüssel angelegt werden.
+- Unabhängig davon machbar: `LtiCourseMapView` ruft noch `courseApi.list` direkt (V12-Rest), die LTI-Views lesen Fehler schon über `getErrorCode`/`getErrorStatus`; `StatusScreen`-Komponente für die sechs Status-Bildschirme (T14); die LTI-Specs prüfen teils deutsche Texte → vorher auf i18n-Schlüssel oder `data-testid` umstellen.
+- Hartkodierte Texte außerhalb LTI (V19): u. a. `AppLayout` (`Profil`/`Abmelden`), `DeploymentActiveTaskCard` (`running since`, `Waiting for first log line…`), `InfrastructureVm*`, `UserView` (`N/A`), `deployment.store` („App und Name sind Pflichtfelder“), `formatSlotLabel`.
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
