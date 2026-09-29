@@ -33,12 +33,12 @@ export interface FileSummary {
   chips: Array<{ slot: string; filename: string; size: string }>
 }
 
-/** A value as text: yes/no for booleans, lists comma-joined, wrapping quotes and brackets stripped. */
+/** A value as text: yes/no for booleans, lists comma-joined, wrapping quotes and brackets stripped, "-" when empty. */
 export function formatSummaryValue(val: unknown, t: Translate): string {
+  if (val === null || val === undefined || val === '') return '-'
   if (typeof val === 'boolean') return val ? t('deployment.summary.yes') : t('deployment.summary.no')
   if (Array.isArray(val)) return val.map((item) => String(item).replace(/^"|"$/g, '')).join(', ')
   if (typeof val === 'string') return val.replace(/^["'[]+|["'\]]+$/g, '')
-  if (val === null || val === undefined) return '-'
   return String(val)
 }
 

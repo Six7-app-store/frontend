@@ -275,7 +275,7 @@ describe('NewDeploymentSummaryView.vue — Charakterisierung', () => {
       }),
     )
 
-  it('formatiert Werte: Ja/Nein, Listen, Anführungszeichen', async () => {
+  it('formatiert Werte: Ja/Nein, Listen, Anführungszeichen, leer als Strich', async () => {
     const wrapper = mountWith([
       { name: 'on', source: 'terraform', type: 'bool' },
       { name: 'tags', source: 'terraform', type: 'list(string)' },
@@ -288,9 +288,7 @@ describe('NewDeploymentSummaryView.vue — Charakterisierung', () => {
       on: 'deployment.summary.yes',
       tags: 'a, b',
       quoted: 'x',
-      // Today an empty string renders as nothing: the string branch strips
-      // quotes before the empty check that would show '-'.
-      empty: '',
+      empty: '-',
     })
   })
 

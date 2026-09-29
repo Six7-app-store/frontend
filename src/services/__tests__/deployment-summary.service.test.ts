@@ -23,6 +23,7 @@ describe('formatSummaryValue', () => {
     ['"quoted"', 'quoted'],
     ['[x]', 'x'],
     [null, '-'],
+    ['', '-'],
     [3, '3'],
   ])('%j → %s', (val, expected) => expect(formatSummaryValue(val, t)).toBe(expected))
 })
