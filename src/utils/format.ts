@@ -68,6 +68,16 @@ export function formatDateTime(
  * 1 KiB show as whole bytes, KiB values are rounded to a whole number, MiB and
  * GiB values keep one decimal. Consolidates the per-component byte formatters.
  */
+/**
+ * A size given in MiB, such as a flavor's RAM: ``MB`` below 1 GiB, else
+ * ``GB`` with at most one decimal (``1.5 GB``, ``2 GB``). Empty → ``0 MB``.
+ */
+export function formatMegabytes(mb: number | undefined | null): string {
+  if (!mb) return '0 MB'
+  if (mb < 1024) return `${mb} MB`
+  return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`
+}
+
 export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`
   if (n < 1024 ** 2) return `${Math.round(n / 1024)} KB`

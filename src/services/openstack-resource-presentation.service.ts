@@ -5,7 +5,7 @@
  */
 import type { OsResourceType } from '@/api/openstack-resources.api'
 import { splitCsv } from '@/services/variable-types'
-import { formatBytes } from '@/utils/format'
+import { formatBytes, formatMegabytes } from '@/utils/format'
 
 export type Translate = (key: string, params?: Record<string, unknown>) => string
 
@@ -21,13 +21,6 @@ export interface ResourceItem {
   raw: any
 }
 
-/** A flavor's RAM: MB below 1 GB, else GB with at most one decimal. */
-export function formatRam(mb: number | undefined | null): string {
-  if (!mb) return '0 MB'
-  if (mb < 1024) return `${mb} MB`
-  return `${(mb / 1024).toFixed(mb % 1024 === 0 ? 0 : 1)} GB`
-}
-
 /** The picker row for a raw resource of ``type`` as the backend sends it. */
 export function adaptResource(type: OsResourceType, raw: any, t: Translate): ResourceItem {
   switch (type) {
@@ -35,7 +28,7 @@ export function adaptResource(type: OsResourceType, raw: any, t: Translate): Res
       return {
         id: raw.id ?? '',
         name: raw.name ?? '',
-        secondary: `${raw.vcpus ?? 0} vCPU · ${formatRam(raw.ram)} RAM · ${raw.disk ?? 0} GB Disk`,
+        secondary: `${raw.vcpus ?? 0} vCPU · ${formatMegabytes(raw.ram)} RAM · ${raw.disk ?? 0} GB Disk`,
         tertiary: raw.is_public ? '' : t('openstackPicker.network.private'),
         raw,
       }

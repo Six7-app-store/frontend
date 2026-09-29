@@ -20,6 +20,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeploymentResource } from '@/types'
 import { formatUptime, lifecyclePillClass } from '@/composables/useVmPresentation'
+import { formatMegabytes } from '@/utils/format'
 import { RefreshCcw, AlertTriangle, Cpu, Network } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -89,7 +90,7 @@ const flavorBrief = computed(() => {
   const parts: string[] = []
   if (hw.flavor_name) parts.push(hw.flavor_name)
   if (hw.vcpus != null) parts.push(`${hw.vcpus} ${t('vm.units.vcpu')}`)
-  if (hw.ram_mb != null) parts.push(`${(hw.ram_mb / 1024).toFixed(0)} ${t('vm.units.gb')} RAM`)
+  if (hw.ram_mb != null) parts.push(`${formatMegabytes(hw.ram_mb)} RAM`)
   if (hw.disk_gb != null) parts.push(`${hw.disk_gb} ${t('vm.units.gb')}`)
   return parts.length > 0 ? parts.join(' · ') : null
 })

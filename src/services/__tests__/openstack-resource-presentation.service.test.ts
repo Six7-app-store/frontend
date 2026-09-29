@@ -2,22 +2,11 @@ import { describe, it, expect } from 'vitest'
 import {
   adaptResource,
   filterResources,
-  formatRam,
   selectedKeysOf,
   type ResourceItem,
 } from '@/services/openstack-resource-presentation.service'
 
 const t = (key: string) => key
-
-describe('formatRam', () => {
-  it('uses MB below one GB and GB with at most one decimal above', () => {
-    expect(formatRam(0)).toBe('0 MB')
-    expect(formatRam(null)).toBe('0 MB')
-    expect(formatRam(512)).toBe('512 MB')
-    expect(formatRam(2048)).toBe('2 GB')
-    expect(formatRam(1536)).toBe('1.5 GB')
-  })
-})
 
 describe('adaptResource', () => {
   it('describes a flavor by its specs and marks a private one', () => {
