@@ -6,13 +6,13 @@ import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useStudentDirectory } from '@/composables/useStudentDirectory'
 import { useTeamAssignment } from '@/composables/useTeamAssignment'
-import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
+import WizardStepLayout from '@/components/deployment-wizard/WizardStepLayout.vue'
 import { userDisplayName } from '@/utils/user-display'
 import GroupModeSelector from '@/components/deployment-wizard/GroupModeSelector.vue'
 import StudentChip from '@/components/deployment-wizard/StudentChip.vue'
 import TeamDropCard from '@/components/deployment-wizard/TeamDropCard.vue'
 import type { GroupMode } from '@/types'
-import { Plus, Minus, Users, ArrowRight, ArrowLeft, GripVertical, Trash2, UserPlus, Shuffle } from 'lucide-vue-next'
+import { Plus, Minus, GripVertical, Trash2, UserPlus, Shuffle } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -103,25 +103,9 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
 </script>
 
 <template>
-  <div class="max-w-[1800px] mx-auto w-full px-4">
-    
-    <div class="surface-panel min-h-[700px] flex flex-col overflow-hidden">
-      
-      <!-- Header -->
-      <div class="p-8 pb-6 bg-panel border-b-2 border-subtle">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="glass-control w-12 h-12 flex items-center justify-center">
-            <Users :size="24" :stroke-width="1.75" class="text-icon" />
-          </div>
-          <h1 class="text-[32px] leading-tight font-semibold tracking-[-0.015em] text-fg">
-            {{ t('deployment.title') }}
-          </h1>
-        </div>
-        <DeploymentProgressBar :current-step="2" />
-      </div>
-
+  <WizardStepLayout :step="2" :next-disabled="!complete" @back="handleBack" @next="handleNext">
       <!-- Controls Section -->
-      <div class="p-6 bg-panel border-b-2 border-subtle">
+      <div class="pb-6 border-b-2 border-subtle">
         <div class="flex flex-wrap items-center justify-between gap-4">
           
           <GroupModeSelector :mode="mode" @select="selectMode" />
@@ -174,7 +158,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
       </div>
 
       <!-- Main Content Grid -->
-      <div class="flex-grow p-6 overflow-hidden">
+      <div class="pt-6">
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
           
           <!-- Unassigned Students Pool -->
@@ -240,31 +224,13 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="flex justify-between items-center p-6 pt-4 bg-panel border-t-2 border-subtle">
-        <button 
-          @click="handleBack"
-          class="btn-secondary flex items-center gap-2 px-8 py-3 rounded-control font-semibold transition">
-          <ArrowLeft :size="20" />
-          {{ t('deployment.actions.back') }}
-        </button>
-        
+      <template #status>
         <div class="text-center">
           <p class="text-sm text-fg-muted mb-1">{{ t('deployment.assignment.progress') }}</p>
           <p class="text-lg font-bold text-fg-muted">
             {{ t('deployment.assignment.assignedCount', { assigned: totalStudents - unassignedStudents.length, total: totalStudents }) }}
           </p>
         </div>
-        
-        <button 
-          @click="handleNext"
-          :disabled="!complete"
-          class="btn-primary flex items-center gap-2 px-8 py-3 rounded-control font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-          {{ t('deployment.actions.next') }}
-          <ArrowRight :size="20" />
-        </button>
-      </div>
-
-    </div>
-  </div>
+      </template>
+  </WizardStepLayout>
 </template>

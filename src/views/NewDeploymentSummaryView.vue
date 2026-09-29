@@ -9,16 +9,10 @@ import { useToast } from '@/composables/useToast'
 import { getErrorStatus } from '@/utils/http-error'
 import { fileSummaries, packerRows, terraformRows, type SummaryContext } from '@/services/deployment-summary.service'
 import { formatSubmitError } from '@/services/deployment-submit-error.service'
-import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
+import WizardStepLayout from '@/components/deployment-wizard/WizardStepLayout.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import SummaryVariableCard from '@/components/deployment-wizard/SummaryVariableCard.vue'
-import {
-  BarChart3,
-  ArrowRight,
-  ArrowLeft,
-  Box,
-  Layers
-} from 'lucide-vue-next'
+import { ArrowRight, Box, Layers } from 'lucide-vue-next'
 import type { AppVariable } from '@/types'
 import type { OsResourceType } from '@/api/openstack-resources.api'
 import { userDisplayName } from '@/utils/user-display'
@@ -243,27 +237,17 @@ const handleBack = () => {
 </script>
 
 <template>
-  <div class="bg-panel rounded-2xl p-10 border shadow-sm max-w-7xl mx-auto min-h-[600px] flex flex-col">
-
-    <div class="mb-8">
-      <div class="flex items-center gap-3 mb-6">
-        <h1 class="text-3xl font-bold text-fg">
-          {{ t('deployment.title') }}
-        </h1>
-        <BarChart3 :size="32" class="text-icon" />
-      </div>
-
-      <DeploymentProgressBar :current-step="4" />
-      <div class="border-b border-subtle mt-4"></div>
-    </div>
-
-    <div class="text-center mb-8">
-      <h2 class="text-2xl font-bold text-fg">
-        {{ t('deployment.summary.title') }}
-      </h2>
-      <p class="text-fg-muted mt-2">{{ t('deployment.summary.subtitle') }}</p>
-    </div>
-
+  <WizardStepLayout
+    :step="4"
+    :title="t('deployment.summary.title')"
+    :subtitle="t('deployment.summary.subtitle')"
+    :next-label="t('deployment.actions.deploy')"
+    :next-disabled="isLoadingVariables"
+    :busy="isSubmitting || deploymentStore.isLoading"
+    :busy-label="t('deployment.summary.creating')"
+    @back="handleBack"
+    @next="handleDeploy"
+  >
     <div v-if="isLoadingVariables" class="flex flex-col items-center justify-center py-12 gap-3">
       <Spinner />
       <span class="text-fg-muted text-sm">{{ t('deployment.summary.loadingConfig') }}</span>
@@ -412,22 +396,5 @@ const handleBack = () => {
 
     </div>
 
-    <div class="flex justify-between items-center mt-8 pt-6 border-t-2 border-subtle">
-      <button @click="handleBack"
-        class="btn-secondary flex items-center gap-2 px-8 py-3 rounded-control font-semibold transition">
-        <ArrowLeft :size="18" />
-        {{ t('deployment.actions.back') }}
-      </button>
-
-      <button @click="handleDeploy"
-        :disabled="isLoadingVariables || isSubmitting || deploymentStore.isLoading"
-        class="btn-primary flex items-center gap-3 px-10 py-3 rounded-control font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-
-        <span v-if="isSubmitting || deploymentStore.isLoading" class="animate-spin rounded-full h-5 w-5 border-2 border-surface border-t-transparent"></span>
-        <span v-if="isSubmitting || deploymentStore.isLoading">{{ t('deployment.summary.creating') }}</span>
-        <span v-else>{{ t('deployment.actions.deploy') }}</span>
-      </button>
-    </div>
-
-  </div>
+  </WizardStepLayout>
 </template>

@@ -5,10 +5,10 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useVariableForm } from '@/composables/useVariableForm'
-import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
+import WizardStepLayout from '@/components/deployment-wizard/WizardStepLayout.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import VariableFieldCard from '@/components/deployment-wizard/VariableFieldCard.vue'
-import { ArrowRight, ArrowLeft, Box, Layers } from 'lucide-vue-next'
+import { Box, Layers } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -44,19 +44,15 @@ const handleBack = () => {
 </script>
 
 <template>
-  <div class="bg-panel rounded-2xl p-10 border shadow-sm max-w-5xl mx-auto min-h-[600px] flex flex-col">
-
-    <div class="mb-6">
-      <DeploymentProgressBar :current-step="3" class="mb-8" />
-      <div class="text-center">
-        <h1 class="text-3xl font-bold text-fg">{{ t('deployment.summary.variablesConfigTitle') }}</h1>
-        <p class="text-fg-muted font-medium mt-2 text-lg">
-          {{ t('deployment.summary.appLabel') }}: {{ deploymentStore.draft.name || t('deployment.variables.unnamed') }}
-        </p>
-      </div>
-    </div>
-
-    <div class="flex-grow w-full max-w-7xl mx-auto mt-6">
+  <WizardStepLayout
+    :step="3"
+    :title="t('deployment.summary.variablesConfigTitle')"
+    :subtitle="`${t('deployment.summary.appLabel')}: ${deploymentStore.draft.name || t('deployment.variables.unnamed')}`"
+    :next-disabled="!canSubmit"
+    @back="handleBack"
+    @next="handleNext"
+  >
+    <div class="w-full">
       
       <div v-if="isLoading" class="flex flex-col items-center justify-center py-20">
         <Spinner class="mb-3" />
@@ -131,36 +127,13 @@ const handleBack = () => {
       </div>
     </div>
 
-    <div class="flex justify-between items-center mt-12 pt-6 border-t border-subtle">
-      <button
-        @click="handleBack"
-        class="btn-secondary flex items-center gap-2 px-6 py-2.5 rounded-control font-semibold transition"
-      >
-        <ArrowLeft :size="18" />
-        {{ t('deployment.actions.back') }}
-      </button>
-
-      <div v-if="!canSubmit && !isLoading && variables.length > 0" class="flex-1 mx-6 text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded px-3 py-2">
+    <template #status>
+      <div v-if="!canSubmit && !isLoading && variables.length > 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded px-3 py-2">
         <p class="font-semibold mb-0.5">{{ t('deployment.variables.missingRequiredTitle') }}</p>
         <ul class="list-disc pl-5">
           <li v-for="m in missingRequired" :key="m">{{ m }}</li>
         </ul>
       </div>
-
-      <button
-        @click="handleNext"
-        :disabled="!canSubmit"
-        :class="[
-          'flex items-center gap-2 px-8 py-2.5 rounded-control font-semibold transition',
-          canSubmit
-            ? 'btn-primary'
-            : 'bg-line/[.12] text-fg-muted cursor-not-allowed',
-        ]"
-      >
-        {{ t('deployment.actions.next') }}
-        <ArrowRight :size="18" />
-      </button>
-    </div>
-
-  </div>
+    </template>
+  </WizardStepLayout>
 </template>

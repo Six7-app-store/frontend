@@ -4,8 +4,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
-import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
-import { BarChart3, BookOpen, UserPlus } from 'lucide-vue-next'
+import WizardStepLayout from '@/components/deployment-wizard/WizardStepLayout.vue'
+import { BookOpen, UserPlus } from 'lucide-vue-next'
 import CoursePickerList from '@/components/deployment-wizard/CoursePickerList.vue'
 import SelectedStudentsPanel from '@/components/deployment-wizard/SelectedStudentsPanel.vue'
 import StudentSearchList from '@/components/deployment-wizard/StudentSearchList.vue'
@@ -161,18 +161,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto w-full">
-    
-    <div class="bg-panel rounded-2xl p-10 border shadow-sm min-h-[700px] flex flex-col">
-      
-      <div class="flex items-center gap-3 mb-6">
-        <h1 class="text-3xl font-bold text-fg">
-          {{ t('deployment.title') }}
-        </h1>
-        <BarChart3 :size="32" class="text-icon" />
-      </div>
-
-      <DeploymentProgressBar :current-step="1" />
+  <WizardStepLayout
+    :step="1"
+    :next-disabled="credStore.isResolved && !credStore.hasCredential"
+    @back="handleBack"
+    @next="handleNext"
+  >
 
       <CredentialMissingBanner
         v-if="credStore.isResolved && !credStore.hasCredential"
@@ -248,25 +242,5 @@ onMounted(async () => {
       </div>
       </template>
 
-      <div class="flex justify-between items-center mt-8 pt-4 border-t border-subtle">
-        <button 
-          @click="handleBack"
-          data-testid="btn-back"
-          class="btn-secondary px-8 py-2.5 rounded-control font-semibold transition"
-        >
-          {{ t('deployment.actions.back') }}
-        </button>
-        
-        <button
-          @click="handleNext"
-          data-testid="btn-next"
-          :disabled="credStore.isResolved && !credStore.hasCredential"
-          class="btn-primary px-8 py-2.5 rounded-control font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {{ t('deployment.actions.next') }}
-        </button>
-      </div>
-
-    </div>
-  </div>
+  </WizardStepLayout>
 </template>
