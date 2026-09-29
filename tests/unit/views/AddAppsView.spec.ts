@@ -285,4 +285,26 @@ describe('AddAppsView.vue', () => {
 
         expect(appApi.create).toHaveBeenCalledWith(expect.objectContaining({ submit_all_versions: true }))
     })
+
+    it('entfernt ein gewähltes Logo wieder und legt die App ohne Bild an', async () => {
+        ;(appApi.create as any).mockResolvedValue({ data: {} })
+        const wrapper = mountComponent()
+        const textInputs = wrapper.findAll('input[type="text"]')
+        await textInputs[0]!.setValue('Super App')
+        await textInputs[1]!.setValue('https://github.com/user/repo')
+
+        const fileInput = wrapper.find('input[type="file"]')
+        const logo = new File(['x'], 'logo.png', { type: 'image/png' })
+        Object.defineProperty(fileInput.element, 'files', { value: [logo] })
+        await fileInput.trigger('change')
+        expect(wrapper.text()).toContain('logo.png')
+
+        await wrapper.findAll('span').find(s => s.text() === 'AppsCreateView.form.logoRemove')!.trigger('click')
+        expect(wrapper.find('img').exists()).toBe(false)
+
+        const buttons = wrapper.findAll('button')
+        await buttons[buttons.length - 1]!.trigger('click')
+        await flushPromises()
+        expect(appApi.create).toHaveBeenCalledWith(expect.objectContaining({ image: null }))
+    })
 })

@@ -314,4 +314,65 @@ describe('AppsDetailView.vue', () => {
         expect(mockToastSuccess).toHaveBeenCalledWith('AppsDetailView.toasts.setPrivate')
         expect(wrapper.text()).toContain('AppsDetailView.visibilityPrivate')
     })
+
+    describe('App bearbeiten: Bild', () => {
+        beforeEach(() => {
+            global.URL.createObjectURL = vi.fn(() => 'blob:mocked-url')
+            global.URL.revokeObjectURL = vi.fn()
+            ;(appApi.getById as any).mockResolvedValue({
+                data: { appId: 'app-123', name: 'Test App', description: '', userId: 'user-1', image: 'data:image/png;base64,ALT', versions: ['v1.0'] },
+            })
+            ;(appApi.update as any).mockResolvedValue({ data: {} })
+        })
+
+        const openEditDialog = async () => {
+            const wrapper = mountComponent()
+            await flushPromises()
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editApp'))!.trigger('click')
+            return wrapper
+        }
+        const save = async (wrapper: ReturnType<typeof mountComponent>) => {
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editModal.saveButton'))!.trigger('click')
+            await flushPromises()
+        }
+        const chooseFile = async (wrapper: ReturnType<typeof mountComponent>, file: File) => {
+            const input = wrapper.find('input[type="file"]')
+            Object.defineProperty(input.element, 'files', { value: [file], configurable: true })
+            await input.trigger('change')
+        }
+
+        it('ruft ohne Änderung nichts auf', async () => {
+            const wrapper = await openEditDialog()
+            await save(wrapper)
+            expect(appApi.update).not.toHaveBeenCalled()
+        })
+
+        it('ersetzt das Bild durch eine Data-URL', async () => {
+            const wrapper = await openEditDialog()
+            await chooseFile(wrapper, new File(['neu'], 'neu.png', { type: 'image/png' }))
+            expect(wrapper.text()).toContain('neu.png')
+
+            await save(wrapper)
+            // The file is read with a FileReader, which resolves outside the promise queue.
+            await vi.waitFor(() => expect(appApi.update).toHaveBeenCalled())
+            expect(appApi.update).toHaveBeenCalledWith('app-123', { image: expect.stringMatching(/^data:image\/png;base64,/) })
+        })
+
+        it('entfernt das Bild mit einem leeren String', async () => {
+            const wrapper = await openEditDialog()
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editModal.imageRemove'))!.trigger('click')
+
+            await save(wrapper)
+            expect(appApi.update).toHaveBeenCalledWith('app-123', { image: '' })
+        })
+
+        it('lehnt Nicht-Bilder mit einem Hinweis ab', async () => {
+            const wrapper = await openEditDialog()
+            await chooseFile(wrapper, new File(['x'], 'notes.txt', { type: 'text/plain' }))
+
+            expect(mockToastError).toHaveBeenCalledWith('AppsDetailView.toasts.onlyImages')
+            await save(wrapper)
+            expect(appApi.update).not.toHaveBeenCalled()
+        })
+    })
 })
