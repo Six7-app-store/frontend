@@ -10,6 +10,7 @@ import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import { iconForAppName } from '@/services/app-presentation.service'
 import ImageDropZone from '@/components/ui/ImageDropZone.vue'
 import { useImageUpload } from '@/composables/useImageUpload'
@@ -126,7 +127,7 @@ const handleSubmit = async () => {
 <template>
   <div class="bg-panel rounded-2xl p-10 border min-h-[600px] flex flex-col">
 
-    <h1 class="text-4xl font-bold text-fg mb-12">{{ $t('AppsCreateView.title') }}</h1>
+    <PageHeader :title="$t('AppsCreateView.title')" />
 
     <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-16 items-start mb-8">
 

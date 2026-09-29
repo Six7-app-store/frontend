@@ -13,8 +13,12 @@
  * slot beats a prop here because each page wants different
  * combinations of buttons, sometimes none.
  */
+import type { Component } from 'vue'
+
 defineProps<{
   title: string
+  /** Optional lucide icon left of the title. */
+  icon?: Component
   /** Optional one-line subtitle in muted gray. Omitting it just
    *  removes the line — title sizing stays the same. */
   subtitle?: string
@@ -23,9 +27,12 @@ defineProps<{
 
 <template>
   <div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
-    <div class="min-w-0">
-      <h1 class="text-[32px] leading-tight font-semibold tracking-[-0.015em] text-fg mb-1">{{ title }}</h1>
-      <p v-if="subtitle" class="text-fg-muted">{{ subtitle }}</p>
+    <div class="min-w-0 flex items-center gap-4">
+      <component :is="icon" v-if="icon" :size="28" class="text-icon shrink-0" />
+      <div class="min-w-0">
+        <h1 class="text-[32px] leading-tight font-semibold tracking-[-0.015em] text-fg mb-1">{{ title }}</h1>
+        <p v-if="subtitle" class="text-fg-muted">{{ subtitle }}</p>
+      </div>
     </div>
     <!--
       Actions go right of the title row. Multiple buttons stack

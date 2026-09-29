@@ -17,6 +17,7 @@ import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.sto
 import { useToast } from '@/composables/useToast'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 import TabBar from '@/components/ui/TabBar.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { parseCloudsYaml, CloudsYamlError } from '@/utils/clouds-yaml'
 import { isInAppPath } from '@/utils/safe-redirect'
@@ -256,16 +257,7 @@ const maybeReturnToWizard = () => {
 
 <template>
   <div class="p-6 max-w-4xl mx-auto">
-    <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-fg mb-1 flex items-center gap-2">
-        <Cloud :size="28" class="text-icon" />
-        {{ t('SettingsOpenStackView.title') }}
-      </h1>
-      <p class="text-fg-muted">
-        {{ t('SettingsOpenStackView.intro') }}
-      </p>
-    </div>
+    <PageHeader :icon="Cloud" :title="t('SettingsOpenStackView.title')" :subtitle="t('SettingsOpenStackView.intro')" />
 
     <!-- Lock banner -->
     <CredentialMissingBanner

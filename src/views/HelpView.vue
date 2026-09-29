@@ -1,18 +1,11 @@
 <script setup lang="ts">
 import { HelpCircle, Layers, BookOpen, FileText } from 'lucide-vue-next'
+import PageHeader from '@/components/ui/PageHeader.vue'
 </script>
 
 <template>
   <div class="bg-panel rounded-2xl p-10 border shadow-sm">
-    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
-      <div class="flex items-center gap-4 text-fg">
-        <HelpCircle :size="28" />
-        <div>
-          <h1 class="text-2xl font-bold">{{ $t('HelpView.title') }}</h1>
-          <p class="text-sm text-fg-muted">{{ $t('HelpView.subtitle') }}</p>
-        </div>
-      </div>
-    </div>
+    <PageHeader :icon="HelpCircle" :title="$t('HelpView.title')" :subtitle="$t('HelpView.subtitle')" />
 
     <p class="text-fg-muted leading-7 max-w-3xl mb-8">
       {{ $t('HelpView.intro') }}
