@@ -24,6 +24,8 @@ import Modal from '@/components/ui/Modal.vue'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import ReasonModal from '@/components/ui/ReasonModal.vue'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
+import TabBar from '@/components/ui/TabBar.vue'
+import type { Tab } from '@/components/ui/tab'
 import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
@@ -42,6 +44,14 @@ const isLoading = ref(false)
 const app = ref<any>(null)
 const selectedVersion = ref('')
 const activeTab = ref<'overview' | 'store'>('overview')
+// The store tab (submissions, visibility) is only for those who may edit the app.
+const tabs = computed(() => {
+  const all: Tab<'overview' | 'store'>[] = [
+    { key: 'overview', label: t('AppsDetailView.tabOverview'), icon: Layers },
+    { key: 'store', label: t('AppsDetailView.tabStore'), icon: ShoppingBag },
+  ]
+  return canEditApp.value ? all : all.filter((tab) => tab.key !== 'store')
+})
 
 const showDeleteModal = ref(false)
 const isDeleting = ref(false)
@@ -442,35 +452,15 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Tab bar -->
-      <div class="flex gap-1 mb-8 border-b border-subtle">
-        <button
-          @click="activeTab = 'overview'"
-          class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px"
-          :class="activeTab === 'overview'
-            ? 'border-accent text-fg'
-            : 'border-transparent text-fg-muted hover:text-fg hover:border-strong'"
-        >
-          <Layers :size="16" />
-          {{ $t('AppsDetailView.tabOverview') }}
-        </button>
-        <button
-          v-if="canEditApp"
-          @click="activeTab = 'store'"
-          class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px"
-          :class="activeTab === 'store'
-            ? 'border-accent text-fg'
-            : 'border-transparent text-fg-muted hover:text-fg hover:border-strong'"
-        >
-          <ShoppingBag :size="16" />
-          {{ $t('AppsDetailView.tabStore') }}
+      <TabBar v-model="activeTab" :tabs="tabs" class="mb-8">
+        <template #extra="{ tab }">
           <!-- dot if action needed -->
           <span
-            v-if="appBannerStatus === 'no_submission' || appBannerStatus === 'pending'"
+            v-if="tab.key === 'store' && (appBannerStatus === 'no_submission' || appBannerStatus === 'pending')"
             class="w-2 h-2 rounded-full bg-warning-dot"
           />
-        </button>
-      </div>
+        </template>
+      </TabBar>
 
       <!-- ============================================================ -->
       <!-- TAB 1: OVERVIEW                                               -->

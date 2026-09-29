@@ -16,6 +16,7 @@ import {
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useToast } from '@/composables/useToast'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
+import TabBar from '@/components/ui/TabBar.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { parseCloudsYaml, CloudsYamlError } from '@/utils/clouds-yaml'
 import { isInAppPath } from '@/utils/safe-redirect'
@@ -362,23 +363,18 @@ const maybeReturnToWizard = () => {
 
     <!-- Tabs -->
     <div class="bg-panel rounded-xl border">
-      <div class="flex border-b">
-        <button
-          class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-          :class="activeTab === 'app' ? 'text-fg border-b-2 border-accent' : 'text-fg-muted hover:text-fg'"
-          @click="activeTab = 'app'"
-        >
-          {{ t('SettingsOpenStackView.tabs.app') }}
-          <span class="ml-2 text-xs text-success">{{ t('SettingsOpenStackView.tabs.appRecommended') }}</span>
-        </button>
-        <button
-          class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-          :class="activeTab === 'password' ? 'text-fg border-b-2 border-accent' : 'text-fg-muted hover:text-fg'"
-          @click="activeTab = 'password'"
-        >
-          {{ t('SettingsOpenStackView.tabs.password') }}
-        </button>
-      </div>
+      <TabBar
+        v-model="activeTab"
+        :tabs="[
+          { key: 'app', label: t('SettingsOpenStackView.tabs.app') },
+          { key: 'password', label: t('SettingsOpenStackView.tabs.password') },
+        ]"
+        fill
+      >
+        <template #extra="{ tab }">
+          <span v-if="tab.key === 'app'" class="text-xs text-success">{{ t('SettingsOpenStackView.tabs.appRecommended') }}</span>
+        </template>
+      </TabBar>
 
       <!-- Application Credential -->
       <div v-if="activeTab === 'app'" class="p-6 space-y-4">

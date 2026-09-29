@@ -20,6 +20,7 @@ import { getErrorDetailMessage } from '@/utils/http-error'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { userDisplayName } from '@/utils/user-display'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
+import TabBar from '@/components/ui/TabBar.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -386,28 +387,14 @@ onMounted(async () => {
           {{ t('deployment.config.targetGroupTitle') }}
         </h2>
 
-        <div class="flex border-b border-subtle mb-6">
-          <button
-            @click="activeTab = 'courses'"
-            class="px-6 py-3 font-semibold transition-colors border-b-2"
-            :class="activeTab === 'courses' 
-              ? 'border-accent text-fg-muted' 
-              : 'border-transparent text-fg-muted hover:text-fg'"
-          >
-            <BookOpen :size="20" class="inline mr-2" />
-            {{ t('deployment.config.courseLabel') }}
-          </button>
-          <button
-            @click="activeTab = 'individuals'"
-            class="px-6 py-3 font-semibold transition-colors border-b-2"
-            :class="activeTab === 'individuals' 
-              ? 'border-accent text-fg-muted' 
-              : 'border-transparent text-fg-muted hover:text-fg'"
-          >
-            <UserPlus :size="20" class="inline mr-2" />
-            {{ t('deployment.config.studentsLabel') }}
-          </button>
-        </div>
+        <TabBar
+          v-model="activeTab"
+          :tabs="[
+            { key: 'courses', label: t('deployment.config.courseLabel'), icon: BookOpen },
+            { key: 'individuals', label: t('deployment.config.studentsLabel'), icon: UserPlus },
+          ]"
+          class="mb-6"
+        />
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           
