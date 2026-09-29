@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import { ROUTE_NAMES } from '@/router/route-names'
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useDeploymentStore } from '@/stores/deployment.store'
-import { useAppStore } from '@/stores/app.store'
-import { useToast } from '@/composables/useToast'
+import { useVariableForm } from '@/composables/useVariableForm'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import VariableInput from '@/components/VariableInput.vue'
 import ScopeBadge from '@/components/ui/ScopeBadge.vue'
-import { effectiveVariableScope, templateKeyOf } from '@/services/deployment-variables.service'
-import { isBool, isList, isNumber, splitCsv } from '@/services/variable-types'
-import { fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
-import { parseUserInputVar } from '@/services/deployment-input.service'
+import FileDropZone from '@/components/FileDropZone.vue'
+import { effectiveVariableScope as effectiveScope } from '@/services/deployment-variables.service'
+import { isList } from '@/services/variable-types'
+import { isFileVariable as isFileVar, isScoped, userSlotKey } from '@/services/variable-form.service'
 import {
   ArrowRight,
   ArrowLeft,
@@ -22,587 +21,77 @@ import {
   Layers,
   AlertTriangle,
 } from 'lucide-vue-next'
-import type { AppVariable, DeploymentFile } from '@/types'
-import FileDropZone from '@/components/FileDropZone.vue'
+import type { AppVariable } from '@/types'
 
 const { t } = useI18n()
 const router = useRouter()
 const deploymentStore = useDeploymentStore()
-const appStore = useAppStore()
-const toast = useToast()
 
-// --- State ---
-const isLoading = ref(false)
-const variables = ref<AppVariable[]>([])
-const formValues = ref<Record<string, any>>({})
+const {
+  teams,
+  isLoading,
+  variables,
+  values,
+  formKey,
+  slotKeysFor,
+  templateKeys,
+  packerByTemplate,
+  packerVariables,
+  terraformVariables,
+  missingRequired,
+  canSubmit,
+  load,
+  save,
+  getScopedValue,
+  setScopedValue,
+  getFileSlot,
+  setFileSlot,
+  networkForSubnet,
+} = useVariableForm()
+
 const activeTooltip = ref<string | null>(null)
-
-// Does the variable have value-help metadata (osType)? The picker takes
-// precedence over type-based input, including ``list(string)`` variables.
-// ``osType`` is set by the backend only when the variable's description carries
-// an ``@openstack:<type>`` marker.
-//
-// File variables (``osType === 'file'``) are excluded here: their renderer is
-// the file-specific FileDropZone branch, not the OpenStackResourcePicker.
-// True when the variable is marked ``@openstack:file:<scope>``.
-const isFileVar = (v: AppVariable): boolean => v.osType === 'file'
-
-// True when the variable has a per-variable scope other than ``all``.
-const effectiveScope = effectiveVariableScope
-const isScoped = (v: AppVariable): boolean => effectiveScope(v) !== 'all'
-
-/** Slot keys for a scoped variable. */
-const slotKeysFor = (v: AppVariable): string[] => {
-  const scope = effectiveScope(v)
-  if (scope === 'team') return wizardTeams.value.map((t) => t.name)
-  if (scope === 'user') {
-    const keys: string[] = []
-    wizardTeams.value.forEach((t) =>
-      t.members.forEach((m) => keys.push(userSlotKey(t.name, m.username))),
-    )
-    return keys
-  }
-  return []
+const toggleTooltip = (name: string) => {
+  activeTooltip.value = activeTooltip.value === name ? null : name
 }
 
-/** Single-path API for the v-model of a scoped non-file variable. */
-const getScopedValue = (varName: string, slotKey: string): any => {
-  const bag = formValues.value[varName]
-  if (bag && typeof bag === 'object' && !Array.isArray(bag)) return bag[slotKey] ?? ''
-  return ''
-}
-const setScopedValue = (varName: string, slotKey: string, value: any): void => {
-  const bag = formValues.value[varName]
-  if (!bag || typeof bag !== 'object' || Array.isArray(bag)) {
-    formValues.value[varName] = {}
-  }
-  formValues.value[varName][slotKey] = value
-}
-
-/**
- * Builds the initial slot map for a scoped variable (``varScope = team|user``).
- * Distributes a scalar or list default across every team/user slot so a scoped
- * default is visible and effective per slot.
- *
- * Object defaults (e.g. ``map(string)`` with default ``{}``) yield no per-slot
- * value and stay an empty map. Existing slot values (returning via "Back") are
- * not overwritten.
- */
-const seedScopedDefault = (
-  v: AppVariable,
-  existing?: Record<string, any>,
-): Record<string, any> => {
-  const map: Record<string, any> =
-    existing && typeof existing === 'object' && !Array.isArray(existing)
-      ? { ...existing }
-      : {}
-  const def = v.default
-  const hasSeedableDefault =
-    def !== undefined &&
-    def !== null &&
-    (typeof def === 'string' ||
-      typeof def === 'number' ||
-      typeof def === 'boolean' ||
-      Array.isArray(def))
-  if (!hasSeedableDefault) return map
-  // list(...) defaults as a comma string, consistent with the non-scoped textarea widget.
-  const seed = isList(v.type) && Array.isArray(def) ? def.join(', ') : def
-  for (const slot of slotKeysFor(v)) {
-    const cur = map[slot]
-    if (cur === undefined || cur === null || cur === '') {
-      map[slot] = seed
-    }
-  }
-  return map
-}
+const focusInput = (id: string) => document.getElementById(id)?.focus()
 
 /** ``accept`` attribute for a file variable. */
-const fileAcceptFor = (v: AppVariable): string => {
-  if (!v.fileExtensions || v.fileExtensions.length === 0) return '*'
-  return v.fileExtensions.map((e) => `.${e}`).join(',')
-}
+const fileAcceptFor = (v: AppVariable): string =>
+  v.fileExtensions?.length ? v.fileExtensions.map((e) => `.${e}`).join(',') : '*'
 
-// Subnet filter
-const findNetworkValueForSubnet = (): string | null => {
-  const networkVar = variables.value.find(
-    (v) => v.osType === 'network' && v.osMode === 'id',
-  )
-  if (!networkVar) return null
-  const val = formValues.value[networkVar.name]
-  if (typeof val === 'string' && val.trim()) return val
-  return null
-}
-
-const toggleTooltip = (name: string) => {
-  if (activeTooltip.value === name) activeTooltip.value = null
-  else activeTooltip.value = name
-}
-
-const focusInput = (name: string) => {
-  const el = document.getElementById(name)
-  if (el) el.focus()
-}
-
-// ----------------------------------------------------------------
-// FILE-VARIABLE WIRING
-// ----------------------------------------------------------------
-
-interface WizardTeamMember {
-  userId: string
-  username: string
-}
-interface WizardTeam {
-  name: string
-  members: WizardTeamMember[]
-}
-
-const wizardTeams = computed<WizardTeam[]>(() => {
-  const groupNames = deploymentStore.draft.groupNames || []
-  const assignments = deploymentStore.draft.assignments || {}
-  const out: WizardTeam[] = []
-  groupNames.forEach((rawName, idx) => {
-    const teamName = rawName || fallbackTeamName(idx)
-    const memberIds: string[] = (assignments as any)[idx] || []
-    const members: WizardTeamMember[] = memberIds.map((uid) => {
-      const cached = deploymentStore.studentCache.get(String(uid))
-      const username = cached?.username
-        || cached?.email?.split('@')[0]
-        || cached?.firstName
-        || String(uid).slice(0, 8)
-      return { userId: String(uid), username }
-    })
-    out.push({ name: teamName, members })
-  })
-  return out
-})
-
-const userSlotKey = (teamName: string, username: string) =>
-  `${teamName}-${username}`
-
-const formatSlotLabel = (
-  variable: AppVariable,
-  slotKey: string,
-): string => {
+/** Label of a slot input: the team, or team and person. */
+const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
   const scope = effectiveScope(variable)
   if (scope === 'team') return `Team „${slotKey}"`
   if (scope === 'user') {
-    const teamNames = wizardTeams.value.map((t) => t.name)
-    const sorted = [...teamNames].sort((a, b) => b.length - a.length)
-    for (const team of sorted) {
+    // Longest team name first, so "Team-10" is not read as "Team-1" + "0-…".
+    const names = teams.value.map((team) => team.name).sort((a, b) => b.length - a.length)
+    for (const team of names) {
       if (slotKey === team) return `Team „${team}"`
-      if (slotKey.startsWith(team + '-')) {
-        const user = slotKey.slice(team.length + 1)
-        return `Team „${team}" → ${user}`
-      }
+      if (slotKey.startsWith(team + '-')) return `Team „${team}" → ${slotKey.slice(team.length + 1)}`
     }
     const sep = slotKey.lastIndexOf('-')
-    if (sep > 0) {
-      const team = slotKey.slice(0, sep)
-      const user = slotKey.slice(sep + 1)
-      return `Team „${team}" → ${user}`
-    }
+    if (sep > 0) return `Team „${slotKey.slice(0, sep)}" → ${slotKey.slice(sep + 1)}`
   }
   return slotKey
 }
 
-const getFileSlot = (varName: string, slotKey: string): DeploymentFile | null => {
-  const bag = deploymentStore.draft.fileUploads?.[varName]
-  return (bag && bag[slotKey]) || null
-}
-
-const setFileSlot = (
-  varName: string,
-  slotKey: string,
-  value: DeploymentFile | null,
-) => {
-  const draft = deploymentStore.draft
-  if (!draft.fileUploads) draft.fileUploads = {}
-  if (!draft.fileUploads[varName]) draft.fileUploads[varName] = {}
-  if (value === null) {
-    delete draft.fileUploads[varName][slotKey]
-  } else {
-    draft.fileUploads[varName][slotKey] = value
-  }
-}
-
-// ----------------------------------------------------------------
-// VARIABLES BY TEMPLATE
-// ----------------------------------------------------------------
-
-const packerByTemplate = computed<Record<string, AppVariable[]>>(() => {
-  const out: Record<string, AppVariable[]> = {}
-  for (const v of variables.value) {
-    if (v.source !== 'packer') continue
-    const key = templateKeyOf(v)
-    ;(out[key] ??= []).push(v)
-  }
-  return out
-})
-
-const templateKeys = computed(() => Object.keys(packerByTemplate.value).sort())
-
-const packerVariables = computed(() =>
-  Object.values(packerByTemplate.value).flat(),
-)
-
-const terraformVariables = computed(() =>
-  variables.value.filter(v => v.source === 'terraform')
-)
-
-const isMultiImage = computed(
-  () => templateKeys.value.length > 1 || (templateKeys.value.length === 1 && templateKeys.value[0] !== 'default'),
-)
-
-const packerFormKey = (variable: AppVariable): string => {
-  const tkey = templateKeyOf(variable)
-  if (!isMultiImage.value || tkey === 'default') return variable.name
-  return `${tkey}.${variable.name}`
-}
-
-// --- CORE LOGIC: value normalization for comparison ---
-const normalizeValue = (val: any, type: string) => {
-  if (val === null || val === undefined) {
-    if (isList(type)) return []
-    if (isBool(type)) return false
-    // Numbers: same value as an empty input below, so an untouched number
-    // variable without a default doesn't count as changed.
-    if (isNumber(type)) return null
-    return ""
-  }
-
-  if (isList(type)) {
-    let arr: any[] = []
-    if (Array.isArray(val)) {
-      arr = val
-    } else if (typeof val === 'string') {
-      arr = splitCsv(val)
-    } else {
-      arr = [String(val)]
-    }
-    return JSON.stringify(arr.sort())
-  }
-
-  if (isNumber(type)) {
-    if (val === '') return null
-    return Number(val)
-  }
-
-  if (isBool(type)) {
-    return Boolean(val)
-  }
-
-  return String(val).trim()
-}
-
-// --- Data Loading ---
-onMounted(async () => {
+onMounted(() => {
   if (!deploymentStore.draft.appId) {
     router.replace({ name: ROUTE_NAMES.apps })
     return
   }
-
-  if (deploymentStore.draft.variableDefinitions && deploymentStore.draft.variableDefinitions.length > 0) {
-    variables.value = deploymentStore.draft.variableDefinitions
-    // Re-hydrate ``formValues`` from the draft. The form binding uses
-    // ``packerFormKey(v)`` throughout, but ``handleNext`` stores Packer values
-    // differently by mode:
-    //   - single-image: ``draft.variables[v.name]`` (flat)
-    //   - multi-image : ``draft.variables.packer[<tkey>][<name>]`` (nested)
-    // So we map explicitly back to the form-key convention and fill missing
-    // values from ``v.default``.
-    const stored = (deploymentStore.draft.variables || {}) as Record<string, any>
-    const restored: Record<string, any> = {}
-    for (const v of variables.value) {
-      // File variables are rendered separately in the drop zone (they go via
-      // draft.fileUploads), not through formValues.
-      if (v.osType === 'file') continue
-      const key = v.source === 'packer' ? packerFormKey(v) : v.name
-      let stored_value: any
-      if (v.source === 'packer' && isMultiImage.value) {
-        const tkey = templateKeyOf(v)
-        stored_value = stored.packer?.[tkey]?.[v.name]
-      } else if (v.source === 'packer') {
-        stored_value = stored.packer?.[v.name] ?? stored[v.name]
-      } else {
-        stored_value = stored[v.name]
-      }
-      // Scoped variables are a slot map, not a scalar. Restore the existing map
-      // and top up new slots with the author default; otherwise seed fresh.
-      if (isScoped(v)) {
-        const existingMap =
-          stored_value && typeof stored_value === 'object' && !Array.isArray(stored_value)
-            ? stored_value
-            : undefined
-        restored[key] = seedScopedDefault(v, existingMap)
-        continue
-      }
-      if (stored_value !== undefined && stored_value !== null) {
-        restored[key] = stored_value
-      } else if (v.default !== undefined && v.default !== null) {
-        restored[key] = v.default
-      } else {
-        restored[key] = ''
-      }
-      // List values are stored in the draft as an array, but the ``<textarea>``
-      // widget expects a comma string, so normalise to ``"a, b"`` on rehydration.
-      if (isList(v.type) && Array.isArray(restored[key])) {
-        restored[key] = restored[key].join(', ')
-      }
-    }
-    formValues.value = restored
-    return
-  }
-
-  isLoading.value = true
-
-  try {
-    const version = releaseVersion(deploymentStore.draft.releaseTag)
-    const rawVariables = await appStore.fetchAppVariables(deploymentStore.draft.appId, version)
-    
-    const uniqueVariablesMap = new Map<string, AppVariable>()
-    rawVariables.forEach(v => {
-      const dedupKey = v.source === 'packer'
-        ? `${templateKeyOf(v)}.${v.name}`
-        : v.name
-      if (!uniqueVariablesMap.has(dedupKey)) uniqueVariablesMap.set(dedupKey, v)
-    })
-    variables.value = Array.from(uniqueVariablesMap.values())
-    deploymentStore.draft.variableDefinitions = variables.value
-
-    const osTypesToPrime = new Set<string>()
-    for (const v of variables.value) {
-      if (v.osType && v.osType !== 'file') osTypesToPrime.add(v.osType)
-    }
-    if (osTypesToPrime.size > 0) {
-      const { ensureLoaded } = await import('@/composables/useOpenStackResourceCache')
-      await Promise.allSettled(
-        Array.from(osTypesToPrime).map((t) => ensureLoaded(t as any)),
-      )
-    }
-
-    let savedValues: Record<string, any> = {}
-    try {
-      savedValues = parseUserInputVar(deploymentStore.draft.userInputVar)
-    } catch {
-      toast.error(t('deployment.summary.invalidJson'))
-    }
-
-    variables.value.forEach(v => {
-      let valToSet: any = ''
-      const storageKey = v.source === 'packer' ? packerFormKey(v) : v.name
-
-      if (savedValues[storageKey] !== undefined) {
-        valToSet = savedValues[storageKey]
-      } else if (savedValues[v.name] !== undefined) {
-        valToSet = savedValues[v.name]
-      }
-      else if (v.default !== undefined && v.default !== null) {
-        valToSet = v.default
-      }
-
-      if (isScoped(v) && v.osType !== 'file') {
-        // Reuse an existing slot map (e.g. from savedValues) or an empty map,
-        // and in both cases distribute the author default across every
-        // team/user slot (see seedScopedDefault).
-        const existingMap =
-          valToSet && typeof valToSet === 'object' && !Array.isArray(valToSet)
-            ? valToSet
-            : undefined
-        formValues.value[storageKey] = seedScopedDefault(v, existingMap)
-        return
-      }
-      
-      if (isList(v.type) && Array.isArray(valToSet)) {
-        valToSet = valToSet.join(', ')
-      }
-
-      if (valToSet === '' || valToSet === null || valToSet === undefined) {
-         if (isBool(v.type)) valToSet = false
-         else if (isNumber(v.type)) valToSet = ''
-         else valToSet = ''
-      }
-
-      formValues.value[storageKey] = valToSet
-    })
-
-  } catch (error: any) {
-    console.error(error)
-    toast.error(t('deployment.summary.fetchVarsError'))
-  } finally {
-    isLoading.value = false
-  }
-
-  const bad = variables.value.filter((v) => v.markerError)
-  if (bad.length > 0) {
-    const lines = bad.map((v) => {
-      const loc = v.markerError?.location ? ` (${v.markerError.location})` : ''
-      return `• ${v.markerError?.variable}${loc}: ${v.markerError?.message}`
-    })
-    toast.error(
-      t('deployment.variables.markerErrorToast', { count: bad.length, lines: lines.join('\n') })
-    )
-  }
+  load()
 })
 
-// --- Actions ---
 const handleNext = () => {
-  try {
-    const changedValues: Record<string, any> = {}
-    const allValues: Record<string, any> = {}
-    
-    const packerNested: Record<string, Record<string, any>> = {}
-    const packerNestedAll: Record<string, Record<string, any>> = {}
-
-    variables.value.forEach(v => {
-      if (v.osType === 'file') return
-
-      const storageKey = v.source === 'packer' ? packerFormKey(v) : v.name
-      const tkey = templateKeyOf(v)
-      const isMultiPacker = v.source === 'packer' && isMultiImage.value
-
-      if (isScoped(v)) {
-        const map = formValues.value[storageKey]
-        const cleanMap: Record<string, any> = {}
-        if (map && typeof map === 'object' && !Array.isArray(map)) {
-          for (const [slotKey, raw] of Object.entries(map)) {
-            if (raw === undefined || raw === null) continue
-            if (typeof raw === 'string' && raw.trim() === '') continue
-            let val: any = raw
-            if (isList(v.type) && typeof raw === 'string') {
-              val = splitCsv(raw)
-            } else if (isNumber(v.type) && raw !== '') {
-              val = Number(raw)
-            }
-            cleanMap[slotKey] = val
-          }
-        }
-        if (isMultiPacker) {
-          if (Object.keys(cleanMap).length > 0) {
-            ;(packerNested[tkey] ??= {})[v.name] = cleanMap
-          }
-          ;(packerNestedAll[tkey] ??= {})[v.name] = cleanMap
-        } else {
-          if (Object.keys(cleanMap).length > 0) {
-            changedValues[v.name] = cleanMap
-          }
-          allValues[v.name] = cleanMap
-        }
-        return
-      }
-
-      const currentValueRaw = formValues.value[storageKey]
-      const defaultValueRaw = v.default
-
-      const normalizedCurrent = normalizeValue(currentValueRaw, v.type)
-      const normalizedDefault = normalizeValue(defaultValueRaw, v.type)
-
-      let valueToSave: any = currentValueRaw
-      if (isList(v.type) && typeof currentValueRaw === 'string') {
-        valueToSave = splitCsv(currentValueRaw)
-      } else if (isNumber(v.type) && currentValueRaw !== '') {
-        valueToSave = Number(currentValueRaw)
-      }
-
-      const changed = normalizedCurrent !== normalizedDefault
-
-      if (isMultiPacker) {
-        if (changed) {
-          ;(packerNested[tkey] ??= {})[v.name] = valueToSave
-        }
-        ;(packerNestedAll[tkey] ??= {})[v.name] = valueToSave
-      } else {
-        if (changed) changedValues[v.name] = valueToSave
-        allValues[v.name] = valueToSave
-      }
-    })
-
-    if (isMultiImage.value && Object.keys(packerNested).length > 0) {
-      changedValues.packer = packerNested
-    }
-    if (isMultiImage.value && Object.keys(packerNestedAll).length > 0) {
-      allValues.packer = packerNestedAll
-    }
-
-    deploymentStore.draft.userInputVar = JSON.stringify(changedValues) as any
-    deploymentStore.draft.variables = allValues
-    router.push({ name: ROUTE_NAMES.deploymentSummary })
-  } catch (e) {
-    console.error(e)
-    toast.error(t('deployment.variables.saveError'))
-  }
+  if (save()) router.push({ name: ROUTE_NAMES.deploymentSummary })
 }
 
 const handleBack = () => {
   router.push({ name: ROUTE_NAMES.deploymentTeams })
 }
-
-// ----------------------------------------------------------------
-// REQUIRED-GATING
-// ----------------------------------------------------------------
-const isEmptyValue = (val: any): boolean => {
-  if (val === undefined || val === null) return true
-  if (typeof val === 'string' && val.trim() === '') return true
-  if (Array.isArray(val) && val.length === 0) return true
-  return false
-}
-
-const missingRequired = computed<string[]>(() => {
-  const missing: string[] = []
-  for (const v of variables.value) {
-    if (!v.required) continue
-    if (v.osType === 'file') continue 
-    const storageKey = v.source === 'packer' ? packerFormKey(v) : v.name
-    if (isScoped(v)) {
-      const map = (formValues.value[storageKey] ?? {}) as Record<string, any>
-      const slots = slotKeysFor(v)
-      if (slots.length === 0) {
-        missing.push(v.name)
-        continue
-      }
-      for (const slot of slots) {
-        if (isEmptyValue(map[slot])) {
-          missing.push(`${v.name} (${slot})`)
-        }
-      }
-    } else {
-      if (isEmptyValue(formValues.value[storageKey])) missing.push(v.name)
-    }
-  }
-  return missing
-})
-
-const canSubmit = computed(() => missingRequired.value.length === 0)
-
-// ----------------------------------------------------------------
-// TEAM-RENAME RECONCILIATION
-// ----------------------------------------------------------------
-watch(
-  wizardTeams,
-  (_newTeams, _oldTeams) => {
-    if (!variables.value.length) return
-    const dropped: string[] = []
-    for (const v of variables.value) {
-      if (!isScoped(v)) continue
-      if (v.osType === 'file') continue
-      const storageKey = v.source === 'packer' ? packerFormKey(v) : v.name
-      const map = formValues.value[storageKey]
-      if (!map || typeof map !== 'object' || Array.isArray(map)) continue
-      const validSlots = new Set(slotKeysFor(v))
-      for (const key of Object.keys(map)) {
-        if (!validSlots.has(key)) {
-          dropped.push(`${v.name} → ${key}`)
-          delete (map as Record<string, any>)[key]
-        }
-      }
-    }
-    if (dropped.length > 0) {
-      toast.info(
-        t('deployment.variables.teamRenameToast', { count: dropped.length, lines: dropped.join('\n') })
-      )
-    }
-  },
-  { deep: true },
-)
 </script>
 
 <template>
@@ -656,8 +145,8 @@ watch(
               <div v-for="variable in packerByTemplate[tkey]" :key="`${tkey}.${variable.name}`" class="bg-panel rounded-lg p-4 border border-subtle shadow-sm">
               <div class="flex items-start justify-between gap-2 mb-3">
                 <label
-                  :for="packerFormKey(variable)"
-                  @click.prevent="focusInput(packerFormKey(variable))"
+                  :for="formKey(variable)"
+                  @click.prevent="focusInput(formKey(variable))"
                   class="text-base font-bold text-fg cursor-pointer hover:text-fg transition-colors flex-1"
                 >
                   {{ variable.name }}
@@ -665,9 +154,9 @@ watch(
 
                 <button
                   v-if="variable.description || isList(variable.type)"
-                  @click.stop="toggleTooltip(packerFormKey(variable))"
+                  @click.stop="toggleTooltip(formKey(variable))"
                   class="text-fg-muted hover:text-fg-muted transition-colors "
-                  :class="activeTooltip === packerFormKey(variable) ? 'text-fg-muted' : ''"
+                  :class="activeTooltip === formKey(variable) ? 'text-fg-muted' : ''"
                   :title="t('deployment.variables.showInfo')"
                 >
                   <Info :size="16" />
@@ -688,7 +177,7 @@ watch(
                 </p>
               </div>
 
-              <div v-if="activeTooltip === packerFormKey(variable)" class="mb-3 bg-line/[.04] p-3 rounded-lg border border-subtle text-sm text-fg">
+              <div v-if="activeTooltip === formKey(variable)" class="mb-3 bg-line/[.04] p-3 rounded-lg border border-subtle text-sm text-fg">
                 <p v-if="variable.description" class="mb-2">{{ variable.description }}</p>
                 <div v-if="isList(variable.type)" class="flex gap-2 items-start text-xs text-fg">
                   <Info :size="12" class="mt-0.5 shrink-0" />
@@ -726,20 +215,20 @@ watch(
                 />
                 <template v-else-if="variable.osScope === 'team'">
                   <FileDropZone
-                    v-for="team in wizardTeams"
+                    v-for="team in teams"
                     :key="`${variable.name}::${team.name}`"
                     :model-value="getFileSlot(variable.name, team.name)"
                     @update:modelValue="(v) => setFileSlot(variable.name, team.name, v)"
                     :label="team.name"
                     :accept="fileAcceptFor(variable)"
                   />
-                  <div v-if="wizardTeams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
+                  <div v-if="teams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
                     {{ t('deployment.variables.noTeamsConfigured') }}
                   </div>
                 </template>
                 <template v-else-if="variable.osScope === 'user'">
                   <div
-                    v-for="team in wizardTeams"
+                    v-for="team in teams"
                     :key="`${variable.name}::${team.name}`"
                     class="border-l-2 border-subtle pl-3 space-y-2"
                   >
@@ -758,7 +247,7 @@ watch(
                       {{ t('deployment.variables.noMembers') }}
                     </div>
                   </div>
-                  <div v-if="wizardTeams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
+                  <div v-if="teams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
                     {{ t('deployment.variables.noTeamsConfigured') }}
                   </div>
                 </template>
@@ -768,10 +257,10 @@ watch(
                 <VariableInput
                   v-if="!isScoped(variable)"
                   :variable="variable"
-                  :model-value="formValues[packerFormKey(variable)]"
-                  @update:modelValue="(v) => (formValues[packerFormKey(variable)] = v)"
-                  :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
-                  :input-id="packerFormKey(variable)"
+                  :model-value="values[formKey(variable)]"
+                  @update:modelValue="(v) => (values[formKey(variable)] = v)"
+                  :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
+                  :input-id="formKey(variable)"
                 />
                 <div v-else class="space-y-3">
                   <div
@@ -781,11 +270,11 @@ watch(
                     {{ t('deployment.variables.noTeamsConfigured') }}
                   </div>
                   <template v-if="effectiveScope(variable) === 'user'">
-                    <div v-if="wizardTeams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
+                    <div v-if="teams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
                       {{ t('deployment.variables.noTeamsConfigured') }}
                     </div>
                     <div
-                      v-for="team in wizardTeams"
+                      v-for="team in teams"
                       :key="`${variable.name}::team::${team.name}`"
                       class="border-l-2 border-subtle pl-3 space-y-2"
                     >
@@ -798,17 +287,17 @@ watch(
                         class="flex flex-col gap-1"
                       >
                         <label
-                          :for="`${packerFormKey(variable)}__${userSlotKey(team.name, member.username)}`"
+                          :for="`${formKey(variable)}__${userSlotKey(team.name, member.username)}`"
                           class="text-xs font-semibold text-fg-muted"
                         >
                           {{ member.username }}
                         </label>
                         <VariableInput
                           :variable="variable"
-                          :model-value="getScopedValue(packerFormKey(variable), userSlotKey(team.name, member.username))"
-                          @update:modelValue="(v) => setScopedValue(packerFormKey(variable), userSlotKey(team.name, member.username), v)"
-                          :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
-                          :input-id="`${packerFormKey(variable)}__${userSlotKey(team.name, member.username)}`"
+                          :model-value="getScopedValue(formKey(variable), userSlotKey(team.name, member.username))"
+                          @update:modelValue="(v) => setScopedValue(formKey(variable), userSlotKey(team.name, member.username), v)"
+                          :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
+                          :input-id="`${formKey(variable)}__${userSlotKey(team.name, member.username)}`"
                         />
                       </div>
                       <div v-if="team.members.length === 0" class="text-xs text-fg-muted italic">
@@ -823,17 +312,17 @@ watch(
                       class="flex flex-col gap-1"
                     >
                       <label
-                        :for="`${packerFormKey(variable)}__${slotKey}`"
+                        :for="`${formKey(variable)}__${slotKey}`"
                         class="text-xs font-semibold text-fg-muted"
                       >
                         {{ formatSlotLabel(variable, slotKey) }}
                       </label>
                       <VariableInput
                         :variable="variable"
-                        :model-value="getScopedValue(packerFormKey(variable), slotKey)"
-                        @update:modelValue="(v) => setScopedValue(packerFormKey(variable), slotKey, v)"
-                        :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
-                        :input-id="`${packerFormKey(variable)}__${slotKey}`"
+                        :model-value="getScopedValue(formKey(variable), slotKey)"
+                        @update:modelValue="(v) => setScopedValue(formKey(variable), slotKey, v)"
+                        :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
+                        :input-id="`${formKey(variable)}__${slotKey}`"
                       />
                     </div>
                   </template>
@@ -931,20 +420,20 @@ watch(
                 />
                 <template v-else-if="variable.osScope === 'team'">
                   <FileDropZone
-                    v-for="team in wizardTeams"
+                    v-for="team in teams"
                     :key="`${variable.name}::${team.name}`"
                     :model-value="getFileSlot(variable.name, team.name)"
                     @update:modelValue="(v) => setFileSlot(variable.name, team.name, v)"
                     :label="team.name"
                     :accept="fileAcceptFor(variable)"
                   />
-                  <div v-if="wizardTeams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
+                  <div v-if="teams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
                     {{ t('deployment.variables.noTeamsConfigured') }}
                   </div>
                 </template>
                 <template v-else-if="variable.osScope === 'user'">
                   <div
-                    v-for="team in wizardTeams"
+                    v-for="team in teams"
                     :key="`${variable.name}::${team.name}`"
                     class="border-l-2 border-subtle pl-3 space-y-2"
                   >
@@ -963,7 +452,7 @@ watch(
                       {{ t('deployment.variables.noMembers') }}
                     </div>
                   </div>
-                  <div v-if="wizardTeams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
+                  <div v-if="teams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
                     {{ t('deployment.variables.noTeamsConfigured') }}
                   </div>
                 </template>
@@ -973,9 +462,9 @@ watch(
                 <VariableInput
                   v-if="!isScoped(variable)"
                   :variable="variable"
-                  :model-value="formValues[variable.name]"
-                  @update:modelValue="(v) => (formValues[variable.name] = v)"
-                  :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
+                  :model-value="values[variable.name]"
+                  @update:modelValue="(v) => (values[variable.name] = v)"
+                  :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
                   :input-id="variable.name"
                 />
                 <div v-else class="space-y-3">
@@ -986,11 +475,11 @@ watch(
                     {{ t('deployment.variables.noTeamsConfigured') }}
                   </div>
                   <template v-if="effectiveScope(variable) === 'user'">
-                    <div v-if="wizardTeams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
+                    <div v-if="teams.length === 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded p-2">
                       {{ t('deployment.variables.noTeamsConfigured') }}
                     </div>
                     <div
-                      v-for="team in wizardTeams"
+                      v-for="team in teams"
                       :key="`${variable.name}::team::${team.name}`"
                       class="border-l-2 border-subtle pl-3 space-y-2"
                     >
@@ -1012,7 +501,7 @@ watch(
                           :variable="variable"
                           :model-value="getScopedValue(variable.name, userSlotKey(team.name, member.username))"
                           @update:modelValue="(v) => setScopedValue(variable.name, userSlotKey(team.name, member.username), v)"
-                          :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
+                          :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
                           :input-id="`${variable.name}__${userSlotKey(team.name, member.username)}`"
                         />
                       </div>
@@ -1037,7 +526,7 @@ watch(
                         :variable="variable"
                         :model-value="getScopedValue(variable.name, slotKey)"
                         @update:modelValue="(v) => setScopedValue(variable.name, slotKey, v)"
-                        :filter-network-id="variable.osType === 'subnet' ? findNetworkValueForSubnet() : null"
+                        :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
                         :input-id="`${variable.name}__${slotKey}`"
                       />
                     </div>
