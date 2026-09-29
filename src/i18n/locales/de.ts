@@ -965,6 +965,7 @@ export default {
       saveSuccess: 'OpenStack-Credentials gespeichert und validiert.',
       credentialsValid: 'Credentials sind gültig.',
     },
+    confirmDeleteTitle: 'Credentials löschen',
     confirmDelete: 'OpenStack-Credentials wirklich löschen?',
     tooltips: {
       lockedNow: 'Credentials sind aktuell gesperrt',

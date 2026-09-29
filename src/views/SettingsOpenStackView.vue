@@ -19,13 +19,19 @@ import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
 import TabBar from '@/components/ui/TabBar.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import { parseCloudsYaml, CloudsYamlError } from '@/utils/clouds-yaml'
 import { isInAppPath } from '@/utils/safe-redirect'
 import { formatDateTime } from '@/utils/format'
-import type {
-  OpenStackAuthType,
-  OpenStackCredentialUpsert,
-} from '@/types/openstack-credential'
+import {
+  buildCredentialPayload,
+  emptyAppForm,
+  emptyPasswordForm,
+  formFromCloudsYaml,
+  formFromStatus,
+  type CredentialTab,
+  type PasswordCredentialForm,
+} from '@/services/openstack-credential-form.service'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,26 +39,24 @@ const toast = useToast()
 const credStore = useOpenStackCredentialsStore()
 const { t } = useI18n()
 
-type Tab = 'app' | 'password'
-const activeTab = ref<Tab>('app')
+const activeTab = ref<CredentialTab>('app')
+const formApp = reactive(emptyAppForm())
+const formPwd = reactive(emptyPasswordForm())
+const showDeleteModal = ref(false)
 
-const formApp = reactive({
-  auth_url: '',
-  region_name: '',
-  identifier: '',
-  secret: '',
-})
+/** Switches to ``tab`` and writes ``fields`` into its form. */
+const fillForm = ({ tab, fields }: { tab: CredentialTab; fields: Partial<PasswordCredentialForm> }) => {
+  activeTab.value = tab
+  Object.assign(tab === 'app' ? formApp : formPwd, fields)
+}
 
-const formPwd = reactive({
-  auth_url: '',
-  region_name: '',
-  identifier: '',
-  secret: '',
-  project_id: '',
-  project_name: '',
-  user_domain_name: 'Default',
-  project_domain_name: '',
-})
+// Credentials in use by an active deployment can't be changed. Warns and
+// returns true when that is the case.
+const refuseWhileLocked = () => {
+  if (!credStore.isLocked) return false
+  toast.warning(t('SettingsOpenStackView.errors.lockedActiveDeployments', { count: credStore.activeDeployments }))
+  return true
+}
 
 const isDragging = ref(false)
 const yamlInputRef = ref<HTMLInputElement | null>(null)
@@ -64,61 +68,13 @@ const lastValidated = computed(() => {
 
 onMounted(async () => {
   await credStore.fetch()
-  // Pre-fill known non-secret fields if creds exist.
-  if (credStore.status?.has_credential) {
-    const c = credStore.status
-    activeTab.value = c.auth_type === 'v3applicationcredential' ? 'app' : 'password'
-    if (activeTab.value === 'app') {
-      formApp.auth_url = c.auth_url ?? ''
-      formApp.region_name = c.region_name ?? ''
-    } else {
-      formPwd.auth_url = c.auth_url ?? ''
-      formPwd.region_name = c.region_name ?? ''
-      formPwd.project_id = c.project_id ?? ''
-      formPwd.project_name = c.project_name ?? ''
-      formPwd.user_domain_name = c.user_domain_name ?? 'Default'
-      formPwd.project_domain_name = c.project_domain_name ?? ''
-    }
-  }
+  // Pre-fill the known non-secret fields if credentials exist.
+  if (credStore.status?.has_credential) fillForm(formFromStatus(credStore.status))
 })
 
-const buildPayload = (): OpenStackCredentialUpsert | null => {
-  if (activeTab.value === 'app') {
-    if (!formApp.auth_url || !formApp.identifier || !formApp.secret) return null
-    const payload: OpenStackCredentialUpsert = {
-      auth_type: 'v3applicationcredential' as OpenStackAuthType,
-      auth_url: formApp.auth_url,
-      region_name: formApp.region_name || null,
-      interface: 'public',
-      identity_api_version: '3',
-      identifier: formApp.identifier,
-      secret: formApp.secret,
-    }
-    return payload
-  }
-  if (!formPwd.auth_url || !formPwd.identifier || !formPwd.secret || !formPwd.user_domain_name) return null
-  if (!formPwd.project_id && !formPwd.project_name) return null
-  return {
-    auth_type: 'password' as OpenStackAuthType,
-    auth_url: formPwd.auth_url,
-    region_name: formPwd.region_name || null,
-    interface: 'public',
-    identity_api_version: '3',
-    identifier: formPwd.identifier,
-    secret: formPwd.secret,
-    project_id: formPwd.project_id || null,
-    project_name: formPwd.project_name || null,
-    user_domain_name: formPwd.user_domain_name,
-    project_domain_name: formPwd.project_domain_name || null,
-  }
-}
-
 const handleSave = async () => {
-  if (credStore.isLocked) {
-    toast.warning(t('SettingsOpenStackView.errors.lockedActiveDeployments', { count: credStore.activeDeployments }))
-    return
-  }
-  const payload = buildPayload()
+  if (refuseWhileLocked()) return
+  const payload = buildCredentialPayload(activeTab.value, formApp, formPwd)
   if (!payload) {
     toast.error(t('SettingsOpenStackView.errors.missingFields'))
     return
@@ -156,27 +112,26 @@ const handleTest = async () => {
   }
 }
 
-const handleDelete = async () => {
-  if (credStore.isLocked) {
-    toast.warning(t('SettingsOpenStackView.errors.lockedActiveDeployments', { count: credStore.activeDeployments }))
-    return
-  }
-  if (!confirm(t('SettingsOpenStackView.confirmDelete'))) return
+const handleDelete = () => {
+  if (refuseWhileLocked()) return
+  showDeleteModal.value = true
+}
+
+const confirmDelete = async () => {
   try {
     await credStore.remove()
+    showDeleteModal.value = false
     toast.success(t('SettingsOpenStackView.status.deleteSuccess'))
     formApp.secret = ''
     formPwd.secret = ''
   } catch {
+    showDeleteModal.value = false
     toast.error(credStore.error || t('SettingsOpenStackView.errors.deleteFailed'))
   }
 }
 
 const handleYamlFile = async (file: File) => {
-  if (credStore.isLocked) {
-    toast.warning(t('SettingsOpenStackView.errors.lockedActiveDeployments', { count: credStore.activeDeployments }))
-    return
-  }
+  if (refuseWhileLocked()) return
   let text: string
   try {
     text = await file.text()
@@ -200,24 +155,7 @@ const handleYamlFile = async (file: File) => {
     return
   }
 
-  if (parsed.auth_type === 'v3applicationcredential') {
-    activeTab.value = 'app'
-    formApp.auth_url = parsed.auth_url
-    formApp.region_name = parsed.region_name
-    formApp.identifier = parsed.identifier
-    formApp.secret = parsed.secret
-  } else {
-    activeTab.value = 'password'
-    formPwd.auth_url = parsed.auth_url
-    formPwd.region_name = parsed.region_name
-    formPwd.identifier = parsed.identifier
-    formPwd.secret = parsed.secret
-    formPwd.project_id = parsed.project_id
-    formPwd.project_name = parsed.project_name
-    formPwd.user_domain_name = parsed.user_domain_name || 'Default'
-    formPwd.project_domain_name = parsed.project_domain_name
-  }
-
+  fillForm(formFromCloudsYaml(parsed))
   toast.success(t('SettingsOpenStackView.cloudsYamlImported'))
 }
 
@@ -464,5 +402,17 @@ const maybeReturnToWizard = () => {
         </BaseButton>
       </div>
     </div>
+
+    <ConfirmModal
+      :show="showDeleteModal"
+      :busy="credStore.loading"
+      :title="t('SettingsOpenStackView.confirmDeleteTitle')"
+      :confirm-label="t('SettingsOpenStackView.status.delete')"
+      :cancel-label="t('action.cancel')"
+      @close="showDeleteModal = false"
+      @confirm="confirmDelete"
+    >
+      <p class="text-fg">{{ t('SettingsOpenStackView.confirmDelete') }}</p>
+    </ConfirmModal>
   </div>
 </template>
