@@ -377,6 +377,17 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
     expect(toastInfo).toHaveBeenCalledWith('deployment.variables.teamRenameToast')
   })
 
+  it.each([
+    ['Team-Variable', { name: 'quota', source: 'terraform', type: 'number', varScope: 'team' }],
+    ['Personen-Variable', { name: 'login', source: 'terraform', type: 'string', varScope: 'user' }],
+    ['Team-Datei', { name: 'cert', source: 'terraform', type: 'map(string)', osType: 'file', osScope: 'team' }],
+  ])('weist bei einer %s ohne Teams genau einmal darauf hin', async (_label, variable) => {
+    const wrapper = mountView({ groupNames: [], assignments: {} }, [variable])
+    await flushPromises()
+
+    expect(wrapper.text().split('deployment.variables.noTeamsConfigured').length - 1).toBe(1)
+  })
+
   it('lässt Datei-Variablen aus den Werten heraus', async () => {
     const wrapper = mountView({}, [
       { name: 'cert', source: 'terraform', type: 'map(string)', osType: 'file', default: {} },
