@@ -28,8 +28,13 @@ das alte Modul zusätzlich fest: Ctrl+Shift+R.
 
 ## Konventionen
 
-- Datenfluss ist `View → Store → api/*.ts → Backend`. Views rufen nie
-  direkt die API auf.
+- Datenfluss ist `View → (Store | Composable) → api/*.ts → Backend`.
+  Views und Komponenten rufen nie direkt die API auf. Ein Store hält
+  Zustand, den mehrere Seiten teilen; seitenlokaler Zustand samt seinen
+  Aufrufen gehört in ein Composable (`useAppDetail`, `useUserSearch` …).
+- Regeln ohne Vue und ohne I/O (Payload bauen, Werte aufbereiten,
+  Validierung) sind reine Funktionen in `services/*.service.ts`, mit
+  Unit-Test daneben. Views halten nur Verdrahtung und Toasts.
 - Zu jeder Ressource gehört ein `*.api.ts` (nur die Aufrufe) und meist ein
   `*.store.ts` (Daten + Aktionen). Das Paar nicht auseinanderziehen.
 - Den Auth-Token nie selbst an einen Aufruf hängen — das macht
