@@ -11,6 +11,7 @@ import { fileSummaries, packerRows, terraformRows, type SummaryContext } from '@
 import { formatSubmitError } from '@/services/deployment-submit-error.service'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
 import Spinner from '@/components/ui/Spinner.vue'
+import SummaryVariableCard from '@/components/deployment-wizard/SummaryVariableCard.vue'
 import {
   BarChart3,
   ArrowRight,
@@ -357,55 +358,11 @@ const handleBack = () => {
         </div>
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div class="bg-panel rounded-lg border-2 border-subtle overflow-hidden">
-            <div class="bg-line/[.07] px-4 py-2 border-b border-subtle flex items-center gap-2">
-              <Box :size="18" class="text-icon" />
-              <h4 class="font-bold text-fg text-sm">{{ t('deployment.summary.packerVars') }}</h4>
-              <span class="ml-auto text-xs bg-line/[.12] text-fg px-2 py-0.5 rounded-full font-bold">
-                {{ packerVars.length }}
-              </span>
-            </div>
-            <div class="p-4 space-y-2 max-h-64 overflow-y-auto">
-              <div v-for="item in packerVars" :key="item.label"
-                class="flex justify-between items-start gap-3 py-2 border-b border-subtle last:border-0">
-                <span class="text-sm font-semibold text-fg flex-shrink-0">{{ item.label }}</span>
-                <span
-                  class="text-sm text-fg font-medium text-right break-all"
-                  :title="item.raw ? t('deployment.summary.submittedValue', { value: item.raw }) : undefined"
-                >
-                  {{ item.value }}
-                </span>
-              </div>
-              <p v-if="packerVars.length === 0" class="text-sm text-fg-muted italic text-center py-4">
-                {{ t('deployment.summary.noPackerVars') }}
-              </p>
-            </div>
-          </div>
+          <SummaryVariableCard :title="t('deployment.summary.packerVars')" :icon="Box" :rows="packerVars"
+            :empty-label="t('deployment.summary.noPackerVars')" />
 
-          <div class="bg-panel rounded-lg border-2 border-subtle overflow-hidden">
-            <div class="bg-line/[.07] px-4 py-2 border-b border-subtle flex items-center gap-2">
-              <Layers :size="18" class="text-icon" />
-              <h4 class="font-bold text-fg text-sm">{{ t('deployment.summary.terraformVars') }}</h4>
-              <span class="ml-auto text-xs bg-line/[.12] text-fg px-2 py-0.5 rounded-full font-bold">
-                {{ terraformVars.length }}
-              </span>
-            </div>
-            <div class="p-4 space-y-2 max-h-64 overflow-y-auto">
-              <div v-for="item in terraformVars" :key="item.label"
-                class="flex justify-between items-start gap-3 py-2 border-b border-subtle last:border-0">
-                <span class="text-sm font-semibold text-fg flex-shrink-0">{{ item.label }}</span>
-                <span
-                  class="text-sm text-fg font-medium text-right break-all"
-                  :title="item.raw ? t('deployment.summary.submittedValue', { value: item.raw }) : undefined"
-                >
-                  {{ item.value }}
-                </span>
-              </div>
-              <p v-if="terraformVars.length === 0" class="text-sm text-fg-muted italic text-center py-4">
-                {{ t('deployment.summary.noTerraformVars') }}
-              </p>
-            </div>
-          </div>
+          <SummaryVariableCard :title="t('deployment.summary.terraformVars')" :icon="Layers" :rows="terraformVars"
+            :empty-label="t('deployment.summary.noTerraformVars')" />
 
           <!-- Files section. One card per file variable; chips list the
                uploaded slots (filename + size). Hidden when the app declares
@@ -416,7 +373,7 @@ const handleBack = () => {
           >
             <div class="bg-warning-dot/10 px-4 py-2 border-b border-warning-dot/30 flex items-center gap-2">
               <Layers :size="18" class="text-warning" />
-              <h4 class="font-bold text-warning text-sm">Hochgeladene Dateien</h4>
+              <h4 class="font-bold text-warning text-sm">{{ t('deployment.summary.uploadedFiles') }}</h4>
               <span class="ml-auto text-xs bg-warning-dot/20 text-warning px-2 py-0.5 rounded-full font-bold">
                 {{ fileVarSummaries.reduce((acc, v) => acc + v.chips.length, 0) }}
               </span>
@@ -426,11 +383,11 @@ const handleBack = () => {
                 <div class="text-xs font-semibold text-fg mb-1">
                   {{ entry.name }}
                   <span class="text-[10px] font-normal text-fg-muted ml-1">
-                    (Scope: {{ entry.scope }})
+                    ({{ t('deployment.summary.fileScope', { scope: entry.scope }) }})
                   </span>
                 </div>
                 <div v-if="entry.chips.length === 0" class="text-xs text-fg-muted italic">
-                  Keine Datei hochgeladen
+                  {{ t('deployment.summary.noFileUploaded') }}
                 </div>
                 <div v-else class="flex flex-wrap gap-1.5">
                   <span
