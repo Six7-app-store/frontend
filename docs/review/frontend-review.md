@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 937 Tests, Coverage 91 / 86 / 73 / 91 %.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 939 Tests, Coverage 91 / 86 / 73 / 91 %.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -454,14 +454,16 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Test-Falle:** `beforeEach(() => mock.mockReset())` gibt den Mock zurück, und Vitest ruft eine zurückgegebene Funktion als Cleanup auf. Ist der Mock auf `mockRejectedValue` gestellt, schlägt der Test mit dem Fehlerobjekt fehl. Immer mit Block-Body schreiben: `beforeEach(() => { mock.mockReset() })`.
 - **Schritt 15:** Seit `4e1ec6c` importiert keine View und keine Komponente mehr ein API-Modul (außer Typen) — V12 ist vollständig erledigt. Sichtbare Änderung in `96aacd5`: Die Live-Karte zeigt auf Deutsch „läuft seit“, „Wartet“ (statt `idle`) und „Warte auf die erste Logzeile …“; der Snapshot ändert sich genau in diesen drei Texten. **Offen:** die deutschen Texte der fünf LTI-Views und `CallbackView` (V6), `StatusScreen` (T14), fremde i18n-Namespaces (V20), `formatSlotLabel`/„Image:“, „App und Name sind Pflichtfelder“ (nur Programmierfehler-Schutz).
 - **Schritt 16:** Der Router wartet über `authStore.whenSettled()` auf laufende Anmeldungen (vorher 100 ms geraten; bei langsamem Token-Check landete ein Angemeldeter auf dem Login). `handleCallback` wickelt jetzt `finishCallback` ein. Löschen der OpenStack-Credentials fragt per `ConfirmModal` statt `confirm()`, neuer Schlüssel `SettingsOpenStackView.confirmDeleteTitle`. Die Coverage-Schwelle steht knapp unter dem Ist-Wert und darf nur steigen.
+- **D31 erledigt** (`2861c09`): Datumsangaben folgen der gewählten Sprache (de-DE bzw. en-GB); die Sprache wird aus `localStorage` gelesen, nicht aus der i18n-Instanz, weil ein Import von `@/i18n` in `utils/format` alle Specs bricht, die `vue-i18n` mocken.
+- **Prüf-Falle:** Nicht nur die Zeile `Tests … passed` ansehen, sondern auch `Test Files` — eine Spec, die schon beim Laden scheitert, taucht in der Testzahl einfach nicht auf (so fielen 113 Tests unbemerkt weg). Befehl: `npx vitest --run 2>&1 | grep -E "×|Test Files|Tests |FAIL"`.
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Der Plan ist bis auf vier Punkte umgesetzt, die jeweils auf eine Entscheidung warten: `WizardStepLayout` (Schritt 8) und `DetailSection` (Schritt 14) → offene Frage 2 (UX); LTI-Texte, `StatusScreen` → offene Frage 3; Test-Ablageort → offene Frage 5. Außerdem offen aus dem Bericht: D31 (Datumsformat fest `de-DE`), D32 (Rundung RAM/Bytes), V10 (englische Ersatztexte in den Stores), Frage 4 (`DeploymentGroupsCard` redundant?). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage).
+**Stand (29.09.):** Der Plan ist bis auf vier Punkte umgesetzt, die jeweils auf eine Entscheidung warten: `WizardStepLayout` (Schritt 8) und `DetailSection` (Schritt 14) → offene Frage 2 (UX); LTI-Texte, `StatusScreen` → offene Frage 3; Test-Ablageort → offene Frage 5. Außerdem offen aus dem Bericht: D32 (Rundung RAM/Bytes), V10 (englische Ersatztexte in den Stores), Frage 4 (`DeploymentGroupsCard` redundant?). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage).
 
-**Hier weitermachen:** zuerst die offenen Fragen klären lassen, dann den jeweiligen Rest umsetzen. Ohne Entscheidung ist als Nächstes D31 machbar (`utils/format.ts` nach der i18n-Sprache richten; betrifft Snapshots mit Datumsangaben — vorher prüfen, welche Specs `de-DE`-Formate erwarten).
+**Hier weitermachen:** zuerst die offenen Fragen klären lassen, dann den jeweiligen Rest umsetzen. Ohne Entscheidung machbar sind noch D32 (eine Rundungsregel für RAM/Bytes) und V10 (englische `Failed to …`-Ersatztexte in den Stores durch i18n ersetzen oder streichen).
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
