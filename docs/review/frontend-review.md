@@ -397,7 +397,7 @@ Grundsätze für jeden Schritt:
 
 ## 5. Umsetzungsstand
 
-Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 897 Tests.
+Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vitest --run`, `eslint .` und `vue-tsc -b` grün; zuletzt 926 Tests.
 
 | Schritt | Status | Commits |
 |---|---|---|
@@ -414,7 +414,8 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 | 10 Team-Assignment + Config | erledigt | `ddfde0d` (Charakterisierung), `4ca75c8` (`team-assignment.service`, `useTeamAssignment`, `useStudentDirectory`, Karten), `27d3181` (`useUserSearch`, `useCourseStudents`, auch `CourseDetailView`), `fe0dea9` (Config-Komponenten) |
 | 11 App-Views über Composables | erledigt | `32ffc83` (`useAppCatalog`, `useNewApp`, `useAppDetail`, `useAppApprovals`; ungenutzte `appStore`-Aktionen entfernt; D21), `3fea790` (`useCourseMemberCounts`) |
 | 12 `AppsDetailView` + `AdminAppsView` zerlegen | erledigt | `d03c012` (Charakterisierung), `dd832f8` (Versions-Service + 6 Komponenten in `components/app/`), `11ea62a` (`ApprovalAccordionItem`, T16) |
-| 13–16 | offen | — |
+| 13 `OpenStackResourcePicker` zerlegen | erledigt | `041487a` (neue Charakterisierungs-Spec), `2c3cc3f` (`listOsResources` D13, Service, `useOsResourceList`, `useFloatingDropdown`), `9572205` (Panel-/Auswahl-Komponenten) |
+| 14–16 | offen | — |
 
 **Nachträge zum Befund:**
 - **Merge-Verluste.** Die Regressionen aus Abschnitt 0 waren kein Einzelfall. Der Merge `69acb32` hat in drei Dateien den Template-Teil bereits gemergter Fixes auf den alten Stand zurückgesetzt:
@@ -446,16 +447,18 @@ Stand 28.09.2026, Branch `refactor/second_review`. Nach jedem Commit waren `vite
 - **Schritt 10:** `NewDeploymentGroupsAssignmentView` 612 → ~270, `NewDeploymentConfigView` 533 → ~270 Zeilen. D11 erledigt: Es gibt nur noch `deploymentStore.studentCache` (die Pinia-Map ist schon reaktiv), Zugriff über `useStudentDirectory`. D12 erledigt: `useUserSearch` für Config und `CourseDetailView`. Beide Wizard-Views und `CourseDetailView` rufen `userApi`/`courseApi` nicht mehr direkt (V12 dort erledigt). **Kleine Verhaltensänderungen (nur Fehler-/Randpfade, im Commit `27d3181` beschrieben):** Eine fehlgeschlagene Suche im Config-Schritt leert die Trefferliste und ersetzt ihren alten Fehler-Toast; auf der Kursseite zeigt eine geleerte Suche die schon geladene Startliste, statt sie neu zu holen. Die Drag-Handler bleiben bewusst in der View (UI-Zustand, `relatedTarget`-Schutz).
 - **Schritt 11:** Keine View ruft mehr `appApi` direkt. **Abweichung vom Plan:** Die ungenutzten `appStore`-Aktionen (`fetchAppById`, `createApp`, `updateApp`, `deleteApp`, `currentApp`) sind **gelöscht statt verdrahtet** — die App-Seiten halten seitenlokalen Zustand, den nichts anderes liest, und ihre Specs mocken auf API-Ebene ohne Pinia. Die Composables werfen, die Views entscheiden über den Toast. D21: Die ID-Fallbacks `app.id`/`app._id` sind weg; drei Test-Fixtures nutzten noch `id` und sind auf `appId` umgestellt. Direkte API-Importe gibt es danach nur noch in `LtiCourseMapView` (`courseApi.list`, gehört zu Schritt 15), `InfrastructureVmDrawer` (Schritt 14) und `OpenStackResourcePicker` (Schritt 13); `ltiApi` in den LTI-Views ebenfalls Schritt 15.
 - **Schritt 12:** `AppsDetailView` 746 → ~320, `AdminAppsView` 400 → ~240 Zeilen. Versionsregeln (`appBannerStatus`, `versionOptions`, `findVersion`, `versionInfo`) als reine Funktionen in `app-presentation.service.ts`. `AppEditModal` hält das Formular selbst und emittiert nur geänderte Felder. Eine geteilte `VersionApprovalTable` gibt es **nicht**: Die Tabelle im Store-Tab (Owner: einreichen/zurückziehen) und die im Admin-Akkordeon (freigeben/ablehnen/widerrufen) haben andere Spalten und Aktionen; eine gemeinsame Komponente hätte nur Slots durchgereicht.
+- **Schritt 13:** Picker 849 → ~330 Zeilen. D13 erledigt: `api/openstack-resource-list.ts` ist die einzige Typ→Endpunkt-Weiche (als eigene Datei, damit Specs, die `openstackResourcesApi` mocken, die Weiche mittesten). Totes Emit `credentials-missing` entfernt. **Fehlerbehebung nebenbei:** Scrollte der Trigger aus dem Bild, blieben vier Listener am `window`/`document` hängen (altes `isOpen = false` ohne `close()`); `useFloatingDropdown` schließt jetzt immer über `close()`.
 - **Hook-Fehlalarm:** Der PreToolUse-Hook blockiert Shell-Befehle, in denen ein Punkt direkt vor `key` steht (etwa ein Property-Zugriff im Testcode), weil er darin eine Geheimnisdatei vermutet. Solche Inhalte mit dem Write-Werkzeug schreiben bzw. Skripte als Datei ablegen und dann ausführen.
 - **Container-Hinweis:** Das `node_modules`-Volume von `frontend-dev` kann älter sein als `package-lock.json` (ESLint fehlte am 28.09. komplett). Dann `docker exec frontend-dev sh -lc 'cd /app && npm ci'` — betrifft nur das Volume, nicht Host oder Lockfile.
 
 ## 6. Übergabe — hier weitermachen
 
-**Stand (29.09.):** Schritte 0–12 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
+**Stand (29.09.):** Schritte 0–13 abgeschlossen, außer `WizardStepLayout` in Schritt 8 (wartet auf die UX-Entscheidung, offene Frage 2). Branch `refactor/second_review`; die Commits ab `7198eb3` sind **lokal und noch nicht gepusht** (Push nur nach Rückfrage). Container `frontend-dev` läuft allein.
 
-**Hier weitermachen: Schritt 13 — `OpenStackResourcePicker` zerlegen (2.3).**
-- Der Picker hat **keine eigene Spec** → zuerst eine Charakterisierungs-Spec (eigener Commit): Single-/Multi-Auswahl, CSV-Normalisierung beim Mount, Freitext-Fallback, 412/502-Zustände, Refresh.
-- Dann: `listByType` in `api/openstack-resources.api.ts` (D13, ersetzt auch den Switch in `useOpenStackResourceCache.fetchList`), `adaptResource` als reiner Service, `useResourceSelection`, `useFloatingDropdown`; totes Emit `credentials-missing` entfernen.
+**Hier weitermachen: Schritt 14 — Deployment-Detail entschlacken (V13, V14).**
+- `InfrastructureVmDrawer` lädt selbst über `deploymentApi` → den Fetch nach `useDeploymentResources` (Test dort ergänzen), Drawer rein präsentational.
+- Prop-Drilling: `DeploymentActiveTaskCard` (10 Props, zwei Phasen-Indizes), `DeploymentInfrastructureSection`, `DeploymentTaskHistory` → `DeploymentTaskDetail`; `DeploymentTeamsCard` bekommt `teams` **und** `enrichedTeams` → `teams` streichen.
+- Absicherung: `DeploymentDetailView.characterization.spec.ts` muss **ohne Snapshot-Änderung** grün bleiben.
 
 Regeln für jede KI oder Person, die hier weiterarbeitet:
 
