@@ -18,7 +18,7 @@ const { t } = useI18n()
 
 <template>
   <div>
-    <h3 class="text-lg font-semibold text-fg mb-4">{{ t('CoursesView.title') }}</h3>
+    <h3 class="text-lg font-semibold text-fg mb-4">{{ t('common.courses') }}</h3>
     <div class="space-y-3 max-h-[400px] overflow-y-auto">
       <div
         v-for="course in courses"
@@ -38,8 +38,8 @@ const { t } = useI18n()
         <div class="flex-grow">
           <div class="font-semibold text-fg">{{ course.name }}</div>
           <div class="text-sm text-fg-muted">
-            <span v-if="loading.has(course.courseId)">{{ t('CoursesView.loading') }}</span>
-            <span v-else>{{ t('DeploymentDetailView.deploymentStudentCount', countOf(course.courseId)) }}</span>
+            <span v-if="loading.has(course.courseId)">{{ t('common.loadingCourses') }}</span>
+            <span v-else>{{ t('common.studentCount', countOf(course.courseId)) }}</span>
           </div>
         </div>
       </div>

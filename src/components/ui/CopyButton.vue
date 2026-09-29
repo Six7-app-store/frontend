@@ -28,18 +28,18 @@ const copied = computed(() => copiedKey.value === props.copyKey)
   <button
     v-if="variant === 'labeled'"
     type="button"
-    :title="copied ? $t('DeploymentDetailView.copied') : title"
+    :title="copied ? $t('common.copiedToClipboard') : title"
     class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors"
     :class="copied ? 'status-success' : 'bg-panel text-fg border-strong hover:bg-line/[.04]'"
     @click="copyToClipboard(text ?? '', copyKey)"
   >
     <component :is="copied ? Check : Copy" :size="13" />
-    {{ copied ? $t('DeploymentDetailView.copiedShort') : $t('DeploymentDetailView.copyShort') }}
+    {{ copied ? $t('common.copied') : $t('common.copy') }}
   </button>
   <button
     v-else
     type="button"
-    :title="copied ? $t('DeploymentDetailView.copied') : title"
+    :title="copied ? $t('common.copiedToClipboard') : title"
     class="text-fg-muted hover:text-warning p-0.5 rounded hover:bg-line/[.12] transition-colors flex-shrink-0"
     @click="copyToClipboard(text ?? '', copyKey)"
   >

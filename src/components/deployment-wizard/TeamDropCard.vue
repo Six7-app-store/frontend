@@ -47,7 +47,7 @@ const { t } = useI18n()
       <div class="mt-2 flex items-center justify-center gap-2 bg-line/[.07] rounded-lg px-3 py-1.5">
         <Users :size="16" class="text-icon" />
         <span class="text-sm font-semibold text-fg">
-          {{ t('DeploymentDetailView.deploymentStudentCount', members?.length || 0) }}
+          {{ t('common.studentCount', members?.length || 0) }}
         </span>
       </div>
     </div>

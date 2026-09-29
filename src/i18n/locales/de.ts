@@ -25,6 +25,26 @@ export default {
     },
   },
 
+  // Texte, die mehrere Seiten teilen. Eine Seite liest nie die Schlüssel
+  // einer anderen Seite, sondern diese hier.
+  common: {
+    remove: "Entfernen",
+    studentCount: "{n} Student | {n} Studenten",
+    courses: "Kurse",
+    loadingCourses: "Lädt Kurse...",
+    loadCoursesError: "Fehler beim Laden der Kurse",
+    loadUsersError: "Studenten konnten nicht geladen werden.",
+    noUsersFound: "Keine Benutzer gefunden.",
+    copy: 'Kopieren',
+    copied: 'Kopiert',
+    copiedToClipboard: 'Kopiert!',
+    missingCreds: {
+      title: "OpenStack-Credentials fehlen — siehe Profil",
+      link: "OpenStack-Credentials",
+      text: "hinterlegen, um diese App zu deployen.",
+    },
+  },
+
   nav: {
     dashboard: "Dashboard",
     deployments: "Deployments",
@@ -340,7 +360,6 @@ export default {
     logLine: 'Zeile',
     logLines: 'Zeilen',
     lastShown: 'letzte {count} angezeigt',
-    copied: 'Kopiert!',
     copyUsername: 'Username kopieren',
     copyUrl: 'URL kopieren',
     copySshCommand: 'SSH-Befehl kopieren',
@@ -356,8 +375,6 @@ export default {
     logs: 'Logs',
     logEntries: 'Einträge',
     copyToClipboard: 'In die Zwischenablage kopieren',
-    copyShort: 'Kopieren',
-    copiedShort: 'Kopiert',
     hideTechnicalDetails: 'Technische Details ausblenden',
     showTechnicalDetails: 'Technische Details anzeigen',
     noLogs: 'Keine Logs für diesen Task vorhanden',

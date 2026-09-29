@@ -25,6 +25,26 @@ export default {
     },
   },
 
+  // Texts several pages share. A page never reads another page's keys,
+  // it reads these.
+  common: {
+    remove: "Remove",
+    studentCount: "{n} Student | {n} Students",
+    courses: "Courses",
+    loadingCourses: "Loading courses...",
+    loadCoursesError: "Failed to load courses",
+    loadUsersError: "Failed to load students.",
+    noUsersFound: "No users found.",
+    copy: 'Copy',
+    copied: 'Copied',
+    copiedToClipboard: 'Copied!',
+    missingCreds: {
+      title: "OpenStack credentials missing — see profile",
+      link: "OpenStack Credentials",
+      text: "must be provided to deploy this app.",
+    },
+  },
+
   nav: {
     dashboard: "Dashboard",
     deployments: "Deployments",
@@ -340,7 +360,6 @@ export default {
     logLine: 'line',
     logLines: 'lines',
     lastShown: 'last {count} shown',
-    copied: 'Copied!',
     copyUsername: 'Copy username',
     copyUrl: 'Copy URL',
     copySshCommand: 'Copy SSH command',
@@ -356,8 +375,6 @@ export default {
     logs: 'Logs',
     logEntries: 'entries',
     copyToClipboard: 'Copy to clipboard',
-    copyShort: 'Copy',
-    copiedShort: 'Copied',
     hideTechnicalDetails: 'Hide technical details',
     showTechnicalDetails: 'Show technical details',
     noLogs: 'No logs available for this task',

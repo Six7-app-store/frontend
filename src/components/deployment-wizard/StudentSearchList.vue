@@ -51,7 +51,7 @@ const { t } = useI18n()
       </div>
 
       <div v-if="students.length === 0" class="p-4 text-fg-muted text-center">
-        {{ t('CourseDetailView.addModal.noUsersFound') }}
+        {{ t('common.noUsersFound') }}
       </div>
     </div>
   </div>

@@ -32,7 +32,7 @@ const { t } = useI18n()
       v-if="removable"
       @click="$emit('remove')"
       class="opacity-0 group-hover:opacity-100 transition-all p-1.5 hover:bg-danger-dot/10 rounded-lg"
-      :title="t('CourseDetailView.removeModal.remove')">
+      :title="t('common.remove')">
       <X :size="14" class="text-danger" />
     </button>
   </div>

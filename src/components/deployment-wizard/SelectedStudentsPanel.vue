@@ -34,7 +34,7 @@ const { t } = useI18n()
           <button
             @click="$emit('remove', student.userId)"
             class="text-danger hover:text-danger font-bold text-lg leading-none"
-            :title="t('CourseDetailView.removeModal.remove')"
+            :title="t('common.remove')"
             :data-testid="`remove-${student.userId}`"
           >
             ×

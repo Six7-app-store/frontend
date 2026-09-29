@@ -698,7 +698,7 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     await wrapper.findAll(`button[title="${t('DeploymentDetailView.copyToClipboard')}"]`)[0]!.trigger('click')
     await settle()
     expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(JSON.stringify(makeTask().logs, null, 2))
-    expect(buttonWithText(wrapper, t('DeploymentDetailView.copiedShort'))).toBeTruthy()
+    expect(buttonWithText(wrapper, t('common.copied'))).toBeTruthy()
 
     // Both copy buttons share the title; the logs one now reads "copied", so
     // the remaining match is the terraform-state button.

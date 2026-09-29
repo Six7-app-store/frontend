@@ -73,11 +73,11 @@ function syncCourseSelection() {
 const toggleCourse = async (courseId: string) => {
   const studentIds = await memberIds(courseId)
   if (studentIds === null) {
-    toast.error(t('CourseDetailView.toasts.loadUsersError'))
+    toast.error(t('common.loadUsersError'))
     return
   }
   if (studentIds.length === 0) {
-    toast.warning(t('CourseDetailView.addModal.noUsersFound'))
+    toast.warning(t('common.noUsersFound'))
     return
   }
   if (isCourseSelected(courseId)) {
@@ -102,7 +102,7 @@ const toggleStudent = (studentUserId: string) => {
 const handleNext = () => {
   // Block if credentials missing — banner already explains why
   if (!credStore.hasCredential) {
-    toast.warning(t('AppsDetailView.missingCredsTitle'))
+    toast.warning(t('common.missingCreds.title'))
     return
   }
   if (!store.draft.name || store.draft.name.trim() === '') {
@@ -137,7 +137,7 @@ watch(searchError, (err: any) => {
   if (!err) return
   console.error('User search error:', err)
   searchErrorToastId = toast.error(
-    getErrorDetailMessage(err) || err?.message || t('CourseDetailView.toasts.loadUsersError'),
+    getErrorDetailMessage(err) || err?.message || t('common.loadUsersError'),
   )
 })
 
@@ -147,7 +147,7 @@ onMounted(async () => {
   try {
     await loadCourses()
   } catch {
-    toast.error(t('CoursesView.toasts.loadError'))
+    toast.error(t('common.loadCoursesError'))
   }
   loadCounts()
   // The initial list is never shown (an empty query lists nobody); it fills
@@ -155,7 +155,7 @@ onMounted(async () => {
   try {
     directory.remember(await loadInitial())
   } catch {
-    toast.error(t('CourseDetailView.toasts.loadUsersError'))
+    toast.error(t('common.loadUsersError'))
   }
 })
 </script>
@@ -171,9 +171,9 @@ onMounted(async () => {
       <CredentialMissingBanner
         v-if="credStore.isResolved && !credStore.hasCredential"
         variant="warning"
-        :title="t('AppsDetailView.missingCredsTitle')"
-        :message="t('AppsDetailView.missingCredsText')"
-        :cta="t('AppsDetailView.missingCredsLink')"
+        :title="t('common.missingCreds.title')"
+        :message="t('common.missingCreds.text')"
+        :cta="t('common.missingCreds.link')"
         :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
         :next="{ name: ROUTE_NAMES.deploymentConfig }"
         class="mb-6"

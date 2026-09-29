@@ -246,7 +246,7 @@ describe('NewDeploymentTeamsView.vue', () => {
     const store = useDeploymentStore()
 
     // Finde den Remove-Button (das erste 'X' in der Drop-Zone)
-    const removeBtn = wrapper.find('button[title="CourseDetailView.removeModal.remove"]')
+    const removeBtn = wrapper.find('button[title="common.remove"]')
     expect(removeBtn.exists()).toBe(true)
     
     await removeBtn.trigger('click')
