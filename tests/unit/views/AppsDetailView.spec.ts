@@ -39,7 +39,9 @@ vi.mock('@/composables/useToast', () => ({
 vi.mock('@/api/app.api', () => ({
     appApi: {
         getById: vi.fn(),
-        delete: vi.fn()
+        delete: vi.fn(),
+        submitVersion: vi.fn(),
+        listVersionApprovals: vi.fn(),
     }
 }))
 import { appApi } from '@/api/app.api'
@@ -76,6 +78,7 @@ describe('AppsDetailView.vue', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
+        ;(appApi.listVersionApprovals as any).mockResolvedValue({ data: [] })
         // Standard-Antwort der API
         ;(appApi.getById as any).mockResolvedValue({
             data: {
@@ -237,5 +240,58 @@ describe('AppsDetailView.vue', () => {
         await backButton.trigger('click')
 
         expect(mockBack).toHaveBeenCalledTimes(1)
+    })
+
+    describe('Version einreichen', () => {
+        const openSubmitDialog = async () => {
+            const wrapper = mountComponent()
+            await flushPromises()
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.tabStore'))!.trigger('click')
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.submitButton'))!.trigger('click')
+            return wrapper
+        }
+        const submitButton = (wrapper: ReturnType<typeof mountComponent>) =>
+            wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.submitModal.submit'))!
+
+        it('reicht die Version mit getrimmter Notiz ein und schließt den Dialog', async () => {
+            ;(appApi.submitVersion as any).mockResolvedValue({})
+            const wrapper = await openSubmitDialog()
+
+            await wrapper.find('textarea').setValue('  bitte prüfen  ')
+            await submitButton(wrapper).trigger('click')
+            await flushPromises()
+
+            expect(appApi.submitVersion).toHaveBeenCalledWith('app-123', 'v1.0', undefined, 'bitte prüfen')
+            expect(mockToastSuccess).toHaveBeenCalledWith('AppsDetailView.toasts.submitSuccess')
+            expect(wrapper.find('textarea').exists()).toBe(false)
+        })
+
+        it('reicht ohne Notiz ein (Notiz ist optional)', async () => {
+            ;(appApi.submitVersion as any).mockResolvedValue({})
+            const wrapper = await openSubmitDialog()
+
+            await submitButton(wrapper).trigger('click')
+            await flushPromises()
+
+            expect(appApi.submitVersion).toHaveBeenCalledWith('app-123', 'v1.0', undefined, undefined)
+        })
+
+        it('zeigt Marker-Fehler einer 422 im offenen Dialog', async () => {
+            ;(appApi.submitVersion as any).mockRejectedValue({
+                response: { status: 422, data: { detail: { marker_errors: [
+                    { variable: 'flavor', code: 'unknown_type', message: 'Unbekannter Typ', location: 'variables.tf:3' },
+                ] } } },
+            })
+            const wrapper = await openSubmitDialog()
+
+            await submitButton(wrapper).trigger('click')
+            await flushPromises()
+
+            expect(wrapper.find('textarea').exists()).toBe(true)
+            expect(wrapper.text()).toContain('flavor')
+            expect(wrapper.text()).toContain('Unbekannter Typ')
+            expect(wrapper.text()).toContain('variables.tf:3')
+            expect(mockToastError).not.toHaveBeenCalled()
+        })
     })
 })

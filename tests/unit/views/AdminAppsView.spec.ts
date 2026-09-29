@@ -77,4 +77,42 @@ describe('AdminAppsView.vue', () => {
 
     expect(appApi.admin.approveVersion).toHaveBeenCalledWith('a1', 'v1.0.0')
   })
+
+  const dialog = (wrapper: ReturnType<typeof mountView>) => wrapper.find('.surface-overlay')
+  const dialogButton = (wrapper: ReturnType<typeof mountView>, text: string) =>
+    dialog(wrapper).findAll('button').find((b) => b.text().includes(text))!
+
+  it('rejects only with a reason and sends it trimmed', async () => {
+    ;(appApi.admin.rejectVersion as any).mockResolvedValue({})
+    const wrapper = await expandFirstApp()
+    await buttonWithText(wrapper, 'AdminAppsView.rejectBtn').trigger('click')
+
+    const submit = dialogButton(wrapper, 'AdminAppsView.rejectModal.submit')
+    expect(submit.attributes('disabled')).toBeDefined()
+
+    await dialog(wrapper).find('textarea').setValue('  Keine Lizenzangabe  ')
+    expect(dialogButton(wrapper, 'AdminAppsView.rejectModal.submit').attributes('disabled')).toBeUndefined()
+    await dialogButton(wrapper, 'AdminAppsView.rejectModal.submit').trigger('click')
+    await flushPromises()
+
+    expect(appApi.admin.rejectVersion).toHaveBeenCalledWith('a1', 'v1.0.0', 'Keine Lizenzangabe')
+    expect(dialog(wrapper).exists()).toBe(false)
+  })
+
+  it('revokes an approved version only with a reason and sends it trimmed', async () => {
+    ;(appApi.listVersionApprovals as any).mockResolvedValue({
+      data: [{ approvalId: 'p1', appId: 'a1', version_tag: 'v1.0.0', status: 'approved', created_at: '2026-09-01' }],
+    })
+    ;(appApi.admin.revokeVersion as any).mockResolvedValue({})
+    const wrapper = await expandFirstApp()
+    await buttonWithText(wrapper, 'AdminAppsView.revokeBtn').trigger('click')
+
+    expect(dialogButton(wrapper, 'AdminAppsView.revokeModal.submit').attributes('disabled')).toBeDefined()
+    await dialog(wrapper).find('textarea').setValue(' Sicherheitslücke ')
+    await dialogButton(wrapper, 'AdminAppsView.revokeModal.submit').trigger('click')
+    await flushPromises()
+
+    expect(appApi.admin.revokeVersion).toHaveBeenCalledWith('a1', 'v1.0.0', 'Sicherheitslücke')
+    expect(dialog(wrapper).exists()).toBe(false)
+  })
 })
