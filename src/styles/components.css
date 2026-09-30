@@ -8,16 +8,16 @@
   /* Glass chrome */
   .surface-topbar {
     background: var(--surface-topbar-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     border-bottom: 1px solid var(--line-subtle);
     box-shadow: var(--surface-topbar-shadow);
   }
 
   .surface-sidebar {
     background: var(--surface-sidebar-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
     border-right: 1px solid var(--line-subtle);
     box-shadow: var(--surface-sidebar-shadow);
   }
@@ -45,7 +45,7 @@
   .surface-panel {
     background: var(--surface-panel-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     box-shadow: var(--surface-panel-shadow);
   }
 
@@ -57,21 +57,21 @@
   .surface-sunken {
     background: var(--surface-sunken-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     box-shadow: var(--surface-sunken-shadow);
   }
 
   .surface-banner {
     background: var(--surface-banner-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     box-shadow: var(--surface-banner-shadow);
   }
 
   .surface-overlay {
     background: var(--surface-overlay-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     box-shadow: var(--surface-overlay-shadow);
   }
 
@@ -83,7 +83,7 @@
   .glass-control {
     background: var(--control-bg);
     border: 1px solid var(--line-strong);
-    border-radius: 6px;
+    border-radius: var(--radius-control);
     box-shadow: var(--control-shadow);
     color: rgb(var(--color-fg-muted));
     transition: background 150ms, color 150ms;
@@ -99,11 +99,11 @@
     gap: 2px;
     background: var(--segment-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: 6px;
+    border-radius: var(--radius-control);
     box-shadow: var(--segment-shadow);
   }
   .segment-btn {
-    border-radius: 4px;
+    border-radius: var(--radius-tag);
     color: rgb(var(--color-fg-muted));
     transition: background 150ms, color 150ms;
   }
@@ -111,8 +111,8 @@
     color: rgb(var(--color-fg));
   }
   .segment-btn[aria-pressed="true"] {
-    background: var(--nav-active-bg);
-    box-shadow: var(--nav-active-shadow);
+    background: var(--segment-active-bg);
+    box-shadow: var(--segment-active-shadow);
     color: rgb(var(--color-fg));
   }
 
@@ -167,7 +167,7 @@
     color: rgb(var(--color-fg));
     background: var(--field-bg);
     border: 1px solid var(--line-strong);
-    border-radius: 6px;
+    border-radius: var(--radius-control);
     box-shadow: var(--field-shadow);
   }
   .field::placeholder {
@@ -183,7 +183,7 @@
     align-items: center;
     gap: 6px;
     border: 1px solid;
-    border-radius: 4px;
+    border-radius: var(--radius-tag);
   }
   .status-success {
     color: rgb(var(--color-success));
@@ -222,12 +222,12 @@
   .toggle-on {
     background: var(--toggle-on-bg);
     border-color: rgb(var(--color-accent-strong));
-    box-shadow: var(--toggle-shadow);
+    box-shadow: var(--toggle-on-shadow);
   }
   .toggle-off {
     background: var(--toggle-off-bg);
     border-color: var(--toggle-off-border);
-    box-shadow: var(--toggle-shadow);
+    box-shadow: var(--toggle-off-shadow);
   }
   .toggle-knob {
     background: var(--toggle-knob-bg);
@@ -237,7 +237,7 @@
   /* Meters */
   .meter-track {
     background: var(--meter-track-bg);
-    border-radius: 4px;
+    border-radius: var(--radius-tag);
     box-shadow: var(--meter-track-shadow);
     overflow: hidden;
   }

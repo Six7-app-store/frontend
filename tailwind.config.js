@@ -1,8 +1,12 @@
 import typography from '@tailwindcss/typography'
 
-// Colours resolve to the CSS variables in src/styles/tokens.css, so light and
-// dark differ only there. Triplets keep Tailwind's opacity modifier working.
+// Everything here resolves to the CSS variables in src/styles/tokens.css, so
+// light and dark differ only there and no value is repeated in this file.
+// Colour triplets keep Tailwind's opacity modifier working.
 const token = (name) => `rgb(var(--color-${name}) / <alpha-value>)`
+
+// Font size and line height travel together as one scale step.
+const step = (size, leading) => [`var(--text-${size})`, { lineHeight: `var(--leading-${leading})` }]
 
 export default {
   content: [
@@ -21,11 +25,16 @@ export default {
         'on-accent': token('on-accent'),
         canvas: token('canvas'),
         surface: token('surface'),
+        heading: token('heading'),
         fg: {
           DEFAULT: token('fg'),
+          body: token('fg-body'),
           muted: token('fg-muted'),
+          subtle: token('fg-subtle'),
         },
+        nav: token('nav'),
         icon: token('icon'),
+        disabled: token('disabled-fg'),
         line: token('line'),
         tooltip: {
           DEFAULT: token('tooltip'),
@@ -38,21 +47,22 @@ export default {
       },
       borderColor: {
         DEFAULT: 'var(--line-subtle)',
+        faint: 'var(--line-faint)',
         subtle: 'var(--line-subtle)',
         strong: 'var(--line-strong)',
       },
       divideColor: {
-        DEFAULT: 'var(--line-subtle)',
+        DEFAULT: 'var(--line-faint)',
       },
       // Aero radii stay between 6 and 8px; the larger steps are capped so
       // existing rounded-xl/2xl/3xl classes follow the rule.
       borderRadius: {
-        tag: '4px',
-        control: '6px',
-        panel: '8px',
-        xl: '8px',
-        '2xl': '8px',
-        '3xl': '8px',
+        tag: 'var(--radius-tag)',
+        control: 'var(--radius-control)',
+        panel: 'var(--radius-panel)',
+        xl: 'var(--radius-panel)',
+        '2xl': 'var(--radius-panel)',
+        '3xl': 'var(--radius-panel)',
       },
       // Tailwind's stock shadow steps resolve to the themed token shadows.
       boxShadow: {
@@ -67,16 +77,64 @@ export default {
         overlay: 'var(--surface-overlay-shadow)',
         control: 'var(--control-shadow)',
       },
+      // The design's type scale replaces Tailwind's stock steps.
+      fontSize: {
+        xs: step('xs', 'normal'),
+        sm: step('sm', 'normal'),
+        base: step('base', 'normal'),
+        md: step('md', 'relaxed'),
+        lg: step('lg', 'tight'),
+        xl: step('xl', 'tight'),
+        '2xl': step('2xl', 'tight'),
+        '3xl': step('3xl', 'tight'),
+        '4xl': step('4xl', 'tight'),
+        '5xl': step('5xl', 'tight'),
+        '6xl': step('6xl', 'tight'),
+      },
+      lineHeight: {
+        tight: 'var(--leading-tight)',
+        normal: 'var(--leading-normal)',
+        relaxed: 'var(--leading-relaxed)',
+      },
+      fontFamily: {
+        sans: 'var(--font-sans)',
+        mono: 'var(--font-mono)',
+      },
+      // Layout measures: page widths, shell sizes, control heights.
+      maxWidth: {
+        page: 'var(--page-max)',
+        detail: 'var(--detail-max)',
+        narrow: 'var(--narrow-max)',
+        reading: 'var(--reading-max)',
+      },
+      width: {
+        sidebar: 'var(--sidebar-w)',
+        'sidebar-collapsed': 'var(--sidebar-w-collapsed)',
+        aside: 'var(--aside-w)',
+      },
+      height: {
+        topbar: 'var(--topbar-h)',
+        control: 'var(--control-h)',
+        'control-sm': 'var(--control-h-sm)',
+        'control-icon': 'var(--control-h-icon)',
+      },
+      spacing: {
+        'page-x': 'var(--page-pad-x)',
+        'page-y': 'var(--page-pad-y)',
+        section: 'var(--section-gap)',
+        card: 'var(--card-gap)',
+        panel: 'var(--panel-pad)',
+      },
       // Point the typography plugin's colour variables at the tokens so
       // rendered Markdown follows the theme.
       typography: {
         DEFAULT: {
           css: {
-            '--tw-prose-body': 'rgb(var(--color-fg-muted))',
-            '--tw-prose-headings': 'rgb(var(--color-fg))',
-            '--tw-prose-lead': 'rgb(var(--color-fg-muted))',
+            '--tw-prose-body': 'rgb(var(--color-fg-body))',
+            '--tw-prose-headings': 'rgb(var(--color-heading))',
+            '--tw-prose-lead': 'rgb(var(--color-fg-body))',
             '--tw-prose-links': 'rgb(var(--color-accent-fg))',
-            '--tw-prose-bold': 'rgb(var(--color-fg))',
+            '--tw-prose-bold': 'rgb(var(--color-heading))',
             '--tw-prose-counters': 'rgb(var(--color-icon))',
             '--tw-prose-bullets': 'rgb(var(--color-icon))',
             '--tw-prose-hr': 'var(--line-subtle)',
@@ -89,13 +147,9 @@ export default {
             '--tw-prose-pre-code': 'rgb(var(--color-on-tooltip))',
             '--tw-prose-pre-bg': 'rgb(var(--color-tooltip))',
             '--tw-prose-th-borders': 'var(--line-strong)',
-            '--tw-prose-td-borders': 'var(--line-subtle)',
+            '--tw-prose-td-borders': 'var(--line-faint)',
           },
         },
-      },
-      fontFamily: {
-        sans: ["'Segoe UI'", 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['Consolas', "'Cascadia Mono'", 'ui-monospace', 'monospace'],
       },
     },
   },

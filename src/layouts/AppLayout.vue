@@ -24,9 +24,9 @@ import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
-import logoDark from '@/assets/Logo.png'
-import logoLight from '@/assets/Logo_lightmode.png'
-import logoIcon from '@/assets/Logo-icon.png'
+import logoDark from '@/assets/based-logo-dark.png'
+import logoLight from '@/assets/based-logo-light.png'
+import logoIcon from '@/assets/based-icon.png'
 
 const { isDark } = useTheme()
 const logo = computed(() => (isDark.value ? logoDark : logoLight))

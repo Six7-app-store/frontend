@@ -24,8 +24,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTheme } from '@/composables/useTheme'
-import logoDark from '@/assets/Logo.png'
-import logoLight from '@/assets/Logo_lightmode.png'
+import logoDark from '@/assets/based-logo-dark.png'
+import logoLight from '@/assets/based-logo-light.png'
 
 const { isDark } = useTheme()
 const logo = computed(() => (isDark.value ? logoDark : logoLight))
