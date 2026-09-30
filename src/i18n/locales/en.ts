@@ -1,7 +1,7 @@
 export default {
   auth: {
     login: {
-      title: "Login",
+      title: "Sign in",
       emailLabel: "E-Mail",
       emailPlaceholder: "name@six7.de",
       userLabel: "Username",
@@ -10,7 +10,7 @@ export default {
       passwordPlaceholder: "••••••••",
       submit: "Login",
       keycloakButton: "Sign in with DHBW",
-      keycloakInfo: "Sign in with your DHBW account",
+      keycloakInfo: "With your DHBW account.",
       noAccount: "No account? Contact your administrator.",
       toRegister: "No account yet? Register",
       successMessage: "Successfully logged in!",
@@ -202,6 +202,7 @@ export default {
   },
 
   DashboardView: {
+    statsLabel: "Key figures",
     title: "Welcome back to Six7!",
     statsLoadError: "The overview figures could not be loaded.",
     subtitle: "Welcome back to your deployment environment.",
@@ -240,6 +241,16 @@ export default {
     noCredentialsTitle: "No credentials configured",
     noCredentialsHint: "Add your OpenStack credentials.",
     setUpNow: "Set up now",
+    deploymentNeedsCredentials: "Available once your OpenStack credentials are stored",
+    resourcesNeedCredentials: "Usage appears here once your OpenStack credentials are stored.",
+    resourceColumns: {
+      resource: "Resource",
+      usedLimit: "Used / limit",
+      usage: "Usage",
+      percent: "Percent",
+    },
+    legendLow: "below 50 %",
+    legendMid: "50 % and above",
   },
 
   HelpView: {

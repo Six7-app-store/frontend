@@ -84,4 +84,9 @@ describe('DataTable', () => {
     expect(wrapper.find('thead').exists()).toBe(true)
     expect(wrapper.get('.empty').text()).toBe('Nichts da')
   })
+
+  it('macht die Zeilen mit dense niedriger', () => {
+    expect(mountTable().get('table').classes()).not.toContain('data-table-dense')
+    expect(mountTable({ dense: true }).get('table').classes()).toContain('data-table-dense')
+  })
 })

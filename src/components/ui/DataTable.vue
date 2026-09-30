@@ -30,6 +30,8 @@ defineProps<{
   rowTo?: (row: Row) => RouteLocationRaw
   /** What the table lists, for screen readers. */
   caption: string
+  /** Lower rows (48 instead of 56px), for compact overviews. */
+  dense?: boolean
 }>()
 
 function cellValue(row: Row, id: string): string {
@@ -40,7 +42,7 @@ function cellValue(row: Row, id: string): string {
 
 <template>
   <div class="overflow-x-auto">
-    <table class="data-table min-w-[36rem]">
+    <table class="data-table min-w-[36rem]" :class="{ 'data-table-dense': dense }">
       <caption class="sr-only">{{ caption }}</caption>
       <colgroup>
         <col v-for="column in columns" :key="column.id" :class="column.class" />

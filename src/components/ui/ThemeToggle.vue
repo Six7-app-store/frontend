@@ -14,7 +14,7 @@ const label = computed(() => t(isDark.value ? 'theme.toLight' : 'theme.toDark'))
 <template>
   <button
     type="button"
-    class="glass-control inline-flex h-control-icon w-control-icon items-center justify-center"
+    class="btn btn-ghost btn-icon"
     :aria-label="label"
     :title="label"
     @click="toggleTheme"

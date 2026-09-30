@@ -48,6 +48,11 @@ vi.mock('lucide-vue-next', () => {
     CheckCircle2: icon,
     AlertCircle: icon,
     DownloadCloud: icon,
+    // AlertBox (skipped members)
+    AlertOctagon: icon,
+    AlertTriangle: icon,
+    CheckCircle: icon,
+    Info: icon,
   }
 })
 

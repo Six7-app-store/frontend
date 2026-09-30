@@ -62,7 +62,7 @@ const helpItem = { to: { name: ROUTE_NAMES.help }, labelKey: 'nav.help', icon: H
   >
     <RouterLink
       :to="{ name: ROUTE_NAMES.home }"
-      class="flex h-topbar shrink-0 items-center px-4"
+      class="flex h-topbar shrink-0 items-center border-b border-faint px-5"
       :class="{ 'justify-center': collapsed }"
       aria-label="Click'n Deploy"
     >
@@ -71,7 +71,7 @@ const helpItem = { to: { name: ROUTE_NAMES.help }, labelKey: 'nav.help', icon: H
       <img v-else :src="logo" alt="" class="h-[34px] w-auto max-w-full object-contain" />
     </RouterLink>
 
-    <nav :aria-label="t('nav.main')" class="flex flex-1 flex-col overflow-y-auto px-3 pb-4 pt-2">
+    <nav :aria-label="t('nav.main')" class="flex flex-1 flex-col overflow-y-auto px-3 py-4">
       <ul class="flex flex-col gap-0.5">
         <li v-for="item in mainItems" :key="item.labelKey">
           <SidebarNavItem
@@ -97,7 +97,7 @@ const helpItem = { to: { name: ROUTE_NAMES.help }, labelKey: 'nav.help', icon: H
       </SidebarGroup>
 
       <!-- Help stays at the bottom however short the list above is. -->
-      <ul class="mt-auto pt-4">
+      <ul class="mt-auto pt-2">
         <li>
           <SidebarNavItem
             :to="helpItem.to"

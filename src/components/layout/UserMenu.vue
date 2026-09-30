@@ -30,8 +30,8 @@ function onSelect(id: string) {
 <template>
   <ActionMenu :items="items" :label="userName" @select="onSelect">
     <template #trigger="{ triggerAttrs, open }">
-      <button type="button" class="btn btn-ghost gap-2 px-2" v-bind="triggerAttrs">
-        <span class="avatar flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold" aria-hidden="true">
+      <button type="button" class="btn btn-ghost gap-2 px-1.5" v-bind="triggerAttrs">
+        <span class="avatar flex h-[26px] w-[26px] items-center justify-center rounded-full text-xs font-semibold" aria-hidden="true">
           {{ userInitial }}
         </span>
         <span class="max-w-28 truncate text-base font-normal text-fg">{{ userName }}</span>

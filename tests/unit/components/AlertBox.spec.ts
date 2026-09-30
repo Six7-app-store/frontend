@@ -3,6 +3,8 @@ import { mount } from '@vue/test-utils'
 
 import AlertBox from '@/components/ui/AlertBox.vue'
 
+const LockIcon = { name: 'LockIcon', template: '<svg class="lock-icon" />' }
+
 describe('AlertBox', () => {
   it('ist ohne Angabe eine Warnung und zeigt Titel, Text und Aktion', () => {
     const wrapper = mount(AlertBox, {
@@ -26,5 +28,12 @@ describe('AlertBox', () => {
   it('meldet nur Fehler als alert an Screenreader', () => {
     expect(mount(AlertBox, { props: { tone: 'danger' } }).attributes('role')).toBe('alert')
     expect(mount(AlertBox, { props: { tone: 'info' } }).attributes('role')).toBeUndefined()
+  })
+
+  it('nimmt ein eigenes Icon statt des Ton-Icons', () => {
+    const wrapper = mount(AlertBox, { props: { tone: 'info', icon: LockIcon } })
+
+    expect(wrapper.find('.lock-icon').exists()).toBe(true)
+    expect(wrapper.findAll('svg')).toHaveLength(1)
   })
 })

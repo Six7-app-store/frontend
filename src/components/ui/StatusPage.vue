@@ -1,15 +1,13 @@
 <script setup lang="ts">
 /**
- * Full-screen frame of the pages that only report a state — the sign-in
- * callbacks and the Moodle (LTI) pages: a narrow centred column, one
- * ``StatusScreen`` per state inside.
+ * Frame of the pages that only report a state — the sign-in callbacks and
+ * the Moodle (LTI) pages — inside the auth layout's panel: one
+ * ``StatusScreen`` per state.
  */
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen px-4">
-    <div class="max-w-md w-full text-center flex flex-col items-center gap-4">
-      <slot />
-    </div>
+  <div class="flex w-full flex-col gap-6">
+    <slot />
   </div>
 </template>

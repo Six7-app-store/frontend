@@ -53,6 +53,8 @@ export default {
       },
       divideColor: {
         DEFAULT: 'var(--line-faint)',
+        faint: 'var(--line-faint)',
+        subtle: 'var(--line-subtle)',
       },
       // Aero radii stay between 6 and 8px; the larger steps are capped so
       // existing rounded-xl/2xl/3xl classes follow the rule.
@@ -111,6 +113,7 @@ export default {
         sidebar: 'var(--sidebar-w)',
         'sidebar-collapsed': 'var(--sidebar-w-collapsed)',
         aside: 'var(--aside-w)',
+        'login-panel': 'var(--login-panel-w)',
         'control-icon': 'var(--control-h-icon)',
       },
       height: {
@@ -126,6 +129,7 @@ export default {
         section: 'var(--section-gap)',
         card: 'var(--card-gap)',
         panel: 'var(--panel-pad)',
+        'login-x': 'var(--login-panel-pad-x)',
       },
       // Point the typography plugin's colour variables at the tokens so
       // rendered Markdown follows the theme.

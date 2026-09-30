@@ -21,6 +21,14 @@ const TEXT_CLASS: Record<StatusTone, string> = {
   danger: 'text-danger',
   neutral: 'text-fg-muted',
 }
+
+// Spelled out, not built from the tone: Tailwind only emits classes it finds verbatim.
+const DOT_CLASS: Record<StatusTone, string> = {
+  success: 'status-dot-success',
+  warning: 'status-dot-warning',
+  danger: 'status-dot-danger',
+  neutral: 'status-dot-neutral',
+}
 </script>
 
 <template>
@@ -29,7 +37,7 @@ const TEXT_CLASS: Record<StatusTone, string> = {
     :class="[TEXT_CLASS[tone], size === 'md' ? 'text-base' : 'text-sm']"
   >
     <component :is="icon" v-if="icon" :size="13" class="shrink-0" aria-hidden="true" />
-    <span v-else class="status-dot" :class="`status-dot-${tone}`" aria-hidden="true" />
+    <span v-else class="status-dot" :class="DOT_CLASS[tone]" aria-hidden="true" />
     <slot />
   </span>
 </template>

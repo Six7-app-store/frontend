@@ -5,7 +5,7 @@
  * dynamic value, so it is the one inline style.
  */
 import { computed } from 'vue'
-import { clampPercent, meterLevel } from '@/services/meter.service'
+import { clampPercent, meterLevel, type MeterLevel } from '@/services/meter.service'
 
 const props = defineProps<{
   value: number
@@ -14,6 +14,12 @@ const props = defineProps<{
 
 const percent = computed(() => clampPercent(props.value))
 const level = computed(() => meterLevel(props.value))
+
+// Spelled out, not built from the level: Tailwind only emits classes it finds verbatim.
+const FILL_CLASS: Record<MeterLevel, string> = {
+  low: 'meter-fill-low',
+  mid: 'meter-fill-mid',
+}
 </script>
 
 <template>
@@ -25,6 +31,6 @@ const level = computed(() => meterLevel(props.value))
     aria-valuemax="100"
     :aria-valuenow="Math.round(percent)"
   >
-    <div class="h-full" :class="`meter-fill-${level}`" :style="{ width: `${percent}%` }" />
+    <div class="h-full" :class="FILL_CLASS[level]" :style="{ width: `${percent}%` }" />
   </div>
 </template>

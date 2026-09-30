@@ -37,20 +37,6 @@ function writeCachedQuotas(value: QuotaOverview | null) {
   }
 }
 
-/**
- * One scale for every quota indicator: the bar, the used/limit text and the
- * warning icon. The dashboard used to carry its own thresholds (60/80), which
- * made a bar look merely "warm" while the number next to it was already red.
- */
-const QUOTA_THRESHOLDS = {
-  /** From here the usage is noticeable. */
-  notable: 50,
-  /** From here it gets tight — bar orange, number amber. */
-  high: 75,
-  /** From here it is critical — bar and number red, warning icon. */
-  critical: 90,
-} as const
-
 const quotas = ref<QuotaOverview | null>(readCachedQuotas())
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -68,24 +54,6 @@ export const useQuotas = () => {
     if (limit === 0) return 0
     return Math.round((used / limit) * 100)
   }
-
-  const getColorClass = (percentage: number): string => {
-    if (percentage >= QUOTA_THRESHOLDS.critical) return 'meter-fill-high'
-    if (percentage >= QUOTA_THRESHOLDS.high) return 'meter-fill-mid'
-    if (percentage >= QUOTA_THRESHOLDS.notable) return 'meter-fill-mid'
-    return 'meter-fill-low'
-  }
-
-  /** Colour of the used/limit number, on the same scale as the bar. */
-  const getTextColorClass = (percentage: number): string => {
-    if (percentage >= QUOTA_THRESHOLDS.critical) return 'text-danger'
-    if (percentage >= QUOTA_THRESHOLDS.high) return 'text-warning'
-    return 'text-fg-muted'
-  }
-
-  /** True when the usage deserves the warning icon. */
-  const isQuotaCritical = (percentage: number): boolean =>
-    percentage >= QUOTA_THRESHOLDS.critical
 
   const formattedQuotas = computed(() => {
     if (!quotas.value) return []
@@ -180,8 +148,5 @@ export const useQuotas = () => {
     formattedQuotas,
     hasCachedQuotas,
     fetchQuotas,
-    getColorClass,
-    getTextColorClass,
-    isQuotaCritical
   }
 }

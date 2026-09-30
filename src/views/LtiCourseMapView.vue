@@ -24,6 +24,7 @@ import { ROUTE_NAMES } from '@/router/route-names'
 import type { LtiRosterSkipReason } from '@/api/lti.api'
 import { useLtiCourseMapping } from '@/composables/useLtiCourseMapping'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
+import AlertBox from '@/components/ui/AlertBox.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import StatusPage from '@/components/ui/StatusPage.vue'
 import StatusScreen from '@/components/ui/StatusScreen.vue'
@@ -156,25 +157,19 @@ onMounted(async () => {
         created: report.created, matched: report.matched,
       })"
     >
-      <div
+      <AlertBox
         v-if="report.skipped.length"
         data-testid="import-skipped"
-        class="w-full text-left rounded-md border border-warning-dot/30 bg-warning-dot/10 p-3"
+        class="w-full"
+        :title="$t('lti.courseMap.skippedCount', { count: report.skipped.length })"
       >
-        <p class="text-sm font-medium text-warning">
-          {{ $t('lti.courseMap.skippedCount', { count: report.skipped.length }) }}
-        </p>
         <ul class="mt-2 flex flex-col gap-2">
-          <li
-            v-for="(skip, i) in report.skipped"
-            :key="i"
-            class="text-xs text-warning"
-          >
-            <span class="font-medium">{{ skip.name || skip.email || $t('lti.courseMap.unknownPerson') }}</span>
+          <li v-for="(skip, i) in report.skipped" :key="i" class="text-sm">
+            <span class="font-semibold">{{ skip.name || skip.email || $t('lti.courseMap.unknownPerson') }}</span>
             — {{ skipLabel(skip.reason) }}
           </li>
         </ul>
-      </div>
+      </AlertBox>
 
       <BaseButton size="sm" @click="skip">
         {{ $t('lti.courseMap.toDeployments') }}
@@ -188,10 +183,10 @@ onMounted(async () => {
       :title="$t('lti.courseMap.title')"
     >
       <template #text>
-        <i18n-t keypath="lti.courseMap.startedFrom" tag="p" class="text-sm text-fg-muted mt-2">
+        <i18n-t keypath="lti.courseMap.startedFrom" tag="p" class="text-md text-fg-muted">
           <template #name><strong>{{ moodleName }}</strong></template>
         </i18n-t>
-        <p class="text-xs text-fg-muted mt-2">{{ $t('lti.courseMap.mappingHint') }}</p>
+        <p class="text-sm text-fg-muted">{{ $t('lti.courseMap.mappingHint') }}</p>
       </template>
 
       <select
@@ -215,13 +210,9 @@ onMounted(async () => {
         >
           {{ $t('lti.courseMap.map') }}
         </BaseButton>
-        <button
-          data-testid="map-skip"
-          class="px-4 py-2 rounded-md text-fg-muted hover:text-fg"
-          @click="skip"
-        >
+        <BaseButton data-testid="map-skip" variant="ghost" size="sm" @click="skip">
           {{ $t('lti.courseMap.later') }}
-        </button>
+        </BaseButton>
       </div>
 
       <!-- The other way round: no Studiengruppe to point at yet, so
