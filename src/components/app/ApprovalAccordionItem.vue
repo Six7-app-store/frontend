@@ -7,7 +7,7 @@
 import { ChevronDown, ChevronRight, Check, X, RotateCcw, ExternalLink } from 'lucide-vue-next'
 import { ROUTE_NAMES } from '@/router/route-names'
 import Spinner from '@/components/ui/Spinner.vue'
-import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
+import AppVersionStatusBadge from '@/components/app/AppVersionStatusBadge.vue'
 import { formatDate } from '@/utils/format'
 import type { App, AppVersionApproval } from '@/types'
 

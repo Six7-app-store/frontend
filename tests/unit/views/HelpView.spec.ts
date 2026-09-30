@@ -54,9 +54,6 @@ for (const [lng, msgs] of Object.entries(locales)) {
     it('renders icon visuals (stub or svg)', () => {
       const html = wrapper.html()
       // lucide icons render as inline SVG with classnames like 'lucide-...'
-      expect(
-        html.includes('helpcircle-stub') || html.includes('lucide-circle-question-mark')
-      ).toBe(true)
       expect(html.includes('layers-stub') || html.includes('lucide-layers')).toBe(true)
       expect(html.includes('bookopen-stub') || html.includes('lucide-book-open')).toBe(true)
     })

@@ -20,7 +20,8 @@
  * is also true, and you don't want to flash the "empty" CTA before
  * the spinner has had a chance to appear.
  */
-import type { FunctionalComponent } from 'vue'
+import type { Component } from 'vue'
+import EmptyState from './EmptyState.vue'
 import Spinner from './Spinner.vue'
 
 defineProps<{
@@ -38,7 +39,7 @@ defineProps<{
   /** Lucide icon component for the empty state (e.g. ``Inbox``,
    *  ``GraduationCap``). Falls back to no icon — the empty message
    *  alone is still rendered. */
-  icon?: FunctionalComponent
+  icon?: Component
   /** Visible text for the empty state. */
   emptyMessage?: string
   /** Optional text shown next to the loading spinner. Leave undefined
@@ -49,43 +50,21 @@ defineProps<{
 </script>
 
 <template>
-  <!-- Loading: spinner + optional one-line label. ``py-12`` matches
-       the empty-state vertical air so the page doesn't jump between
-       states. -->
-  <div v-if="isLoading" class="flex flex-col items-center justify-center py-12 gap-3 text-fg-muted">
+  <div v-if="isLoading" class="flex flex-col items-center justify-center gap-3 py-12 text-fg-muted">
     <Spinner />
     <p v-if="loadingMessage" class="text-sm">{{ loadingMessage }}</p>
   </div>
 
-  <div v-else-if="isError" class="flex flex-col items-center justify-center py-12 gap-3 text-center">
-    <p class="text-fg-muted">{{ errorMessage }}</p>
+  <EmptyState v-else-if="isError" :title="errorMessage">
     <slot name="error-action" />
-  </div>
+  </EmptyState>
 
-  <!-- Empty: icon + message + optional CTA. Icon is muted so the
-       primary visual is still the message + action. -->
-  <div v-else-if="isEmpty" class="flex flex-col items-center justify-center py-12 text-center">
-    <component
-      v-if="icon"
-      :is="icon"
-      :size="64"
-      :stroke-width="1.5"
-      class="text-icon/60 mb-4"
-      aria-hidden="true"
-    />
-    <p v-if="emptyMessage" class="text-fg-muted mb-4">{{ emptyMessage }}</p>
-    <!--
-      Action slot — callers commonly drop a ``<BaseButton>`` here that
-      mirrors the page-header create button (so an empty page has a
-      visible call-to-action without the user having to find the
-      header button). Slot stays optional; many empty states are
-      view-only (e.g. approvals, when nothing is pending).
-    -->
+  <!-- The action slot usually holds the same button as the page header, so an
+       empty page has a visible call to action; many empty states have none. -->
+  <EmptyState v-else-if="isEmpty" :icon="icon" :title="emptyMessage">
     <slot name="empty-action" />
-  </div>
+  </EmptyState>
 
-  <!-- Default slot: the actual list rendering. Callers wrap their
-       grid/table here. We don't impose a wrapper — keeps it flexible
-       (grid, table, accordion all work). -->
+  <!-- The list itself; no wrapper, so grids, tables and accordions all work. -->
   <slot v-else />
 </template>

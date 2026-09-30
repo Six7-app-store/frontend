@@ -8,8 +8,8 @@ import { useToast } from '@/composables/useToast'
 import { useUserSearch } from '@/composables/useUserSearch'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
-import { roleBadgeVariant, roleLabelKey } from '@/i18n/role-labels'
-import { badgeVariantClasses } from '@/components/ui/badge-variants'
+import { roleBadgeTone, roleLabelKey } from '@/i18n/role-labels'
+import { badgeToneClasses } from '@/components/ui/badge-tones'
 import { useI18n } from 'vue-i18n'
 import Card from '@/components/ui/Card.vue'
 import BackLink from '@/components/ui/BackLink.vue'
@@ -202,9 +202,9 @@ const roleLabel = (role: string | undefined) => {
   return t(roleLabelKey(role))
 }
 
-// Colours come from the central role mapping (``roleBadgeVariant``), the pill
+// Colours come from the central role mapping (``roleBadgeTone``), the pill
 // keeps its compact shape here.
-const roleClass = (role: string | undefined) => badgeVariantClasses(roleBadgeVariant(role))
+const roleClass = (role: string | undefined) => badgeToneClasses(roleBadgeTone(role))
 </script>
 
 <template>

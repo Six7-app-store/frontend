@@ -2,23 +2,11 @@
 
 exports[`HelpView (de) > matches snapshot 1`] = `
 "<div class="bg-panel rounded-2xl p-10 border shadow-sm">
-  <div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
-    <div class="min-w-0 flex items-center gap-4"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon shrink-0 lucide-circle-question-mark-icon lucide-circle-question-mark text-icon shrink-0">
-        <circle cx="12" cy="12" r="10"></circle>
-        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-        <path d="M12 17h.01"></path>
-      </svg>
-      <div class="min-w-0">
-        <h1 class="text-[32px] leading-tight font-semibold tracking-[-0.015em] text-fg mb-1">Hilfe &amp; Q/A</h1>
-        <p class="text-fg-muted">Support &amp; häufige Fragen.</p>
-      </div>
+  <div class="mb-section flex flex-wrap items-start justify-between gap-4">
+    <div class="min-w-0">
+      <h1 class="font-semibold text-heading text-4xl tracking-[-0.01em]">Hilfe &amp; Q/A</h1>
+      <p class="mt-1 text-md text-fg-muted">Support &amp; häufige Fragen.</p>
     </div>
-    <!--
-      Actions go right of the title row. Multiple buttons stack
-      horizontally; the parent decides the order. When the slot is
-      empty Vue renders nothing here and the title row uses the full
-      width — no empty placeholder div.
-    -->
     <!--v-if-->
   </div>
   <p class="text-fg-muted leading-7 max-w-3xl mb-8">Diese Seite erklärt die wichtigsten Schritte für Nutzer, die bereits eingeloggt sind. Du erhältst hier konkrete Hinweise für Deployments, Quotas und die nächsten praktischen Schritte.</p>
@@ -109,23 +97,11 @@ exports[`HelpView (de) > matches snapshot 1`] = `
 
 exports[`HelpView (en) > matches snapshot 1`] = `
 "<div class="bg-panel rounded-2xl p-10 border shadow-sm">
-  <div class="flex items-center justify-between mb-8 gap-4 flex-wrap">
-    <div class="min-w-0 flex items-center gap-4"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon shrink-0 lucide-circle-question-mark-icon lucide-circle-question-mark text-icon shrink-0">
-        <circle cx="12" cy="12" r="10"></circle>
-        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-        <path d="M12 17h.01"></path>
-      </svg>
-      <div class="min-w-0">
-        <h1 class="text-[32px] leading-tight font-semibold tracking-[-0.015em] text-fg mb-1">Help &amp; Q/A</h1>
-        <p class="text-fg-muted">Support &amp; frequently asked questions.</p>
-      </div>
+  <div class="mb-section flex flex-wrap items-start justify-between gap-4">
+    <div class="min-w-0">
+      <h1 class="font-semibold text-heading text-4xl tracking-[-0.01em]">Help &amp; Q/A</h1>
+      <p class="mt-1 text-md text-fg-muted">Support &amp; frequently asked questions.</p>
     </div>
-    <!--
-      Actions go right of the title row. Multiple buttons stack
-      horizontally; the parent decides the order. When the slot is
-      empty Vue renders nothing here and the title row uses the full
-      width — no empty placeholder div.
-    -->
     <!--v-if-->
   </div>
   <p class="text-fg-muted leading-7 max-w-3xl mb-8">This page explains the most important steps for users who are already signed in. You get concrete guidance for deployments, quotas and next practical steps.</p>

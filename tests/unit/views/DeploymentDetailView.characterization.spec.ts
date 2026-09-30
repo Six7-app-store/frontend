@@ -916,7 +916,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
   it('zeigt den Status-Badge-Text je Status', async () => {
     setStatus('paused')
     const wrapper = await mountLoaded()
-    expect(wrapper.find('span.capitalize.rounded-lg').text()).toBe(t('DeploymentsView.deploymentPaused'))
+    expect(wrapper.get('.status-dot').element.parentElement?.textContent?.trim()).toBe(t('DeploymentsView.deploymentPaused'))
   })
 
   it('löscht direkt bei 204: Erfolgstoast und Navigation zur Liste', async () => {

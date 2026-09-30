@@ -7,7 +7,7 @@
  *   * ``user`` → badge "Pro User" + ``User`` icon
  *   * ``all``/undefined → nothing rendered (the calm default)
  *
- * ``purple`` is the emphasised hue-free label variant. Accepts ``undefined`` so
+ * ``emphasis`` is the hue-free label tone. Accepts ``undefined`` so
  * callers can pass ``v.varScope`` without a guard (the backend omits it when "all").
  */
 import { Users, User } from 'lucide-vue-next'
@@ -19,11 +19,11 @@ defineProps<{
 </script>
 
 <template>
-  <Badge v-if="scope === 'team'" variant="purple">
+  <Badge v-if="scope === 'team'" tone="emphasis">
     <Users :size="12" class="mr-1" aria-hidden="true" />
     <span>Pro Team</span>
   </Badge>
-  <Badge v-else-if="scope === 'user'" variant="purple">
+  <Badge v-else-if="scope === 'user'" tone="emphasis">
     <User :size="12" class="mr-1" aria-hidden="true" />
     <span>Pro User</span>
   </Badge>

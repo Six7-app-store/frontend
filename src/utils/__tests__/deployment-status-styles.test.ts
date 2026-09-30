@@ -15,8 +15,8 @@ describe('getStatusStyles', () => {
     expect(de.DeploymentsView).toHaveProperty(key)
   })
 
-  it('maps icons and badge classes', () => {
-    expect(getStatusStyles('success')).toMatchObject({ icon: CheckCircle, badgeClass: 'status-success' })
+  it('maps icons and tones', () => {
+    expect(getStatusStyles('success')).toMatchObject({ icon: CheckCircle, tone: 'success' })
     expect(getStatusStyles('running').icon).toBe(Loader2)
     expect(getStatusStyles('paused').icon).toBe(PauseCircle)
     expect(getStatusStyles('pause_failed').icon).toBe(AlertCircle)
@@ -33,7 +33,7 @@ describe('getStatusStyles', () => {
     expect(getStatusStyles(undefined)).toEqual({
       label: 'DeploymentsView.noStatus',
       iconClass: 'text-warning',
-      badgeClass: 'status-neutral',
+      tone: 'neutral',
       icon: AlertCircle,
     })
   })

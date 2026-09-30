@@ -5,7 +5,9 @@
  */
 
 @layer components {
-  /* Glass chrome */
+  /* ---------------------------------------------------------------
+   * Glass chrome
+   * ------------------------------------------------------------- */
   .surface-topbar {
     background: var(--surface-topbar-bg);
     backdrop-filter: blur(var(--glass-blur));
@@ -33,20 +35,32 @@
     color: rgb(var(--color-fg));
   }
 
-  /* Rows in dropdown menus */
-  .menu-item {
-    transition: background 150ms;
-  }
-  .menu-item:hover {
-    background: var(--nav-hover-bg);
-  }
-
-  /* Content surfaces */
+  /* ---------------------------------------------------------------
+   * Content surfaces
+   * ------------------------------------------------------------- */
   .surface-panel {
     background: var(--surface-panel-bg);
     border: 1px solid var(--line-subtle);
     border-radius: var(--radius-panel);
     box-shadow: var(--surface-panel-shadow);
+  }
+
+  /* A panel that is a link or button as a whole: only the border reacts */
+  .panel-interactive {
+    transition: border-color 150ms;
+  }
+  .panel-interactive:hover {
+    border-color: var(--line-hover);
+  }
+
+  /* Panel header row: title left, actions right */
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem var(--panel-pad);
+    border-bottom: 1px solid var(--line-subtle);
   }
 
   /* Panel fill only, for elements that bring their own border and radius */
@@ -79,7 +93,53 @@
     background: var(--scrim);
   }
 
-  /* Glass control: icon buttons, segmented controls, language/theme switch */
+  /* ---------------------------------------------------------------
+   * Navigation and menus
+   * ------------------------------------------------------------- */
+  /* Rows in dropdown menus */
+  .menu-item {
+    transition: background 150ms;
+  }
+  .menu-item:hover {
+    background: var(--nav-hover-bg);
+  }
+
+  /* Popup menu (ActionMenu) and its entries */
+  .menu-entry {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    height: var(--control-h-icon);
+    padding: 0 0.75rem;
+    border-radius: var(--radius-tag);
+    color: rgb(var(--color-fg));
+    font-size: var(--text-base);
+    text-align: left;
+    white-space: nowrap;
+    transition: background 150ms, color 150ms;
+  }
+  .menu-entry:hover:not(:disabled),
+  .menu-entry:focus-visible {
+    background: var(--nav-hover-bg);
+  }
+  .menu-entry:disabled {
+    color: rgb(var(--color-disabled-fg));
+    cursor: not-allowed;
+  }
+  .menu-entry-danger {
+    color: rgb(var(--color-fg-muted));
+  }
+  .menu-entry-danger:hover:not(:disabled),
+  .menu-entry-danger:focus-visible {
+    color: rgb(var(--color-danger));
+    background: var(--danger-hover-bg);
+  }
+
+  /* ---------------------------------------------------------------
+   * Controls
+   * ------------------------------------------------------------- */
+  /* Glass control: language/theme switch, collapse button */
   .glass-control {
     background: var(--control-bg);
     border: 1px solid var(--line-strong);
@@ -93,6 +153,7 @@
     color: rgb(var(--color-fg));
   }
 
+  /* Segmented control */
   .segment {
     display: inline-flex;
     padding: 2px;
@@ -103,9 +164,21 @@
     box-shadow: var(--segment-shadow);
   }
   .segment-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 26px;
+    min-width: 36px;
+    padding: 0 0.5rem;
     border-radius: var(--radius-tag);
     color: rgb(var(--color-fg-muted));
+    font-size: var(--text-xs);
+    font-weight: 600;
     transition: background 150ms, color 150ms;
+  }
+  .segment-md .segment-btn {
+    height: var(--control-h-sm);
   }
   .segment-btn:hover {
     color: rgb(var(--color-fg));
@@ -113,14 +186,43 @@
   .segment-btn[aria-pressed="true"] {
     background: var(--segment-active-bg);
     box-shadow: var(--segment-active-shadow);
-    color: rgb(var(--color-fg));
+    color: rgb(var(--color-heading));
   }
 
-  /* Buttons */
+  /* Buttons: .btn is the shape, .btn-* the variant, .btn-sm/.btn-lg the size */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: var(--control-h);
+    padding: 0 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-control);
+    font-size: var(--text-base);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background 150ms, border-color 150ms, color 150ms, filter 150ms;
+  }
+  .btn-sm {
+    height: var(--control-h-sm);
+    padding: 0 0.625rem;
+    font-size: var(--text-sm);
+  }
+  .btn-lg {
+    height: var(--control-h-lg);
+    padding: 0 1.5rem;
+  }
+  .btn-icon {
+    width: var(--control-h-icon);
+    height: var(--control-h-icon);
+    padding: 0;
+  }
+
   .btn-primary {
     color: rgb(var(--color-on-accent));
     background: var(--btn-primary-bg);
-    border: 1px solid rgb(var(--color-accent-strong));
+    border-color: rgb(var(--color-accent-strong));
     box-shadow: var(--btn-primary-shadow);
   }
   .btn-primary:hover:not(:disabled) {
@@ -133,51 +235,119 @@
   .btn-secondary,
   .btn-danger {
     background: var(--control-bg);
-    border: 1px solid var(--line-strong);
+    border-color: var(--line-strong);
     box-shadow: var(--control-shadow);
-  }
-  .btn-secondary {
     color: rgb(var(--color-fg));
-  }
-  .btn-danger {
-    color: rgb(var(--color-danger));
   }
   .btn-secondary:hover:not(:disabled),
   .btn-danger:hover:not(:disabled) {
     background: var(--control-hover-bg);
   }
-  .btn-secondary:active:not(:disabled),
-  .btn-danger:active:not(:disabled) {
+  .btn-secondary:active:not(:disabled) {
     background: var(--control-active-bg);
     border-color: rgb(var(--color-accent-strong));
+  }
+  /* Destructive: neutral until hovered, red only then */
+  .btn-danger:hover:not(:disabled),
+  .btn-danger:active:not(:disabled) {
+    color: rgb(var(--color-danger));
+    background: var(--danger-hover-bg);
+    border-color: var(--danger-hover-border);
+  }
+  .btn-icon.btn-danger {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    color: rgb(var(--color-fg-muted));
   }
 
   .btn-ghost {
     color: rgb(var(--color-fg-muted));
     background: transparent;
-    border: 1px solid transparent;
   }
   .btn-ghost:hover:not(:disabled) {
     color: rgb(var(--color-fg));
-    background: var(--nav-hover-bg);
+    background: var(--icon-btn-hover-bg);
+    border-color: var(--icon-btn-hover-border);
+  }
+
+  /* Disabled looks disabled: grey and flat in every variant */
+  .btn:disabled {
+    cursor: not-allowed;
+    color: rgb(var(--color-disabled-fg));
+    background: var(--btn-disabled-bg);
+    border-color: var(--btn-disabled-border);
+    box-shadow: none;
+    filter: none;
+  }
+  .btn-ghost:disabled {
+    background: transparent;
+    border-color: transparent;
   }
 
   /* Form fields */
   .field {
+    min-height: var(--control-h);
     color: rgb(var(--color-fg));
     background: var(--field-bg);
     border: 1px solid var(--line-strong);
     border-radius: var(--radius-control);
     box-shadow: var(--field-shadow);
+    font-size: var(--text-base);
   }
   .field::placeholder {
     color: rgb(var(--color-fg-muted));
   }
   .field:focus {
-    border-color: rgb(var(--color-accent) / 0.6);
+    border-color: rgb(var(--color-focus) / 0.6);
+  }
+  .field:disabled {
+    cursor: not-allowed;
+    color: rgb(var(--color-disabled-fg));
+    background: var(--btn-disabled-bg);
+  }
+  .field[aria-invalid="true"] {
+    border-color: rgb(var(--color-danger-dot) / 0.6);
   }
 
-  /* Status badges */
+  /* Switches: red track when on, recessed grey when off */
+  .toggle-on {
+    background: var(--toggle-on-bg);
+    border-color: rgb(var(--color-accent-strong));
+    box-shadow: var(--toggle-on-shadow);
+  }
+  .toggle-off {
+    background: var(--toggle-off-bg);
+    border-color: var(--toggle-off-border);
+    box-shadow: var(--toggle-off-shadow);
+  }
+  .toggle-knob {
+    background: var(--toggle-knob-bg);
+    box-shadow: var(--toggle-knob-shadow);
+  }
+
+  /* Meters: green below 50 %, yellow from 50 % */
+  .meter-track {
+    height: 6px;
+    background: var(--meter-track-bg);
+    border-radius: var(--radius-tag);
+    box-shadow: var(--meter-track-shadow);
+    overflow: hidden;
+  }
+  .meter-fill-low {
+    background: var(--meter-low-bg);
+  }
+  .meter-fill-mid {
+    background: var(--meter-mid-bg);
+  }
+  .meter-fill-high {
+    background: var(--meter-high-bg);
+  }
+
+  /* ---------------------------------------------------------------
+   * Status
+   * ------------------------------------------------------------- */
+  /* Label chips (roles, scopes) and tinted status pills */
   .status-badge {
     display: inline-flex;
     align-items: center;
@@ -218,36 +388,139 @@
     box-shadow: var(--control-shadow);
   }
 
-  /* Switches: red track when on, recessed grey when off */
-  .toggle-on {
-    background: var(--toggle-on-bg);
-    border-color: rgb(var(--color-accent-strong));
-    box-shadow: var(--toggle-on-shadow);
+  /* Status as a dot with text (StatusBadge) */
+  .status-dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
   }
-  .toggle-off {
-    background: var(--toggle-off-bg);
-    border-color: var(--toggle-off-border);
-    box-shadow: var(--toggle-off-shadow);
+  .status-dot-success {
+    background: rgb(var(--color-success-dot));
   }
-  .toggle-knob {
-    background: var(--toggle-knob-bg);
-    box-shadow: var(--toggle-knob-shadow);
+  .status-dot-warning {
+    background: rgb(var(--color-warning-dot));
+  }
+  .status-dot-danger {
+    background: rgb(var(--color-danger-dot));
+  }
+  .status-dot-neutral {
+    background: rgb(var(--color-neutral-dot));
   }
 
-  /* Meters */
-  .meter-track {
-    background: var(--meter-track-bg);
+  /* Notice boxes: warning uses the notice tokens, the other tones tint the status colour */
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem var(--panel-pad);
+    border: 1px solid;
+    border-radius: var(--radius-panel);
+  }
+  .alert-warning {
+    background: var(--notice-bg);
+    border-color: var(--notice-border);
+    box-shadow: var(--notice-shadow);
+  }
+  .alert-warning .alert-icon {
+    color: rgb(var(--color-warning-dot));
+  }
+  .alert-warning .alert-title {
+    color: rgb(var(--color-warning));
+  }
+  .alert-info {
+    background: rgb(var(--color-neutral-dot) / 0.08);
+    border-color: var(--line-strong);
+  }
+  .alert-info .alert-icon {
+    color: rgb(var(--color-icon));
+  }
+  .alert-danger {
+    background: rgb(var(--color-danger-dot) / 0.08);
+    border-color: var(--danger-hover-border);
+  }
+  .alert-danger .alert-icon,
+  .alert-danger .alert-title {
+    color: rgb(var(--color-danger));
+  }
+  .alert-success {
+    background: rgb(var(--color-success-dot) / 0.10);
+    border-color: rgb(var(--color-success-dot) / 0.40);
+  }
+  .alert-success .alert-icon,
+  .alert-success .alert-title {
+    color: rgb(var(--color-success));
+  }
+
+  /* ---------------------------------------------------------------
+   * Data display
+   * ------------------------------------------------------------- */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-size: var(--text-base);
+    font-variant-numeric: tabular-nums;
+  }
+  .data-table th {
+    padding: 0.625rem 1rem;
+    border-bottom: 1px solid var(--line-strong);
+    color: rgb(var(--color-fg-muted));
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-align: left;
+  }
+  .data-table td {
+    padding: 0 1rem;
+    height: 3.25rem;
+    border-bottom: 1px solid var(--line-faint);
+    color: rgb(var(--color-fg));
+    line-height: var(--leading-normal);
+    overflow-wrap: anywhere;
+  }
+  .data-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .data-table th:first-child,
+  .data-table td:first-child {
+    padding-left: var(--panel-pad);
+  }
+  .data-table th:last-child,
+  .data-table td:last-child {
+    padding-right: var(--panel-pad);
+  }
+  .data-table .align-right {
+    text-align: right;
+  }
+  .data-row {
+    position: relative;
+    transition: background 150ms;
+  }
+  .data-row:hover,
+  .hover-tint:hover {
+    background: var(--row-hover-bg);
+  }
+  .hover-tint {
+    transition: background 150ms;
+  }
+  /* First cell's link covers the whole row, so the row is one real link */
+  .row-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .row-link:focus-visible {
+    outline-offset: -2px;
+  }
+
+  /* Inline code and identifiers: versions, commits, URLs, variable names */
+  .code-chip {
+    padding: 1px 6px;
+    border: 1px solid var(--code-border);
     border-radius: var(--radius-tag);
-    box-shadow: var(--meter-track-shadow);
-    overflow: hidden;
-  }
-  .meter-fill-low {
-    background: var(--meter-low-bg);
-  }
-  .meter-fill-mid {
-    background: var(--meter-mid-bg);
-  }
-  .meter-fill-high {
-    background: var(--meter-high-bg);
+    background: var(--code-bg);
+    color: rgb(var(--color-fg));
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
   }
 }

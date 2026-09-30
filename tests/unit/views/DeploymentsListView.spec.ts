@@ -135,18 +135,16 @@ describe('DeploymentsListView.vue', () => {
   })
 
   it.each([
-    ['failed', 'DeploymentsView.deploymentFailed', ['status-danger']],
-    ['paused', 'DeploymentsView.deploymentPaused', ['status-neutral']],
-    ['unbekannt', 'DeploymentsView.noStatus', ['status-neutral']]
-  ])('zeigt den Status %s übersetzt und passend eingefärbt', (status, label, expectedClasses) => {
+    ['failed', 'DeploymentsView.deploymentFailed', 'status-dot-danger'],
+    ['paused', 'DeploymentsView.deploymentPaused', 'status-dot-neutral'],
+    ['unbekannt', 'DeploymentsView.noStatus', 'status-dot-neutral']
+  ])('zeigt den Status %s übersetzt und passend eingefärbt', (status, label, dotClass) => {
     mockDeployments = [makeDeployment({ status })]
 
-    const statusSpan = mountComponent().find('.capitalize')
+    const dot = mountComponent().get('.status-dot')
 
-    expect(statusSpan.text()).toBe(label)
-    for (const cls of expectedClasses) {
-      expect(statusSpan.classes()).toContain(cls)
-    }
+    expect(dot.element.parentElement?.textContent?.trim()).toBe(label)
+    expect(dot.classes()).toContain(dotClass)
   })
 
   // --- 3. UI-Zustände ---

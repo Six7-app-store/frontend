@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { HelpCircle, Layers, BookOpen, FileText } from 'lucide-vue-next'
+import { Layers, BookOpen, FileText } from 'lucide-vue-next'
 import PageHeader from '@/components/ui/PageHeader.vue'
 </script>
 
 <template>
   <div class="bg-panel rounded-2xl p-10 border shadow-sm">
-    <PageHeader :icon="HelpCircle" :title="$t('HelpView.title')" :subtitle="$t('HelpView.subtitle')" />
+    <PageHeader :title="$t('HelpView.title')" :subtitle="$t('HelpView.subtitle')" />
 
     <p class="text-fg-muted leading-7 max-w-3xl mb-8">
       {{ $t('HelpView.intro') }}

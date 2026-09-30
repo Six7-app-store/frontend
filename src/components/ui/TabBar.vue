@@ -21,19 +21,19 @@ defineSlots<{
 </script>
 
 <template>
-  <div role="tablist" class="flex border-b border-subtle" :class="{ 'gap-1': !fill }">
+  <div role="tablist" class="flex border-b border-subtle" :class="{ 'gap-6': !fill }">
     <button
       v-for="tab in tabs"
       :key="tab.key"
       type="button"
       role="tab"
       :aria-selected="active === tab.key"
-      class="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px"
+      class="-mb-px flex h-10 items-center justify-center gap-2 border-b-2 text-base transition-colors"
       :class="[
         active === tab.key
-          ? 'border-accent text-fg'
-          : 'border-transparent text-fg-muted hover:text-fg hover:border-strong',
-        { 'flex-1': fill },
+          ? 'border-accent font-semibold text-heading'
+          : 'border-transparent text-fg-muted hover:text-fg',
+        fill ? 'flex-1 px-4' : '',
       ]"
       @click="active = tab.key"
     >

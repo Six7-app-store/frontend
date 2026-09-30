@@ -1,4 +1,5 @@
 import type { UserRole } from "@/types"
+import type { BadgeTone } from "@/types/tone"
 
 /**
  * Central role-label registry. Views call ``t(roleLabelKey(role))`` for a single
@@ -16,18 +17,16 @@ export function roleLabelKey(role: string | undefined | null): string {
   }
 }
 
-/** Variant name for the ``<Badge>`` UI component. */
-export function roleBadgeVariant(role: string | undefined | null): 'yellow' | 'green' | 'red' | 'purple' | 'blue' | 'gray' {
+/** Tone for the ``<Badge>`` UI component. */
+export function roleBadgeTone(role: string | undefined | null): BadgeTone {
   switch (role) {
     case "admin":
-      return "purple"
+      return "emphasis"
     case "teacher":
-      return "blue"
+      return "info"
     // Green is reserved for status (running/success), not for a role.
-    case "student":
-      return "gray"
     default:
-      return "gray"
+      return "neutral"
   }
 }
 

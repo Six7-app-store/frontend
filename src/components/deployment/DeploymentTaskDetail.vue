@@ -11,7 +11,7 @@ import { computed } from 'vue'
 import { AlertCircle, Loader2, Settings, Terminal } from 'lucide-vue-next'
 import CopyButton from '@/components/ui/CopyButton.vue'
 import { formatDateTime } from '@/utils/format'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
+import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
 import { prettyJson, highlightJson } from '@/utils/json-display'
 import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
 import type { Task } from '@/types'
@@ -63,7 +63,7 @@ const taskLogsSplit = computed(() => {
           </div>
           <div>
             <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStatus') }}</div>
-            <StatusBadge :status="selectedTask.status" />
+            <DeploymentStatusBadge :status="selectedTask.status" />
           </div>
           <div>
             <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStarted') }}</div>

@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   XCircle,
   CircleHelp,
-  Cloud,
   KeyRound,
   Trash2,
   RefreshCw,
@@ -195,7 +194,7 @@ const maybeReturnToWizard = () => {
 
 <template>
   <div class="p-6 max-w-4xl mx-auto">
-    <PageHeader :icon="Cloud" :title="t('SettingsOpenStackView.title')" :subtitle="t('SettingsOpenStackView.intro')" />
+    <PageHeader :title="t('SettingsOpenStackView.title')" :subtitle="t('SettingsOpenStackView.intro')" />
 
     <!-- Lock banner -->
     <CredentialMissingBanner

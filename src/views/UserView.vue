@@ -4,7 +4,7 @@ import { User, Mail, Shield, Calendar, Cloud, ChevronRight, BookOpen, Contact, K
 import { useAuthStore } from '@/stores/auth.store'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { roleLabelKey, roleBadgeVariant as roleBadgeVariantFor } from '@/i18n/role-labels'
+import { roleLabelKey, roleBadgeTone as roleBadgeToneFor } from '@/i18n/role-labels'
 import Badge from '@/components/ui/Badge.vue'
 import Card from '@/components/ui/Card.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
@@ -17,7 +17,7 @@ const { t } = useI18n()
 const user = computed(() => authStore.user as any)
 
 // Central role-label helpers: one source for variant + translation across views.
-const roleBadgeVariant = computed(() => roleBadgeVariantFor(user.value?.role))
+const roleBadgeTone = computed(() => roleBadgeToneFor(user.value?.role))
 const roleLabel = computed(() => t(roleLabelKey(user.value?.role)))
 
 const createdDate = computed(() => {
@@ -49,7 +49,7 @@ const createdDate = computed(() => {
             <div class="font-semibold text-fg text-lg">
               {{ user.username || t('UserView.notAvailable') }}
             </div>
-            <Badge :variant="roleBadgeVariant">{{ roleLabel }}</Badge>
+            <Badge :tone="roleBadgeTone">{{ roleLabel }}</Badge>
           </div>
         </div>
       </Card>

@@ -60,8 +60,17 @@ export default {
     logout: "Log out",
   },
 
+  breadcrumb: {
+    label: "Breadcrumb",
+  },
+
+  pageToc: {
+    title: "On this page",
+  },
+
   theme: {
-    dark: "Dark theme",
+    toDark: "Switch to dark theme",
+    toLight: "Switch to light theme",
   },
 
   action: {

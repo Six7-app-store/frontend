@@ -61,8 +61,17 @@ export default {
     logout: "Abmelden",
   },
 
+  breadcrumb: {
+    label: "Brotkrümelnavigation",
+  },
+
+  pageToc: {
+    title: "Auf dieser Seite",
+  },
+
   theme: {
-    dark: "Dunkles Design",
+    toDark: "Zum dunklen Design wechseln",
+    toLight: "Zum hellen Design wechseln",
   },
 
   action: {

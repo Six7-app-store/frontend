@@ -111,11 +111,13 @@ export default {
         sidebar: 'var(--sidebar-w)',
         'sidebar-collapsed': 'var(--sidebar-w-collapsed)',
         aside: 'var(--aside-w)',
+        'control-icon': 'var(--control-h-icon)',
       },
       height: {
         topbar: 'var(--topbar-h)',
         control: 'var(--control-h)',
         'control-sm': 'var(--control-h-sm)',
+        'control-lg': 'var(--control-h-lg)',
         'control-icon': 'var(--control-h-icon)',
       },
       spacing: {

@@ -6,7 +6,7 @@
  */
 import { AlertCircle, Clock, Globe, Lock, Send, Undo2 } from 'lucide-vue-next'
 import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
-import AppVersionStatusBadge from '@/components/ui/AppVersionStatusBadge.vue'
+import AppVersionStatusBadge from '@/components/app/AppVersionStatusBadge.vue'
 import { formatDate } from '@/utils/format'
 import type { AppVersionApproval } from '@/types'
 

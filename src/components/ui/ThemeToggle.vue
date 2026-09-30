@@ -1,20 +1,22 @@
 <script setup lang="ts">
+/** Icon button that switches between the light and the dark theme; the label names the theme it switches to. */
+import { computed } from 'vue'
 import { Moon, Sun } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '@/composables/useTheme'
 
 const { t } = useI18n()
 const { isDark, toggleTheme } = useTheme()
+
+const label = computed(() => t(isDark.value ? 'theme.toLight' : 'theme.toDark'))
 </script>
 
 <template>
-  <!-- One fixed label; aria-pressed carries the on/off state. -->
   <button
     type="button"
-    class="glass-control inline-flex h-8 w-8 items-center justify-center"
-    :aria-label="t('theme.dark')"
-    :aria-pressed="isDark"
-    :title="t('theme.dark')"
+    class="glass-control inline-flex h-control-icon w-control-icon items-center justify-center"
+    :aria-label="label"
+    :title="label"
     @click="toggleTheme"
   >
     <Sun v-if="isDark" :size="16" :stroke-width="1.75" aria-hidden="true" />

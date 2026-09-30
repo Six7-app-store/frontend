@@ -13,7 +13,7 @@ import { AlertCircle, ChevronDown, CircleArrowLeft, Loader2, Terminal } from 'lu
 import DeploymentTaskDetail from '@/components/deployment/DeploymentTaskDetail.vue'
 import { formatDateTime } from '@/utils/format'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
+import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
 import type { Task } from '@/types'
 import DetailSection from '@/components/ui/DetailSection.vue'
 
@@ -75,7 +75,7 @@ const showTaskLogsTrace = ref(false)
             <div class="flex-1">
               <div class="flex items-center gap-3 mb-1">
                 <span class="font-medium text-fg capitalize">{{ task.type }}</span>
-                <StatusBadge :status="task.status" />
+                <DeploymentStatusBadge :status="task.status" />
               </div>
               <div class="text-xs text-fg-muted">
                 Created: {{ formatDateTime(task.created_at) }}

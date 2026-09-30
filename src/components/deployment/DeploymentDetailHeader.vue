@@ -9,7 +9,7 @@
 import { PauseCircle, PlayCircle, Trash2 } from 'lucide-vue-next'
 import BackLink from '@/components/ui/BackLink.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
+import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
 import { ROUTE_NAMES } from '@/router/route-names'
 import type { PauseResumeAction } from '@/services/deployment-lifecycle.service'
@@ -44,7 +44,7 @@ defineEmits<{
       <div class="flex items-center gap-4">
         <div class="flex items-center gap-3">
           <component :is="getStatusStyles(deployment.status).icon" :size="20" :class="getStatusStyles(deployment.status).iconClass" />
-          <StatusBadge :status="deployment.status" size="md" />
+          <DeploymentStatusBadge :status="deployment.status" size="md" />
         </div>
 
         <!-- Pause / Resume button. One slot, two states, visible only

@@ -121,7 +121,7 @@ describe('AppLayout theme toggle', () => {
     const buttons = wrapper.findAll('header button').map((b) => b.attributes('aria-label') ?? b.text())
     const de_ = buttons.indexOf('DE')
     const en_ = buttons.indexOf('EN')
-    const theme = buttons.indexOf(de.theme.dark)
+    const theme = buttons.indexOf(de.theme.toDark)
     const user = buttons.findIndex((label) => label.includes('kim'))
 
     expect(theme).toBeGreaterThan(Math.max(de_, en_))

@@ -1,30 +1,35 @@
 <script setup lang="ts">
 /**
- * Status pill for a deployment or task: translated label in the status's
- * tone (see ``utils/deployment-status-styles``). ``md`` is the page-header
- * size, ``sm`` the one for lists.
+ * A status as text with a dot in the status colour, or with an icon when the
+ * status has one of its own. Green and yellow only ever mean status.
+ * ``md`` is the page-header size, ``sm`` the one for lists and tables.
  */
-import { computed } from 'vue'
-import { getStatusStyles } from '@/utils/deployment-status-styles'
+import type { Component } from 'vue'
+import type { StatusTone } from '@/types/tone'
 
-const props = withDefaults(defineProps<{
-  status?: string
+withDefaults(defineProps<{
+  tone: StatusTone
   size?: 'sm' | 'md'
+  icon?: Component
 }>(), {
   size: 'sm',
 })
 
-const styles = computed(() => getStatusStyles(props.status))
+const TEXT_CLASS: Record<StatusTone, string> = {
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger',
+  neutral: 'text-fg-muted',
+}
 </script>
 
 <template>
   <span
-    class="inline-flex items-center font-semibold border capitalize whitespace-nowrap"
-    :class="[
-      styles.badgeClass,
-      size === 'md' ? 'px-3 py-1.5 rounded-lg text-sm' : 'px-2 py-0.5 rounded text-xs',
-    ]"
+    class="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold"
+    :class="[TEXT_CLASS[tone], size === 'md' ? 'text-base' : 'text-sm']"
   >
-    {{ $t(styles.label) }}
+    <component :is="icon" v-if="icon" :size="13" class="shrink-0" aria-hidden="true" />
+    <span v-else class="status-dot" :class="`status-dot-${tone}`" aria-hidden="true" />
+    <slot />
   </span>
 </template>

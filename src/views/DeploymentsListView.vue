@@ -13,7 +13,7 @@ import {
 } from 'lucide-vue-next'
 
 import BaseButton from '@/components/ui/BaseButton.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
+import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
 import Card from '@/components/ui/Card.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
@@ -185,7 +185,7 @@ const studentStateColor = (status: string | null | undefined) =>
               >
                 {{ $t(studentStateLabel(deployment.status)) }}
               </span>
-              <StatusBadge v-else :status="deployment.status" />
+              <DeploymentStatusBadge v-else :status="deployment.status" />
             </div>
 
             <!-- Student footer: the one question they have is "how do I
