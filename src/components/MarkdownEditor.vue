@@ -254,7 +254,7 @@ const onList = () =>
  @input="autoResize"
  @keydown="onKeydown"
  :style="{ minHeight: `${minHeightPx}px`, maxHeight: `${maxHeightPx}px` }"
- class="block w-full resize-none bg-transparent border-0 px-2 py-1.5 text-sm text-fg font-mono overflow-y-auto"
+ class="block w-full resize-none bg-transparent border-0 px-2 py-1.5 text-sm text-fg font-mono overflow-y-auto placeholder:text-fg-subtle"
  />
  <div
  v-show="mode === 'preview'"

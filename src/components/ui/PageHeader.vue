@@ -13,6 +13,13 @@ withDefaults(defineProps<{
   size: 'page',
 })
 
+// Overview pages line the actions up with the subtitle, detail pages with the title.
+const ALIGN_CLASS = {
+  page: 'items-end',
+  detail: 'items-start',
+  greeting: 'items-center',
+} as const
+
 const TITLE_CLASS = {
   page: 'text-4xl tracking-[-0.01em]',
   detail: 'text-5xl tracking-[-0.01em]',
@@ -21,13 +28,13 @@ const TITLE_CLASS = {
 </script>
 
 <template>
-  <div class="mb-section flex flex-wrap items-start justify-between gap-4">
+  <div class="mb-section flex flex-wrap justify-between gap-4" :class="ALIGN_CLASS[size]">
     <div class="min-w-0">
       <h1 class="font-semibold text-heading" :class="TITLE_CLASS[size]">{{ title }}</h1>
-      <p v-if="subtitle" class="mt-1 text-md text-fg-muted">{{ subtitle }}</p>
+      <p v-if="subtitle" class="mt-1.5 text-base text-fg-muted">{{ subtitle }}</p>
       <slot name="meta" />
     </div>
-    <div v-if="$slots.actions" class="flex shrink-0 items-center gap-2">
+    <div v-if="$slots.actions" class="flex shrink-0 items-center gap-3">
       <slot name="actions" />
     </div>
   </div>

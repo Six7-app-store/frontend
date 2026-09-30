@@ -1,6 +1,8 @@
 /**
  * Presentation rules for apps in the catalogue and detail view.
  */
+import { marked, type Tokens } from 'marked'
+import { plainText } from '@/services/markdown.service'
 import { Box, Database, Globe, LayoutTemplate, Layers, Server, Shield, Terminal } from 'lucide-vue-next'
 
 /** Pick a lucide icon from keywords in the app name (fallback: ``Layers``). */
@@ -97,4 +99,25 @@ export function versionInfo(details: Record<string, any> | null): VersionInfo | 
     prerelease: details.prerelease ?? '',
     html_url: details.html_url ?? details.url ?? '',
   }
+}
+
+export interface DescriptionPreview {
+  /** The description's opening heading, if it starts with one. */
+  heading: string | null
+  /** The first paragraph as plain text (no markdown marks). */
+  text: string
+}
+
+/**
+ * What an app card shows of a markdown description: the opening heading
+ * as its own line and the first paragraph as plain text. Anything further
+ * down (sections, tables, code) belongs on the detail page.
+ */
+export function descriptionPreview(markdown: string | null | undefined): DescriptionPreview {
+  const tokens = marked.lexer(markdown ?? '').filter((token) => token.type !== 'space')
+  const first = tokens[0]
+  const heading = first?.type === 'heading' ? plainText((first as Tokens.Heading).tokens, (first as Tokens.Heading).text) : null
+  const paragraph = tokens.find((token): token is Tokens.Paragraph => token.type === 'paragraph')
+  const text = paragraph ? plainText(paragraph.tokens, paragraph.text) : ''
+  return { heading, text: text.replace(/\s+/g, ' ').trim() }
 }

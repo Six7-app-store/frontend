@@ -2,18 +2,21 @@
 /**
  * A status as text with a dot in the status colour, or with an icon when the
  * status has one of its own. Green and yellow only ever mean status.
- * ``md`` is the page-header size, ``sm`` the one for lists and tables.
+ * ``md`` is the page-header size, ``sm`` the one for lists and tables,
+ * ``xs`` the one for cards.
  */
 import type { Component } from 'vue'
 import type { StatusTone } from '@/types/tone'
 
 withDefaults(defineProps<{
   tone: StatusTone
-  size?: 'sm' | 'md'
+  size?: 'xs' | 'sm' | 'md'
   icon?: Component
 }>(), {
   size: 'sm',
 })
+
+const SIZE_CLASS = { xs: 'text-xs', sm: 'text-sm', md: 'text-base' } as const
 
 const TEXT_CLASS: Record<StatusTone, string> = {
   success: 'text-success',
@@ -33,10 +36,10 @@ const DOT_CLASS: Record<StatusTone, string> = {
 
 <template>
   <span
-    class="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold"
-    :class="[TEXT_CLASS[tone], size === 'md' ? 'text-base' : 'text-sm']"
+    class="inline-flex items-center gap-1.5 whitespace-nowrap"
+    :class="[TEXT_CLASS[tone], SIZE_CLASS[size]]"
   >
-    <component :is="icon" v-if="icon" :size="13" class="shrink-0" aria-hidden="true" />
+    <component :is="icon" v-if="icon" :size="12" :stroke-width="2" class="shrink-0" aria-hidden="true" />
     <span v-else class="status-dot" :class="DOT_CLASS[tone]" aria-hidden="true" />
     <slot />
   </span>

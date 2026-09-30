@@ -38,18 +38,38 @@ kein Push, `.claude/` nicht anfassen.
   - Neue Specs: `layouts/AuthLayout`, `components/CredentialMissingBanner`, AlertBox-Icon, DataTable-`dense`; Dashboard-Spec
     auf das neue Verhalten umgestellt (Begrüßung im `h1`, Balken grün/gelb statt Rot, Hauptaktion gesperrt mit Grund).
   - Stand: vue-tsc grün, 108 Dateien / 1057 Tests grün, Coverage 91,9/86,8/74,7/91,9, eslint leer, keine Hex-Treffer.
+- e) Commit „Bring the apps pages and rendered Markdown to the v2 design“ (`git log -1`):
+  - `app/AppCard` (ganze Karte = Link, ohne Icon, Status als Punkt/Icon + Text, Vorschau aus `descriptionPreview`: erste
+    Überschrift + erster Absatz als Klartext) in `AppsView` und als Vorschau in `AddAppsView`. Filter = `SegmentedControl size="md"`.
+  - `AppsDetailView` (`max-w-detail`): `AppDetailHeader` = `PageHeader size="detail"` + Meta (Versionen · Repo mono + `CopyButton`),
+    „Bearbeiten“ + „…“-Menü (Löschen). Tabs ohne Icons. `AppOverviewTab`: Artikel (660px) + sticky Spalte (`#deploy`-Slot mit
+    `AppDeploySidebar` als Card/FormField/BaseSelect, `PageToc` aus den H2 der Beschreibung, `InfoList` App + Version).
+    `AppStoreTab`: AlertBox-Hinweise, Sichtbarkeit als Panel mit ToggleSwitch, Versionen als `DataTable`, „Zurückziehen“ jetzt mit
+    Bestätigung (ConfirmModal in der View), Lösch-Bereich unten.
+  - `AddAppsView`: Formular in Cards mit `FormField`/`BaseInput`, Sichtbarkeit als `SegmentedControl`, Info als `AlertBox`,
+    „Abbrechen“ + „App hinzufügen“ unten rechts, Absenden über `<form @submit>` (Enter funktioniert).
+  - Markdown: Rendering als reine Funktion `renderMarkdown` in `services/markdown.service.ts` (+ `markdownHeadings`, `headingId`,
+    `plainText`), `breaks: false`, Überschriften mit `md-…`-IDs (für die TOC; im Browser geprüft, DOMPurify lässt sie stehen).
+    Gestaltung komplett in der typography-Konfiguration (`tailwind.config.js`): Text 15/1.65, H1 20, H2 17, H3 15, Inline-Code als
+    Chip ohne Backticks, Tabellen/Listen/Zitate/Codeblöcke im Vorlagenstil. `.md-compact` für die kompakte Variante.
+  - `StatusBadge` normal statt fett, neue Größe `xs`; `AppVersionStatusBadge`: veröffentlicht/in Prüfung/abgelehnt als Punkt,
+    privat = Schloss, nicht eingereicht = Uhr. `PageHeader`: Aktionen unten (Liste), oben (Detail), mittig (Begrüßung); Untertitel 14px.
+  - `InfoList` kann `href`; `.link`-Klasse (unterstrichen, nicht rot); `CopyButton` (Icon) als Ghost-Icon-Button mit `aria-label`.
+  - Snapshots HelpView + DeploymentDetailView aktualisiert (nur Klassen und `aria-label` der Kopier-Buttons, per Diff geprüft).
+  - Stand: vue-tsc grün, 110 Dateien / 1082 Tests grün, Coverage 92,0/87,5/75,7/92,0, eslint leer, keine Hex-Treffer.
 
 ## Offen (Reihenfolge)
-e Apps + App-Detail + Markdown-Fix · f übrige Seiten · g Aufräumen · Abschluss
+f übrige Seiten · g Aufräumen · Abschluss
 (alle Harness-Checks, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo, Schlussbericht laut Plan)
 
 ## Nächster Schritt (als Erstes)
-Etappe e: `AppsView` (Karten ohne Icon, ganze Karte klickbar, Status Punkt+Text, Link „Details & Deployment“, Filter als
-`SegmentedControl`), `AddAppsView` (FormField, Markdown-Editor, Live-Vorschau), `AppsDetailView` mit Tabs Übersicht (Kopf mit
-Versionsanzahl + Repo-Link/Kopieren, Beschreibung links, rechts sticky „Deployment starten“ + `PageToc` + `InfoList`) und App Store
-(Sichtbarkeit, Versions-`DataTable`, „Zurückziehen“ mit Bestätigung, Löschen im „…“-Menü). Markdown-Fix laut Plan
-(`breaks: false`, Inline-Code-Chip ohne Backticks in der typography-Konfiguration, kleinere Überschriften) +
-`tests/unit/components/MarkdownRenderer.spec.ts`. Vorlagen: `V2LApps`, `V2LAppDetail`, `V2LAppStore` (+ Dark).
+Etappe f, Vorlagen `V2LDeployments`, `V2LKurse`, `V2LKursDetail`, `V2LFreigaben`, `V2LHilfe` (+ Dark):
+`DeploymentsListView`/`DeploymentsView` (DataTable: Name, App, Version mono, Status, Erstellt; Zeile klickbar; EmptyState;
+Studierenden-Sicht im selben Raster), `DeploymentDetailView` (PageHeader + Cards, Löschen/Abbrechen grau→rot mit Dialog,
+`DeploymentRedeployModal` i18n), Wizard (4 Schritte, Stepper, Drag-and-Drop-Chips, „Zurücksetzen“ mit Bestätigung),
+`CoursesView`/`CourseDetailView`, `AdminAppsView` („Freigaben“), `HelpView` (Lesespalte 720 + PageToc), Profil/OpenStack
+(`max-w-detail`), LTI-Formulare auf `BaseSelect`/`FormField`, Forbidden/NotFound als EmptyState, Toast/Modals
+(inkl. `AppEditModal`: „Logo entfernen“ mit Bestätigung).
 
 ## Sichtprüfung (so geht's ohne Browser-MCP)
 Headless Chrome per `puppeteer-core` (im Scratchpad installiert, nicht im Repo). Login per Keycloak-Formular
@@ -96,6 +116,14 @@ Nach Änderungen an `tailwind.config.js`: `docker restart frontend-dev`, sonst f
   DeploymentActiveTaskCard, Modal), `--surface-banner-shadow` (über `shadow-lg`/`shadow-banner` im Wizard), `bg-panel`-Hüllen
   (`bg-panel rounded-2xl p-10`) statt `Card`, `btn-ghost`-Altaufrufe, scoped Styles in `Toast`/`Modal`/`DeploymentProgressBar`,
   `VariableInput.vue:92` (harte `gray`/`white`-Klassen), ungenutztes Asset `src/assets/onlySix7-green-withoutBackground.png`.
+- Ungenutzt seit e → in g löschen: `iconForAppName` (+ Tests) in `app-presentation.service.ts`, i18n `AppsCreateView.preview.
+  {logoAlt,deployBtn}`, `AppsDetailView.{appInfoTitle,versionDetailsTitle,versionsAvailable,visibilityLabel,storeVisibilityTitle,
+  visibilityPublic,visibilityPrivate}`, `markdownRenderer.more/less` nur falls `expandable` nirgends mehr genutzt wird (vorher suchen).
+  Das App-Logo wird nirgends mehr angezeigt (Karten ohne Icon laut Plan), Upload/Bearbeiten bleibt.
+- Testumgebung: Unter happy-dom packt DOMPurify Elemente aus und lässt Event-Handler stehen. Deshalb ist DOMPurify in
+  `MarkdownRenderer.spec.ts` ein Spy; die Markdown-Regeln werden auf `renderMarkdown` getestet. Views stubben den Renderer ohnehin.
+- Bash/Python-Heredocs: `\n` in Python-Strings landet als echter Zeilenumbruch in der Datei → Test-Strings mit `\n` per Edit/Write
+  schreiben oder `[...].join('\n')` nutzen.
 - i18n ungenutzt seit d → in g löschen: `DashboardView.{title,subtitle,noCredentialsTitle,noCredentialsHint,setUpNow,quotaUsed}`
   (vorher per Suche bestätigen).
 - LTI-Seiten: `select.field` in Kurs-Zuordnung und Deep-Link noch nicht auf `BaseSelect`/`FormField` (f).

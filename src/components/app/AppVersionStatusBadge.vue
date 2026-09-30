@@ -1,32 +1,43 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Globe, Clock, XCircle, MinusCircle, Lock } from 'lucide-vue-next'
+/**
+ * Where an app or version stands in the store. Published, pending and
+ * rejected show as a coloured dot; private and not-yet-submitted are no
+ * store status in the strict sense and carry a neutral icon instead.
+ */
+import { computed, type Component } from 'vue'
+import { Clock, Lock } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { AppVersionBadgeStatus } from '@/types'
+import type { StatusTone } from '@/types/tone'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 
-const props = defineProps<{ status: AppVersionBadgeStatus }>()
+const props = withDefaults(defineProps<{
+  status: AppVersionBadgeStatus
+  size?: 'xs' | 'sm' | 'md'
+}>(), {
+  size: 'sm',
+})
 const { t } = useI18n()
 
-const config = computed(() => {
+const config = computed((): { label: string; tone: StatusTone; icon?: Component } => {
   switch (props.status) {
     case 'new':
-      return { icon: MinusCircle, label: t('AppVersionStatusBadge.new'), tone: 'neutral' as const }
+      return { icon: Clock, label: t('AppVersionStatusBadge.new'), tone: 'neutral' }
     case 'pending':
-      return { icon: Clock, label: t('AppVersionStatusBadge.pending'), tone: 'warning' as const }
+      return { label: t('AppVersionStatusBadge.pending'), tone: 'warning' }
     case 'approved':
     case 'published':
-      return { icon: Globe, label: t('AppVersionStatusBadge.published'), tone: 'success' as const }
+      return { label: t('AppVersionStatusBadge.published'), tone: 'success' }
     case 'rejected':
-      return { icon: XCircle, label: t('AppVersionStatusBadge.rejected'), tone: 'danger' as const }
+      return { label: t('AppVersionStatusBadge.rejected'), tone: 'danger' }
     case 'private':
-      return { icon: Lock, label: t('AppVersionStatusBadge.private'), tone: 'neutral' as const }
+      return { icon: Lock, label: t('AppVersionStatusBadge.private'), tone: 'neutral' }
     default:
-      return { icon: MinusCircle, label: '-', tone: 'neutral' as const }
+      return { label: '-', tone: 'neutral' }
   }
 })
 </script>
 
 <template>
-  <StatusBadge :tone="config.tone" :icon="config.icon">{{ config.label }}</StatusBadge>
+  <StatusBadge :tone="config.tone" :icon="config.icon" :size="size">{{ config.label }}</StatusBadge>
 </template>

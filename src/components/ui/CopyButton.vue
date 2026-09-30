@@ -40,9 +40,10 @@ const copied = computed(() => copiedKey.value === props.copyKey)
     v-else
     type="button"
     :title="copied ? $t('common.copiedToClipboard') : title"
-    class="text-fg-muted hover:text-warning p-0.5 rounded hover:bg-line/[.12] transition-colors flex-shrink-0"
+    :aria-label="copied ? $t('common.copiedToClipboard') : title"
+    class="btn btn-ghost btn-icon h-[26px] w-[26px] shrink-0"
     @click="copyToClipboard(text ?? '', copyKey)"
   >
-    <component :is="copied ? Check : Copy" :size="12" />
+    <component :is="copied ? Check : Copy" :size="14" aria-hidden="true" />
   </button>
 </template>

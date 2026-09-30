@@ -1,9 +1,14 @@
 <script setup lang="ts">
 /** Version picker and the button that starts the deployment wizard. */
-import { Layers } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { AlertTriangle } from 'lucide-vue-next'
 import { ROUTE_NAMES } from '@/router/route-names'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseSelect, { type SelectOption } from '@/components/ui/BaseSelect.vue'
+import Card from '@/components/ui/Card.vue'
+import FormField from '@/components/ui/FormField.vue'
 
-defineProps<{
+const props = defineProps<{
   versionOptions: string[]
   /** OpenStack credentials are known to be missing: deploying is blocked. */
   credentialsMissing: boolean
@@ -12,35 +17,39 @@ defineProps<{
 const selectedVersion = defineModel<string>('selectedVersion', { required: true })
 
 defineEmits<{ deploy: [] }>()
+
+const options = computed<SelectOption[]>(() => props.versionOptions.map((ver) => ({ value: ver, label: ver })))
 </script>
 
 <template>
-  <div class="surface-sunken p-6 h-fit sticky top-6">
-    <h2 class="text-lg font-semibold text-fg mb-6">{{ $t('AppsDetailView.startDeploymentTitle') }}</h2>
+  <Card :title="$t('AppsDetailView.startDeploymentTitle')">
+    <div class="flex flex-col gap-4">
+      <FormField v-slot="{ id }" :label="$t('AppsDetailView.selectVersionLabel')">
+        <BaseSelect
+          :id="id"
+          v-model="selectedVersion"
+          :options="options"
+          :placeholder="versionOptions.length === 0 ? $t('AppsDetailView.noVersionsYet') : undefined"
+          :disabled="versionOptions.length === 0"
+        />
+      </FormField>
 
-    <div class="mb-6">
-      <label class="block text-sm font-medium text-fg mb-2">{{ $t('AppsDetailView.selectVersionLabel') }}</label>
-      <select
-        v-model="selectedVersion"
-        class="field w-full py-2 px-3 text-sm text-fg focus:border-accent/60 cursor-pointer transition-all hover:border-strong"
-        :disabled="versionOptions.length === 0"
+      <BaseButton
+        class="w-full"
+        :disabled="!selectedVersion || credentialsMissing"
+        :disabled-reason="credentialsMissing ? $t('AppsDetailView.missingCredsTitle') : undefined"
+        @click="$emit('deploy')"
       >
-        <option v-for="ver in versionOptions" :key="ver" :value="ver">{{ ver }}</option>
-      </select>
-    </div>
+        {{ $t('AppsDetailView.deployButton') }}
+      </BaseButton>
 
-    <button
-      @click="$emit('deploy')"
-      :disabled="!selectedVersion || credentialsMissing"
-      :title="credentialsMissing ? $t('AppsDetailView.missingCredsTitle') : ''"
-      class="btn-primary w-full px-4 py-3 rounded-control font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      <Layers :size="18" />
-      {{ $t('AppsDetailView.deployButton') }}
-    </button>
-    <p v-if="credentialsMissing" class="mt-2 text-sm text-warning">
-      <router-link :to="{ name: ROUTE_NAMES.userOpenStack }" class="underline font-medium">{{ $t('AppsDetailView.missingCredsLink') }}</router-link>
-      {{ $t('AppsDetailView.missingCredsText') }}
-    </p>
-  </div>
+      <p v-if="credentialsMissing" class="flex gap-2 text-sm text-fg-body">
+        <AlertTriangle :size="15" class="mt-0.5 shrink-0 text-warning-dot" aria-hidden="true" />
+        <span>
+          <RouterLink :to="{ name: ROUTE_NAMES.userOpenStack }" class="link">{{ $t('AppsDetailView.missingCredsLink') }}</RouterLink>
+          {{ $t('AppsDetailView.missingCredsText') }}
+        </span>
+      </p>
+    </div>
+  </Card>
 </template>

@@ -181,19 +181,37 @@ describe('AppsDetailView.vue', () => {
 
     // --- 3. Löschen (Modal & API) ---
 
-    it('zeigt den Lösch-Button an, wenn der Nutzer der Besitzer ist, und öffnet das Modal', async () => {
+    // Deleting sits at the bottom of the store tab and in the header's "…" menu.
+    const openDeleteDialog = async (wrapper: ReturnType<typeof mountComponent>) => {
+        await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.tabStore'))!.trigger('click')
+        await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteZoneButton'))!.trigger('click')
+        await nextTick()
+    }
+
+    it('bietet dem Besitzer das Löschen im Store-Tab an und öffnet den Dialog', async () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        const deleteButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteApp'))!
-        expect(deleteButton.exists()).toBe(true)
-
-        await deleteButton.trigger('click')
-        await nextTick()
+        await openDeleteDialog(wrapper)
 
         const modal = wrapper.find('.modal')
         expect(modal.exists()).toBe(true)
         expect(modal.text()).toContain('AppsDetailView.confirmDeleteTitle')
+    })
+
+    it('öffnet denselben Dialog über das "…"-Menü im Kopf', async () => {
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        await wrapper.get('button[aria-haspopup]').trigger('click')
+        await nextTick()
+        const entry = document.body.querySelector<HTMLButtonElement>('[role="menuitem"]')!
+        expect(entry.textContent).toContain('AppsDetailView.deleteApp')
+        entry.click()
+        await nextTick()
+
+        expect(wrapper.find('.modal').text()).toContain('AppsDetailView.confirmDeleteTitle')
+        wrapper.unmount()
     })
 
     it('rendert den App-Namen im Lösch-Modal als Text, nicht als HTML', async () => {
@@ -204,9 +222,7 @@ describe('AppsDetailView.vue', () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        const deleteButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteApp'))!
-        await deleteButton.trigger('click')
-        await nextTick()
+        await openDeleteDialog(wrapper)
 
         const modal = wrapper.find('.modal')
         expect(modal.find('img').exists()).toBe(false)
@@ -219,9 +235,7 @@ describe('AppsDetailView.vue', () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        const deleteButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteApp'))!
-        await deleteButton.trigger('click')
-        await nextTick()
+        await openDeleteDialog(wrapper)
 
         const confirmBtn = wrapper.findAll('.modal button').find(b => b.text().includes('AppsDetailView.confirmButton'))!
         await confirmBtn.trigger('click')
@@ -390,6 +404,12 @@ describe('AppsDetailView.vue', () => {
             expect(wrapper.text()).toContain('AppsDetailView.bannerPending')
 
             await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.withdrawButton'))!.trigger('click')
+            await nextTick()
+            // Withdrawing is confirmed first.
+            expect(appApi.withdrawVersion).not.toHaveBeenCalled()
+            const dialog = wrapper.find('.modal')
+            expect(dialog.text()).toContain('AppsDetailView.withdrawConfirmTitle')
+            await dialog.findAll('button').find(b => b.text().includes('AppsDetailView.withdrawButton'))!.trigger('click')
             await flushPromises()
 
             expect(appApi.withdrawVersion).toHaveBeenCalledWith('app-123', 'v1.0')

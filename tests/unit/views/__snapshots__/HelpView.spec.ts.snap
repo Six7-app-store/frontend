@@ -2,10 +2,10 @@
 
 exports[`HelpView (de) > matches snapshot 1`] = `
 "<div class="bg-panel rounded-2xl p-10 border shadow-sm">
-  <div class="mb-section flex flex-wrap items-start justify-between gap-4">
+  <div class="mb-section flex flex-wrap justify-between gap-4 items-end">
     <div class="min-w-0">
       <h1 class="font-semibold text-heading text-4xl tracking-[-0.01em]">Hilfe &amp; Q/A</h1>
-      <p class="mt-1 text-md text-fg-muted">Support &amp; häufige Fragen.</p>
+      <p class="mt-1.5 text-base text-fg-muted">Support &amp; häufige Fragen.</p>
     </div>
     <!--v-if-->
   </div>
@@ -97,10 +97,10 @@ exports[`HelpView (de) > matches snapshot 1`] = `
 
 exports[`HelpView (en) > matches snapshot 1`] = `
 "<div class="bg-panel rounded-2xl p-10 border shadow-sm">
-  <div class="mb-section flex flex-wrap items-start justify-between gap-4">
+  <div class="mb-section flex flex-wrap justify-between gap-4 items-end">
     <div class="min-w-0">
       <h1 class="font-semibold text-heading text-4xl tracking-[-0.01em]">Help &amp; Q/A</h1>
-      <p class="mt-1 text-md text-fg-muted">Support &amp; frequently asked questions.</p>
+      <p class="mt-1.5 text-base text-fg-muted">Support &amp; frequently asked questions.</p>
     </div>
     <!--v-if-->
   </div>

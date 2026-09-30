@@ -211,7 +211,9 @@
     transition: background 150ms, color 150ms;
   }
   .segment-md .segment-btn {
-    height: var(--control-h-sm);
+    height: 30px;
+    padding: 0 0.75rem;
+    font-size: var(--text-sm);
   }
   .segment-btn:hover {
     color: rgb(var(--color-fg));
@@ -543,7 +545,23 @@
     outline-offset: -2px;
   }
 
-  /* Inline code and identifiers: versions, commits, URLs, variable names */
+  /* Text link: underlined, not coloured; the underline darkens on hover */
+  .md-compact a,
+  .link {
+    color: rgb(var(--color-fg));
+    text-decoration: underline;
+    text-decoration-color: rgb(var(--color-line) / 0.3);
+    text-underline-offset: 3px;
+    transition: text-decoration-color 150ms;
+  }
+  .md-compact a:hover,
+  .link:hover {
+    text-decoration-color: currentColor;
+  }
+
+  /* Inline code and identifiers: versions, commits, URLs, variable names.
+     Rendered Markdown in cards (MarkdownRenderer compact) uses the same chip. */
+  .md-compact code,
   .code-chip {
     padding: 1px 6px;
     border: 1px solid var(--code-border);

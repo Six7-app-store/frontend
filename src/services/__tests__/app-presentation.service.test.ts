@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { Box, Database, Globe, LayoutTemplate, Layers, Server, Shield, Terminal } from 'lucide-vue-next'
 
 import {
+  descriptionPreview,
   appBannerStatus,
   findVersion,
   iconForAppName,
@@ -99,5 +100,38 @@ describe('versionInfo', () => {
   it('is null for a version without any detail', () => {
     expect(versionInfo({ version: 'v1' })).toBeNull()
     expect(versionInfo(null)).toBeNull()
+  })
+})
+
+describe('descriptionPreview', () => {
+  it('nimmt die erste Überschrift und den ersten Absatz als Klartext', () => {
+    const md = [
+      '# GitLab CE – Git pro Student',
+      '',
+      'Deployt **pro Team** eine',
+      '[GitLab](https://gitlab.com) mit `gp1.small`.',
+      '',
+      '## Details',
+      '',
+      'Mehr Text.',
+    ].join('\n')
+
+    expect(descriptionPreview(md)).toEqual({
+      heading: 'GitLab CE – Git pro Student',
+      text: 'Deployt pro Team eine GitLab mit gp1.small.',
+    })
+  })
+
+  it('hat ohne einleitende Überschrift nur Text', () => {
+    expect(descriptionPreview('Nur ein Absatz.\n\n## Später')).toEqual({ heading: null, text: 'Nur ein Absatz.' })
+  })
+
+  it('liefert für leere Beschreibungen nichts', () => {
+    expect(descriptionPreview(null)).toEqual({ heading: null, text: '' })
+    expect(descriptionPreview('   ')).toEqual({ heading: null, text: '' })
+  })
+
+  it('übergeht HTML-Blöcke und nimmt den ersten echten Absatz', () => {
+    expect(descriptionPreview('<div onclick="alert(1)">x</div>\n\nHallo').text).toBe('Hallo')
   })
 })

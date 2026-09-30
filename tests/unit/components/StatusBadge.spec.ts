@@ -26,11 +26,13 @@ describe('StatusBadge', () => {
     expect(wrapper.find('svg').attributes('aria-hidden')).toBe('true')
   })
 
-  it('hat eine größere Variante für Seitenköpfe', () => {
+  it('hat eine größere Variante für Seitenköpfe und eine kleinere für Karten', () => {
     const small = mount(StatusBadge, { props: { tone: 'success' } })
     const medium = mount(StatusBadge, { props: { tone: 'success', size: 'md' } })
+    const tiny = mount(StatusBadge, { props: { tone: 'success', size: 'xs' } })
 
     expect(small.classes()).toContain('text-sm')
     expect(medium.classes()).toContain('text-base')
+    expect(tiny.classes()).toContain('text-xs')
   })
 })

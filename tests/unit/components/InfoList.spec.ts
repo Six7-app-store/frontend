@@ -32,4 +32,13 @@ describe('InfoList', () => {
 
     expect(wrapper.find('dl').exists()).toBe(false)
   })
+
+  it('macht Werte mit href zu externen Links', () => {
+    const wrapper = mount(InfoList, { props: { items: [{ label: 'Link', value: 'Release', href: 'https://x.test/r' }] } })
+
+    const link = wrapper.get('dd a')
+    expect(link.text()).toBe('Release')
+    expect(link.attributes('href')).toBe('https://x.test/r')
+    expect(link.attributes('rel')).toContain('noopener')
+  })
 })

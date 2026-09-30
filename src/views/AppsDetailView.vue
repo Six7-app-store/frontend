@@ -7,7 +7,6 @@ import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetail, getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
 import { useI18n } from 'vue-i18n'
-import { Layers, ShoppingBag } from 'lucide-vue-next'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useAuthStore } from '@/stores/auth.store'
@@ -21,6 +20,7 @@ import {
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import TabBar from '@/components/ui/TabBar.vue'
 import Spinner from '@/components/ui/Spinner.vue'
+import { provideCopyToClipboard } from '@/composables/useCopyToClipboard'
 import type { Tab } from '@/components/ui/tab'
 import AppDetailHeader from '@/components/app/AppDetailHeader.vue'
 import AppOverviewTab from '@/components/app/AppOverviewTab.vue'
@@ -45,6 +45,7 @@ const {
   load, loadApprovals, submitVersion, withdrawVersion: withdraw, setPrivate, update, remove,
 } = useAppDetail(appId)
 useBreadcrumbEntity(() => app.value?.name)
+provideCopyToClipboard()
 
 const selectedVersion = ref('')
 const activeTab = ref<'overview' | 'store'>('overview')
@@ -54,6 +55,7 @@ const isDeleting = ref(false)
 const showEditModal = ref(false)
 const isSavingEdit = ref(false)
 const withdrawingVersion = ref<string | null>(null)
+const withdrawTarget = ref<string | null>(null)
 const isTogglingPrivacy = ref(false)
 
 const showSubmitModal = ref(false)
@@ -78,8 +80,8 @@ const canEditApp = computed(() =>
 // The store tab (submissions, visibility) is only for those who may edit the app.
 const tabs = computed(() => {
   const all: Tab<'overview' | 'store'>[] = [
-    { key: 'overview', label: t('AppsDetailView.tabOverview'), icon: Layers },
-    { key: 'store', label: t('AppsDetailView.tabStore'), icon: ShoppingBag },
+    { key: 'overview', label: t('AppsDetailView.tabOverview') },
+    { key: 'store', label: t('AppsDetailView.tabStore') },
   ]
   return canEditApp.value ? all : all.filter((tab) => tab.key !== 'store')
 })
@@ -156,11 +158,19 @@ const confirmSubmit = async () => {
   }
 }
 
-const withdrawVersion = async (versionTag: string) => {
+// Withdrawing takes a version out of the admins' review list, so it is confirmed first.
+const askWithdraw = (versionTag: string) => {
+  withdrawTarget.value = versionTag
+}
+
+const confirmWithdraw = async () => {
+  const versionTag = withdrawTarget.value
+  if (!versionTag) return
   withdrawingVersion.value = versionTag
   try {
     await withdraw(versionTag)
     toast.success(t('AppsDetailView.toasts.withdrawSuccess'))
+    withdrawTarget.value = null
   } catch {
     toast.error(t('AppsDetailView.toasts.withdrawError'))
   } finally {
@@ -220,49 +230,40 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-panel rounded-2xl p-10 border min-h-[600px]">
-
-    <!-- Back -->
-    <!-- Loading -->
-    <div v-if="isLoading" class="flex justify-center py-20">
-      <div class="flex flex-col items-center gap-3">
-        <Spinner />
-        <div class="text-fg-muted">{{ $t('AppsDetailView.loading') }}</div>
-      </div>
+  <div class="max-w-detail">
+    <div v-if="isLoading" class="flex flex-col items-center gap-3 py-20">
+      <Spinner />
+      <p class="text-fg-muted">{{ $t('AppsDetailView.loading') }}</p>
     </div>
 
-    <div v-else-if="app" class="max-w-4xl mx-auto">
-
+    <template v-else-if="app">
       <AppDetailHeader :app="app" :can-edit="canEditApp" @edit="showEditModal = true" @delete="showDeleteModal = true" />
 
-      <TabBar v-model="activeTab" :tabs="tabs" class="mb-8">
+      <TabBar v-model="activeTab" :tabs="tabs" class="mb-section">
         <template #extra="{ tab }">
           <!-- dot if action needed -->
           <span
             v-if="tab.key === 'store' && (bannerStatus === 'no_submission' || bannerStatus === 'pending')"
-            class="w-2 h-2 rounded-full bg-warning-dot"
+            class="h-2 w-2 rounded-full bg-warning-dot"
           />
         </template>
       </TabBar>
 
-      <!-- ============================================================ -->
-      <!-- TAB 1: OVERVIEW                                               -->
-      <!-- ============================================================ -->
-      <div v-if="activeTab === 'overview'" class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <AppOverviewTab
+        v-if="activeTab === 'overview'"
+        :app="app"
+        :version-info="versionInfo"
+        :selected-version="selectedVersion"
+      >
+        <template #deploy>
+          <AppDeploySidebar
+            v-model:selected-version="selectedVersion"
+            :version-options="versionOptions"
+            :credentials-missing="credStore.isResolved && !credStore.hasCredential"
+            @deploy="handleDeploy" />
+        </template>
+      </AppOverviewTab>
 
-        <AppOverviewTab :app="app" :version-info="versionInfo" />
-
-        <AppDeploySidebar
-          v-model:selected-version="selectedVersion"
-          :version-options="versionOptions"
-          :credentials-missing="credStore.isResolved && !credStore.hasCredential"
-          @deploy="handleDeploy" />
-
-      </div>
-
-      <!-- ============================================================ -->
-      <!-- TAB 2: APP STORE                                              -->
-      <!-- ============================================================ -->
       <AppStoreTab
         v-else-if="activeTab === 'store'"
         :app="app"
@@ -274,9 +275,9 @@ onMounted(async () => {
         :toggling-privacy="isTogglingPrivacy"
         @toggle-privacy="togglePrivacy"
         @submit="openSubmitModal"
-        @withdraw="withdrawVersion" />
-
-    </div>
+        @withdraw="askWithdraw"
+        @delete="showDeleteModal = true" />
+    </template>
 
     <!-- Delete modal -->
     <ConfirmModal
@@ -292,6 +293,18 @@ onMounted(async () => {
       <i18n-t keypath="AppsDetailView.confirmDeleteMessage" tag="p" class="text-fg">
         <template #name><strong>{{ app.name }}</strong></template>
       </i18n-t>
+    </ConfirmModal>
+
+    <ConfirmModal
+      :show="withdrawTarget !== null"
+      :busy="withdrawingVersion !== null"
+      :title="$t('AppsDetailView.withdrawConfirmTitle')"
+      :confirm-label="$t('AppsDetailView.withdrawButton')"
+      :busy-label="$t('AppsDetailView.withdrawingButton')"
+      @close="withdrawTarget = null"
+      @confirm="confirmWithdraw"
+    >
+      <p class="text-fg">{{ $t('AppsDetailView.withdrawConfirmMessage', { version: withdrawTarget }) }}</p>
     </ConfirmModal>
 
     <AppEditModal

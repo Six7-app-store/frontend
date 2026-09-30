@@ -3,8 +3,6 @@ import { mount, flushPromises } from '@vue/test-utils'
 
 import AddAppsView from '@/views/AddAppsView.vue'
 
-// Icons für die Preview-Tests
-import { Shield, Server, Box, Layers } from 'lucide-vue-next'
 
 // ---------------------------------------------------------
 // 1. Abhängigkeiten (Dependencies) "mocken"
@@ -85,10 +83,7 @@ describe('AddAppsView.vue', () => {
     it('zeigt einen Fehler, wenn Pflichtfelder (Name, Repo) fehlen', async () => {
         const wrapper = mountComponent()
 
-        const buttons = wrapper.findAll('button')
-        const submitButton = buttons[buttons.length - 1]!
-
-        await submitButton.trigger('click')
+        await wrapper.get('form').trigger('submit')
 
         expect(mockToastError).toHaveBeenCalledWith('AppsCreateView.messages.missingFields')
         expect(appApi.create).not.toHaveBeenCalled()
@@ -102,33 +97,41 @@ describe('AddAppsView.vue', () => {
         // Korrektur: Repo-URL ist nun Index 1, da Textarea die Description hält
         await textInputs[1]!.setValue('keine-echte-url')
 
-        const buttons = wrapper.findAll('button')
-        await buttons[buttons.length - 1]!.trigger('click')
+        await wrapper.get('form').trigger('submit')
 
         expect(mockToastError).toHaveBeenCalledWith('AppsCreateView.messages.invalidUrl')
     })
 
     // --- 2. Dynamische Vorschau (Computed Properties) ---
 
-    it('zeigt in der Vorschau dasselbe Icon wie der Katalog', async () => {
+    it('zeigt in der Vorschau die Karte, wie sie im Katalog erscheinen wird', async () => {
         const wrapper = mountComponent()
-        const nameInput = wrapper.findAll('input[type="text"]')[0]!
+        const preview = () => wrapper.get('[data-testid="app-card"]')
 
-        await nameInput.setValue('Security Scanner')
-        expect(wrapper.findComponent(Shield).exists()).toBe(true)
-        expect(wrapper.findComponent(Shield).classes()).toContain('text-icon')
+        expect(preview().text()).toContain('AppsCreateView.preview.defaultName')
+        expect(preview().text()).toContain('AppsCreateView.preview.defaultDesc')
 
-        await nameInput.setValue('Node Backend')
-        expect(wrapper.findComponent(Server).exists()).toBe(true)
+        await wrapper.findAll('input[type="text"]')[0]!.setValue('Security Scanner')
+        await wrapper.get('textarea').setValue(['# Scanner', '', 'Prüft **alles**.'].join('\n'))
 
-        await nameInput.setValue('Python Script')
-        expect(wrapper.findComponent(Box).exists()).toBe(true)
-
-        await nameInput.setValue('Unbekanntes Framework')
-        expect(wrapper.findComponent(Layers).exists()).toBe(true)
+        expect(preview().text()).toContain('Security Scanner')
+        expect(preview().text()).toContain('Scanner')
+        expect(preview().text()).toContain('Prüft alles.')
+        // A preview is not a link.
+        expect(preview().element.tagName).toBe('DIV')
     })
 
-    // --- 3. Datei-Upload (Bilder) ---
+    it('stellt die Sichtbarkeit über den Umschalter um und blendet "alle Versionen einreichen" für private Apps aus', async () => {
+        const wrapper = mountComponent()
+        const privateButton = wrapper.findAll('button[aria-pressed]').find((b) => b.text().includes('AppsCreateView.form.visibilityPrivate'))!
+
+        expect(wrapper.text()).toContain('AppsCreateView.form.submitAllLabel')
+        await privateButton.trigger('click')
+
+        expect(privateButton.attributes('aria-pressed')).toBe('true')
+        expect(wrapper.text()).toContain('AppsCreateView.form.visibilityPrivateHint')
+        expect(wrapper.text()).not.toContain('AppsCreateView.form.submitAllLabel')
+    })
 
     it('lehnt Dateien ab, die keine Bilder sind', async () => {
         const wrapper = mountComponent()
@@ -185,8 +188,7 @@ describe('AddAppsView.vue', () => {
         // Korrektur: Repo-URL ist Index 1
         await textInputs[1]!.setValue('https://github.com/user/repo')
 
-        const buttons = wrapper.findAll('button')
-        await buttons[buttons.length - 1]!.trigger('click')
+        await wrapper.get('form').trigger('submit')
 
         await flushPromises()
 
@@ -218,8 +220,7 @@ describe('AddAppsView.vue', () => {
         // Korrektur: Repo-URL ist Index 1
         await textInputs[1]!.setValue('https://github.com/user/repo')
 
-        const buttons = wrapper.findAll('button')
-        await buttons[buttons.length - 1]!.trigger('click')
+        await wrapper.get('form').trigger('submit')
         await flushPromises()
 
         expect(mockToastError).toHaveBeenCalledWith('AppsCreateView.messages.noAccess')
@@ -240,8 +241,7 @@ describe('AddAppsView.vue', () => {
         await textInputs[0]!.setValue('Super App')
         await textInputs[1]!.setValue('https://github.com/user/repo')
 
-        const buttons = wrapper.findAll('button')
-        await buttons[buttons.length - 1]!.trigger('click')
+        await wrapper.get('form').trigger('submit')
         await flushPromises()
 
         expect(mockToastError).toHaveBeenCalledWith(expected)
@@ -279,8 +279,7 @@ describe('AddAppsView.vue', () => {
         const toggle = (w: { findAll: (s: string) => any[] }) =>
       w.findAll('button').find((b: any) => b.find('.toggle-knob').exists())!
         await toggle(wrapper).trigger('click')
-        const buttons = wrapper.findAll('button')
-        await buttons[buttons.length - 1]!.trigger('click')
+        await wrapper.get('form').trigger('submit')
         await flushPromises()
 
         expect(appApi.create).toHaveBeenCalledWith(expect.objectContaining({ submit_all_versions: true }))
@@ -302,8 +301,7 @@ describe('AddAppsView.vue', () => {
         await wrapper.findAll('button').find(b => b.text() === 'AppsCreateView.form.logoRemove')!.trigger('click')
         expect(wrapper.find('img').exists()).toBe(false)
 
-        const buttons = wrapper.findAll('button')
-        await buttons[buttons.length - 1]!.trigger('click')
+        await wrapper.get('form').trigger('submit')
         await flushPromises()
         expect(appApi.create).toHaveBeenCalledWith(expect.objectContaining({ image: null }))
     })

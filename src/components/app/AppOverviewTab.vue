@@ -1,90 +1,82 @@
 <script setup lang="ts">
-/** Description, app info and the details of the selected version. */
+/**
+ * The app's description on the left; on the right a sticky column with
+ * the deploy panel (``deploy`` slot), the description's table of contents
+ * and the facts about the app and the selected version.
+ */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import InfoList, { type InfoItem } from '@/components/ui/InfoList.vue'
+import PageToc, { type TocItem } from '@/components/ui/PageToc.vue'
+import { markdownHeadings } from '@/services/markdown.service'
 import { formatDate } from '@/utils/format'
 import type { VersionInfo } from '@/services/app-presentation.service'
 
-defineProps<{ app: any; versionInfo: VersionInfo | null }>()
+const props = defineProps<{ app: any; versionInfo: VersionInfo | null; selectedVersion: string }>()
 
-const { locale } = useI18n()
+const { t, locale } = useI18n()
+
+const ARTICLE_ID = 'app-description'
+
+const hasDescription = computed(() => Boolean(props.app.description?.trim()))
+
+// "Description" leads to the top (the opening heading, if there is one), then one entry per section.
+const tocItems = computed<TocItem[]>(() => {
+  const headings = markdownHeadings(props.app.description)
+  const sections = headings.filter((h) => h.depth === 2)
+  if (!sections.length) return []
+  const top = headings[0]?.depth === 1 ? headings[0].id : ARTICLE_ID
+  return [{ id: top, label: t('AppsDetailView.descriptionTitle') }, ...sections.map((h) => ({ id: h.id, label: h.text }))]
+})
+
+const appFacts = computed<InfoItem[]>(() => [
+  { label: t('AppsDetailView.createdAt'), value: props.app.created_at ? formatDate(props.app.created_at) : '' },
+  { label: t('AppsDetailView.createdBy'), value: props.app.user?.username || t('AppsDetailView.unknownUser') },
+])
+
+const prerelease = computed(() => {
+  const value = props.versionInfo?.prerelease
+  if (value === '' || value === undefined || value === null) return ''
+  return String(value).toLowerCase() === 'true' ? t('AppsDetailView.yes') : t('AppsDetailView.no')
+})
+
+const versionFacts = computed<InfoItem[]>(() => {
+  const info = props.versionInfo
+  return [
+    { label: t('AppsDetailView.versionLabel'), value: props.selectedVersion, mono: true },
+    { label: t('AppsDetailView.versionName'), value: info?.name },
+    { label: t('AppsDetailView.versionType'), value: info?.type },
+    { label: t('AppsDetailView.versionCommit'), value: info?.commit ? info.commit.slice(0, 8) : '', mono: true },
+    { label: t('AppsDetailView.versionAuthor'), value: info?.author },
+    { label: t('AppsDetailView.versionPublishedAt'), value: info?.published_at ? formatDate(info.published_at) : '' },
+    { label: t('AppsDetailView.versionPreRelease'), value: prerelease.value },
+    { label: t('AppsDetailView.versionLink'), value: info?.html_url, href: info?.html_url || undefined },
+  ]
+})
 </script>
 
 <template>
-  <div class="lg:col-span-2 space-y-6">
+  <div class="grid grid-cols-1 items-start gap-12 lg:grid-cols-[minmax(0,1fr)_var(--aside-w)]">
+    <article :id="ARTICLE_ID" :lang="locale" class="min-w-0 max-w-[660px] scroll-mt-6">
+      <MarkdownRenderer v-if="hasDescription" :source="app.description" variant="full" />
+      <p v-else class="text-md italic text-fg-muted">{{ $t('AppsDetailView.noDescription') }}</p>
+    </article>
 
-    <div>
-      <h2 class="text-xl font-semibold text-fg mb-3">{{ $t('AppsDetailView.descriptionTitle') }}</h2>
-      <MarkdownRenderer
-        v-if="app.description && app.description.trim()"
-        :source="app.description"
-        variant="full"
-      />
-      <p
-          v-else
-          :lang="locale"
-          class="text-fg-muted italic"
-      >
-        {{ $t('AppsDetailView.noDescription') }}
-      </p>
-    </div>
+    <aside class="flex flex-col gap-section lg:sticky lg:top-0">
+      <slot name="deploy" />
 
-    <div class="bg-line/[.04] rounded-lg p-4 border border-subtle">
-      <h3 class="text-sm font-semibold text-fg uppercase tracking-wide mb-2">{{ $t('AppsDetailView.appInfoTitle') }}</h3>
-      <ul class="space-y-2 text-sm text-fg-muted">
-        <li class="flex justify-between">
-          <span>{{ $t('AppsDetailView.createdAt') }}</span>
-          <span class="font-medium">{{ app.created_at ? formatDate(app.created_at) : '-' }}</span>
-        </li>
-        <li class="flex justify-between">
-          <span>{{ $t('AppsDetailView.createdBy') }}</span>
-          <span class="font-medium">{{ app.user?.username || $t('AppsDetailView.unknownUser') }}</span>
-        </li>
-      </ul>
-    </div>
+      <PageToc v-if="tocItems.length" :items="tocItems" />
 
-    <div class="bg-line/[.04] rounded-lg p-4 border border-subtle">
-      <h3 class="text-sm font-semibold text-fg uppercase tracking-wide mb-2">{{ $t('AppsDetailView.versionDetailsTitle') }}</h3>
-      <div v-if="versionInfo" class="space-y-2 text-sm">
-        <div class="flex justify-between">
-          <span class="text-fg-muted">{{ $t('AppsDetailView.versionName') }}</span>
-          <span class="font-medium text-right">{{ versionInfo.name || '-' }}</span>
+      <section class="flex flex-col gap-4 border-t border-subtle pt-5">
+        <InfoList :items="appFacts" />
+        <InfoList :items="versionFacts" />
+        <p v-if="!versionInfo" class="text-sm text-fg-muted">{{ $t('AppsDetailView.noVersionInfo') }}</p>
+        <div v-if="versionInfo?.description" class="flex flex-col gap-1">
+          <p class="text-sm text-fg-muted">{{ $t('AppsDetailView.versionDescTitle') }}</p>
+          <MarkdownRenderer :source="versionInfo.description" variant="compact" class="text-sm" />
         </div>
-        <div class="flex justify-between">
-          <span class="text-fg-muted">{{ $t('AppsDetailView.versionType') }}</span>
-          <span class="font-medium text-right">{{ versionInfo.type || '-' }}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-fg-muted">{{ $t('AppsDetailView.versionCommit') }}</span>
-          <span class="font-medium text-right">{{ versionInfo.commit || '-' }}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-fg-muted">{{ $t('AppsDetailView.versionAuthor') }}</span>
-          <span class="font-medium text-right">{{ versionInfo.author || '-' }}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-fg-muted">{{ $t('AppsDetailView.versionPublishedAt') }}</span>
-          <span class="font-medium text-right">{{ versionInfo.published_at ? formatDate(versionInfo.published_at) : '-' }}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-fg-muted">{{ $t('AppsDetailView.versionPreRelease') }}</span>
-          <span class="font-medium text-right">
-            {{ String(versionInfo.prerelease ?? '').toLowerCase() === 'true' ? $t('AppsDetailView.yes') : (versionInfo.prerelease === '' ? '-' : $t('AppsDetailView.no')) }}
-          </span>
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-fg-muted">{{ $t('AppsDetailView.versionLink') }}</span>
-          <a v-if="versionInfo.html_url" :href="versionInfo.html_url" target="_blank" rel="noopener" class="font-medium text-accent-fg hover:underline break-all">{{ versionInfo.html_url }}</a>
-          <span v-else class="font-medium text-right">-</span>
-        </div>
-      </div>
-      <p v-else class="text-xs text-fg-muted">{{ $t('AppsDetailView.noVersionInfo') }}</p>
-    </div>
-
-    <div v-if="versionInfo && versionInfo.description" class="bg-line/[.04] rounded-lg p-4 border border-subtle">
-      <h3 class="text-sm font-semibold text-fg uppercase tracking-wide mb-2">{{ $t('AppsDetailView.versionDescTitle') }}</h3>
-      <MarkdownRenderer :source="versionInfo.description" variant="full" />
-    </div>
-
+      </section>
+    </aside>
   </div>
 </template>
