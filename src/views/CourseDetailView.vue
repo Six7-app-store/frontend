@@ -6,13 +6,13 @@ import { GraduationCap, UserMinus, UserPlus, Search, X, Loader2, Edit2, Check, X
 import { useCourseStore } from '@/stores/course.store'
 import { useToast } from '@/composables/useToast'
 import { useUserSearch } from '@/composables/useUserSearch'
+import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
 import { roleBadgeTone, roleLabelKey } from '@/i18n/role-labels'
 import { badgeToneClasses } from '@/components/ui/badge-tones'
 import { useI18n } from 'vue-i18n'
 import Card from '@/components/ui/Card.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import Modal from '@/components/ui/Modal.vue'
@@ -34,6 +34,7 @@ const { isStaff } = useRole()
 const { t } = useI18n()
 
 const courseId = computed(() => String(route.params.id))
+useBreadcrumbEntity(() => courseStore.currentCourse?.name)
 
 // --- Kursname bearbeiten ---
 const isEditingName = ref(false)
@@ -209,8 +210,6 @@ const roleClass = (role: string | undefined) => badgeToneClasses(roleBadgeTone(r
 
 <template>
   <div class="p-6 max-w-5xl mx-auto">
-    <BackLink :to="{ name: ROUTE_NAMES.courses }" :label="$t('CourseDetailView.back')" class="mb-4" />
-
     <div v-if="courseStore.isLoading && !courseStore.currentCourse" class="text-center py-16 text-fg-muted">
       {{ $t('CourseDetailView.loading') }}
     </div>

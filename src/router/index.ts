@@ -74,8 +74,7 @@ const wizardMeta = () => ({ requiresAuth: true, layout: 'app', requiresRole: STA
 
 
 // Route table — the single place that defines paths, names, layouts, role
-// requirements, header titles (``meta.titleKey``) and the dashboard mesh
-// background (``meta.useMeshBg``). Exported so layouts and tests can rely
+// requirements and the nav section of a route (``meta.titleKey``). Exported so layouts and tests can rely
 // on the same definitions.
 export const routes: RouteRecordRaw[] = [
   // AUTH LAYOUT
@@ -152,13 +151,13 @@ export const routes: RouteRecordRaw[] = [
     path: "/",
     name: ROUTE_NAMES.home,
     component: DashboardView,
-    meta: { layout: "app", requiresAuth: true, titleKey: "nav.dashboard", useMeshBg: true },
+    meta: { layout: "app", requiresAuth: true, titleKey: "nav.dashboard" },
   },
   {
     path: "/dashboard",
     name: ROUTE_NAMES.dashboard,
     component: DashboardView,
-    meta: { layout: "app", requiresAuth: true, titleKey: "nav.dashboard", useMeshBg: true },
+    meta: { layout: "app", requiresAuth: true, titleKey: "nav.dashboard" },
   },
   {
     path: "/courses",
@@ -230,7 +229,7 @@ export const routes: RouteRecordRaw[] = [
     path: "/user",
     name: ROUTE_NAMES.user,
     component: UserView,
-    meta: { layout: "user", requiresAuth: true },
+    meta: { layout: "app", requiresAuth: true },
   },
   {
     path: '/deployment/new/config',
@@ -269,7 +268,7 @@ export const routes: RouteRecordRaw[] = [
     path: '/user/openstack',
     name: ROUTE_NAMES.userOpenStack,
     component: () => import('@/views/SettingsOpenStackView.vue'),
-    meta: { requiresAuth: true, layout: 'user' },
+    meta: { requiresAuth: true, layout: 'app' },
   },
   {
     path: '/forbidden',

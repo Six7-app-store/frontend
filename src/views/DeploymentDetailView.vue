@@ -20,6 +20,7 @@ import DeploymentRedeployModal from '@/components/deployment/DeploymentRedeployM
 import DeploymentPauseResumeModal from '@/components/deployment/DeploymentPauseResumeModal.vue'
 import { provideCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useDeploymentOwnerView } from '@/composables/useDeploymentOwnerView'
+import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
 import { useDeploymentTasks } from '@/composables/useDeploymentTasks'
 import { useDeploymentLiveStream } from '@/composables/useDeploymentLiveStream'
 import { useDeploymentCredentials } from '@/composables/useDeploymentCredentials'
@@ -41,6 +42,8 @@ const deployment = computed(() => {
     const current = deploymentStore.currentDeployment
     return current?.deploymentId === deploymentId ? current : null
 })
+
+useBreadcrumbEntity(() => deployment.value?.name)
 
 // True when the initial load found no deployment (not found, server or
 // network error); the page then shows an error instead of the spinner.

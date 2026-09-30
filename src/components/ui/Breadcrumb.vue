@@ -1,11 +1,6 @@
 <script setup lang="ts">
 /** Where the current page sits, e.g. "Apps / Online-IDE". The last crumb is the current page and no link. */
-import type { RouteLocationRaw } from 'vue-router'
-
-export interface Crumb {
-  label: string
-  to?: RouteLocationRaw
-}
+import type { Crumb } from './breadcrumb'
 
 defineProps<{
   items: Crumb[]

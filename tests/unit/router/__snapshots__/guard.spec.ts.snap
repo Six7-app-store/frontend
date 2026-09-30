@@ -83,7 +83,6 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
       "layout": "app",
       "requiresAuth": true,
       "titleKey": "nav.dashboard",
-      "useMeshBg": true,
     },
     "name": "home",
     "path": "/",
@@ -95,7 +94,6 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
       "layout": "app",
       "requiresAuth": true,
       "titleKey": "nav.dashboard",
-      "useMeshBg": true,
     },
     "name": "dashboard",
     "path": "/dashboard",
@@ -204,7 +202,7 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
     "children": undefined,
     "guarded": false,
     "meta": {
-      "layout": "user",
+      "layout": "app",
       "requiresAuth": true,
     },
     "name": "user",
@@ -284,7 +282,7 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
     "children": undefined,
     "guarded": false,
     "meta": {
-      "layout": "user",
+      "layout": "app",
       "requiresAuth": true,
     },
     "name": "user.openstack",

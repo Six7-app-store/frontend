@@ -3,6 +3,7 @@ import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppDetail } from '@/composables/useAppDetail'
+import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetail, getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
 import { useI18n } from 'vue-i18n'
@@ -19,7 +20,6 @@ import {
 } from '@/services/app-presentation.service'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import TabBar from '@/components/ui/TabBar.vue'
-import BackLink from '@/components/ui/BackLink.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import type { Tab } from '@/components/ui/tab'
 import AppDetailHeader from '@/components/app/AppDetailHeader.vue'
@@ -44,6 +44,7 @@ const {
   app, approvals, isLoading,
   load, loadApprovals, submitVersion, withdrawVersion: withdraw, setPrivate, update, remove,
 } = useAppDetail(appId)
+useBreadcrumbEntity(() => app.value?.name)
 
 const selectedVersion = ref('')
 const activeTab = ref<'overview' | 'store'>('overview')
@@ -222,10 +223,6 @@ onMounted(async () => {
   <div class="bg-panel rounded-2xl p-10 border min-h-[600px]">
 
     <!-- Back -->
-    <div class="mb-6">
-      <BackLink :label="$t('AppsDetailView.backToOverview')" />
-    </div>
-
     <!-- Loading -->
     <div v-if="isLoading" class="flex justify-center py-20">
       <div class="flex flex-col items-center gap-3">

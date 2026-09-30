@@ -7,11 +7,9 @@
  * caller (``useDeploymentLifecycle``) and passed in.
  */
 import { PauseCircle, PlayCircle, Trash2 } from 'lucide-vue-next'
-import BackLink from '@/components/ui/BackLink.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
-import { ROUTE_NAMES } from '@/router/route-names'
 import type { PauseResumeAction } from '@/services/deployment-lifecycle.service'
 import type { DeploymentWithRelations } from '@/types'
 
@@ -34,7 +32,6 @@ defineEmits<{
 
 <template>
   <div>
-    <BackLink :to="{ name: ROUTE_NAMES.deploymentsList }" :label="$t('DeploymentDetailView.backToList')" class="mb-4" />
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-fg">{{ deployment.name }}</h1>

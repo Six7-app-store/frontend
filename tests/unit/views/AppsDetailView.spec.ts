@@ -234,16 +234,6 @@ describe('AppsDetailView.vue', () => {
 
     // --- 4. Navigation ---
 
-    it('navigiert zurück, wenn der Zurück-Button geklickt wird', async () => {
-        const wrapper = mountComponent()
-        await flushPromises()
-
-        const backButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.backToOverview'))!
-        await backButton.trigger('click')
-
-        expect(mockBack).toHaveBeenCalledTimes(1)
-    })
-
     describe('Version einreichen', () => {
         const openSubmitDialog = async () => {
             const wrapper = mountComponent()

@@ -150,15 +150,6 @@ describe('CourseDetailView.vue', () => {
         expect(mockPush).toHaveBeenCalledWith({ name: 'courses' })
     })
 
-    it('verlinkt "Zurück" auf die Kursliste', async () => {
-        const wrapper = mountComponent()
-        await flushPromises()
-
-        const back = wrapper.findComponent(RouterLinkStub)
-        expect(back.text()).toContain('CourseDetailView.back')
-        expect(back.props('to')).toEqual({ name: 'courses' })
-    })
-
     // --- 2. Inline-Editing (Kursnamen bearbeiten) ---
 
     it('startet das Bearbeiten des Namens und speichert die Änderung', async () => {

@@ -433,7 +433,6 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     expect(wrapper.find('h1').text()).toBe('Data Lab')
     expect(text).toContain(t('DeploymentDetailView.detailsSubtitle'))
     expect(text).toContain(t('DeploymentsView.deploymentSuccessful'))
-    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ name: 'deployments.list' })
 
     expect(text).toContain('Deployment Info')
     expect(text).toContain('v1.2.3')
