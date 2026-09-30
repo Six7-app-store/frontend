@@ -76,6 +76,7 @@ describe('NewDeploymentTeamsView.vue', () => {
     return mount(DeploymentTeams, {
       global: {
         plugins: [pinia],
+        mocks: { $t: (key: string) => key },
         stubs: {
           DeploymentProgressBar: true,
           Plus: true,
@@ -285,7 +286,7 @@ describe('NewDeploymentTeamsView.vue', () => {
     const wrapper = createWrapper()
     await flushPromises()
 
-    const backBtn = wrapper.find('button.btn-secondary')
+    const backBtn = wrapper.find('[data-testid="btn-back"]')
     await backBtn.trigger('click')
 
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployment.config' })
@@ -313,6 +314,12 @@ describe('NewDeploymentTeamsView.vue', () => {
       const store = useDeploymentStore()
 
       await buttonWith(wrapper, 'deployment.assignment.reset').trigger('click')
+      // Clearing asks first; nothing happens before the confirmation.
+      expect(store.draft.assignments).toEqual([['u1'], ['u2']])
+      expect(wrapper.text()).toContain('deployment.assignment.resetConfirmTitle')
+
+      const confirm = wrapper.findAll('.scrim button').find((b: any) => b.text().includes('deployment.assignment.reset'))!
+      await confirm.trigger('click')
 
       expect(store.draft.assignments).toEqual([[], []])
     })

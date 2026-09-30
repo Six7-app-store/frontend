@@ -20,26 +20,24 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="bg-panel rounded-lg border-2 border-subtle overflow-hidden">
-    <div class="bg-line/[.07] px-4 py-2 border-b border-subtle flex items-center gap-2">
-      <component :is="icon" :size="18" class="text-icon" />
-      <h4 class="font-semibold text-fg text-sm">{{ title }}</h4>
-      <span class="ml-auto text-xs bg-line/[.12] text-fg px-2 py-0.5 rounded-full font-semibold">
-        {{ rows.length }}
-      </span>
+  <div class="overflow-hidden rounded-panel border border-subtle">
+    <div class="flex items-center gap-2 border-b border-faint bg-line/[.03] px-4 py-2">
+      <component :is="icon" :size="16" class="text-icon" aria-hidden="true" />
+      <h4 class="text-sm font-semibold text-heading">{{ title }}</h4>
+      <span class="ml-auto text-sm tabular-nums text-fg-muted">{{ rows.length }}</span>
     </div>
-    <div class="p-4 space-y-2 max-h-64 overflow-y-auto">
-      <div v-for="row in rows" :key="row.label"
-        class="flex justify-between items-start gap-3 py-2 border-b border-subtle last:border-0">
-        <span class="text-sm font-semibold text-fg flex-shrink-0">{{ row.label }}</span>
+    <div class="max-h-64 overflow-y-auto px-4 py-2">
+      <div v-for="row in rows" :key="row.label" data-testid="summary-var-row"
+        class="flex items-start justify-between gap-3 border-b border-faint py-2 last:border-0">
+        <span class="shrink-0 font-mono text-sm text-fg">{{ row.label }}</span>
         <span
-          class="text-sm text-fg font-medium text-right break-all"
+          class="break-all text-right text-sm text-fg-body"
           :title="row.raw ? t('deployment.summary.submittedValue', { value: row.raw }) : undefined"
         >
           {{ row.value }}
         </span>
       </div>
-      <p v-if="rows.length === 0" class="text-sm text-fg-muted italic text-center py-4">
+      <p v-if="rows.length === 0" class="py-4 text-center text-sm text-fg-muted">
         {{ emptyLabel }}
       </p>
     </div>

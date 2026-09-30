@@ -28,6 +28,7 @@ export default {
   // Texts several pages share. A page never reads another page's keys,
   // it reads these.
   common: {
+    close: "Close",
     remove: "Remove",
     studentCount: "{n} Student | {n} Students",
     courses: "Courses",
@@ -257,6 +258,7 @@ export default {
   },
 
   HelpView: {
+    areasTitle: "Areas of the app",
     title: "Help & Q/A",
     subtitle: "Support & frequently asked questions.",
     quickTip: "Only for logged-in users: direct help for the app’s core workflows.",
@@ -677,6 +679,8 @@ export default {
       markerErrorTitle: "Cannot submit — invalid markers:",
     },
     editModal: {
+      removeConfirmTitle: "Remove logo?",
+      removeConfirmText: "The app is shown without a logo afterwards. This only takes effect when you save.",
       title: "Edit app",
       description: "Update name, description and logo. The repository is immutable after creation.",
       nameLabel: "Name",
@@ -787,7 +791,7 @@ export default {
       }
     },
     config: {
-      nameLabel: 'Select a name:',
+      nameLabel: 'Deployment name',
       namePlaceholder: 'Pentesting-2025-best-course',
       courseLabel: 'Select a course',
       studentsLabel: 'Select students',
@@ -798,6 +802,7 @@ export default {
       infoText: 'The total number of students is the combination of the selected courses and individually added students. Duplicates are removed automatically.'
     },
     groups: {
+      label: 'Group mode',
       title: 'Set the number of groups',
       one: 'One group',
       eachUser: 'Each user individually', // <--- WICHTIG: "eachUser" statt "each"
@@ -826,6 +831,10 @@ export default {
       shuffle: 'Shuffle',
       resetTooltip: 'Clear all assignments',
       reset: 'Reset',
+      removeTeam: 'Remove team',
+      addTeam: 'Add team',
+      resetConfirmTitle: 'Clear all assignments?',
+      resetConfirmText: 'All students move back to “Unassigned”. Team names and the number of teams stay.',
       dragDropTitle: 'Drag & Drop enabled',
       dragDropText: 'Drag and drop students between teams and the unassigned area.',
       allAssigned: 'All students are assigned to teams.',

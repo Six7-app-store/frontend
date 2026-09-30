@@ -32,21 +32,19 @@ const { t } = useI18n()
 
 <template>
   <div
-    class="flex flex-col bg-panel rounded-xl border-2 shadow-lg overflow-hidden transition-all"
-    :class="highlighted
-      ? 'border-accent ring-4 ring-accent/30 shadow-2xl'
-      : 'border-subtle hover:border-strong hover:shadow-xl'">
+    class="surface-panel flex flex-col overflow-hidden rounded-xl transition-colors"
+    :class="{ 'border-icon': highlighted }">
 
-    <div class="bg-panel px-4 py-3 border-b-2 border-subtle">
+    <div class="border-b border-faint px-4 py-3">
       <input
         type="text"
         v-model="name"
         :placeholder="t('deployment.assignment.vmDefaultName', { index: index + 1 })"
-        class="field w-full text-fg placeholder-fg-muted px-3 py-2 focus:border-accent/60 font-semibold text-center transition-all"
+        class="field w-full px-3 py-2 text-center font-semibold"
       />
-      <div class="mt-2 flex items-center justify-center gap-2 bg-line/[.07] rounded-lg px-3 py-1.5">
-        <Users :size="16" class="text-icon" />
-        <span class="text-sm font-semibold text-fg">
+      <div class="mt-2 flex items-center justify-center gap-2 text-sm text-fg-muted">
+        <Users :size="14" class="text-icon" aria-hidden="true" />
+        <span>
           {{ t('common.studentCount', members?.length || 0) }}
         </span>
       </div>
@@ -62,8 +60,8 @@ const { t } = useI18n()
       @drop="(e) => $emit('drop', e)">
 
       <div v-if="!members || members.length === 0"
-        class="h-full flex flex-col items-center justify-center text-fg-muted text-sm italic border-2 border-dashed border-strong rounded-lg p-4 bg-panel">
-        <UserPlus :size="32" class="mb-2 opacity-50" />
+        class="drop-zone flex h-full flex-col items-center justify-center p-4 text-sm text-fg-muted">
+        <UserPlus :size="22" class="mb-2 text-icon" aria-hidden="true" />
         <p>{{ t('deployment.assignment.dropZone') }}</p>
       </div>
 

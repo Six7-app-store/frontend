@@ -1,26 +1,25 @@
 <script setup lang="ts">
-/** The three group modes of the team-assignment step as a button row. */
+/** The three group modes of the team-assignment step as a segmented control. */
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import type { SegmentOption } from '@/components/ui/segment'
 import type { GroupMode } from '@/types'
 
-defineProps<{ mode: GroupMode }>()
-defineEmits<{ select: [mode: GroupMode] }>()
+const props = defineProps<{ mode: GroupMode }>()
+const emit = defineEmits<{ select: [mode: GroupMode] }>()
 
 const { t } = useI18n()
 const modes: GroupMode[] = ['one', 'eachUser', 'custom']
+
+const options = computed<SegmentOption<GroupMode>[]>(() => modes.map((m) => ({ value: m, label: t(`deployment.groups.${m}`) })))
+
+const selected = computed<GroupMode>({
+  get: () => props.mode,
+  set: (m) => emit('select', m),
+})
 </script>
 
 <template>
-  <div class="flex gap-2">
-    <button
-      v-for="option in modes"
-      :key="option"
-      @click="$emit('select', option)"
-      class="px-5 py-2.5 rounded-xl font-semibold transition-all text-sm border-2"
-      :class="mode === option
-        ? 'bg-accent text-on-accent border-accent shadow-lg'
-        : 'bg-panel text-fg-muted border-subtle hover:border-strong hover:bg-line/[.07]'">
-      {{ t(`deployment.groups.${option}`) }}
-    </button>
-  </div>
+  <SegmentedControl v-model="selected" size="md" :options="options" :ariaLabel="t('deployment.groups.label')" />
 </template>

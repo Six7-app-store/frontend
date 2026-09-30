@@ -366,6 +366,9 @@ describe('AppsDetailView.vue', () => {
         it('entfernt das Bild mit einem leeren String', async () => {
             const wrapper = await openEditDialog()
             await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editModal.imageRemove'))!.trigger('click')
+            // Removing asks first.
+            expect(wrapper.text()).toContain('AppsDetailView.editModal.removeConfirmTitle')
+            await wrapper.get('[data-testid="confirm-remove-image"]').trigger('click')
 
             await save(wrapper)
             expect(appApi.update).toHaveBeenCalledWith('app-123', { image: '' })

@@ -142,10 +142,9 @@ describe('NewDeploymentVariableView.vue', () => {
     const wrapper = createWrapper({}, mockVars)
     await flushPromises()
 
-    // Next-Button sollte im disabled-State sein (Klasse oder Attribut)
+    // Next-Button ist gesperrt (Zustand, nicht Klasse)
     const nextBtn = wrapper.findAll('button').find(b => b.text().includes('deployment.actions.next'))
     expect(nextBtn?.attributes('disabled')).toBeDefined()
-    expect(nextBtn?.classes()).toContain('disabled:cursor-not-allowed')
     
     // Warnhinweis für fehlende Felder sollte sichtbar sein
     expect(wrapper.text()).toContain('deployment.variables.missingRequiredTitle')

@@ -82,15 +82,31 @@ kein Push, `.claude/` nicht anfassen.
   pro App statt einer flachen Tabelle, weil die Freigaben pro App erst beim Aufklappen geladen werden (Logik unverändert).
   Stand: 110 Dateien / 1082 Tests grün, Coverage 91,9/87,5/75,8/91,9.
 
+- f3) Commit „Finish the remaining pages, the wizard and dialogs in v2“ (`git log -1`):
+  - Hilfe als Lesespalte (720) + `PageToc` (neue Anker `help-*`, Klasse `.help-article`), Profil als Konto-Panel mit `InfoList`
+    (leere Felder ausgeblendet statt „N/A“), OpenStack-Einstellungen mit `max-w-detail`, Panels und neutralem Link.
+    403/404 als `EmptyState` (neu: `titleTag`) mit einer Aktion.
+  - Wizard: `WizardStepLayout` mit `PageHeader`, neuer Stepper ohne Grün (erledigt = Häkchen, aktuell = Akzentring,
+    `aria-current="step"`), Buttons als `BaseButton`. Schritt 1: `FormField`, Kursliste als Panel mit Checkbox-Zeilen,
+    Hinweis als `AlertBox`. Schritt 2: `GroupModeSelector` = `SegmentedControl`, Zähler/Zufall als sekundäre Buttons,
+    „Zurücksetzen“ grau→rot **mit Bestätigung (neu)**, Drag-Hinweis als `AlertBox`, Spalten/Chips ohne Doppelrahmen und
+    Schatten. Schritt 4: drei `Card`s mit `InfoList`, Dateien als `code-chip`.
+  - `.drop-zone`/`.drop-zone-active` für alle Drop-Zonen (neutral statt rot/grün). `VariableInput` ohne `gray`/`white`.
+  - `Toast` und `Modal` ohne Scoped-CSS: Toast unter der Topbar mit Status-Icon und `role`; Modal mit `role="dialog"`,
+    `aria-modal`, Esc, Fokus beim Öffnen, übersetztem Schließen-Button (`common.close`). Keine `<style>`-Blöcke mehr im Repo.
+  - `AppEditModal`: Felder als `FormField`, **Logo entfernen mit Rückfrage (neu, inline im Dialog)**. LTI-Auswahlen als `BaseSelect`.
+  - Snapshots Help/DeploymentDetail per Textvergleich geprüft (nur Klassen). Stand: 110 Dateien / 1082 Tests grün,
+    Coverage 91,9/87,7/75,7/91,9, eslint leer, keine Hex-Treffer.
+
 ## Offen (Reihenfolge)
-f Rest (Wizard, Hilfe, Profil/OpenStack, LTI-Formulare, 403/404, Modals/Toast) · g Aufräumen · Abschluss
+g Aufräumen · Abschluss
 (alle Harness-Checks, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo, Schlussbericht laut Plan)
 
 ## Nächster Schritt (als Erstes)
-Etappe f, Rest: Wizard (`NewDeployment*View`, `WizardStepLayout`, Stepper, Drag-and-Drop, „Zurücksetzen“ mit Bestätigung),
-`HelpView`
-(`V2LHilfe`: Lesespalte 720 + PageToc), Profil/OpenStack (`max-w-detail`), LTI-Formulare auf `BaseSelect`/`FormField`,
-Forbidden/NotFound als EmptyState, Toast/Modals (inkl. `AppEditModal`: „Logo entfernen“ mit Bestätigung).
+Etappe g, Aufräumen: ungenutzte Komponenten (`ScopeBadge`?, `EntityListState`-Varianten prüfen), Klassen (`surface-sunken`,
+`--surface-banner-shadow`/`shadow-banner`, `bg-panel`-Altreste, `focus:border-accent/60`), Tokens (per Suche nach `var(--…)`),
+Assets (`onlySix7-green-withoutBackground.png`), i18n-Keys (Listen unten, vorher suchen), `iconForAppName` + Tests.
+Danach Hex-Suche, Komponenten-Inventar, Abschluss laut Plan (ADR im `deployment`-Repo, Schlussbericht).
 
 ## Sichtprüfung (so geht's ohne Browser-MCP)
 Headless Chrome per `puppeteer-core` (im Scratchpad installiert, nicht im Repo). Login per Keycloak-Formular

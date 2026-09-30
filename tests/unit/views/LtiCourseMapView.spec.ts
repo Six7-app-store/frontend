@@ -43,6 +43,7 @@ vi.mock('@/api/course.api', () => ({
 vi.mock('lucide-vue-next', () => {
   const icon = { template: '<span />' }
   return {
+    ChevronDown: icon, // BaseSelect
     Loader2: icon,
     GraduationCap: icon,
     CheckCircle2: icon,

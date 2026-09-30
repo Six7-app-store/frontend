@@ -22,18 +22,20 @@ const { t } = useI18n()
 <template>
   <div
     draggable="true"
-    class="group bg-panel rounded-lg border-2 border-subtle cursor-move hover:border-strong hover:shadow-lg hover:scale-[1.02] transition-all flex items-center"
-    :class="compact ? 'px-3 py-2.5 gap-2' : 'px-4 py-3 gap-3'">
-    <GripVertical :size="compact ? 16 : 18" class="text-icon group-hover:text-fg transition-colors flex-shrink-0" />
-    <span class="font-semibold text-fg group-hover:text-fg flex-1 transition-colors" :class="{ 'text-sm': compact }">
+    class="group flex cursor-move items-center rounded-control border border-subtle bg-panel transition-colors hover:border-strong"
+    :class="compact ? 'gap-2 px-3 py-2' : 'gap-3 px-3 py-2.5'">
+    <GripVertical :size="compact ? 14 : 16" class="shrink-0 text-icon" aria-hidden="true" />
+    <span class="flex-1 text-fg" :class="compact ? 'text-sm' : 'text-base'">
       {{ name }}
     </span>
     <button
       v-if="removable"
-      @click="$emit('remove')"
-      class="opacity-0 group-hover:opacity-100 transition-all p-1.5 hover:bg-danger-dot/10 rounded-lg"
-      :title="t('common.remove')">
-      <X :size="14" class="text-danger" />
+      type="button"
+      class="btn btn-danger btn-icon h-[26px] w-[26px] opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+      :title="t('common.remove')"
+      :aria-label="t('common.remove')"
+      @click="$emit('remove')">
+      <X :size="14" aria-hidden="true" />
     </button>
   </div>
 </template>

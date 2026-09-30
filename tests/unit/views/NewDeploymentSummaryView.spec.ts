@@ -269,7 +269,7 @@ describe('NewDeploymentSummaryView.vue — Charakterisierung', () => {
   /** label → value of every summary row. */
   const rows = (wrapper: ReturnType<typeof mountWith>) =>
     Object.fromEntries(
-      wrapper.findAll('div.flex.justify-between.items-start').map((row) => {
+      wrapper.findAll('[data-testid="summary-var-row"]').map((row) => {
         const [label, value] = row.findAll('span')
         return [label!.text(), value!.text()]
       }),
@@ -310,7 +310,7 @@ describe('NewDeploymentSummaryView.vue — Charakterisierung', () => {
     await flushPromises()
 
     expect(rows(wrapper)).toEqual({ flavor: 'OS-Name-f-1', nets: 'OS-Name-n-1, OS-Name-n-2' })
-    const flavorValue = wrapper.findAll('div.flex.justify-between.items-start')[0]!.findAll('span')[1]!
+    const flavorValue = wrapper.findAll('[data-testid="summary-var-row"]')[0]!.findAll('span')[1]!
     expect(flavorValue.attributes('title')).toBe('deployment.summary.submittedValue')
   })
 

@@ -193,7 +193,7 @@ const maybeReturnToWizard = () => {
 </script>
 
 <template>
-  <div class="p-6 max-w-4xl mx-auto">
+  <div class="max-w-detail">
     <PageHeader :title="t('SettingsOpenStackView.title')" :subtitle="t('SettingsOpenStackView.intro')" />
 
     <!-- Lock banner -->
@@ -204,11 +204,11 @@ const maybeReturnToWizard = () => {
       :message="t('SettingsOpenStackView.lockBanner.message', { count: credStore.activeDeployments })"
       :cta="t('SettingsOpenStackView.lockBanner.cta')"
       :ctaTo="{ name: ROUTE_NAMES.deploymentsList }"
-      class="mb-6"
+      class="mb-section"
     />
 
     <!-- Status card -->
-    <div class="bg-panel rounded-xl border p-5 mb-6">
+    <div class="surface-panel mb-section p-panel">
       <div v-if="credStore.loading" class="text-fg-muted text-sm">
         {{ t('SettingsOpenStackView.status.loading') }}
       </div>
@@ -259,9 +259,9 @@ const maybeReturnToWizard = () => {
 
     <!-- clouds.yaml drop zone -->
     <div
-      class="border-2 border-dashed rounded-xl p-6 mb-6 transition-colors text-center"
+      class="drop-zone mb-section p-6 text-center"
       :class="[
-        isDragging ? 'border-accent bg-accent/[.05]' : 'border-strong bg-panel',
+        isDragging ? 'drop-zone-active' : '',
         credStore.isLocked ? 'opacity-50 pointer-events-none' : ''
       ]"
       @dragenter.prevent.stop="!credStore.isLocked && (isDragging = true)"
@@ -274,7 +274,7 @@ const maybeReturnToWizard = () => {
       <div class="text-sm text-fg-muted mb-3">
         {{ t('SettingsOpenStackView.dropZone.orPrefix') }}
         <button
-          class="text-accent-fg underline disabled:opacity-50 disabled:cursor-not-allowed"
+          class="link disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="credStore.isLocked"
           @click="yamlInputRef?.click()"
         >{{ t('SettingsOpenStackView.dropZone.pickFile') }}</button>
@@ -291,7 +291,7 @@ const maybeReturnToWizard = () => {
     </div>
 
     <!-- Tabs -->
-    <div class="bg-panel rounded-xl border">
+    <div class="surface-panel">
       <TabBar
         v-model="activeTab"
         :tabs="[

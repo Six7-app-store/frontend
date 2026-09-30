@@ -28,6 +28,7 @@ export default {
   // Texte, die mehrere Seiten teilen. Eine Seite liest nie die Schlüssel
   // einer anderen Seite, sondern diese hier.
   common: {
+    close: "Schließen",
     remove: "Entfernen",
     studentCount: "{n} Student | {n} Studenten",
     courses: "Kurse",
@@ -258,6 +259,7 @@ export default {
   },
 
  HelpView: {
+    areasTitle: "Die Bereiche der App",
     title: "Hilfe & Q/A",
     subtitle: "Support & häufige Fragen.",
     quickTip: "Nur für eingeloggte Nutzer: direkte Hilfe für die wichtigsten Abläufe.",
@@ -680,6 +682,8 @@ export default {
       markerErrorTitle: "Einreichung nicht möglich — fehlerhafte Marker:",
     },
     editModal: {
+      removeConfirmTitle: "Logo entfernen?",
+      removeConfirmText: "Die App wird danach ohne Logo angezeigt. Wirksam wird das erst beim Speichern.",
       title: "App bearbeiten",
       description: "Aktualisiere Name, Beschreibung und Logo. Das Repository ist nach der Erstellung nicht mehr änderbar.",
       nameLabel: "Name",
@@ -791,7 +795,7 @@ export default {
       },
     },
     config: {
-      nameLabel: 'Namen festlegen:',
+      nameLabel: 'Name des Deployments',
       namePlaceholder: 'Pentesting-2025-bester-Kurs',
       courseLabel: 'Kurs auswählen',
       studentsLabel: 'Studenten auswählen',
@@ -802,6 +806,7 @@ export default {
       infoText: 'Die Gesamtmenge der Studenten ergibt sich aus der Kombination der ausgewählten Kurse und einzeln hinzugefügten Studenten. Duplikate werden automatisch entfernt.'
     },
     groups: {
+      label: 'Gruppenmodus',
       title: 'Legen Sie die Anzahl der Gruppen fest',
       one: 'Eine Gruppe',
       eachUser: 'Jeder Nutzer einzeln',
@@ -830,6 +835,10 @@ export default {
       shuffle: 'Zufall',
       resetTooltip: 'Alle Zuweisungen löschen',
       reset: 'Zurücksetzen',
+      removeTeam: 'Team entfernen',
+      addTeam: 'Team hinzufügen',
+      resetConfirmTitle: 'Alle Zuweisungen löschen?',
+      resetConfirmText: 'Alle Studierenden kommen zurück in „Nicht zugewiesen“. Teamnamen und Teamanzahl bleiben.',
       dragDropTitle: 'Drag & Drop aktiviert',
       dragDropText: 'Ziehen Sie Studenten per Drag & Drop zwischen den Teams und dem Nicht-zugewiesenen Bereich hin und her.',
       allAssigned: 'Alle Studenten sind Teams zugewiesen',

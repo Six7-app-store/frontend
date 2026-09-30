@@ -5,7 +5,8 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import WizardStepLayout from '@/components/deployment-wizard/WizardStepLayout.vue'
-import { BookOpen, UserPlus } from 'lucide-vue-next'
+import AlertBox from '@/components/ui/AlertBox.vue'
+import FormField from '@/components/ui/FormField.vue'
 import CoursePickerList from '@/components/deployment-wizard/CoursePickerList.vue'
 import SelectedStudentsPanel from '@/components/deployment-wizard/SelectedStudentsPanel.vue'
 import StudentSearchList from '@/components/deployment-wizard/StudentSearchList.vue'
@@ -180,29 +181,27 @@ onMounted(async () => {
       />
 
       <template v-if="!credStore.isResolved || credStore.hasCredential">
-      <div class="mb-8">
-        <label class="block text-xl font-semibold text-fg mb-3">
-          {{ t('deployment.config.nameLabel') }}
-        </label>
-        <input 
+      <FormField v-slot="{ id }" :label="t('deployment.config.nameLabel')" required class="mb-8 max-w-xl">
+        <input
+          :id="id"
           v-model="store.draft.name"
-          type="text" 
+          type="text"
           :placeholder="t('deployment.config.namePlaceholder')"
           data-testid="deployment-name"
-          class="field w-full px-4 py-3 focus:border-accent/60 transition-all"
+          class="field w-full px-3"
         />
-      </div>
+      </FormField>
 
       <div class="flex-grow">
-        <h2 class="text-xl font-semibold text-fg mb-4">
+        <h2 class="mb-3 text-xl font-semibold text-heading">
           {{ t('deployment.config.targetGroupTitle') }}
         </h2>
 
         <TabBar
           v-model="activeTab"
           :tabs="[
-            { key: 'courses', label: t('deployment.config.courseLabel'), icon: BookOpen },
-            { key: 'individuals', label: t('deployment.config.studentsLabel'), icon: UserPlus },
+            { key: 'courses', label: t('deployment.config.courseLabel') },
+            { key: 'individuals', label: t('deployment.config.studentsLabel') },
           ]"
           class="mb-6"
         />
@@ -231,11 +230,9 @@ onMounted(async () => {
           <div>
             <SelectedStudentsPanel :students="selectedStudents" @remove="toggleStudent" />
 
-            <div class="mt-4 p-4 bg-line/[.04] border border-subtle rounded-lg">
-              <p class="text-sm text-fg">
-                <strong>{{ t('deployment.config.infoTitle') }}</strong> {{ t('deployment.config.infoText') }}
-              </p>
-            </div>
+            <AlertBox tone="info" class="mt-4">
+              <strong class="font-semibold text-heading">{{ t('deployment.config.infoTitle') }}</strong> {{ t('deployment.config.infoText') }}
+            </AlertBox>
           </div>
 
         </div>

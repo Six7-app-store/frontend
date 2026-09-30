@@ -101,14 +101,14 @@ const cardBorderClass = computed(() => {
   if (props.resource.drift === 'stale') return 'border-warning-dot/30'
   // Subtle accent when the detail panel underneath is open, so the
   // user instantly knows which card the panel belongs to.
-  if (props.isExpanded) return 'border-strong ring-1 ring-accent/30'
+  if (props.isExpanded) return 'border-icon'
   return 'border-subtle'
 })
 </script>
 
 <template>
   <div
-    class="bg-panel rounded-lg p-4 border-2 shadow-sm flex flex-col gap-3 transition-colors"
+    class="flex flex-col gap-3 rounded-panel border bg-panel p-4 transition-colors"
     :class="cardBorderClass"
   >
     <!-- Header: Team-Badge + VM-Name + Lifecycle-Pill -->

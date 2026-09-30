@@ -25,6 +25,7 @@ import { useAppCatalog } from '@/composables/useAppCatalog'
 import { useLtiDeepLink } from '@/composables/useLtiDeepLink'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 import StatusPage from '@/components/ui/StatusPage.vue'
 import StatusScreen from '@/components/ui/StatusScreen.vue'
 import { Link2, AlertCircle } from 'lucide-vue-next'
@@ -122,17 +123,15 @@ onMounted(async () => {
         {{ $t('lti.deepLink.empty') }}
       </div>
 
-      <select
+      <BaseSelect
         v-else
         v-model="selected"
         data-testid="deeplink-app"
-        class="field w-full px-3 py-2"
-      >
-        <option value="" disabled>{{ $t('lti.deepLink.choose') }}</option>
-        <option v-for="app in apps" :key="app.appId" :value="app.appId">
-          {{ app.name }}
-        </option>
-      </select>
+        class="w-full"
+        :aria-label="$t('lti.deepLink.choose')"
+        :placeholder="$t('lti.deepLink.choose')"
+        :options="apps.map((app) => ({ value: app.appId, label: app.name }))"
+      />
 
       <BaseButton
         data-testid="deeplink-submit"

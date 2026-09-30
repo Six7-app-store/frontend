@@ -26,6 +26,7 @@ import { useLtiCourseMapping } from '@/composables/useLtiCourseMapping'
 import { getErrorCode, getErrorStatus } from '@/utils/http-error'
 import AlertBox from '@/components/ui/AlertBox.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import BaseSelect from '@/components/ui/BaseSelect.vue'
 import StatusPage from '@/components/ui/StatusPage.vue'
 import StatusScreen from '@/components/ui/StatusScreen.vue'
 import {
@@ -189,17 +190,15 @@ onMounted(async () => {
         <p class="text-sm text-fg-muted">{{ $t('lti.courseMap.mappingHint') }}</p>
       </template>
 
-      <select
+      <BaseSelect
         v-model="selected"
         data-testid="map-course"
+        class="w-full"
+        :aria-label="$t('lti.courseMap.chooseCourse')"
         :disabled="state === 'saving'"
-        class="field w-full px-3 py-2"
-      >
-        <option value="" disabled>{{ $t('lti.courseMap.chooseCourse') }}</option>
-        <option v-for="course in courses" :key="course.courseId" :value="course.courseId">
-          {{ course.name }}
-        </option>
-      </select>
+        :placeholder="$t('lti.courseMap.chooseCourse')"
+        :options="courses.map((course) => ({ value: course.courseId, label: course.name }))"
+      />
 
       <div class="flex items-center gap-3">
         <BaseButton

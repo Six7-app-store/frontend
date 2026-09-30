@@ -256,7 +256,7 @@ const placeholderText = computed(() => {
     <!-- ============================================================ -->
     <div v-else-if="errorReason === 'credentials_missing'">
       <div
-        class="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-warning-dot/30 bg-warning-dot/10 text-warning text-sm"
+        class="flex items-center gap-2 px-3 py-2 rounded-panel border border-warning-dot/30 bg-warning-dot/10 text-warning text-sm"
       >
         <AlertTriangle :size="14" class="flex-shrink-0" />
         <span>{{ t('openstackPicker.credentialsRequired') }}</span>
@@ -281,7 +281,7 @@ const placeholderText = computed(() => {
             ref="triggerEl"
             @click="toggleDropdown"
             type="button"
-            class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border-2 border-subtle bg-panel hover:border-strong transition focus:border-accent/60 text-left"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-control border border-strong bg-panel hover:border-strong transition focus:border-accent/60 text-left"
           >
             <ResourcePickerSelection
               :selected="selectedDisplay"
@@ -310,7 +310,7 @@ const placeholderText = computed(() => {
         v-if="isOpen && !isFreeTextMode && errorReason !== 'credentials_missing'"
         ref="dropdownEl"
         :style="popupStyle"
-        class="border-2 border-subtle rounded-lg bg-panel shadow-2xl overflow-hidden flex flex-col"
+        class="surface-overlay flex flex-col overflow-hidden"
         @mousedown.stop
       >
         <ResourcePickerPanel

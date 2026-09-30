@@ -51,7 +51,7 @@ describe('ConfirmModal', () => {
     expect(confirm.attributes('disabled')).toBeDefined()
     expect(cancel.attributes('disabled')).toBeDefined()
 
-    await wrapper.find('button[aria-label="Close"]').trigger('click')
+    await wrapper.find(`button[aria-label="${de.common.close}"]`).trigger('click')
     await wrapper.find('.scrim').trigger('click')
     expect(wrapper.emitted('close')).toBeUndefined()
   })

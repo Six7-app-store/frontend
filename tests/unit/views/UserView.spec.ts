@@ -107,7 +107,7 @@ describe('UserView.vue', () => {
 
     // --- 3. Fallbacks (Fehlende Daten) ---
 
-    it('zeigt "N/A" an, wenn optionale Felder fehlen', () => {
+    it('blendet fehlende optionale Angaben aus, statt "N/A" zu zeigen', () => {
         mockUser = {
             username: 'minimalist',
             role: 'admin'
@@ -116,13 +116,10 @@ describe('UserView.vue', () => {
 
         const wrapper = mountComponent()
 
-        // Die Komponente ist so programmiert, dass sie 6 Mal 'N/A' anzeigt
-        // (Vorname, Nachname, E-Mail, Kurs, UserID, KeycloakID) + 1x fürs Datum = 7x N/A
-        const text = wrapper.text()
-        expect(text).toContain('UserView.notAvailable')
-
-        // Testen wir explizit, ob der Administrator-Label korrekt gerendert wurde
-        expect(text).toContain('Administrator')
+        const labels = wrapper.findAll('dt').map((dt) => dt.text())
+        expect(labels).toEqual(['UserView.fields.role'])
+        expect(wrapper.text()).not.toContain('UserView.notAvailable')
+        expect(wrapper.text()).toContain('Administrator')
     })
 
     // --- 4. Rollen-Logik (Computed Properties) ---

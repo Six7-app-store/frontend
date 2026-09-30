@@ -65,7 +65,6 @@ const selectedIndex = (v: AppVariable): number | '' => {
 
 const update = (value: any) => emit('update:modelValue', value)
 
-const borderClass = 'border-subtle focus:border-accent/60'
 </script>
 
 <template>
@@ -89,8 +88,7 @@ const borderClass = 'border-subtle focus:border-accent/60'
     @change="update(variable.allowedValues![Number(($event.target as HTMLSelectElement).value)])"
     :id="inputId || variable.name"
     :disabled="disabled"
-    class="w-full px-3 py-2 rounded-lg border-2 outline-none transition-all font-medium text-gray-800 bg-white disabled:bg-gray-50 disabled:text-gray-500"
-    :class="borderClass"
+    class="field w-full px-3"
   >
     <option value="" disabled>{{ t('variableInput.chooseValue') }}</option>
     <option v-for="(opt, i) in variable.allowedValues" :key="i" :value="i">{{ opt }}</option>
@@ -115,8 +113,7 @@ const borderClass = 'border-subtle focus:border-accent/60'
     type="number"
     :id="inputId || variable.name"
     :disabled="disabled"
-    class="field w-full px-3 py-2 transition-all font-medium text-fg disabled:bg-line/[.04] disabled:text-fg-muted"
-    :class="borderClass"
+    class="field w-full px-3"
     placeholder="0"
   />
 
@@ -127,8 +124,7 @@ const borderClass = 'border-subtle focus:border-accent/60'
     :id="inputId || variable.name"
     :disabled="disabled"
     rows="3"
-    class="field w-full px-3 py-2 transition-all font-mono text-sm text-fg disabled:bg-line/[.04] disabled:text-fg-muted"
-    :class="borderClass"
+    class="field w-full px-3 py-2 font-mono text-sm"
     :placeholder="t('variableInput.listPlaceholder')"
   />
 
@@ -139,8 +135,7 @@ const borderClass = 'border-subtle focus:border-accent/60'
     type="text"
     :id="inputId || variable.name"
     :disabled="disabled"
-    class="field w-full px-3 py-2 transition-all font-medium text-fg disabled:bg-line/[.04] disabled:text-fg-muted"
-    :class="borderClass"
+    class="field w-full px-3"
     :placeholder="variable.default ? t('variableInput.defaultPlaceholder', { value: variable.default }) : t('variableInput.enterValue')"
   />
 </template>

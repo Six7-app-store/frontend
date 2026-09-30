@@ -43,8 +43,8 @@ const onDrop = (event: DragEvent) => {
 
 <template>
   <div
-    class="bg-panel rounded-lg py-2 px-3 text-fg shadow-sm border-2 border-dashed transition-all cursor-pointer flex items-center min-h-[60px]"
-    :class="dragging ? 'border-success-dot bg-success-dot/10' : 'border-subtle hover:border-strong'"
+    class="drop-zone flex min-h-[60px] cursor-pointer items-center px-3 py-2 text-fg"
+    :class="{ 'drop-zone-active': dragging }"
     @dragover.prevent="dragging = true"
     @dragleave.prevent="dragging = false"
     @drop.prevent="onDrop"

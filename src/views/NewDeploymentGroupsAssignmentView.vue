@@ -12,7 +12,10 @@ import GroupModeSelector from '@/components/deployment-wizard/GroupModeSelector.
 import StudentChip from '@/components/deployment-wizard/StudentChip.vue'
 import TeamDropCard from '@/components/deployment-wizard/TeamDropCard.vue'
 import type { GroupMode } from '@/types'
-import { Plus, Minus, GripVertical, Trash2, UserPlus, Shuffle } from 'lucide-vue-next'
+import { Plus, Minus, GripVertical, Trash2, Shuffle } from 'lucide-vue-next'
+import AlertBox from '@/components/ui/AlertBox.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -22,6 +25,13 @@ const {
   groupNames, groupCount, totalStudents, mode, unassigned: unassignedStudents, teams, complete,
   prepare, setOneGroup, setEachUser, setCustom, increment, decrement, moveTo, shuffle, clearAll,
 } = useTeamAssignment()
+
+const showResetConfirm = ref(false)
+
+const confirmReset = () => {
+  clearAll()
+  showResetConfirm.value = false
+}
 
 const selectMode = (next: GroupMode) =>
   ({ one: setOneGroup, eachUser: setEachUser, custom: setCustom })[next]()
@@ -104,57 +114,53 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
 
 <template>
   <WizardStepLayout :step="2" :next-disabled="!complete" @back="handleBack" @next="handleNext">
-      <!-- Controls Section -->
-      <div class="pb-6 border-b-2 border-subtle">
+      <!-- Controls -->
+      <div class="flex flex-col gap-4 border-b border-subtle pb-6">
         <div class="flex flex-wrap items-center justify-between gap-4">
-          
           <GroupModeSelector :mode="mode" @select="selectMode" />
 
-          <!-- Team Counter -->
-          <div v-if="mode === 'custom'" class="flex items-center gap-3 bg-line/[.07] px-4 py-2 rounded-xl border-2 border-subtle">
-            <button @click="decrement" 
-              class="w-9 h-9 rounded-lg bg-panel border border-strong hover:border-danger-dot hover:bg-danger-dot/10 flex items-center justify-center transition-all text-danger disabled:opacity-40 disabled:cursor-not-allowed" 
-              :disabled="groupCount <= 1">
-              <Minus :size="18" />
-            </button>
-            <div class="flex items-center gap-2">
-              <span class="text-3xl font-semibold text-fg w-12 text-center tabular-nums">{{ groupCount }}</span>
-              <span class="text-sm font-semibold text-fg-muted">{{ t('deployment.assignment.teamsLabel') }}</span>
-            </div>
-            <button @click="increment" 
-              class="w-9 h-9 rounded-lg bg-panel border border-strong hover:border-strong hover:bg-line/[.07] flex items-center justify-center transition-all text-fg-muted disabled:opacity-40 disabled:cursor-not-allowed" 
-              :disabled="groupCount >= totalStudents">
-              <Plus :size="18" />
-            </button>
+          <!-- Team counter -->
+          <div v-if="mode === 'custom'" class="flex items-center gap-3">
+            <BaseButton
+              variant="secondary"
+              icon
+              :label="t('deployment.assignment.removeTeam')"
+              :disabled="groupCount <= 1"
+              @click="decrement"
+            >
+              <Minus :size="16" aria-hidden="true" />
+            </BaseButton>
+            <span class="flex items-baseline gap-2">
+              <span class="w-8 text-center text-3xl font-semibold tabular-nums text-heading">{{ groupCount }}</span>
+              <span class="text-sm text-fg-muted">{{ t('deployment.assignment.teamsLabel') }}</span>
+            </span>
+            <BaseButton
+              variant="secondary"
+              icon
+              :label="t('deployment.assignment.addTeam')"
+              :disabled="groupCount >= totalStudents"
+              @click="increment"
+            >
+              <Plus :size="16" aria-hidden="true" />
+            </BaseButton>
           </div>
 
-          <!-- Action Buttons -->
           <div class="flex gap-2">
-            <button @click="shuffle()" 
-              class="px-4 py-2.5 rounded-xl bg-line/[.07] text-fg font-semibold hover:bg-line/[.12] transition-all flex items-center gap-2 border-2 border-subtle"
-              :title="t('deployment.assignment.shuffleTooltip')">
-              <Shuffle :size="18" />
+            <BaseButton variant="secondary" :title="t('deployment.assignment.shuffleTooltip')" @click="shuffle()">
+              <Shuffle :size="16" aria-hidden="true" />
               {{ t('deployment.assignment.shuffle') }}
-            </button>
-            <button @click="clearAll" 
-              class="px-4 py-2.5 rounded-xl bg-danger-dot/10 text-danger font-semibold hover:bg-danger-dot/20 transition-all flex items-center gap-2 border-2 border-danger-dot/30"
-              :title="t('deployment.assignment.resetTooltip')">
-              <Trash2 :size="18" />
+            </BaseButton>
+            <!-- Clearing undoes all manual work, so it asks first. -->
+            <BaseButton variant="danger" :title="t('deployment.assignment.resetTooltip')" @click="showResetConfirm = true">
+              <Trash2 :size="16" aria-hidden="true" />
               {{ t('deployment.assignment.reset') }}
-            </button>
+            </BaseButton>
           </div>
         </div>
 
-        <!-- Info Banner -->
-        <div class="mt-4 bg-line/[.04] border-2 border-subtle rounded-xl p-4 flex items-start gap-3">
-          <div class="avatar w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-            <GripVertical :size="16" class="text-icon" />
-          </div>
-          <div>
-            <p class="font-semibold text-fg mb-1">{{ t('deployment.assignment.dragDropTitle') }}</p>
-            <p class="text-sm text-fg">{{ t('deployment.assignment.dragDropText') }}</p>
-          </div>
-        </div>
+        <AlertBox tone="info" :icon="GripVertical" :title="t('deployment.assignment.dragDropTitle')">
+          {{ t('deployment.assignment.dragDropText') }}
+        </AlertBox>
       </div>
 
       <!-- Main Content Grid -->
@@ -163,28 +169,25 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
           
           <!-- Unassigned Students Pool -->
           <div class="lg:col-span-1">
-            <div class="h-full flex flex-col bg-panel rounded-xl border-2 border-strong overflow-hidden shadow-lg">
-              <div class="bg-panel px-4 py-3 border-b-2 border-subtle flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <UserPlus :size="20" class="text-icon" />
-                  <h3 class="font-semibold text-fg">{{ t('deployment.assignment.unassigned') }}</h3>
-                </div>
-                <span class="px-2.5 py-1 bg-line/[.07] rounded-full text-xs font-semibold text-fg border-2 border-subtle">
-                  {{ unassignedStudents.length }}
-                </span>
+            <div class="surface-panel flex h-full flex-col overflow-hidden">
+              <div class="flex items-center justify-between border-b border-faint px-4 py-3">
+                <h3 class="flex items-baseline gap-2 font-semibold text-heading">
+                  {{ t('deployment.assignment.unassigned') }}
+                  <span class="text-sm font-normal tabular-nums text-fg-muted">{{ unassignedStudents.length }}</span>
+                </h3>
               </div>
               
               <div 
                 data-testid="unassigned-dropzone"
                 class="flex-grow p-3 overflow-y-auto bg-line/[.04]"
-                :class="dragOverUnassigned ? 'bg-line/[.12] ring-4 ring-accent/30' : ''"
+                :class="dragOverUnassigned ? 'bg-line/[.12]' : ''"
                 @dragover="handleDragOver"
                 @dragenter="dragOverUnassigned = true"
                 @dragleave="handleDragLeaveUnassigned"
                 @drop="(e) => handleDrop(null, e)">
                 
                 <div v-if="unassignedStudents.length === 0" 
-                  class="h-full flex items-center justify-center text-fg-muted text-sm italic text-center px-4 border-2 border-dashed border-strong rounded-lg bg-panel">
+                  class="drop-zone flex h-full items-center justify-center px-4 text-center text-sm text-fg-muted">
                   {{ t('deployment.assignment.allAssigned') }}
                 </div>
                 
@@ -226,11 +229,21 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
 
       <template #status>
         <div class="text-center">
-          <p class="text-sm text-fg-muted mb-1">{{ t('deployment.assignment.progress') }}</p>
-          <p class="text-lg font-semibold text-fg-muted">
+          <p class="mb-0.5 text-xs text-fg-muted">{{ t('deployment.assignment.progress') }}</p>
+          <p class="text-base font-semibold tabular-nums text-heading">
             {{ t('deployment.assignment.assignedCount', { assigned: totalStudents - unassignedStudents.length, total: totalStudents }) }}
           </p>
         </div>
       </template>
   </WizardStepLayout>
+
+  <ConfirmModal
+    :show="showResetConfirm"
+    :title="t('deployment.assignment.resetConfirmTitle')"
+    :confirm-label="t('deployment.assignment.reset')"
+    @close="showResetConfirm = false"
+    @confirm="confirmReset"
+  >
+    <p class="text-fg">{{ t('deployment.assignment.resetConfirmText') }}</p>
+  </ConfirmModal>
 </template>

@@ -545,6 +545,50 @@
     outline-offset: -2px;
   }
 
+  /* Toasts slide in from the right and fade out */
+  .toast-enter-active,
+  .toast-leave-active {
+    transition: opacity 200ms ease, transform 200ms ease;
+  }
+  .toast-enter-from,
+  .toast-leave-to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  /* Drop zones (files, images, students): dashed while waiting, darker while something is dragged over */
+  .drop-zone {
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-panel);
+    background: var(--surface-panel-bg);
+    transition: background 150ms, border-color 150ms;
+  }
+  .drop-zone-active {
+    border-color: rgb(var(--color-icon));
+    background: var(--nav-hover-bg);
+  }
+
+  /* Long-form help text: the article scale of the design */
+  .help-article {
+    color: rgb(var(--color-fg-body));
+    font-size: var(--text-md);
+    line-height: var(--leading-relaxed);
+  }
+  .help-article h2 {
+    padding-top: 16px;
+    border-top: 1px solid var(--line-subtle);
+    color: rgb(var(--color-heading));
+    font-size: var(--text-xl);
+    font-weight: 600;
+    line-height: var(--leading-tight);
+    scroll-margin-top: 24px;
+  }
+  .help-article h3 {
+    color: rgb(var(--color-heading));
+    font-size: var(--text-md);
+    font-weight: 600;
+  }
+
   /* Text link: underlined, not coloured; the underline darkens on hover */
   .md-compact a,
   .link {

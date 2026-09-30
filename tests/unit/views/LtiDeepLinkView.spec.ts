@@ -37,7 +37,9 @@ vi.mock('@/api/app.api', () => ({
 
 vi.mock('lucide-vue-next', () => {
   const icon = { template: '<span />' }
-  return { Loader2: icon, Link2: icon, AlertCircle: icon }
+  return {
+    ChevronDown: icon, // BaseSelect
+    Loader2: icon, Link2: icon, AlertCircle: icon }
 })
 
 import LtiDeepLinkView from '@/views/LtiDeepLinkView.vue'

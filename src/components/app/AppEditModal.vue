@@ -7,7 +7,9 @@
  */
 import { ref, watch } from 'vue'
 import Modal from '@/components/ui/Modal.vue'
+import AlertBox from '@/components/ui/AlertBox.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import FormField from '@/components/ui/FormField.vue'
 import ImageDropZone from '@/components/ui/ImageDropZone.vue'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import { useImageUpload } from '@/composables/useImageUpload'
@@ -35,8 +37,16 @@ const {
   remove: removeEditImage,
 } = useImageUpload()
 
+// Removing the logo asks first; the question sits right under the image.
+const confirmingRemove = ref(false)
+const confirmRemove = () => {
+  removeEditImage()
+  confirmingRemove.value = false
+}
+
 watch(() => props.show, (open) => {
   if (!open) return
+  confirmingRemove.value = false
   editForm.value = { name: props.app.name || '', description: props.app.description || '' }
   resetEditImage(props.app.image || null)
 }, { immediate: true })
@@ -68,49 +78,45 @@ const submitEdit = async () => {
   <Modal :show="show" @close="closeEditModal">
     <template #title>{{ $t('AppsDetailView.editModal.title') }}</template>
     <template #body>
-      <div class="space-y-4">
+      <div class="flex flex-col gap-4">
         <p class="text-sm text-fg-muted">{{ $t('AppsDetailView.editModal.description') }}</p>
 
-        <!-- Name -->
-        <div>
-          <label class="block text-sm font-medium text-fg mb-1.5">
-            {{ $t('AppsDetailView.editModal.nameLabel') }}
-          </label>
-          <input
-            v-model="editForm.name"
-            type="text"
-            class="field w-full px-3 py-2 text-sm focus:border-accent/60"
-          />
-        </div>
+        <FormField v-slot="{ id }" :label="$t('AppsDetailView.editModal.nameLabel')" required>
+          <input :id="id" v-model="editForm.name" type="text" class="field w-full px-3" />
+        </FormField>
 
-        <!-- Description -->
-        <div>
-          <label class="block text-sm font-medium text-fg mb-1.5">
-            {{ $t('AppsDetailView.editModal.descLabel') }}
-          </label>
+        <FormField :label="$t('AppsDetailView.editModal.descLabel')" :hint="$t('AppsCreateView.form.descMarkdownHint')">
           <MarkdownEditor
             v-model="editForm.description"
             :placeholder="$t('AppsCreateView.form.descPlaceholder')"
             :min-height-px="120"
             :max-height-px="320"
           />
-          <p class="mt-1 text-xs text-fg-muted">{{ $t('AppsCreateView.form.descMarkdownHint') }}</p>
-        </div>
+        </FormField>
 
-        <!-- Image -->
-        <div>
-          <label class="block text-sm font-medium text-fg mb-1.5">
-            {{ $t('AppsDetailView.editModal.imageLabel') }}
-          </label>
+        <FormField :label="$t('AppsDetailView.editModal.imageLabel')">
           <ImageDropZone
             :preview-url="editImagePreview"
             :caption="editImageFile ? editImageFile.name : $t('AppsDetailView.editModal.currentImage')"
             :placeholder="$t('AppsDetailView.editModal.imageHint')"
             :remove-label="$t('AppsDetailView.editModal.imageRemove')"
             @select="chooseEditImage"
-            @remove="removeEditImage"
+            @remove="confirmingRemove = true"
           />
-        </div>
+          <AlertBox v-if="confirmingRemove" tone="warning" :title="$t('AppsDetailView.editModal.removeConfirmTitle')" class="mt-2">
+            {{ $t('AppsDetailView.editModal.removeConfirmText') }}
+            <template #actions>
+              <div class="flex gap-2">
+                <BaseButton variant="ghost" size="sm" @click="confirmingRemove = false">
+                  {{ $t('AppsDetailView.cancelButton') }}
+                </BaseButton>
+                <BaseButton variant="danger" size="sm" data-testid="confirm-remove-image" @click="confirmRemove">
+                  {{ $t('AppsDetailView.editModal.imageRemove') }}
+                </BaseButton>
+              </div>
+            </template>
+          </AlertBox>
+        </FormField>
       </div>
     </template>
     <template #footer>

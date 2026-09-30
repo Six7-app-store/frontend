@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Frame of every step of the deployment wizard: one card width, the
- * wizard title with the progress bar, an optional step heading, the step
+ * Frame of every step of the deployment wizard: the wizard title with the
+ * stepper, an optional step heading, the step
  * content, and one footer with back, next and room for a status in
  * between (assignment progress, missing required fields).
  *
@@ -9,8 +9,10 @@
  * for the final deploy request.
  */
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, ArrowRight, BarChart3 } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-vue-next'
 import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 
 withDefaults(defineProps<{
   step: 1 | 2 | 3 | 4
@@ -35,54 +37,40 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="bg-panel rounded-2xl p-10 border shadow-sm max-w-7xl mx-auto w-full min-h-[700px] flex flex-col">
-    <div class="flex items-center gap-3 mb-6">
-      <h1 class="text-3xl font-semibold text-fg">{{ t('deployment.title') }}</h1>
-      <BarChart3 :size="32" class="text-icon" />
-    </div>
+  <div class="flex max-w-page flex-col">
+    <PageHeader :title="t('deployment.title')" />
 
     <DeploymentProgressBar :current-step="step" />
 
-    <div v-if="title" class="text-center mt-8">
-      <h2 class="text-2xl font-semibold text-fg">{{ title }}</h2>
-      <p v-if="subtitle" class="text-fg-muted mt-2">{{ subtitle }}</p>
+    <div v-if="title" class="mt-8">
+      <h2 class="text-2xl font-semibold text-heading">{{ title }}</h2>
+      <p v-if="subtitle" class="mt-1.5 text-base text-fg-muted">{{ subtitle }}</p>
     </div>
 
-    <div class="flex-grow mt-8">
+    <div class="mt-6 flex-grow">
       <slot />
     </div>
 
-    <div class="flex justify-between items-center gap-6 mt-8 pt-6 border-t border-subtle">
-      <button
-        type="button"
-        data-testid="btn-back"
-        class="btn-secondary flex items-center gap-2 px-8 py-2.5 rounded-control font-semibold transition"
-        @click="$emit('back')"
-      >
-        <ArrowLeft :size="18" />
+    <div class="mt-8 flex items-center justify-between gap-6 border-t border-subtle pt-6">
+      <BaseButton variant="secondary" data-testid="btn-back" @click="$emit('back')">
+        <ArrowLeft :size="16" aria-hidden="true" />
         {{ t('deployment.actions.back') }}
-      </button>
+      </BaseButton>
 
-      <div class="flex-1 min-w-0">
+      <div class="min-w-0 flex-1">
         <slot name="status" />
       </div>
 
-      <button
-        type="button"
-        data-testid="btn-next"
-        :disabled="nextDisabled || busy"
-        class="btn-primary flex items-center gap-2 px-8 py-2.5 rounded-control font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
-        @click="$emit('next')"
-      >
+      <BaseButton data-testid="btn-next" :disabled="nextDisabled || busy" @click="$emit('next')">
         <template v-if="busy">
-          <span class="animate-spin rounded-full h-5 w-5 border-2 border-surface border-t-transparent"></span>
+          <Loader2 :size="16" class="animate-spin" aria-hidden="true" />
           {{ busyLabel }}
         </template>
         <template v-else>
           {{ nextLabel ?? t('deployment.actions.next') }}
-          <ArrowRight :size="18" />
+          <ArrowRight :size="16" aria-hidden="true" />
         </template>
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

@@ -31,7 +31,7 @@ const { t } = useI18n()
       />
     </div>
 
-    <div class="bg-line/[.04] rounded-lg overflow-hidden border-2 border-subtle max-h-[350px] overflow-y-auto">
+    <div class="surface-panel max-h-[350px] overflow-y-auto">
       <div
         v-for="student in students"
         :key="student.userId"
