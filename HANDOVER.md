@@ -58,18 +58,31 @@ kein Push, `.claude/` nicht anfassen.
   - Snapshots HelpView + DeploymentDetailView aktualisiert (nur Klassen und `aria-label` der Kopier-Buttons, per Diff geprüft).
   - Stand: vue-tsc grün, 110 Dateien / 1082 Tests grün, Coverage 92,0/87,5/75,7/92,0, eslint leer, keine Hex-Treffer.
 
+- f1) Commit „Move the deployment pages to the v2 design“ (`git log -1`):
+  - `DeploymentsListView` als `DataTable` (Name, App, Version mono, Status, Erstellt, Chevron; ganze Zeile = Link);
+    Studierende im selben Raster mit drei Zuständen (Status + Hinweis-Spalte).
+  - Detail: `DeploymentDetailHeader` = `PageHeader` (Meta: Status · Version; Pausieren sekundär, Löschen `danger` mit
+    `disabledReason`). `DeploymentOverviewCards` = drei `Card`s mit `InfoList` (Rolle übersetzt, Repo als Link).
+    `DetailSection` gelöscht, alle Abschnitte sind `Card` (neu: `count`-Prop). Infrastruktur mit i18n, `AlertBox`, `Badge`.
+    VM-Karte: „Details“ sekundär, „Redeploy“ grau→rot (bei fehlender VM rot als Hauptaktion). Gruppen- und Task-Zeilen sind
+    echte Buttons. `DeploymentRedeployModal` und Team-Texte übersetzt.
+  - Klassen-Durchgang über alle `.vue`: `uppercase`/`tracking-*` weg, `text-[10px]`→`text-xs`, `font-bold`→`font-semibold`,
+    `hover:text-accent-fg`→`hover:text-heading` (nur statische `class`-Attribute).
+  - Charakterisierungstest: Klassen-Selektoren durch `data-testid`s ersetzt (`member-row`, `member-username`, `group-card`,
+    `group-name`, `variable-card`, `resources-error`, `task-row`, `phase-label`, `redeploy-address`); Snapshots nach
+    Textvergleich aktualisiert (nur gewollte Textänderungen: i18n statt Englisch, Kopf-Meta, Rolle übersetzt, kein Avatar).
+  - Sichtprüfung mit gemockten Deployments (Mock-Datei im Scratchpad, Pfad-Regex, Port 8000).
+  - Stand: 110 Dateien / 1082 Tests grün, Coverage 92,0/87,5/75,8/92,0, eslint leer, keine Hex-Treffer.
+
 ## Offen (Reihenfolge)
-f übrige Seiten · g Aufräumen · Abschluss
+f Rest (Wizard, Kurse, Freigaben, Hilfe, Profil/OpenStack, LTI-Formulare, 403/404, Modals/Toast) · g Aufräumen · Abschluss
 (alle Harness-Checks, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo, Schlussbericht laut Plan)
 
 ## Nächster Schritt (als Erstes)
-Etappe f, Vorlagen `V2LDeployments`, `V2LKurse`, `V2LKursDetail`, `V2LFreigaben`, `V2LHilfe` (+ Dark):
-`DeploymentsListView`/`DeploymentsView` (DataTable: Name, App, Version mono, Status, Erstellt; Zeile klickbar; EmptyState;
-Studierenden-Sicht im selben Raster), `DeploymentDetailView` (PageHeader + Cards, Löschen/Abbrechen grau→rot mit Dialog,
-`DeploymentRedeployModal` i18n), Wizard (4 Schritte, Stepper, Drag-and-Drop-Chips, „Zurücksetzen“ mit Bestätigung),
-`CoursesView`/`CourseDetailView`, `AdminAppsView` („Freigaben“), `HelpView` (Lesespalte 720 + PageToc), Profil/OpenStack
-(`max-w-detail`), LTI-Formulare auf `BaseSelect`/`FormField`, Forbidden/NotFound als EmptyState, Toast/Modals
-(inkl. `AppEditModal`: „Logo entfernen“ mit Bestätigung).
+Etappe f, Rest: Wizard (`NewDeployment*View`, `WizardStepLayout`, Stepper, Drag-and-Drop, „Zurücksetzen“ mit Bestätigung),
+`CoursesView`/`CourseDetailView` (Vorlagen `V2LKurse`, `V2LKursDetail`), `AdminAppsView` (`V2LFreigaben`), `HelpView`
+(`V2LHilfe`: Lesespalte 720 + PageToc), Profil/OpenStack (`max-w-detail`), LTI-Formulare auf `BaseSelect`/`FormField`,
+Forbidden/NotFound als EmptyState, Toast/Modals (inkl. `AppEditModal`: „Logo entfernen“ mit Bestätigung).
 
 ## Sichtprüfung (so geht's ohne Browser-MCP)
 Headless Chrome per `puppeteer-core` (im Scratchpad installiert, nicht im Repo). Login per Keycloak-Formular

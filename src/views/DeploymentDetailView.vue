@@ -213,16 +213,16 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
 </script>
 
 <template>
-    <div v-if="deployment" class="space-y-6">
+    <div v-if="deployment" :class="openDrawerAddress ? 'max-w-page' : 'max-w-detail'">
         <!--
             Two-column layout: the deployment detail content stays on the left,
             and the VM-detail sidebar anchors as a sticky right column when an
             inline VM is selected. The left column expands to full width otherwise.
         -->
-        <div class="flex gap-6 items-start">
-            <div class="flex-1 min-w-0 space-y-6">
+        <div class="flex flex-col items-start gap-section xl:flex-row">
+            <div class="w-full min-w-0 flex-1">
 
-        <!-- Header with back button and status badge -->
+        <!-- Header with name, status and the lifecycle actions -->
         <DeploymentDetailHeader
             :deployment="deployment"
             :can-operate="canOperate"
@@ -234,6 +234,8 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             @delete="showDeleteModal = true"
             @pause-resume="showPauseResumeModal = true"
         />
+
+        <div class="flex flex-col gap-section">
 
         <!-- Main info grid with 3 cards -->
         <DeploymentOverviewCards :deployment="deployment" />
@@ -310,6 +312,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             @deselect="deselectTask"
         />
 
+        </div>
             </div>
             <!--
                 VM detail sidebar — sticky right column, rendered only when the

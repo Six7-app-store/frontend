@@ -176,7 +176,7 @@ onMounted(loadAll)
         </p>
         <button
           @click="onlyWithSubmissions = false"
-          class="mt-5 text-sm font-medium text-accent-fg hover:text-accent-fg underline-offset-2 hover:underline"
+          class="mt-5 text-sm font-medium text-accent-fg hover:text-heading underline-offset-2 hover:underline"
         >
           {{ $t('AdminAppsView.emptyShowAll') }}
         </button>

@@ -221,7 +221,7 @@ const roleClass = (role: string | undefined) => badgeToneClasses(roleBadgeTone(r
         </div>
         <div class="flex-grow">
           <div v-if="!isEditingName" class="flex items-center gap-3">
-            <h1 class="text-3xl font-bold text-fg">{{ courseStore.currentCourse.name }}</h1>
+            <h1 class="text-3xl font-semibold text-fg">{{ courseStore.currentCourse.name }}</h1>
             <button
                 v-if="isStaff"
                 @click="startEditName"
@@ -336,7 +336,7 @@ const roleClass = (role: string | undefined) => badgeToneClasses(roleBadgeTone(r
                 class="flex items-center gap-1 bg-line/[.07] text-fg text-sm px-2 py-1 rounded"
             >
               {{ user.username }}
-              <button @click="removeSelection(user.userId)" class="hover:text-accent-fg">
+              <button @click="removeSelection(user.userId)" class="hover:text-heading">
                 <X :size="14" />
               </button>
             </span>

@@ -73,7 +73,7 @@ defineProps<{
             <span class="text-base font-semibold text-fg">
               {{ phaseLabel(live.phase) || $t('DeploymentDetailView.phaseStarting') }}
             </span>
-            <span class="text-2xl font-bold text-fg tabular-nums">
+            <span class="text-2xl font-semibold text-fg tabular-nums">
               {{ live.progress ?? 0 }}<span class="text-sm text-fg-muted font-medium">%</span>
             </span>
           </div>
@@ -95,10 +95,11 @@ defineProps<{
               <div class="w-2.5 h-2.5 rounded-full transition-all" :class="(idx - 1) < live.activeStepIndex
                 ? 'bg-icon'
                 : (idx - 1) === live.activeStepIndex
-                  ? 'bg-icon ring-4 ring-accent/30 scale-125'
+                  ? 'bg-icon ring-4 ring-icon/25 scale-125'
                   : 'bg-line/[.12]'"></div>
               <span
-                class="text-[10px] uppercase tracking-wide font-medium whitespace-nowrap text-center"
+                data-testid="phase-label"
+                class="text-xs font-medium whitespace-nowrap text-center"
                 :class="(idx - 1) <= live.activeStepIndex ? 'text-fg' : 'text-fg-muted'">
                 {{ live.stepLabel(idx - 1) }}
               </span>
@@ -116,7 +117,7 @@ defineProps<{
                      producing output even after the box is full. -->
       <div v-if="live.logs.length > 0" class="space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs uppercase tracking-wide font-semibold text-fg-muted">{{ $t('DeploymentDetailView.liveOutput') }}</span>
+          <span class="text-xs font-semibold text-fg-muted">{{ $t('DeploymentDetailView.liveOutput') }}</span>
           <span class="text-xs text-fg-muted">
             {{ live.totalLogCount.toLocaleString() }} {{ live.totalLogCount === 1 ? $t('DeploymentDetailView.logLine') : $t('DeploymentDetailView.logLines')
             }}

@@ -69,7 +69,7 @@ const handleBack = () => {
           <div class="bg-line/[.07] border-b border-subtle text-fg px-6 py-4 flex items-center gap-3">
             <Box :size="24" />
             <div>
-              <h2 class="text-xl font-bold">{{ t('deployment.summary.packerVars') }}</h2>
+              <h2 class="text-xl font-semibold">{{ t('deployment.summary.packerVars') }}</h2>
               <p class="text-xs text-fg-muted mt-0.5">{{ t('deployment.variables.packerDesc') }}</p>
             </div>
           </div>
@@ -103,7 +103,7 @@ const handleBack = () => {
           <div class="bg-line/[.07] border-b border-subtle text-fg px-6 py-4 flex items-center gap-3">
             <Layers :size="24" />
             <div>
-              <h2 class="text-xl font-bold">{{ t('deployment.summary.terraformVars') }}</h2>
+              <h2 class="text-xl font-semibold">{{ t('deployment.summary.terraformVars') }}</h2>
               <p class="text-xs text-fg-muted mt-0.5">{{ t('deployment.variables.terraformDesc') }}</p>
             </div>
           </div>

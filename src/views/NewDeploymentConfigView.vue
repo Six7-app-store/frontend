@@ -181,7 +181,7 @@ onMounted(async () => {
 
       <template v-if="!credStore.isResolved || credStore.hasCredential">
       <div class="mb-8">
-        <label class="block text-xl font-bold text-fg mb-3">
+        <label class="block text-xl font-semibold text-fg mb-3">
           {{ t('deployment.config.nameLabel') }}
         </label>
         <input 
@@ -194,7 +194,7 @@ onMounted(async () => {
       </div>
 
       <div class="flex-grow">
-        <h2 class="text-xl font-bold text-fg mb-4">
+        <h2 class="text-xl font-semibold text-fg mb-4">
           {{ t('deployment.config.targetGroupTitle') }}
         </h2>
 

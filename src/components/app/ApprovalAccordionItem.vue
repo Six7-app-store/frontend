@@ -51,7 +51,7 @@ const busy = (versionTag: string) => props.actingOn === `${props.app.appId}:${ve
       <!-- Link to app detail -->
       <RouterLink
         :to="{ name: ROUTE_NAMES.appsDetail, params: { id: app.appId } }"
-        class="text-fg-muted hover:text-accent-fg transition-colors p-1 rounded"
+        class="text-fg-muted hover:text-heading transition-colors p-1 rounded"
         :title="$t('AdminAppsView.goToApp')"
         @click.stop
       >
@@ -108,10 +108,10 @@ const busy = (versionTag: string) => props.actingOn === `${props.app.appId}:${ve
       <table class="w-full text-sm">
         <thead class="border-b border-subtle">
           <tr>
-            <th class="text-left py-2 px-2 text-xs font-semibold text-fg-muted uppercase tracking-wide">{{ $t('AdminAppsView.colVersion') }}</th>
-            <th class="text-left py-2 px-4 text-xs font-semibold text-fg-muted uppercase tracking-wide">{{ $t('AdminAppsView.colStatus') }}</th>
-            <th class="text-left py-2 px-4 text-xs font-semibold text-fg-muted uppercase tracking-wide">{{ $t('AdminAppsView.colDate') }}</th>
-            <th class="text-right py-2 px-2 text-xs font-semibold text-fg-muted uppercase tracking-wide">{{ $t('AdminAppsView.colActions') }}</th>
+            <th class="text-left py-2 px-2 text-xs font-semibold text-fg-muted">{{ $t('AdminAppsView.colVersion') }}</th>
+            <th class="text-left py-2 px-4 text-xs font-semibold text-fg-muted">{{ $t('AdminAppsView.colStatus') }}</th>
+            <th class="text-left py-2 px-4 text-xs font-semibold text-fg-muted">{{ $t('AdminAppsView.colDate') }}</th>
+            <th class="text-right py-2 px-2 text-xs font-semibold text-fg-muted">{{ $t('AdminAppsView.colActions') }}</th>
           </tr>
         </thead>
         <tbody class="divide-y">

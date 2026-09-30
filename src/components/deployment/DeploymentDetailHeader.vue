@@ -1,15 +1,16 @@
 <script setup lang="ts">
 /**
- * Header of the deployment detail page: back link, deployment name,
- * status badge and the lifecycle action buttons (Pause/Resume, Delete).
+ * Header of the deployment detail page: deployment name, status and the
+ * lifecycle actions (Pause/Resume, Delete). Deleting is grey until hovered
+ * and asks first (the page shows the dialog).
  *
  * The buttons only request an action; availability is computed by the
  * caller (``useDeploymentLifecycle``) and passed in.
  */
 import { PauseCircle, PlayCircle, Trash2 } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
 import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
-import { getStatusStyles } from '@/utils/deployment-status-styles'
 import type { PauseResumeAction } from '@/services/deployment-lifecycle.service'
 import type { DeploymentWithRelations } from '@/types'
 
@@ -31,48 +32,46 @@ defineEmits<{
 </script>
 
 <template>
-  <div>
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold text-fg">{{ deployment.name }}</h1>
-        <p class="text-sm text-fg-muted mt-1">{{ $t('DeploymentDetailView.detailsSubtitle') }}</p>
+  <PageHeader :title="deployment.name" size="detail">
+    <template #meta>
+      <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-fg-muted">
+        <DeploymentStatusBadge :status="deployment.status" />
+        <span class="text-disabled" aria-hidden="true">·</span>
+        <span class="font-mono">{{ deployment.releaseTag }}</span>
       </div>
+    </template>
 
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-3">
-          <component :is="getStatusStyles(deployment.status).icon" :size="20" :class="getStatusStyles(deployment.status).iconClass" />
-          <DeploymentStatusBadge :status="deployment.status" size="md" />
-        </div>
+    <template v-if="canPauseOrResume || canOperate" #actions>
+      <!-- Pause / Resume: one slot, two states, visible only when the
+           lifecycle matrix permits the action right now. -->
+      <BaseButton
+        v-if="canPauseOrResume"
+        variant="secondary"
+        :disabled="pauseResumeBusy"
+        :title="pauseResumeAction === 'pause'
+          ? $t('DeploymentDetailView.pauseTooltip')
+          : $t('DeploymentDetailView.resumeTooltip')"
+        @click="!pauseResumeBusy && $emit('pause-resume')"
+      >
+        <PauseCircle v-if="pauseResumeAction === 'pause'" :size="16" aria-hidden="true" />
+        <PlayCircle v-else :size="16" aria-hidden="true" />
+        {{ pauseResumeAction === 'pause'
+          ? $t('DeploymentDetailView.deploymentPause')
+          : $t('DeploymentDetailView.deploymentResume') }}
+      </BaseButton>
 
-        <!-- Pause / Resume button. One slot, two states, visible only
-                       when the lifecycle matrix permits the action right now. -->
-        <BaseButton
-          v-if="canPauseOrResume"
-          @click="!pauseResumeBusy && $emit('pause-resume')"
-          :disabled="pauseResumeBusy"
-          :title="pauseResumeAction === 'pause'
-            ? $t('DeploymentDetailView.pauseTooltip')
-            : $t('DeploymentDetailView.resumeTooltip')"
-          class="flex items-center gap-2 px-4 py-2"
-          :variant="pauseResumeAction === 'pause' ? 'primary' : 'secondary'">
-          <PauseCircle v-if="pauseResumeAction === 'pause'" :size="18" />
-          <PlayCircle v-else :size="18" />
-          <span class="font-medium">
-            {{ pauseResumeAction === 'pause'
-              ? $t('DeploymentDetailView.deploymentPause')
-              : $t('DeploymentDetailView.deploymentResume') }}
-          </span>
-        </BaseButton>
-
-        <!-- Single Delete button. The backend decides whether this
-                       triggers a destroy task or a straight soft-delete based on
-                       status. Hidden for everyone who may not operate it. -->
-        <BaseButton v-if="canOperate" @click="canDelete && $emit('delete')" :disabled="!canDelete"
-          :title="deleteDisabledReason" class="flex items-center gap-2 px-4 py-2" variant="danger">
-          <Trash2 :size="18" />
-          <span class="font-medium">{{ $t('DeploymentDetailView.deploymentDelete') }}</span>
-        </BaseButton>
-      </div>
-    </div>
-  </div>
+      <!-- Single Delete button. The backend decides whether this triggers
+           a destroy task or a straight soft-delete based on status. -->
+      <BaseButton
+        v-if="canOperate"
+        variant="danger"
+        :disabled="!canDelete"
+        :disabled-reason="deleteDisabledReason || undefined"
+        @click="canDelete && $emit('delete')"
+      >
+        <Trash2 :size="16" aria-hidden="true" />
+        {{ $t('DeploymentDetailView.deploymentDelete') }}
+      </BaseButton>
+    </template>
+  </PageHeader>
 </template>

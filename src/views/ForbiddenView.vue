@@ -24,7 +24,7 @@ const goHome = () => {
       <div class="mx-auto w-16 h-16 rounded-full bg-danger-dot/10 flex items-center justify-center mb-4">
         <ShieldAlert :size="32" class="text-danger" />
       </div>
-      <h1 class="text-2xl font-bold text-fg mb-2">
+      <h1 class="text-2xl font-semibold text-fg mb-2">
         {{ t('ForbiddenView.title') }}
       </h1>
       <p class="text-fg-muted mb-6">

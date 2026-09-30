@@ -41,7 +41,7 @@ defineEmits<{ close: []; confirm: [] }>()
               <span class="font-mono font-medium">{{ e.variable }}</span>
               <span class="text-danger mx-1">·</span>
               <span>{{ e.message }}</span>
-              <span v-if="e.location" class="text-danger ml-1 text-[10px]">({{ e.location }})</span>
+              <span v-if="e.location" class="text-danger ml-1 text-xs">({{ e.location }})</span>
             </li>
           </ul>
         </div>

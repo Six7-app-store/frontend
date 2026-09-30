@@ -58,37 +58,37 @@ const taskLogsSplit = computed(() => {
       <div class="bg-line/[.04] rounded-lg p-4 border border-subtle mb-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
-            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskType') }}</div>
+            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskType') }}</div>
             <div class="text-sm font-medium text-fg capitalize">{{ selectedTask.type }}</div>
           </div>
           <div>
-            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStatus') }}</div>
+            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskStatus') }}</div>
             <DeploymentStatusBadge :status="selectedTask.status" />
           </div>
           <div>
-            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStarted') }}</div>
+            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskStarted') }}</div>
             <div class="text-sm text-fg">{{ formatDateTime(selectedTask.started_at) }}</div>
           </div>
           <div>
-            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskFinished') }}</div>
+            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskFinished') }}</div>
             <div class="text-sm text-fg">{{ formatDateTime(selectedTask.finished_at) }}</div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-3">
           <div>
-            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskId') }}</div>
+            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskId') }}</div>
             <div class="text-xs font-mono text-fg bg-panel px-2 py-1 rounded">{{
               selectedTask.taskId
             }}</div>
           </div>
           <div>
-            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.celeryTaskId') }}</div>
+            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.celeryTaskId') }}</div>
             <div class="text-xs font-mono text-fg bg-panel px-2 py-1 rounded">{{
               selectedTask.celeryTaskId }}</div>
           </div>
           <div>
-            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskCreatedAt') }}</div>
+            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskCreatedAt') }}</div>
             <div class="text-sm text-fg">{{ formatDateTime(selectedTask.created_at) }}</div>
           </div>
         </div>
@@ -111,7 +111,7 @@ const taskLogsSplit = computed(() => {
               </div>
               <span class="font-semibold text-fg">{{ $t('DeploymentDetailView.logs') }}</span>
               <span v-if="logEntryCount !== null"
-                class="px-2 py-0.5 bg-line/[.07] text-fg text-xs font-bold rounded border border-strong">
+                class="px-2 py-0.5 bg-line/[.07] text-fg text-xs font-semibold rounded border border-strong">
                 {{ logEntryCount }} {{ $t('DeploymentDetailView.logEntries') }}
               </span>
             </div>

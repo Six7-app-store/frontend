@@ -118,7 +118,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
               <Minus :size="18" />
             </button>
             <div class="flex items-center gap-2">
-              <span class="text-3xl font-bold text-fg w-12 text-center tabular-nums">{{ groupCount }}</span>
+              <span class="text-3xl font-semibold text-fg w-12 text-center tabular-nums">{{ groupCount }}</span>
               <span class="text-sm font-semibold text-fg-muted">{{ t('deployment.assignment.teamsLabel') }}</span>
             </div>
             <button @click="increment" 
@@ -167,9 +167,9 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
               <div class="bg-panel px-4 py-3 border-b-2 border-subtle flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <UserPlus :size="20" class="text-icon" />
-                  <h3 class="font-bold text-fg">{{ t('deployment.assignment.unassigned') }}</h3>
+                  <h3 class="font-semibold text-fg">{{ t('deployment.assignment.unassigned') }}</h3>
                 </div>
-                <span class="px-2.5 py-1 bg-line/[.07] rounded-full text-xs font-bold text-fg border-2 border-subtle">
+                <span class="px-2.5 py-1 bg-line/[.07] rounded-full text-xs font-semibold text-fg border-2 border-subtle">
                   {{ unassignedStudents.length }}
                 </span>
               </div>
@@ -227,7 +227,7 @@ const handleBack = () => router.push({ name: ROUTE_NAMES.deploymentConfig })
       <template #status>
         <div class="text-center">
           <p class="text-sm text-fg-muted mb-1">{{ t('deployment.assignment.progress') }}</p>
-          <p class="text-lg font-bold text-fg-muted">
+          <p class="text-lg font-semibold text-fg-muted">
             {{ t('deployment.assignment.assignedCount', { assigned: totalStudents - unassignedStudents.length, total: totalStudents }) }}
           </p>
         </div>

@@ -3,6 +3,8 @@ import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 
 import DeploymentsListView from '@/views/DeploymentsListView.vue'
 
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
+
 // ---------------------------------------------------------
 // 1. Mocks & Setup
 // ---------------------------------------------------------
@@ -111,7 +113,7 @@ describe('DeploymentsListView.vue', () => {
     expect(mountComponent().text()).toContain('-')
   })
 
-  it('verlinkt jede Karte auf die Detailseite', () => {
+  it('verlinkt jede Zeile auf die Detailseite', () => {
     mockDeployments = [makeDeployment({ deploymentId: 'dep-42' })]
 
     const links = mountComponent().findAllComponents(RouterLinkStub)
@@ -129,7 +131,7 @@ describe('DeploymentsListView.vue', () => {
       makeDeployment({ deploymentId: 'ohne-datum', name: 'Ohne Datum', created_at: undefined })
     ]
 
-    const names = mountComponent().findAll('h3').map((h) => h.text())
+    const names = mountComponent().findAll('[data-testid="deployment-name"]').map((n) => n.text())
 
     expect(names).toEqual(['Neu', 'Alt', 'Ohne Datum'])
   })

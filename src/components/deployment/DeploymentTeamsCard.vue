@@ -7,12 +7,12 @@
  * resolve to the same account share it.
  */
 import { ref } from 'vue'
-import { User, Users } from 'lucide-vue-next'
+import { User } from 'lucide-vue-next'
 import DeploymentMemberAccess from '@/components/deployment/DeploymentMemberAccess.vue'
 import DeploymentResendAccessButton from '@/components/deployment/DeploymentResendAccessButton.vue'
 import type { EnrichedTeam } from '@/services/deployment-account-matching.service'
 import type { ResendState } from '@/composables/useResendAccess'
-import DetailSection from '@/components/ui/DetailSection.vue'
+import Card from '@/components/ui/Card.vue'
 
 defineProps<{
   /** The deployment's teams with matched accounts (``useDeploymentCredentials``); the card is hidden without any. */
@@ -36,29 +36,29 @@ const togglePasswordVisibility = (key: string | number) => {
 </script>
 
 <template>
-  <DetailSection v-if="enrichedTeams.length > 0" :icon="Users" :title="$t('DeploymentDetailView.teamsAndMembers')" :count="enrichedTeams.length">
+  <Card v-if="enrichedTeams.length > 0" :title="$t('DeploymentDetailView.teamsAndMembers')" :count="enrichedTeams.length">
 
     <div class="space-y-4">
       <div v-for="team in enrichedTeams" :key="team.teamId"
-        class="border border-subtle rounded-lg overflow-hidden">
-        <div class="bg-line/[.04] px-4 py-3 flex items-center justify-between border-b border-subtle">
+        class="overflow-hidden rounded-panel border border-subtle">
+        <div class="flex items-center justify-between border-b border-faint bg-line/[.03] px-4 py-3">
           <div class="flex items-center gap-2">
             <span class="font-semibold text-fg">{{ team.name }}</span>
             <span class="text-xs text-fg-muted">·</span>
-            <span class="text-xs text-fg-muted">
-              {{ team.members.length }}
-              {{ team.members.length === 1 ? 'member' : 'members' }}
+            <span class="text-sm text-fg-muted">
+              {{ $t('DeploymentDetailView.teamMemberCount', team.members.length) }}
             </span>
           </div>
         </div>
 
         <div v-if="team.members.length === 0" class="px-4 py-6 text-center text-sm text-fg-muted">
-          No members assigned to this team.
+          {{ $t('DeploymentDetailView.noTeamMembers') }}
         </div>
 
         <div v-else>
           <div v-for="member in team.members" :key="member.userId"
-            class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-4 py-4 border-b border-subtle last:border-b-0 hover:bg-line/[.04] transition-colors">
+            data-testid="member-row"
+            class="hover-tint flex flex-col justify-between gap-4 border-b border-faint px-4 py-3 last:border-b-0 lg:flex-row lg:items-center">
 
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <div
@@ -66,7 +66,7 @@ const togglePasswordVisibility = (key: string | number) => {
                 <User :size="16" />
               </div>
               <div class="min-w-0 pr-2">
-                <div class="font-medium text-fg truncate">{{ member.username }}</div>
+                <div data-testid="member-username" class="truncate font-semibold text-heading">{{ member.username }}</div>
                 <div class="text-xs text-fg-muted truncate">{{ member.email }}</div>
               </div>
             </div>
@@ -88,5 +88,5 @@ const togglePasswordVisibility = (key: string | number) => {
         </div>
       </div>
     </div>
-  </DetailSection>
+  </Card>
 </template>

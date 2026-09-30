@@ -51,8 +51,8 @@ const copyTitleKey = computed(() => {
     class="flex flex-wrap items-center gap-4 text-xs font-mono text-fg-muted lg:justify-end">
 
     <div v-if="showUsername"
-      class="flex items-center gap-1.5 bg-line/[.04] px-2 py-1 rounded border border-subtle">
-      <span class="text-fg-muted font-sans text-[10px] uppercase tracking-wider flex-shrink-0">User:</span>
+      class="flex items-center gap-1.5 rounded-tag border border-faint bg-line/[.04] px-2 py-0.5">
+      <span class="font-sans text-xs text-fg-muted flex-shrink-0">User:</span>
       <span>{{ account.data.username }}</span>
       <CopyButton :text="account.data.username" :copy-key="'user-' + account.key"
         :title="$t('DeploymentDetailView.copyUsername')" />
@@ -61,30 +61,31 @@ const copyTitleKey = computed(() => {
     <!-- Connection pill. ``web`` renders a link, everything else plain
                                      text — an RDP address is not something a browser can open. -->
     <div v-if="connection"
-      class="flex items-center gap-1.5 bg-line/[.04] px-2 py-1 rounded border border-subtle max-w-[280px]">
-      <span class="text-fg-muted font-sans text-[10px] uppercase tracking-wider flex-shrink-0">{{ connection.label }}:</span>
+      class="flex items-center gap-1.5 rounded-tag border border-faint bg-line/[.04] px-2 py-0.5 max-w-[280px]">
+      <span class="font-sans text-xs text-fg-muted flex-shrink-0">{{ connection.label }}:</span>
       <a v-if="connection.href" :href="connection.href" target="_blank" rel="noopener noreferrer"
-        class="text-accent-fg hover:underline truncate">{{ connection.value }}</a>
+        class="link truncate">{{ connection.value }}</a>
       <span v-else class="truncate">{{ connection.value }}</span>
       <CopyButton :text="connection.href ?? connection.value" :copy-key="'conn-' + account.key"
         :title="$t(copyTitleKey)" />
     </div>
 
     <div v-if="account.data.auth"
-      class="flex items-center gap-1.5 bg-line/[.04] px-2 py-1 rounded border border-subtle min-w-[150px] justify-between">
+      class="flex items-center gap-1.5 rounded-tag border border-faint bg-line/[.04] px-2 py-0.5 min-w-[150px] justify-between">
       <div class="truncate mr-1">
         <span
-          class="text-fg-muted font-sans text-[10px] uppercase tracking-wider mr-1">PW:</span>
+          class="font-sans text-xs text-fg-muted mr-1">PW:</span>
         <template v-if="passwordVisible">{{
           account.data.auth }}</template>
-        <span v-else class="tracking-widest text-fg-muted select-none">••••••••</span>
+        <span v-else class="text-fg-muted select-none">••••••••</span>
       </div>
 
       <div class="flex items-center gap-0.5 flex-shrink-0">
-        <button @click="$emit('toggle-password')"
-          class="text-fg-muted hover:text-fg-muted p-0.5 rounded hover:bg-line/[.12] transition-colors">
-          <component :is="passwordVisible ? EyeOff : Eye"
-            :size="12" />
+        <button type="button" @click="$emit('toggle-password')"
+          :aria-label="passwordVisible ? $t('DeploymentDetailView.hidePassword') : $t('DeploymentDetailView.showPassword')"
+          :aria-pressed="passwordVisible"
+          class="btn btn-ghost btn-icon h-[26px] w-[26px]">
+          <component :is="passwordVisible ? EyeOff : Eye" :size="14" aria-hidden="true" />
         </button>
         <CopyButton :text="account.data.auth" :copy-key="'auth-' + account.key"
           :title="$t('DeploymentDetailView.copyPassword')" />

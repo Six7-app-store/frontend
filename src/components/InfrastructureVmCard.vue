@@ -18,6 +18,7 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import type { DeploymentResource } from '@/types'
 import { formatUptime, lifecyclePillClass } from '@/composables/useVmPresentation'
 import { formatMegabytes } from '@/utils/format'
@@ -115,7 +116,7 @@ const cardBorderClass = computed(() => {
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-1">
           <span
-            class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border"
+            class="text-xs font-semibold px-2 py-0.5 rounded border"
             :class="resource.team
               ? 'bg-line/[.07] text-fg border-subtle'
               : 'bg-line/[.07] text-fg-muted border-subtle'"
@@ -123,12 +124,12 @@ const cardBorderClass = computed(() => {
             {{ resource.team || t('vm.sharedTeam') }}
           </span>
         </div>
-        <h3 class="text-base font-bold text-fg truncate" :title="resource.display_name">
+        <h3 class="text-base font-semibold text-fg truncate" :title="resource.display_name">
           {{ resource.display_name }}
         </h3>
       </div>
       <span
-        class="text-[11px] font-semibold uppercase tracking-wider px-2 py-1 rounded border whitespace-nowrap"
+        class="text-[11px] font-semibold px-2 py-1 rounded border whitespace-nowrap"
         :class="pillClass"
       >
         {{ pillText }}
@@ -197,27 +198,28 @@ const cardBorderClass = computed(() => {
 
     <!-- Footer: actions -->
     <div class="flex gap-2 mt-1 pt-2 border-t border-subtle">
-      <button
+      <BaseButton
+        variant="secondary"
+        size="sm"
+        class="flex-1"
+        :aria-expanded="isExpanded"
         @click="emit('open-details', resource.address)"
-        class="flex-1 text-xs font-semibold py-1.5 px-3 rounded border transition-colors"
-        :class="isExpanded
-          ? 'bg-line/[.12] text-fg border-strong'
-          : 'border-subtle hover:bg-line/[.04]'"
       >
         {{ isExpanded ? t('vm.actions.hideDetails') : t('vm.actions.showDetails') }}
-      </button>
-      <button
+      </BaseButton>
+      <!-- Recreating a VM is destructive: grey until hovered. Only for a VM
+           that is gone from OpenStack is it the one thing to do, so red. -->
+      <BaseButton
         v-if="canRedeploy"
-        @click="emit('redeploy', resource.address)"
+        :variant="resource.drift === 'missing' ? 'primary' : 'danger'"
+        size="sm"
+        class="flex-1"
         :disabled="redeploying"
-        class="flex-1 text-xs font-semibold py-1.5 px-3 rounded border transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-        :class="resource.drift === 'missing'
-          ? 'bg-danger-dot/10 text-danger border-danger-dot/30 hover:bg-danger-dot/10'
-          : 'bg-panel text-danger border-danger-dot/30 hover:bg-danger-dot/10'"
+        @click="emit('redeploy', resource.address)"
       >
-        <RefreshCcw :size="12" :class="redeploying ? 'animate-spin' : ''" />
+        <RefreshCcw :size="12" :class="redeploying ? 'animate-spin' : ''" aria-hidden="true" />
         {{ redeploying ? t('vm.actions.redeploying') : t('vm.actions.redeploy') }}
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

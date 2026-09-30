@@ -42,7 +42,7 @@ const { t } = useI18n()
         type="text"
         v-model="name"
         :placeholder="t('deployment.assignment.vmDefaultName', { index: index + 1 })"
-        class="field w-full text-fg placeholder-fg-muted px-3 py-2 focus:border-accent/60 font-bold text-center transition-all"
+        class="field w-full text-fg placeholder-fg-muted px-3 py-2 focus:border-accent/60 font-semibold text-center transition-all"
       />
       <div class="mt-2 flex items-center justify-center gap-2 bg-line/[.07] rounded-lg px-3 py-1.5">
         <Users :size="16" class="text-icon" />

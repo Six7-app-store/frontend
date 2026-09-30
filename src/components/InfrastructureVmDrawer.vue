@@ -92,7 +92,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
           <Server :size="18" class="text-icon" />
         </div>
         <div class="min-w-0">
-          <p class="text-[10px] uppercase tracking-wider text-fg-muted font-bold">
+          <p class="text-xs text-fg-muted font-semibold">
             {{ t('vm.drawer.title') }}
           </p>
           <h3 class="text-base font-semibold text-fg truncate" :title="detail?.display_name || address">
@@ -146,13 +146,13 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.identity') }}</h4>
             <span
               v-if="detail.team"
-              class="ml-auto text-[10px] font-bold uppercase tracking-wider bg-line/[.07] text-fg px-2 py-0.5 rounded border border-subtle"
+              class="ml-auto text-xs font-semibold bg-line/[.07] text-fg px-2 py-0.5 rounded border border-subtle"
             >
               {{ detail.team }}
             </span>
             <span
               v-else
-              class="ml-auto text-[10px] font-bold uppercase tracking-wider bg-line/[.07] text-fg-muted px-2 py-0.5 rounded border border-subtle"
+              class="ml-auto text-xs font-semibold bg-line/[.07] text-fg-muted px-2 py-0.5 rounded border border-subtle"
             >
               {{ t('vm.sharedTeam') }}
             </span>
@@ -179,7 +179,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.lifecycle') }}</h4>
             <span
               v-if="detail.lifecycle.status"
-              class="ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border"
+              class="ml-auto text-xs font-semibold px-2 py-0.5 rounded border"
               :class="pillClass"
             >
               {{ detail.lifecycle.status }}
@@ -268,7 +268,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <NetworkIcon :size="14" class="text-icon" />
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.addresses') }}</h4>
             <span
-              class="ml-auto text-[10px] font-bold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
+              class="ml-auto text-xs font-semibold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
             >
               {{ detail.addresses.length }}
             </span>
@@ -308,7 +308,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.ports') }}</h4>
             <span
               v-if="detail.ports.length > 0"
-              class="ml-auto text-[10px] font-bold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
+              class="ml-auto text-xs font-semibold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
             >
               {{ detail.ports.length }}
             </span>
@@ -329,14 +329,14 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
                   </code>
                   <span
                     v-if="portNetworkName(port)"
-                    class="text-[10px] font-semibold bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded"
+                    class="text-xs font-semibold bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded"
                     :title="port.network_id || ''"
                   >
                     {{ portNetworkName(port) }}
                   </span>
                 </div>
                 <span
-                  class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border whitespace-nowrap"
+                  class="text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap"
                   :class="port.status === 'ACTIVE'
                     ? 'bg-line/[.07] text-fg border-strong'
                     : 'bg-line/[.07] text-fg-muted border-subtle'"
@@ -371,7 +371,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.securityGroups') }}</h4>
             <span
               v-if="detail.security_groups.length > 0"
-              class="ml-auto text-[10px] font-bold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
+              class="ml-auto text-xs font-semibold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
             >
               {{ detail.security_groups.length }}
             </span>
@@ -388,10 +388,10 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
               <p class="font-semibold text-fg">{{ sg.name }}</p>
               <p v-if="sg.description" class="text-fg-muted">{{ sg.description }}</p>
               <div class="flex items-center gap-2 pt-1">
-                <span class="text-[10px] font-semibold uppercase tracking-wider bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded">
+                <span class="text-xs font-semibold bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded">
                   {{ sg.ingress_rules }} {{ t('vm.drawer.network.ingress') }}
                 </span>
-                <span class="text-[10px] font-semibold uppercase tracking-wider bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded">
+                <span class="text-xs font-semibold bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded">
                   {{ sg.egress_rules }} {{ t('vm.drawer.network.egress') }}
                 </span>
               </div>
@@ -409,7 +409,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.volumes') }}</h4>
             <span
               v-if="detail.volumes.length > 0"
-              class="ml-auto text-[10px] font-bold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
+              class="ml-auto text-xs font-semibold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
             >
               {{ detail.volumes.length }}
             </span>
@@ -429,7 +429,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
                 </p>
                 <span
                   v-if="vol.status"
-                  class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border whitespace-nowrap"
+                  class="text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap"
                   :class="vol.status === 'in-use'
                     ? 'bg-line/[.07] text-fg border-strong'
                     : 'bg-line/[.07] text-fg-muted border-subtle'"
@@ -447,7 +447,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
                   <code class="ml-1 font-mono">{{ vol.device }}</code>
                 </div>
               </div>
-              <p v-if="vol.bootable" class="text-[10px] font-semibold uppercase tracking-wider text-fg">
+              <p v-if="vol.bootable" class="text-xs font-semibold text-fg">
                 {{ t('vm.drawer.volumes.bootable') }}
               </p>
             </div>

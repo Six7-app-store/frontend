@@ -54,7 +54,7 @@ const getTextAlignmentClass = (step: number, total: number) => {
           class="flex flex-col items-center group relative" 
         >
           <div
-            class="step-circle flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-bold z-10 transition-all duration-300"
+            class="step-circle flex items-center justify-center w-8 h-8 rounded-full border-2 text-sm font-semibold z-10 transition-all duration-300"
             :class="[
               currentStep >= item.step ? 'step-reached' : '',
               // Fill the circle once the step is done.
@@ -67,8 +67,8 @@ const getTextAlignmentClass = (step: number, total: number) => {
             <span v-else>{{ item.step }}</span>
           </div>
 
-          <span 
-            class="absolute top-10 text-xs font-bold uppercase tracking-wider transition-colors duration-300 whitespace-nowrap"
+          <span
+            class="absolute top-10 text-xs font-semibold transition-colors duration-300 whitespace-nowrap"
             :class="[
               currentStep >= item.step ? 'text-success' : 'text-fg-muted',
               getTextAlignmentClass(item.step, steps.length)

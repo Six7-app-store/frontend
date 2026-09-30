@@ -33,7 +33,7 @@ const { t } = useI18n()
           </span>
           <button
             @click="$emit('remove', student.userId)"
-            class="text-danger hover:text-danger font-bold text-lg leading-none"
+            class="text-danger hover:text-danger font-semibold text-lg leading-none"
             :title="t('common.remove')"
             :data-testid="`remove-${student.userId}`"
           >

@@ -151,10 +151,10 @@ const goToDetail = (courseId: string) => {
           </button>
 
           <div class="flex items-center gap-4 mb-4">
-            <div class="bg-line/[.04] p-3 rounded-lg text-fg-muted group-hover:text-accent-fg transition-colors flex items-center justify-center w-[56px] h-[56px] flex-shrink-0 border border-subtle">
+            <div class="bg-line/[.04] p-3 rounded-lg text-fg-muted group-hover:text-heading transition-colors flex items-center justify-center w-[56px] h-[56px] flex-shrink-0 border border-subtle">
               <GraduationCap :size="32" />
             </div>
-            <h3 class="font-bold text-xl text-fg leading-tight pr-10">
+            <h3 class="font-semibold text-xl text-fg leading-tight pr-10">
               {{ course.name }}
             </h3>
           </div>

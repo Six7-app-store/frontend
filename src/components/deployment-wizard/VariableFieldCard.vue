@@ -72,7 +72,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
       <label
         :for="formKey(variable)"
         @click.prevent="focusInput(formKey(variable))"
-        class="text-base font-bold text-fg cursor-pointer hover:text-fg transition-colors flex-1"
+        class="text-base font-semibold text-fg cursor-pointer hover:text-fg transition-colors flex-1"
       >
         {{ variable.name }}
       </label>
@@ -80,7 +80,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
       <button
         v-if="variable.description || isList(variable.type)"
         @click.stop="emit('toggle-tooltip')"
-        class="text-fg-muted hover:text-fg-muted transition-colors "
+        class="text-fg-muted hover:text-fg-muted transition-colors"
         :class="tooltipOpen ? 'text-fg-muted' : ''"
         :title="t('deployment.variables.showInfo')"
       >
@@ -111,10 +111,10 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
     </div>
 
     <div class="flex flex-wrap items-center gap-2 mb-3">
-      <span class="text-[10px] font-bold uppercase tracking-wider bg-line/[.07] text-fg px-2 py-0.5 rounded border border-subtle">
+      <span class="text-xs font-semibold bg-line/[.07] text-fg px-2 py-0.5 rounded border border-subtle">
         {{ variable.type }}
       </span>
-      <span v-if="variable.required" class="text-[10px] font-bold uppercase tracking-wider bg-danger-dot/10 text-danger px-2 py-0.5 rounded border border-danger-dot/30">
+      <span v-if="variable.required" class="text-xs font-semibold bg-danger-dot/10 text-danger px-2 py-0.5 rounded border border-danger-dot/30">
         {{ t('deployment.variables.required') }}
       </span>
       <ScopeBadge :scope="effectiveScope(variable)" />
@@ -162,7 +162,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
           :key="`${variable.name}::${team.name}`"
           class="border-l-2 border-subtle pl-3 space-y-2"
         >
-          <div class="text-xs font-semibold text-fg-muted uppercase tracking-wide">
+          <div class="text-xs font-semibold text-fg-muted">
             {{ team.name }}
           </div>
           <FileDropZone
@@ -196,7 +196,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
             :key="`${variable.name}::team::${team.name}`"
             class="border-l-2 border-subtle pl-3 space-y-2"
           >
-            <div class="text-xs font-semibold text-fg-muted uppercase tracking-wide">
+            <div class="text-xs font-semibold text-fg-muted">
               {{ team.name }}
             </div>
             <div

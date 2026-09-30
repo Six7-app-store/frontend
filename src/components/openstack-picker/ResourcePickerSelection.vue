@@ -42,7 +42,7 @@ const { t } = useI18n()
              -loaded items). Shown as a grey, tooltip-capable pill. -->
         <span
           v-if="!selected[0]?.known"
-          class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-line/[.07] text-fg-muted border border-subtle"
+          class="text-xs px-1.5 py-0.5 rounded bg-line/[.07] text-fg-muted border border-subtle"
           :title="t('openstackPicker.notInList')"
         >
           {{ t('openstackPicker.externalBadge') }}
@@ -67,7 +67,7 @@ const { t } = useI18n()
         <button
           @click.stop="$emit('remove', entry.value)"
           type="button"
-          class="hover:text-accent-fg"
+          class="hover:text-heading"
         >
           <X :size="12" />
         </button>

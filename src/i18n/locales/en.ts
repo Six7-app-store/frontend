@@ -308,6 +308,14 @@ export default {
   },
 
   DeploymentsView: {
+    columns: {
+      name: "Name",
+      app: "App",
+      version: "Version",
+      status: "Status",
+      created: "Created",
+      open: "Open",
+    },
     title: "Deployments",
     subtitle: "Overview of your deployments",
     newDeployment: "New Deployment",
@@ -353,6 +361,23 @@ export default {
     studentOpenAccess: "View credentials",
   },
   DeploymentDetailView: {
+    redeployModal: {
+      title: "Recreate VM?",
+      confirm: "Redeploy",
+      text: "This VM is destroyed and recreated identically. Other VMs in this deployment stay untouched.",
+    },
+    infra: {
+      vms: "Virtual machines",
+      loadingVms: "Loading VMs…",
+      noVms: "No VMs in the current Terraform state.",
+      network: "Network",
+      security: "Security",
+    },
+    teamMemberCount: "{n} member | {n} members",
+    noTeamMembers: "No members assigned to this team.",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    deploymentInfo: "Deployment",
     redeployStarted: 'Redeploy started for {address}',
     redeployNotRedeployable: 'Only compute instances can be redeployed individually.',
     redeployNotInState: 'This resource is no longer part of the current state.',

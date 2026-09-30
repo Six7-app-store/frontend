@@ -257,16 +257,16 @@ const handleBack = () => {
       
       <div class="surface-sunken p-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
-          <h3 class="text-xl font-bold text-fg">{{ t('deployment.summary.baseConfigTitle') }}</h3>
+          <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm">1</div>
+          <h3 class="text-xl font-semibold text-fg">{{ t('deployment.summary.baseConfigTitle') }}</h3>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-panel rounded-lg p-4 border border-strong">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.deploymentNameLabel') }}</p>
-            <p class="text-lg font-bold text-fg">{{ deploymentStore.draft.name || '-' }}</p>
+            <p class="text-xs text-fg-muted mb-1 font-semibold">{{ t('deployment.summary.deploymentNameLabel') }}</p>
+            <p class="text-lg font-semibold text-fg">{{ deploymentStore.draft.name || '-' }}</p>
           </div>
           <div class="bg-panel rounded-lg p-4 border border-strong">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.appLabel') }}</p>
+            <p class="text-xs text-fg-muted mb-1 font-semibold">{{ t('deployment.summary.appLabel') }}</p>
             <div class="flex items-center gap-2">
               <img
                 v-if="selectedApp?.image"
@@ -274,16 +274,16 @@ const handleBack = () => {
                 :alt="selectedApp.name"
                 class="w-7 h-7 object-contain rounded"
               />
-              <p class="text-lg font-bold text-fg">{{ selectedApp?.name || t('deployment.summary.appNotFound') }}</p>
+              <p class="text-lg font-semibold text-fg">{{ selectedApp?.name || t('deployment.summary.appNotFound') }}</p>
             </div>
           </div>
           <div class="bg-panel rounded-lg p-4 border border-strong">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.versionLabel') }}</p>
-            <p class="text-lg font-bold text-fg">{{ version }}</p>
+            <p class="text-xs text-fg-muted mb-1 font-semibold">{{ t('deployment.summary.versionLabel') }}</p>
+            <p class="text-lg font-semibold text-fg">{{ version }}</p>
           </div>
         </div>
           <div class="mt-4 bg-panel rounded-lg p-4 border border-strong">
-            <p class="text-xs text-fg-muted mb-2 uppercase tracking-wider font-semibold">{{ t('deployment.summary.selectedStudents', { count: deploymentStore.draft.studentIds.length }) }}</p>
+            <p class="text-xs text-fg-muted mb-2 font-semibold">{{ t('deployment.summary.selectedStudents', { count: deploymentStore.draft.studentIds.length }) }}</p>
             <div class="flex flex-wrap gap-2">
               <span v-for="studentId in deploymentStore.draft.studentIds" :key="studentId" 
                 class="px-3 py-1 bg-line/[.07] text-fg rounded-full text-sm font-medium border border-strong">
@@ -295,25 +295,25 @@ const handleBack = () => {
 
       <div class="surface-sunken p-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
-          <h3 class="text-xl font-bold text-fg">{{ t('deployment.summary.teamAssignmentTitle') }}</h3>
+          <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm">2</div>
+          <h3 class="text-xl font-semibold text-fg">{{ t('deployment.summary.teamAssignmentTitle') }}</h3>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div class="bg-panel rounded-lg p-4 border border-subtle">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.teamCountLabel') }}</p>
-            <p class="text-2xl font-bold text-fg">{{ deploymentStore.draft.groupCount }}</p>
+            <p class="text-xs text-fg-muted mb-1 font-semibold">{{ t('deployment.summary.teamCountLabel') }}</p>
+            <p class="text-2xl font-semibold text-fg">{{ deploymentStore.draft.groupCount }}</p>
           </div>
           <div class="bg-panel rounded-lg p-4 border border-subtle">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.modeLabel') }}</p>
-            <p class="text-lg font-bold text-fg">{{ groupModeDisplay }}</p>
+            <p class="text-xs text-fg-muted mb-1 font-semibold">{{ t('deployment.summary.modeLabel') }}</p>
+            <p class="text-lg font-semibold text-fg">{{ groupModeDisplay }}</p>
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div v-for="(assignments, index) in deploymentStore.draft.assignments" :key="index" 
             class="bg-panel rounded-lg p-4 border-2 border-subtle hover:border-strong transition-colors">
             <div class="flex items-center justify-between mb-3">
-              <p class="font-bold text-fg">{{ deploymentStore.draft.groupNames[index] || t('deployment.assignment.vmDefaultName', { index: index + 1 }) }}</p>
-              <span class="px-2 py-1 bg-line/[.07] text-fg rounded-full text-xs font-bold">
+              <p class="font-semibold text-fg">{{ deploymentStore.draft.groupNames[index] || t('deployment.assignment.vmDefaultName', { index: index + 1 }) }}</p>
+              <span class="px-2 py-1 bg-line/[.07] text-fg rounded-full text-xs font-semibold">
                 {{ t('deployment.assignment.userCount', { count: assignments?.length || 0 }) }}
               </span>
             </div>
@@ -331,8 +331,8 @@ const handleBack = () => {
       <div class="surface-sunken p-6">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
-            <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
-            <h3 class="text-xl font-bold text-fg">{{ t('deployment.summary.variablesConfigTitle') }}</h3>
+            <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm">3</div>
+            <h3 class="text-xl font-semibold text-fg">{{ t('deployment.summary.variablesConfigTitle') }}</h3>
           </div>
           <button @click="handleCustomize"
             class="flex items-center gap-2 px-4 py-2 rounded-lg bg-line/[.07] text-fg font-semibold hover:bg-line/[.12] transition-colors border border-strong text-sm">
@@ -357,8 +357,8 @@ const handleBack = () => {
           >
             <div class="bg-warning-dot/10 px-4 py-2 border-b border-warning-dot/30 flex items-center gap-2">
               <Layers :size="18" class="text-warning" />
-              <h4 class="font-bold text-warning text-sm">{{ t('deployment.summary.uploadedFiles') }}</h4>
-              <span class="ml-auto text-xs bg-warning-dot/20 text-warning px-2 py-0.5 rounded-full font-bold">
+              <h4 class="font-semibold text-warning text-sm">{{ t('deployment.summary.uploadedFiles') }}</h4>
+              <span class="ml-auto text-xs bg-warning-dot/20 text-warning px-2 py-0.5 rounded-full font-semibold">
                 {{ fileVarSummaries.reduce((acc, v) => acc + v.chips.length, 0) }}
               </span>
             </div>
@@ -366,7 +366,7 @@ const handleBack = () => {
               <div v-for="entry in fileVarSummaries" :key="entry.name">
                 <div class="text-xs font-semibold text-fg mb-1">
                   {{ entry.name }}
-                  <span class="text-[10px] font-normal text-fg-muted ml-1">
+                  <span class="text-xs font-normal text-fg-muted ml-1">
                     ({{ t('deployment.summary.fileScope', { scope: entry.scope }) }})
                   </span>
                 </div>
@@ -383,7 +383,7 @@ const handleBack = () => {
                     <span class="text-warning">·</span>
                     <span>{{ chip.size }}</span>
                     <span v-if="entry.scope !== 'all'" class="text-warning">·</span>
-                    <span v-if="entry.scope !== 'all'" class="text-[10px] text-warning">
+                    <span v-if="entry.scope !== 'all'" class="text-xs text-warning">
                       {{ chip.slot }}
                     </span>
                   </span>

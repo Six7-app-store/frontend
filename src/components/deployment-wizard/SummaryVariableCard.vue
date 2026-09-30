@@ -23,8 +23,8 @@ const { t } = useI18n()
   <div class="bg-panel rounded-lg border-2 border-subtle overflow-hidden">
     <div class="bg-line/[.07] px-4 py-2 border-b border-subtle flex items-center gap-2">
       <component :is="icon" :size="18" class="text-icon" />
-      <h4 class="font-bold text-fg text-sm">{{ title }}</h4>
-      <span class="ml-auto text-xs bg-line/[.12] text-fg px-2 py-0.5 rounded-full font-bold">
+      <h4 class="font-semibold text-fg text-sm">{{ title }}</h4>
+      <span class="ml-auto text-xs bg-line/[.12] text-fg px-2 py-0.5 rounded-full font-semibold">
         {{ rows.length }}
       </span>
     </div>

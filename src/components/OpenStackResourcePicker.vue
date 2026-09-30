@@ -236,7 +236,7 @@ const placeholderText = computed(() => {
         <button
           @click="disableFreeText"
           type="button"
-          class="text-xs text-accent-fg hover:text-accent-fg underline"
+          class="text-xs text-accent-fg hover:text-heading underline"
         >
           {{ t('openstackPicker.showList') }}
         </button>
@@ -265,7 +265,7 @@ const placeholderText = computed(() => {
         v-if="allowFreeText"
         @click="enableFreeText"
         type="button"
-        class="mt-2 text-xs text-accent-fg hover:text-accent-fg underline"
+        class="mt-2 text-xs text-accent-fg hover:text-heading underline"
       >
         {{ t('openstackPicker.enterManuallyInstead', { mode: osMode === 'id' ? t('openstackPicker.modeUuid') : t('openstackPicker.modeName') }) }}
       </button>
@@ -296,7 +296,7 @@ const placeholderText = computed(() => {
           @click="handleRefresh"
           type="button"
           :disabled="isLoading"
-          class="flex-shrink-0 p-2 text-fg-muted hover:text-accent-fg disabled:opacity-50 transition"
+          class="flex-shrink-0 p-2 text-fg-muted hover:text-heading disabled:opacity-50 transition"
           :title="t('openstackPicker.refreshList')"
         >
           <RefreshCw :size="16" :class="isLoading ? 'animate-spin' : ''" />

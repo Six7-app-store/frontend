@@ -93,7 +93,7 @@ onMounted(() => searchInputEl.value?.focus())
           v-if="allowFreeText"
           @click="$emit('freeText')"
           type="button"
-          class="text-xs text-accent-fg hover:text-accent-fg underline inline-flex items-center gap-1"
+          class="text-xs text-accent-fg hover:text-heading underline inline-flex items-center gap-1"
         >
           <Pencil :size="12" /> {{ t('openstackPicker.enterManually') }}
         </button>
@@ -126,7 +126,7 @@ onMounted(() => searchInputEl.value?.focus())
             <span class="font-medium text-fg text-sm truncate">{{ item.name || t('openstackPicker.unnamed') }}</span>
             <span
               v-if="item.tertiary"
-              class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-line/[.07] text-fg-muted font-medium flex-shrink-0"
+              class="text-xs px-1.5 py-0.5 rounded bg-line/[.07] text-fg-muted font-medium flex-shrink-0"
             >
               {{ item.tertiary }}
             </span>
@@ -136,7 +136,7 @@ onMounted(() => searchInputEl.value?.focus())
           </div>
           <!-- Show the ID in id-mode as a secondary disambiguation hint;
                the ``name`` remains the main label. -->
-          <div v-if="osMode === 'id' && item.id" class="text-[10px] text-fg-muted font-mono truncate">
+          <div v-if="osMode === 'id' && item.id" class="text-xs text-fg-muted font-mono truncate">
             {{ item.id }}
           </div>
         </div>
@@ -154,7 +154,7 @@ onMounted(() => searchInputEl.value?.focus())
         v-if="allowFreeText"
         @click="$emit('freeText')"
         type="button"
-        class="text-fg hover:text-accent-fg inline-flex items-center gap-1"
+        class="text-fg hover:text-heading inline-flex items-center gap-1"
       >
         <Pencil :size="10" /> {{ t('openstackPicker.enterManuallyShort') }}
       </button>

@@ -37,14 +37,14 @@ const { t } = useI18n()
 <template>
   <div class="bg-panel rounded-2xl p-10 border shadow-sm max-w-7xl mx-auto w-full min-h-[700px] flex flex-col">
     <div class="flex items-center gap-3 mb-6">
-      <h1 class="text-3xl font-bold text-fg">{{ t('deployment.title') }}</h1>
+      <h1 class="text-3xl font-semibold text-fg">{{ t('deployment.title') }}</h1>
       <BarChart3 :size="32" class="text-icon" />
     </div>
 
     <DeploymentProgressBar :current-step="step" />
 
     <div v-if="title" class="text-center mt-8">
-      <h2 class="text-2xl font-bold text-fg">{{ title }}</h2>
+      <h2 class="text-2xl font-semibold text-fg">{{ title }}</h2>
       <p v-if="subtitle" class="text-fg-muted mt-2">{{ subtitle }}</p>
     </div>
 

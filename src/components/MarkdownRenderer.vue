@@ -120,7 +120,7 @@ const onToggle = () => {
     <button
       v-if="showToggle"
       type="button"
-      class="mt-1 text-xs text-accent-fg hover:underline "
+      class="mt-1 text-xs text-accent-fg hover:underline"
       @click.stop="onToggle"
     >
       {{ expanded ? t('markdownRenderer.less') : t('markdownRenderer.more') }}

@@ -314,8 +314,8 @@ const toasts = () => useToastStore(pinia).toasts.map(({ type, message }) => ({ t
 
 const memberRow = (wrapper: VueWrapper, username: string) =>
   wrapper
-    .findAll('div.flex.flex-col.lg\\:flex-row')
-    .find((row) => row.find('.font-medium.text-fg.truncate').text() === username)!
+    .findAll('[data-testid="member-row"]')
+    .find((row) => row.find('[data-testid="member-username"]').text() === username)!
 
 enableAutoUnmount(afterEach)
 
@@ -431,18 +431,18 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     const text = wrapper.text()
 
     expect(wrapper.find('h1').text()).toBe('Data Lab')
-    expect(text).toContain(t('DeploymentDetailView.detailsSubtitle'))
     expect(text).toContain(t('DeploymentsView.deploymentSuccessful'))
 
-    expect(text).toContain('Deployment Info')
+    expect(text).toContain(t('DeploymentDetailView.deploymentInfo'))
     expect(text).toContain('v1.2.3')
     expect(text).toContain('08.06.2026, 12:00:00')
     expect(text).toContain('Notebook Stack')
     expect(wrapper.find('strong').text()).toBe('deployment')
     expect(wrapper.find('a[href="https://git.example/app.git"]').exists()).toBe(true)
-    expect(text).toContain('OW')
+    // The initials avatar is gone in v2; the owner is named by username and e-mail.
     expect(text).toContain('owner@example.com')
-    expect(text).toContain('teacher')
+    // The role is shown with its translated label.
+    expect(text).toContain('Lehrender')
   })
 
   it('zeigt Platzhalter ohne App-Beschreibung, ohne App und ohne User', async () => {
@@ -464,7 +464,7 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
 
   it('zeigt Gruppen mit Drill-down und Fallback-Namen', async () => {
     const wrapper = await mountLoaded()
-    const groupCards = wrapper.findAll('div.cursor-pointer').filter((c) => c.text().includes('Studenten') || c.text().includes('Student'))
+    const groupCards = wrapper.findAll('[data-testid="group-card"]')
 
     expect(groupCards.map((c) => c.text())).toEqual([
       '1Group A2 Studenten',
@@ -485,8 +485,7 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
 
   it('zeigt bereinigte Deployment-Variablen', async () => {
     const wrapper = await mountLoaded()
-    const cards = wrapper.findAll('div.rounded-lg.p-4.border.border-subtle')
-      .filter((c) => c.find('.font-mono').exists())
+    const cards = wrapper.findAll('[data-testid="variable-card"]')
       .map((c) => c.text())
 
     expect(cards).toEqual(['imageubuntu:22.04', 'flavorm1.small', 'empty-'])
@@ -535,8 +534,8 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     expect(memberRow(wrapper, 'annabelle').text()).not.toContain('SSH:')
     expect(memberRow(wrapper, 'annabelle').text()).not.toContain('PW:')
 
-    expect(wrapper.text()).toContain('2 members')
-    expect(wrapper.text()).toContain('4 members')
+    expect(wrapper.text()).toContain('2 Mitglieder')
+    expect(wrapper.text()).toContain('4 Mitglieder')
   })
 
   it('schaltet die Passwort-Sichtbarkeit pro Account um', async () => {
@@ -626,14 +625,14 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     h.deploymentApi.listResources.mockRejectedValue(err)
     const wrapper = await mountLoaded()
 
-    expect(wrapper.find('.text-danger.border-danger-dot\\/30 p').text()).toBe(expected)
+    expect(wrapper.find('[data-testid="resources-error"]').text()).toBe(expected)
   })
 
   it('leert die Ressourcen bei 404 ohne Fehlermeldung', async () => {
     h.deploymentApi.listResources.mockRejectedValue(httpError(404, 'gone'))
     const wrapper = await mountLoaded()
 
-    expect(wrapper.find('.text-danger.border-danger-dot\\/30').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="resources-error"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Keine VMs im aktuellen Terraform-State.')
   })
 
@@ -658,15 +657,15 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
 
 describe('DeploymentDetailView — Tasks & Logs', () => {
   const taskRows = (wrapper: VueWrapper) =>
-    wrapper.findAll('div.cursor-pointer').filter((row) => row.text().includes('Created:'))
+    wrapper.findAll('[data-testid="task-row"]')
 
   it('listet die Task-Historie neueste zuerst', async () => {
     const wrapper = await mountLoaded()
 
     expect(wrapper.text()).toMatch(/Tasks & Logs\s*2/)
     expect(taskRows(wrapper).map((r) => r.text())).toEqual([
-      'deployerfolgreich Created: 08.06.2026, 12:09:00',
-      'deployfehlgeschlagen Created: 01.06.2026, 08:00:00',
+      'deployerfolgreichErstellt am: 08.06.2026, 12:09:00',
+      'deployfehlgeschlagenErstellt am: 01.06.2026, 08:00:00',
     ])
   })
 
@@ -900,9 +899,10 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
 
     const del = buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))!
     expect(del.attributes('disabled') === undefined).toBe(expected.deleteEnabled)
+    // The reason only accompanies a disabled button.
     expect(del.attributes('title')).toBe(
       expected.deleteEnabled
-        ? ''
+        ? undefined
         : 'Delete available when status is success, failed, cancelled, paused, pause_failed, resume_failed',
     )
 
@@ -1031,7 +1031,7 @@ describe('DeploymentDetailView — Redeploy', () => {
     await buttonWithText(wrapper, de.vm.actions.redeploy)!.trigger('click')
     await nextTick()
     expect(wrapper.text()).toContain('VM neu erstellen?')
-    expect(wrapper.find('.fixed .font-mono').text()).toBe(ADDRESS_VM)
+    expect(wrapper.find('[data-testid="redeploy-address"]').text()).toBe(ADDRESS_VM)
 
     const confirm = wrapper.findAll('.fixed button').find((b) => b.text() === 'Redeploy')!
     await confirm.trigger('click')
@@ -1149,7 +1149,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
   }
 
   const stepLabels = (wrapper: VueWrapper) =>
-    wrapper.findAll('span.text-\\[10px\\].uppercase.whitespace-nowrap').map((s) => s.text())
+    wrapper.findAll('[data-testid="phase-label"]').map((s) => s.text())
 
   it('startet den Stream für einen laufenden Task und seedet Fortschritt aus der DB', async () => {
     withRunning(runningTask())

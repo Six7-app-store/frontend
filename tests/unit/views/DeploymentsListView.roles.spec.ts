@@ -48,11 +48,13 @@ vi.mock('lucide-vue-next', () => {
     BarChart3: icon, Plus: icon, Inbox: icon,
     GitBranch: icon, Box: icon, Clock: icon, ArrowRight: icon,
     Loader2: icon, AlertCircle: icon, CheckCircle: icon, Flame: icon,
-    PauseCircle: icon, StopCircle: icon, XCircle: icon,
+    PauseCircle: icon, StopCircle: icon, XCircle: icon, ChevronRight: icon,
   }
 })
 
 import DeploymentsListView from '@/views/DeploymentsListView.vue'
+
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 
 const deployment = (status: string | null) => ({
   deploymentId: 'd1',

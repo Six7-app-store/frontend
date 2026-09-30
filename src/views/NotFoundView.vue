@@ -23,7 +23,7 @@ const goHome = () => {
       <div class="mx-auto w-16 h-16 rounded-full bg-line/[.07] flex items-center justify-center mb-4">
         <Compass :size="32" class="text-icon" />
       </div>
-      <h1 class="text-2xl font-bold text-fg mb-2">
+      <h1 class="text-2xl font-semibold text-fg mb-2">
         {{ t('NotFoundView.title') }}
       </h1>
       <p class="text-fg-muted mb-6">
