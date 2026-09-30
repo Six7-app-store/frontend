@@ -74,13 +74,21 @@ kein Push, `.claude/` nicht anfassen.
   - Sichtprüfung mit gemockten Deployments (Mock-Datei im Scratchpad, Pfad-Regex, Port 8000).
   - Stand: 110 Dateien / 1082 Tests grün, Coverage 92,0/87,5/75,8/92,0, eslint leer, keine Hex-Treffer.
 
+- f2) Commit „Bring courses and approvals to the v2 design“ (`git log -1`): Kursliste als `DataTable` (`max-w-narrow`,
+  Mitglieder, „…“-Menü mit Löschen + Dialog), Kursdetail mit Titel + Stift-Button, Mitglieder-`DataTable` (Avatar, E-Mail,
+  Rolle als Text wie Vorlage, Entfernen grau→rot), Hinweis im Hinzufügen-Dialog als `AlertBox`. Freigaben: Filter
+  „Nur mit Einreichungen“ + `ToggleSwitch` rechts, Akkordeon in einem Panel mit Trennlinien, Leerzustand im Panel mit Link,
+  Aktionen als `BaseButton` (Freigeben primär, Ablehnen/Widerrufen grau→rot). **Abweichung:** Freigaben bleiben ein Akkordeon
+  pro App statt einer flachen Tabelle, weil die Freigaben pro App erst beim Aufklappen geladen werden (Logik unverändert).
+  Stand: 110 Dateien / 1082 Tests grün, Coverage 91,9/87,5/75,8/91,9.
+
 ## Offen (Reihenfolge)
-f Rest (Wizard, Kurse, Freigaben, Hilfe, Profil/OpenStack, LTI-Formulare, 403/404, Modals/Toast) · g Aufräumen · Abschluss
+f Rest (Wizard, Hilfe, Profil/OpenStack, LTI-Formulare, 403/404, Modals/Toast) · g Aufräumen · Abschluss
 (alle Harness-Checks, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo, Schlussbericht laut Plan)
 
 ## Nächster Schritt (als Erstes)
 Etappe f, Rest: Wizard (`NewDeployment*View`, `WizardStepLayout`, Stepper, Drag-and-Drop, „Zurücksetzen“ mit Bestätigung),
-`CoursesView`/`CourseDetailView` (Vorlagen `V2LKurse`, `V2LKursDetail`), `AdminAppsView` (`V2LFreigaben`), `HelpView`
+`HelpView`
 (`V2LHilfe`: Lesespalte 720 + PageToc), Profil/OpenStack (`max-w-detail`), LTI-Formulare auf `BaseSelect`/`FormField`,
 Forbidden/NotFound als EmptyState, Toast/Modals (inkl. `AppEditModal`: „Logo entfernen“ mit Bestätigung).
 

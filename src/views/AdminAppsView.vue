@@ -131,20 +131,15 @@ onMounted(loadAll)
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="max-w-page">
 
     <PageHeader :title="$t('AdminAppsView.title')" :subtitle="$t('AdminAppsView.subtitle')">
       <template #actions>
         <!-- Filter toggle as the page action (page-specific, so it's a slot
              rather than hard-wired). -->
-        <div class="flex items-center gap-2 text-sm">
-          <span class="text-fg-muted">{{ $t('AdminAppsView.filterLabel') }}</span>
-          <ToggleSwitch
-            v-model="onlyWithSubmissions"
-            size="sm"
-            :label="$t('AdminAppsView.filterOnlySubmissions')"
-          />
-          <span class="text-fg font-medium">{{ $t('AdminAppsView.filterOnlySubmissions') }}</span>
+        <div class="flex items-center gap-3 text-base">
+          <span class="text-fg-body" aria-hidden="true">{{ $t('AdminAppsView.filterOnlySubmissions') }}</span>
+          <ToggleSwitch v-model="onlyWithSubmissions" :label="$t('AdminAppsView.filterOnlySubmissions')" />
         </div>
       </template>
     </PageHeader>
@@ -163,26 +158,21 @@ onMounted(loadAll)
            (apps.length > 0 but sortedApps.length === 0). -->
       <div
         v-if="sortedApps.length === 0"
-        class="flex flex-col items-center justify-center py-16 px-6 text-center bg-line/[.04] border border-dashed border-subtle rounded-xl"
+        class="surface-panel flex items-start gap-4 px-panel py-8"
       >
-        <div class="w-14 h-14 rounded-full bg-panel border border-subtle flex items-center justify-center mb-4">
-          <Inbox :size="28" class="text-icon" />
+        <Inbox :size="18" class="mt-0.5 shrink-0 text-icon" aria-hidden="true" />
+        <div class="flex flex-col gap-1">
+          <h2 class="text-md font-semibold text-heading">{{ $t('AdminAppsView.emptyNoSubmissionsTitle') }}</h2>
+          <p class="text-base text-fg-body">
+            {{ $t('AdminAppsView.emptyNoSubmissionsDesc') }}
+            <button type="button" class="link" @click="onlyWithSubmissions = false">
+              {{ $t('AdminAppsView.emptyShowAll') }}
+            </button>
+          </p>
         </div>
-        <h3 class="text-base font-semibold text-fg mb-1">
-          {{ $t('AdminAppsView.emptyNoSubmissionsTitle') }}
-        </h3>
-        <p class="text-sm text-fg-muted max-w-sm">
-          {{ $t('AdminAppsView.emptyNoSubmissionsDesc') }}
-        </p>
-        <button
-          @click="onlyWithSubmissions = false"
-          class="mt-5 text-sm font-medium text-accent-fg hover:text-heading underline-offset-2 hover:underline"
-        >
-          {{ $t('AdminAppsView.emptyShowAll') }}
-        </button>
       </div>
 
-      <div v-else class="space-y-2">
+      <div v-else class="surface-panel divide-y divide-faint overflow-hidden">
       <ApprovalAccordionItem
         v-for="app in sortedApps"
         :key="app.appId"
@@ -213,7 +203,7 @@ onMounted(loadAll)
       @confirm="handleReject"
     >
       <p class="text-sm text-fg-muted">
-        <span class="font-mono bg-line/[.07] px-1.5 py-0.5 rounded text-xs">{{ rejectTarget?.versionTag }}</span>
+        <span class="code-chip">{{ rejectTarget?.versionTag }}</span>
         &nbsp;—&nbsp;{{ rejectTarget?.appName }}
       </p>
     </ReasonModal>
@@ -231,7 +221,7 @@ onMounted(loadAll)
       @confirm="handleRevoke"
     >
       <p class="text-sm text-fg-muted">
-        <span class="font-mono bg-line/[.07] px-1.5 py-0.5 rounded text-xs">{{ revokeTarget?.versionTag }}</span>
+        <span class="code-chip">{{ revokeTarget?.versionTag }}</span>
       </p>
     </ReasonModal>
 

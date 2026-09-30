@@ -116,6 +116,8 @@ export default {
   },
 
   CoursesView: {
+    columns: { course: "Kurs", members: "Mitglieder", actions: "Aktionen" },
+    actionsFor: "Aktionen für {name}",
     title: "Kurse",
     subtitle: "Verwalte deine Kurse und Teilnehmer",
     newCourse: "Neuer Kurs",
@@ -152,6 +154,7 @@ export default {
   },
 
   CourseDetailView: {
+    columns: { name: "Name", email: "E-Mail", role: "Rolle", actions: "Aktionen" },
     back: "Zurück zur Kursübersicht",
     loading: "Lade Kurs...",
     editNameTitle: "Kursnamen bearbeiten",

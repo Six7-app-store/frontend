@@ -8,6 +8,8 @@ import { ChevronDown, ChevronRight, Check, X, RotateCcw, ExternalLink } from 'lu
 import { ROUTE_NAMES } from '@/router/route-names'
 import Spinner from '@/components/ui/Spinner.vue'
 import AppVersionStatusBadge from '@/components/app/AppVersionStatusBadge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import StatusBadge from '@/components/ui/StatusBadge.vue'
 import { formatDate } from '@/utils/format'
 import type { App, AppVersionApproval } from '@/types'
 
@@ -33,54 +35,49 @@ const busy = (versionTag: string) => props.actingOn === `${props.app.appId}:${ve
 </script>
 
 <template>
-  <div class="border border-subtle rounded-xl overflow-hidden">
+  <div>
     <!-- App row (header) -->
     <button
-      class="w-full flex items-center gap-4 px-5 py-4 bg-panel hover:bg-line/[.04] transition-colors text-left"
+      type="button"
+      class="hover-tint flex w-full items-center gap-4 px-panel py-4 text-left"
+      :aria-expanded="expanded"
       @click="$emit('toggle')"
     >
       <component
         :is="expanded ? ChevronDown : ChevronRight"
         :size="18"
-        class="text-fg-muted flex-shrink-0"
+        class="shrink-0 text-icon"
+        aria-hidden="true"
       />
 
       <!-- App name -->
-      <span class="font-semibold text-fg flex-grow">{{ app.name }}</span>
+      <span class="flex-grow font-semibold text-heading">{{ app.name }}</span>
 
       <!-- Link to app detail -->
       <RouterLink
         :to="{ name: ROUTE_NAMES.appsDetail, params: { id: app.appId } }"
-        class="text-fg-muted hover:text-heading transition-colors p-1 rounded"
+        class="btn btn-ghost btn-icon"
         :title="$t('AdminAppsView.goToApp')"
+        :aria-label="$t('AdminAppsView.goToApp')"
         @click.stop
       >
-        <ExternalLink :size="15" />
+        <ExternalLink :size="15" aria-hidden="true" />
       </RouterLink>
 
       <!-- Pending badge -->
-      <span
-        v-if="pendingCount && !app.is_private"
-        class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-warning-dot/10 text-warning"
-      >
+      <StatusBadge v-if="pendingCount && !app.is_private" tone="warning">
         {{ pendingCount }} {{ $t('AdminAppsView.pendingLabel') }}
-      </span>
-      <span
-        v-else-if="app.is_private"
-        class="text-xs text-fg-muted"
-      >
+      </StatusBadge>
+      <span v-else-if="app.is_private" class="text-sm text-fg-muted">
         {{ $t('AdminAppsView.privateLabel') }}
       </span>
-      <span
-        v-else
-        class="text-xs text-fg-muted"
-      >
+      <span v-else class="text-sm text-fg-muted">
         {{ $t('AdminAppsView.noPendingLabel') }}
       </span>
     </button>
 
     <!-- Expanded: versions -->
-    <div v-if="expanded" class="border-t border-subtle bg-line/[.04]">
+    <div v-if="expanded" class="border-t border-faint bg-line/[.02]">
 
       <!-- Private app: no pending submissions shown -->
       <div
@@ -104,26 +101,24 @@ const busy = (versionTag: string) => props.actingOn === `${props.app.appId}:${ve
       </div>
 
       <!-- Version table -->
-      <div v-else class="px-4 pb-3">
-      <table class="w-full text-sm">
-        <thead class="border-b border-subtle">
+      <div v-else class="px-panel pb-3">
+      <table class="w-full text-base">
+        <thead>
           <tr>
-            <th class="text-left py-2 px-2 text-xs font-semibold text-fg-muted">{{ $t('AdminAppsView.colVersion') }}</th>
-            <th class="text-left py-2 px-4 text-xs font-semibold text-fg-muted">{{ $t('AdminAppsView.colStatus') }}</th>
-            <th class="text-left py-2 px-4 text-xs font-semibold text-fg-muted">{{ $t('AdminAppsView.colDate') }}</th>
-            <th class="text-right py-2 px-2 text-xs font-semibold text-fg-muted">{{ $t('AdminAppsView.colActions') }}</th>
+            <th class="px-2 pb-2 pt-3 text-left text-xs font-normal text-fg-muted">{{ $t('AdminAppsView.colVersion') }}</th>
+            <th class="px-4 pb-2 pt-3 text-left text-xs font-normal text-fg-muted">{{ $t('AdminAppsView.colStatus') }}</th>
+            <th class="px-4 pb-2 pt-3 text-left text-xs font-normal text-fg-muted">{{ $t('AdminAppsView.colDate') }}</th>
+            <th class="px-2 pb-2 pt-3 text-right text-xs font-normal text-fg-muted">{{ $t('AdminAppsView.colActions') }}</th>
           </tr>
         </thead>
-        <tbody class="divide-y">
+        <tbody>
           <tr
             v-for="approval in (approvals ?? [])"
             :key="approval.approvalId"
-            class="bg-panel hover:bg-line/[.04] transition-colors"
+            class="border-t border-faint"
           >
-            <td class="py-3 px-2">
-              <span class="font-mono text-fg bg-line/[.07] px-2 py-0.5 rounded text-xs">
-                {{ approval.version_tag }}
-              </span>
+            <td class="px-2 py-3">
+              <span class="font-mono text-heading">{{ approval.version_tag }}</span>
             </td>
             <td class="py-3 px-4">
               <div class="space-y-1.5">
@@ -138,41 +133,42 @@ const busy = (versionTag: string) => props.actingOn === `${props.app.appId}:${ve
                 </div>
               </div>
             </td>
-            <td class="py-3 px-4 text-fg-muted text-xs">
+            <td class="px-4 py-3 tabular-nums text-fg-muted">
               {{ formatDate(approval.created_at) }}
             </td>
             <td class="py-3 px-2">
               <div class="flex justify-end gap-2">
-                <!-- Pending or rejected: approve -->
-                <button
+                <!-- Approving is the main action of the page; rejecting and
+                     revoking are grey until hovered and ask for a reason. -->
+                <BaseButton
                   v-if="approval.status === 'pending' || approval.status === 'rejected'"
+                  size="sm"
+                  :disabled="busy(approval.version_tag)"
                   @click="$emit('approve', approval.version_tag)"
-                  :disabled="busy(approval.version_tag)"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-success-dot/10 text-success border border-success-dot/30 text-xs font-medium hover:bg-success-dot/10 transition-colors disabled:opacity-50"
                 >
-                  <Check :size="13" />
+                  <Check :size="13" aria-hidden="true" />
                   {{ $t('AdminAppsView.approveBtn') }}
-                </button>
-                <!-- Pending: reject -->
-                <button
+                </BaseButton>
+                <BaseButton
                   v-if="approval.status === 'pending'"
+                  variant="danger"
+                  size="sm"
+                  :disabled="busy(approval.version_tag)"
                   @click="$emit('reject', approval.version_tag)"
-                  :disabled="busy(approval.version_tag)"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-danger-dot/10 text-danger border border-danger-dot/30 text-xs font-medium hover:bg-danger-dot/10 transition-colors disabled:opacity-50"
                 >
-                  <X :size="13" />
+                  <X :size="13" aria-hidden="true" />
                   {{ $t('AdminAppsView.rejectBtn') }}
-                </button>
-                <!-- Approved: revoke -->
-                <button
+                </BaseButton>
+                <BaseButton
                   v-if="approval.status === 'approved'"
-                  @click="$emit('revoke', approval.version_tag)"
+                  variant="danger"
+                  size="sm"
                   :disabled="busy(approval.version_tag)"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-line/[.07] text-fg-muted border border-subtle text-xs font-medium hover:bg-line/[.12] transition-colors disabled:opacity-50"
+                  @click="$emit('revoke', approval.version_tag)"
                 >
-                  <RotateCcw :size="13" />
+                  <RotateCcw :size="13" aria-hidden="true" />
                   {{ $t('AdminAppsView.revokeBtn') }}
-                </button>
+                </BaseButton>
               </div>
             </td>
           </tr>

@@ -2,17 +2,18 @@
 import { ROUTE_NAMES } from '@/router/route-names'
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { GraduationCap, UserMinus, UserPlus, Search, X, Loader2, Edit2, Check, X as CloseIcon, Info } from 'lucide-vue-next'
+import { UserMinus, UserPlus, Search, X, Loader2, Pencil, Check, X as CloseIcon } from 'lucide-vue-next'
 import { useCourseStore } from '@/stores/course.store'
 import { useToast } from '@/composables/useToast'
 import { useUserSearch } from '@/composables/useUserSearch'
 import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
-import { roleBadgeTone, roleLabelKey } from '@/i18n/role-labels'
-import { badgeToneClasses } from '@/components/ui/badge-tones'
+import { roleLabelKey } from '@/i18n/role-labels'
 import { useI18n } from 'vue-i18n'
+import AlertBox from '@/components/ui/AlertBox.vue'
 import Card from '@/components/ui/Card.vue'
+import DataTable, { type DataTableColumn } from '@/components/ui/DataTable.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import Modal from '@/components/ui/Modal.vue'
@@ -203,108 +204,104 @@ const roleLabel = (role: string | undefined) => {
   return t(roleLabelKey(role))
 }
 
-// Colours come from the central role mapping (``roleBadgeTone``), the pill
-// keeps its compact shape here.
-const roleClass = (role: string | undefined) => badgeToneClasses(roleBadgeTone(role))
+// Members as in the design: the role is plain text, removing sits at the end of the row.
+const memberColumns = computed<DataTableColumn[]>(() => [
+  { id: 'name', label: t('CourseDetailView.columns.name') },
+  { id: 'email', label: t('CourseDetailView.columns.email') },
+  { id: 'role', label: t('CourseDetailView.columns.role'), class: 'w-[140px]' },
+  ...(isStaff.value
+    ? [{ id: 'actions', label: t('CourseDetailView.columns.actions'), class: 'w-16', align: 'right' as const, hideLabel: true }]
+    : []),
+])
 </script>
 
 <template>
-  <div class="p-6 max-w-5xl mx-auto">
-    <div v-if="courseStore.isLoading && !courseStore.currentCourse" class="text-center py-16 text-fg-muted">
+  <div class="max-w-narrow">
+    <div v-if="courseStore.isLoading && !courseStore.currentCourse" class="py-16 text-center text-fg-muted">
       {{ $t('CourseDetailView.loading') }}
     </div>
 
-    <div v-else-if="courseStore.currentCourse" class="space-y-6">
-      <div class="flex items-start gap-5 border-b border-subtle pb-6">
-        <div class="w-14 h-14 bg-line/[.07] rounded-xl flex items-center justify-center flex-shrink-0">
-          <GraduationCap :size="28" class="text-icon" />
-        </div>
-        <div class="flex-grow">
-          <div v-if="!isEditingName" class="flex items-center gap-3">
-            <h1 class="text-3xl font-semibold text-fg">{{ courseStore.currentCourse.name }}</h1>
-            <button
-                v-if="isStaff"
-                @click="startEditName"
-                class="p-1 hover:bg-line/[.07] rounded text-fg-muted hover:text-fg-muted transition"
-                :title="$t('CourseDetailView.editNameTitle')"
-            >
-              <Edit2 :size="20" />
-            </button>
-          </div>
-
-          <div v-else class="flex items-center gap-2 max-w-md">
-            <BaseInput v-model="editNameValue" @keyup.enter="saveName" auto-focus />
-            <BaseButton @click="saveName" class="!p-2" :title="$t('CourseDetailView.save')">
-              <Check :size="18" />
-            </BaseButton>
-            <BaseButton variant="ghost" @click="cancelEditName" class="!p-2" :title="$t('CourseDetailView.cancel')">
-              <CloseIcon :size="18" />
-            </BaseButton>
-          </div>
-
-          <p class="text-fg-muted text-sm mt-1">
-            {{ memberCount === 1 ? $t('CourseDetailView.memberSingular', { count: memberCount }) : $t('CourseDetailView.memberPlural', { count: memberCount }) }}
-          </p>
-        </div>
-      </div>
-
-      <Card>
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-fg">{{ $t('CourseDetailView.membersTitle') }}</h2>
+    <template v-else-if="courseStore.currentCourse">
+      <div class="mb-section flex flex-col gap-1.5">
+        <div v-if="!isEditingName" class="flex items-center gap-2">
+          <h1 class="text-5xl font-semibold tracking-[-0.01em] text-heading">{{ courseStore.currentCourse.name }}</h1>
           <BaseButton
-              v-if="isStaff"
-              @click="openAddModal"
-              class="flex items-center gap-2"
+            v-if="isStaff"
+            variant="ghost"
+            icon
+            :label="$t('CourseDetailView.editNameTitle')"
+            :title="$t('CourseDetailView.editNameTitle')"
+            @click="startEditName"
           >
-            <UserPlus :size="16" />
-            {{ $t('CourseDetailView.addMemberBtn') }}
+            <Pencil :size="15" aria-hidden="true" />
           </BaseButton>
         </div>
 
-        <div
-            v-if="courseStore.currentMembers.length === 0"
-            class="py-10 text-center text-fg-muted text-sm"
-        >
-          {{ $t('CourseDetailView.noMembers') }}
+        <div v-else class="flex max-w-md items-center gap-2">
+          <BaseInput v-model="editNameValue" :aria-label="$t('CourseDetailView.editNameTitle')" @keyup.enter="saveName" auto-focus />
+          <BaseButton icon :label="$t('CourseDetailView.save')" :title="$t('CourseDetailView.save')" @click="saveName">
+            <Check :size="16" aria-hidden="true" />
+          </BaseButton>
+          <BaseButton variant="ghost" icon :label="$t('CourseDetailView.cancel')" :title="$t('CourseDetailView.cancel')" @click="cancelEditName">
+            <CloseIcon :size="16" aria-hidden="true" />
+          </BaseButton>
         </div>
 
-        <ul v-else class="divide-y">
-          <li
-              v-for="user in courseStore.currentMembers"
-              :key="user.userId"
-              class="flex items-center justify-between py-3"
-          >
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-full bg-line/[.07] flex items-center justify-center text-fg-muted text-sm font-semibold">
-                {{ (user.username || '?').charAt(0).toUpperCase() }}
-              </div>
-              <div>
-                <div class="font-medium text-fg">{{ user.username }}</div>
-                <div class="text-xs text-fg-muted">{{ user.email }}</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-3">
-              <span
-                  class="text-xs px-2 py-0.5 rounded font-medium"
-                  :class="roleClass(user.role)"
-              >
-                {{ roleLabel(user.role) }}
+        <p class="text-base text-fg-muted">
+          {{ memberCount === 1 ? $t('CourseDetailView.memberSingular', { count: memberCount }) : $t('CourseDetailView.memberPlural', { count: memberCount }) }}
+        </p>
+      </div>
+
+      <Card :title="$t('CourseDetailView.membersTitle')" flush>
+        <template v-if="isStaff" #actions>
+          <BaseButton @click="openAddModal">
+            <UserPlus :size="16" aria-hidden="true" />
+            {{ $t('CourseDetailView.addMemberBtn') }}
+          </BaseButton>
+        </template>
+
+        <p v-if="courseStore.currentMembers.length === 0" class="px-panel py-10 text-center text-sm text-fg-muted">
+          {{ $t('CourseDetailView.noMembers') }}
+        </p>
+
+        <DataTable
+          v-else
+          :columns="memberColumns"
+          :rows="courseStore.currentMembers"
+          :row-key="(u: User) => u.userId"
+          :caption="$t('CourseDetailView.membersTitle')"
+        >
+          <template #cell-name="{ row }">
+            <span class="flex items-center gap-3">
+              <span class="avatar flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full text-xs font-semibold" aria-hidden="true">
+                {{ (row.username || '?').charAt(0).toUpperCase() }}
               </span>
-              <button
-                  v-if="isStaff"
-                  @click="requestRemoveMember(user)"
-                  :disabled="removingId === user.userId"
-                  class="p-2 hover:bg-danger-dot/10 rounded-lg transition disabled:opacity-50"
-                  :title="$t('CourseDetailView.removeMemberTitle')"
-              >
-                <Loader2 v-if="removingId === user.userId" :size="16" class="animate-spin text-danger" />
-                <UserMinus v-else :size="16" class="text-danger" />
-              </button>
-            </div>
-          </li>
-        </ul>
+              <span class="truncate text-heading">{{ row.username }}</span>
+            </span>
+          </template>
+          <template #cell-email="{ row }">
+            <span class="text-fg-muted">{{ row.email }}</span>
+          </template>
+          <template #cell-role="{ row }">
+            <span data-testid="member-role">{{ roleLabel(row.role) }}</span>
+          </template>
+          <template #cell-actions="{ row }">
+            <!-- Removing is grey until hovered and always asks first. -->
+            <BaseButton
+              variant="danger"
+              icon
+              :label="$t('CourseDetailView.removeMemberTitle')"
+              :title="$t('CourseDetailView.removeMemberTitle')"
+              :disabled="removingId === row.userId"
+              @click="requestRemoveMember(row)"
+            >
+              <Loader2 v-if="removingId === row.userId" :size="16" class="animate-spin" aria-hidden="true" />
+              <UserMinus v-else :size="16" aria-hidden="true" />
+            </BaseButton>
+          </template>
+        </DataTable>
       </Card>
-    </div>
+    </template>
 
     <Modal :show="showAddModal" @close="closeAddModal">
       <template #header>
@@ -314,10 +311,9 @@ const roleClass = (role: string | undefined) => badgeToneClasses(roleBadgeTone(r
       <template #body>
         <div class="space-y-5">
 
-          <div class="bg-line/[.04] text-fg p-3.5 rounded-lg text-sm flex gap-3 items-start border border-subtle">
-            <Info :size="18" class="mt-0.5 flex-shrink-0 text-icon" />
+          <AlertBox tone="info">
             <p v-html="$t('CourseDetailView.addModal.info')"></p>
-          </div>
+          </AlertBox>
 
           <div class="relative">
             <Search :size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-icon" />

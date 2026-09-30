@@ -115,6 +115,8 @@ export default {
   },
 
   CoursesView: {
+    columns: { course: "Course", members: "Members", actions: "Actions" },
+    actionsFor: "Actions for {name}",
     title: "Courses",
     subtitle: "Manage your courses and participants",
     newCourse: "New Course",
@@ -151,6 +153,7 @@ export default {
   },
 
   CourseDetailView: {
+    columns: { name: "Name", email: "E-mail", role: "Role", actions: "Actions" },
     back: "Back to course overview",
     loading: "Loading course...",
     editNameTitle: "Edit course name",
