@@ -46,7 +46,7 @@ onMounted(() => searchInputEl.value?.focus())
         v-model="searchQuery"
         type="text"
         :placeholder="t('openstackPicker.searchPlaceholder', { type: typeLabel })"
-        class="field w-full pl-7 pr-2 py-1.5 text-sm border-transparent focus:border-accent/60"
+        class="field w-full pl-7 pr-2 py-1.5 text-sm border-transparent"
       />
     </div>
 

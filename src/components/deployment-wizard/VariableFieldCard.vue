@@ -12,8 +12,8 @@ import { useI18n } from 'vue-i18n'
 import { AlertTriangle, Info } from 'lucide-vue-next'
 import VariableInput from '@/components/VariableInput.vue'
 import FileDropZone from '@/components/FileDropZone.vue'
-import ScopeBadge from '@/components/ui/ScopeBadge.vue'
-import { effectiveVariableScope as effectiveScope } from '@/services/deployment-variables.service'
+import Badge from '@/components/ui/Badge.vue'
+import { effectiveVariableScope as effectiveScope, variableScopeLabelKey } from '@/services/deployment-variables.service'
 import { isList } from '@/services/variable-types'
 import { isFileVariable as isFileVar, isScoped, userSlotKey } from '@/services/variable-form.service'
 import type { VariableForm } from '@/composables/useVariableForm'
@@ -67,7 +67,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
 </script>
 
 <template>
-  <div class="bg-panel rounded-lg p-4 border border-subtle shadow-sm">
+  <div class="rounded-panel border border-subtle bg-panel p-4">
     <div class="flex items-start justify-between gap-2 mb-3">
       <label
         :for="formKey(variable)"
@@ -117,7 +117,9 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
       <span v-if="variable.required" class="text-xs font-semibold bg-danger-dot/10 text-danger px-2 py-0.5 rounded border border-danger-dot/30">
         {{ t('deployment.variables.required') }}
       </span>
-      <ScopeBadge :scope="effectiveScope(variable)" />
+      <Badge v-if="variableScopeLabelKey(effectiveScope(variable))" tone="emphasis" data-testid="scope-badge">
+        {{ t(variableScopeLabelKey(effectiveScope(variable))!) }}
+      </Badge>
     </div>
 
     <div

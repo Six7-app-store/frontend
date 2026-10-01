@@ -14,6 +14,13 @@ export function effectiveVariableScope(variable: AppVariable): 'all' | 'team' | 
   return (variable.varScope || variable.osScope || 'all') as 'all' | 'team' | 'user'
 }
 
+/** i18n key of the scope badge on a variable card; ``null`` for ``all``, which needs no marker. */
+export function variableScopeLabelKey(scope: 'all' | 'team' | 'user' | undefined): string | null {
+  if (scope === 'team') return 'deployment.variables.scopeBadgeTeam'
+  if (scope === 'user') return 'deployment.variables.scopeBadgeUser'
+  return null
+}
+
 /** Packer template a variable belongs to; single-image apps use ``default``. */
 export function templateKeyOf(variable: AppVariable): string {
   return variable.template_key ?? 'default'

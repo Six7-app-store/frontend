@@ -869,6 +869,8 @@ export default {
       defaultValue: 'Standard: {default}',
       placeholderList: 'Wert 1, Wert 2',
       saveError: 'Fehler beim Speichern.',
+      scopeBadgeTeam: 'Pro Team',
+      scopeBadgeUser: 'Pro User',
       scopeTitleTeam: 'Pro Team ein eigener Wert',
       scopeTitleUser: 'Pro User ein eigener Wert',
       scopeDescTeam: 'Du gibst unten <strong>eine Eingabe pro Team</strong> ein. Beim Deploy bekommt jedes Team genau seinen eigenen Wert.',

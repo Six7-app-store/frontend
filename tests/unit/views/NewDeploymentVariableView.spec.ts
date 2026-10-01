@@ -97,7 +97,6 @@ describe('NewDeploymentVariableView.vue', () => {
           DeploymentProgressBar: true,
           VariableInput: true, // FIX: Nutzt jetzt den automatischen Stub von Vue Test Utils
           FileDropZone: true,
-          ScopeBadge: true,
           Box: true,
           Layers: true,
           Info: true,
@@ -266,7 +265,7 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
     return mount(DeploymentVariables, {
       global: {
         plugins: [pinia],
-        stubs: { DeploymentProgressBar: true, VariableInput: true, FileDropZone: true, ScopeBadge: true },
+        stubs: { DeploymentProgressBar: true, VariableInput: true, FileDropZone: true },
       },
     })
   }

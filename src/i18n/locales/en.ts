@@ -865,6 +865,8 @@ export default {
       defaultValue: 'Default: {default}',
       placeholderList: 'Value 1, Value 2',
       saveError: 'Error while saving.',
+      scopeBadgeTeam: 'Per team',
+      scopeBadgeUser: 'Per user',
       scopeTitleTeam: 'A separate value per team',
       scopeTitleUser: 'A separate value per user',
       scopeDescTeam: 'You provide <strong>one input per team</strong> below. On deploy, each team receives exactly its own value.',

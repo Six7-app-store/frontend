@@ -66,16 +66,11 @@ export default {
         '2xl': 'var(--radius-panel)',
         '3xl': 'var(--radius-panel)',
       },
-      // Tailwind's stock shadow steps resolve to the themed token shadows.
+      // Only the shadows the design uses; each resolves to a themed token.
       boxShadow: {
         sm: 'var(--control-shadow)',
         DEFAULT: 'var(--surface-panel-shadow)',
-        md: 'var(--surface-panel-shadow)',
-        lg: 'var(--surface-banner-shadow)',
-        xl: 'var(--surface-overlay-shadow)',
-        '2xl': 'var(--surface-overlay-shadow)',
         panel: 'var(--surface-panel-shadow)',
-        banner: 'var(--surface-banner-shadow)',
         overlay: 'var(--surface-overlay-shadow)',
         control: 'var(--control-shadow)',
       },

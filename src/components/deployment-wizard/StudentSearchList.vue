@@ -27,7 +27,7 @@ const { t } = useI18n()
         type="text"
         :placeholder="t('deployment.config.searchPlaceholder')"
         data-testid="student-search"
-        class="field w-full pl-12 pr-4 py-3 focus:border-accent/60 transition-all"
+        class="field w-full pl-12 pr-4 py-3 transition-all"
       />
     </div>
 

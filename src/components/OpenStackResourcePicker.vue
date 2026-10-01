@@ -246,7 +246,7 @@ const placeholderText = computed(() => {
         @input="onFreeTextInput(($event.target as HTMLInputElement).value)"
         type="text"
         :placeholder="multi ? t('openstackPicker.multiPlaceholder') : t('openstackPicker.enterValue', { type: osTypeLabel(), mode: osMode === 'id' ? t('openstackPicker.modeUuid') : t('openstackPicker.modeName') })"
-        class="field w-full px-3 py-2 focus:border-accent/60 font-mono text-sm"
+        class="field w-full px-3 py-2 font-mono text-sm"
       />
     </div>
 
@@ -281,7 +281,7 @@ const placeholderText = computed(() => {
             ref="triggerEl"
             @click="toggleDropdown"
             type="button"
-            class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-control border border-strong bg-panel hover:border-strong transition focus:border-accent/60 text-left"
+            class="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-control border border-strong bg-panel hover:border-strong transition text-left"
           >
             <ResourcePickerSelection
               :selected="selectedDisplay"

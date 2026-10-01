@@ -1,6 +1,7 @@
 # HANDOVER – Aero-Design v2
 
-Stand wird nach jedem Commit überschrieben (kein Tagebuch). Branch: `feat/more_rebranding`, nichts gepusht.
+Stand wird nach jedem Commit überschrieben (kein Tagebuch). Branch: `feat/more_rebranding`, auf Wunsch des Nutzers bis
+einschließlich g1 nach `origin/feat/more_rebranding` gepusht (nie auf `main`, kein PR).
 
 ## Ziel
 Design v2 aus der Vorlage (nur lesen) auf alle Seiten und Zustände des Frontends bringen: Light Standard, Dark per
@@ -98,15 +99,39 @@ kein Push, `.claude/` nicht anfassen.
   - Snapshots Help/DeploymentDetail per Textvergleich geprüft (nur Klassen). Stand: 110 Dateien / 1082 Tests grün,
     Coverage 91,9/87,7/75,7/91,9, eslint leer, keine Hex-Treffer.
 
+- g1) Commit „Remove dead styles, assets and the scope badge“ (`git log -1`), erster Teil des Aufräumens:
+  `ScopeBadge` gelöscht (Variablenkarte nutzt `Badge` + `variableScopeLabelKey()` in `deployment-variables.service.ts`, i18n
+  `deployment.variables.scopeBadgeTeam/User`, Test ergänzt), `iconForAppName` + Tests gelöscht, Asset
+  `onlySix7-green-withoutBackground.png` gelöscht, Schatten-Stufen `shadow-md/lg/xl/2xl/banner` und `--surface-banner-shadow`
+  entfernt, überflüssige `focus:border-accent/60` entfernt (`.field` regelt den Fokus), `VariableFieldCard` ohne Schatten.
+  Stand: 110 Dateien / 1077 Tests grün (−5 = gelöschte Tests von `iconForAppName`), Coverage 91,9/87,6/75,7/91,9, eslint leer,
+  keine Hex-Treffer, keine `<style>`-Blöcke.
+
 ## Offen (Reihenfolge)
-g Aufräumen · Abschluss
-(alle Harness-Checks, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo, Schlussbericht laut Plan)
+g Rest (siehe „Nächster Schritt“) · Abschluss (alle Harness-Checks, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo,
+Schlussbericht laut Plan)
 
 ## Nächster Schritt (als Erstes)
-Etappe g, Aufräumen: ungenutzte Komponenten (`ScopeBadge`?, `EntityListState`-Varianten prüfen), Klassen (`surface-sunken`,
-`--surface-banner-shadow`/`shadow-banner`, `bg-panel`-Altreste, `focus:border-accent/60`), Tokens (per Suche nach `var(--…)`),
-Assets (`onlySix7-green-withoutBackground.png`), i18n-Keys (Listen unten, vorher suchen), `iconForAppName` + Tests.
-Danach Hex-Suche, Komponenten-Inventar, Abschluss laut Plan (ADR im `deployment`-Repo, Schlussbericht).
+1. `git pull` auf `feat/more_rebranding`, Dev-Stack starten (`docker start …-dev` bzw. `make dev-up`), `docker restart frontend-dev`.
+2. Etappe g fortsetzen:
+   - **i18n-Keys löschen**, jeweils vorher per `rg` bestätigen, dass sie nirgends mehr benutzt werden (auch nicht dynamisch über
+     Template-Strings wie `` `HelpView.quickHelp.page${area}` `` oder `DeploymentsView.${key}`):
+     `AppsDetailView.{backToOverview,appInfoTitle,versionDetailsTitle,versionsAvailable,visibilityLabel,storeVisibilityTitle,
+     visibilityPublic,visibilityPrivate}`, `CourseDetailView.back`, `AppsCreateView.preview.{logoAlt,deployBtn}`,
+     `DashboardView.{title,subtitle,noCredentialsTitle,noCredentialsHint,setUpNow,quotaUsed}`, `AppsView.badge*`,
+     `AdminAppsView.filterLabel`, `DeploymentDetailView.detailsSubtitle`, `HelpView`-Icons sind weg (Keys bleiben).
+     DE und EN müssen dieselben Keys behalten (`HelpView`-Paritätstest).
+   - **Altreste der Panel-Hüllen** auf v2 bringen (nur Klassen): `bg-panel rounded-lg/xl … shadow-sm` in
+     `DeploymentTaskDetail.vue`, `InfrastructureVmDrawer.vue`, `DeploymentActiveTaskCard.vue`, `MarkdownEditor.vue`,
+     `NewDeploymentVariableView.vue` (→ `surface-panel`/`rounded-panel border border-subtle`), `DeploymentGroupsCard` Detailansicht.
+     `surface-sunken` bleibt (Log-Bereich, Variablenlisten).
+   - **Token-Check**: `--color-surface` wird nur noch von `tokens.spec.ts` (Kontrastpaare) genutzt – drin lassen. Danach erneut
+     ungenutzte Klassen/Tokens suchen (Python-Skript: Klassen aus `components.css` gegen `src/**/*.{vue,ts}`; Toast-Klassen
+     `toast-enter-*` sind über `<TransitionGroup name="toast">` benutzt).
+   - Hex-Suche, Komponenten-Inventar vorher/nachher (vorher: 23 Dateien in `components/ui/` + Inline-Shell in `AppLayout`).
+3. Abschluss: alle Checks, `HANDOVER.md` = Endstand, ADR (Design v2: Tokens als einzige Quelle, Light Standard/Dark per Schalter,
+   Komponenten-Set) als eigener Commit im `deployment`-Repo unter `docs/adr/` (Skill `adr-schreiben`), Schlussbericht laut Plan
+   (Befehle + Ergebnis, Commits, Inventar, geänderte/gelöschte Dateien, Hex-Ergebnis, Abweichungen – siehe „Entscheidungen“).
 
 ## Sichtprüfung (so geht's ohne Browser-MCP)
 Headless Chrome per `puppeteer-core` (im Scratchpad installiert, nicht im Repo). Login per Keycloak-Formular
@@ -149,26 +174,22 @@ Nach Änderungen an `tailwind.config.js`: `docker restart frontend-dev`, sonst f
 - `make harness-check`: Unter Windows ohne `make` direkt `python deployment/harness/sync.py --check`. Auf Luis' Rechner meldet es
   Drift in `backend/` und `worker/` (`.claude/hooks/agent_guard.py`, `.claude/settings.json`); die Repos liegen auf anderen Branches
   (`ci/auto-trigger-staging-deploy`). Frontend ist synchron. Nicht Teil dieser Aufgabe, nicht angefasst.
-- Noch vorhanden, fallen in e–g weg: `ScopeBadge`, `DetailSection` (Icon-Kachel), `surface-sunken` (AppDeploySidebar,
-  DeploymentActiveTaskCard, Modal), `--surface-banner-shadow` (über `shadow-lg`/`shadow-banner` im Wizard), `bg-panel`-Hüllen
-  (`bg-panel rounded-2xl p-10`) statt `Card`, `btn-ghost`-Altaufrufe, scoped Styles in `Toast`/`Modal`/`DeploymentProgressBar`,
-  `VariableInput.vue:92` (harte `gray`/`white`-Klassen), ungenutztes Asset `src/assets/onlySix7-green-withoutBackground.png`.
-- Ungenutzt seit e → in g löschen: `iconForAppName` (+ Tests) in `app-presentation.service.ts`, i18n `AppsCreateView.preview.
-  {logoAlt,deployBtn}`, `AppsDetailView.{appInfoTitle,versionDetailsTitle,versionsAvailable,visibilityLabel,storeVisibilityTitle,
-  visibilityPublic,visibilityPrivate}`, `markdownRenderer.more/less` nur falls `expandable` nirgends mehr genutzt wird (vorher suchen).
-  Das App-Logo wird nirgends mehr angezeigt (Karten ohne Icon laut Plan), Upload/Bearbeiten bleibt.
 - Testumgebung: Unter happy-dom packt DOMPurify Elemente aus und lässt Event-Handler stehen. Deshalb ist DOMPurify in
   `MarkdownRenderer.spec.ts` ein Spy; die Markdown-Regeln werden auf `renderMarkdown` getestet. Views stubben den Renderer ohnehin.
-- Bash/Python-Heredocs: `\n` in Python-Strings landet als echter Zeilenumbruch in der Datei → Test-Strings mit `\n` per Edit/Write
-  schreiben oder `[...].join('\n')` nutzen.
-- i18n ungenutzt seit d → in g löschen: `DashboardView.{title,subtitle,noCredentialsTitle,noCredentialsHint,setUpNow,quotaUsed}`
-  (vorher per Suche bestätigen).
-- LTI-Seiten: `select.field` in Kurs-Zuordnung und Deep-Link noch nicht auf `BaseSelect`/`FormField` (f).
-- Nicht migrierte Aufrufer übergeben `px-4 py-2` o. ä. an `BaseButton` (überschreibt das `.btn`-Padding) → beim Seitenumbau entfernen.
-- Seiten haben teils eigene Außenabstände/`max-w`; Shell-Main hat `px-page-x py-page-y` → doppelte Abstände beim Umbau entfernen.
-  Profil-Seiten (`UserView`, `SettingsOpenStackView`) haben keine Breitenbegrenzung mehr → in f mit `max-w-detail` lösen.
-- Hartcodierte Texte: `DeploymentRedeployModal.vue` (DE), `DeploymentTeamsCard.vue:56` (EN), `ScopeBadge` („Pro Team“) → i18n (f).
-- Fehlende Bestätigungsdialoge (neu, e/f): Wizard „Zurücksetzen“, Version zurückziehen, Logo entfernen.
+- Bash/Python-Heredocs: `
+` in Python-Strings landet als echter Zeilenumbruch in der Datei, und `'` verliert den Backslash →
+  solche Test-Strings per Edit/Write schreiben oder `[...].join('
+')` nutzen. `grep -- muster … --include` liest die Optionen
+  hinter `--` als Dateinamen.
+- Tailwind: Klassen aus `@layer components` nie per Template-String bauen (`alert-${tone}`), sonst erzeugt Tailwind sie nicht.
+- Komponenten-Specs prüfen Zustand (aria-*, `data-testid`), nicht Tailwind-Klassen. Neue Test-IDs: `member-row`, `member-username`,
+  `group-card`, `group-name`, `variable-card`, `resources-error`, `task-row`, `phase-label`, `redeploy-address`, `wizard-step`,
+  `app-card`, `deployment-name`, `course-name`, `member-role`, `scope-badge`, `summary-var-row`, `confirm-remove-image`.
+- Abweichungen von der Vorlage (für den Schlussbericht): 36px statt gerenderter 38px; Hero-Texte mit vorhandenen Text-Tokens;
+  kein gestrichelter Platzhalterrahmen im Login; Freigaben bleiben Akkordeon pro App (Ladelogik unverändert); Card-Titel mit
+  Trennlinie auch in der Deploy-Box; „App hinzufügen“-Aktionen unten am Formular statt oben rechts; App-Logo wird nicht mehr
+  angezeigt (Karten ohne Icon laut Plan); Profil blendet leere Felder aus statt „N/A“.
+- Ungeklärt: In der Dev-DB gibt es keine Deployments – Detail- und Listenansicht wurden mit gemockten API-Antworten geprüft.
 
 ## Checks nach jeder Etappe (nur bei grün committen)
 ```

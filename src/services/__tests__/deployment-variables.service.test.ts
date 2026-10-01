@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 
 import {
   effectiveVariableScope,
+  variableScopeLabelKey,
   isMultiImagePackerLayout,
   storedPackerValue,
   templateKeyOf,
@@ -65,5 +66,16 @@ describe('storedPackerValue', () => {
   it('is undefined when nothing is stored', () => {
     expect(storedPackerValue({}, size, true)).toBeUndefined()
     expect(storedPackerValue(null, size, false)).toBeUndefined()
+  })
+})
+
+describe('variableScopeLabelKey', () => {
+  it.each([
+    ['team', 'deployment.variables.scopeBadgeTeam'],
+    ['user', 'deployment.variables.scopeBadgeUser'],
+    ['all', null],
+    [undefined, null],
+  ] as const)('liefert für %s den Badge-Text %s', (scope, key) => {
+    expect(variableScopeLabelKey(scope)).toBe(key)
   })
 })

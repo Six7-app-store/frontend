@@ -52,7 +52,7 @@ defineEmits<{
           v-model="text"
           :placeholder="placeholder"
           rows="4"
-          class="field w-full px-3 py-2 text-sm focus:border-accent/60 resize-none"
+          class="field w-full px-3 py-2 text-sm resize-none"
         />
       </div>
       <slot name="after" />
