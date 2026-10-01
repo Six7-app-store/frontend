@@ -50,7 +50,9 @@ onMounted(async () => {
   appStore.fetchApps()
 })
 
-const getAppName = (appId: string) => {
+const isEmpty = computed(() => !deploymentStore.isLoading && deploymentStore.deployments.length === 0)
+
+const getAppName =(appId: string) => {
   const app = appStore.apps.find(a => a.appId === appId)
   return app ? app.name : '-'
 }
@@ -131,8 +133,9 @@ const studentStateTone = (status: string | null | undefined): StatusTone =>
     >
       <template #actions>
         <!-- Staff only. A student clicking this would walk into the wizard
-             and hit a 403 on the final POST. -->
-        <RouterLink v-if="isStaff" :to="{ name: ROUTE_NAMES.apps }" class="btn btn-primary">
+             and hit a 403 on the final POST. Hidden on an empty list, where
+             the empty state already carries the same button. -->
+        <RouterLink v-if="isStaff && !isEmpty" :to="{ name: ROUTE_NAMES.apps }" class="btn btn-primary">
           <Plus :size="16" :stroke-width="2.2" aria-hidden="true" />
           {{ $t('DeploymentsView.newDeployment') }}
         </RouterLink>
@@ -141,7 +144,7 @@ const studentStateTone = (status: string | null | undefined): StatusTone =>
 
     <EntityListState
       :is-loading="deploymentStore.isLoading && deploymentStore.deployments.length === 0"
-      :is-empty="!deploymentStore.isLoading && deploymentStore.deployments.length === 0"
+      :is-empty="isEmpty"
       :icon="Inbox"
       :empty-message="isStudent
         ? $t('DeploymentsView.emptyStudent')
