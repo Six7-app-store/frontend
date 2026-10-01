@@ -35,7 +35,7 @@ const setup = (status: DeploymentWithRelations['status'] = 'success', owner = tr
   mount(defineComponent({
     setup() {
       api = useDeploymentLifecycle({
-        deploymentId: 'dep-1', deployment, isOwnerView: ref(owner), tasks, activeTask, connectionState, loadTasks,
+        deploymentId: 'dep-1', deployment, canOperate: ref(owner), tasks, activeTask, connectionState, loadTasks,
       })
       return () => null
     },
@@ -93,15 +93,42 @@ describe('useDeploymentLifecycle', () => {
     expect(h.push).not.toHaveBeenCalled()
   })
 
-  it('reports a failed delete with the extracted reason', async () => {
+  it('reports a delete refused as busy with the translated reason', async () => {
     h.deploymentApi.delete.mockRejectedValue(httpError(409, { reason: 'deployment_busy' }))
     const { api, toasts, t } = setup()
     api.showDeleteModal.value = true
 
     await api.confirmDelete()
 
-    expect(toasts()).toEqual([{ type: 'error', message: `${t('DeploymentDetailView.deleteErrorToast')}: deployment_busy` }])
+    expect(toasts()).toEqual([{
+      type: 'error',
+      message: `${t('DeploymentDetailView.deleteErrorToast')}: ${t('DeploymentDetailView.lifecycleBusy')}`,
+    }])
     expect(api.showDeleteModal.value).toBe(false)
+  })
+
+  it('sends one DELETE even when confirmed again while the first is in flight', async () => {
+    let resolve!: (v: { status: number }) => void
+    h.deploymentApi.delete.mockReturnValue(new Promise((r) => { resolve = r }))
+    const { api } = setup()
+
+    const first = api.confirmDelete()
+    expect(api.deleteBusy.value).toBe(true)
+    await api.confirmDelete()
+    resolve({ status: 204 })
+    await first
+
+    expect(h.deploymentApi.delete).toHaveBeenCalledTimes(1)
+    expect(api.deleteBusy.value).toBe(false)
+  })
+
+  it('leaves an unknown machine code out of the delete toast', async () => {
+    h.deploymentApi.delete.mockRejectedValue(httpError(412, { reason: 'openstack_credentials_missing' }))
+    const { api, toasts, t } = setup()
+
+    await api.confirmDelete()
+
+    expect(toasts()).toEqual([{ type: 'error', message: t('DeploymentDetailView.deleteErrorToast') }])
   })
 
   it.each([

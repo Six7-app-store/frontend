@@ -3,6 +3,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import {
   parseDeploymentGroups,
   parseDeploymentVariables,
+  parseUserInputVar,
   cleanVariableValue,
 } from '@/services/deployment-input.service'
 
@@ -69,5 +70,27 @@ describe('cleanVariableValue', () => {
     expect(cleanVariableValue('')).toBe('-')
     expect(cleanVariableValue(undefined)).toBe('-')
     expect(cleanVariableValue('# only comment')).toBe('-')
+  })
+})
+
+describe('parseUserInputVar', () => {
+  it('passes an object through', () => {
+    const input = { region: 'eu' }
+    expect(parseUserInputVar(input)).toBe(input)
+  })
+
+  it('parses a JSON string', () => {
+    expect(parseUserInputVar('{"region":"eu"}')).toEqual({ region: 'eu' })
+  })
+
+  it('treats empty input and non-objects as no input', () => {
+    expect(parseUserInputVar('')).toEqual({})
+    expect(parseUserInputVar('   ')).toEqual({})
+    expect(parseUserInputVar(null)).toEqual({})
+    expect(parseUserInputVar(['a'])).toEqual({})
+  })
+
+  it('throws on malformed JSON so the caller can report it', () => {
+    expect(() => parseUserInputVar('{oops')).toThrow()
   })
 })

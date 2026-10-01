@@ -1,7 +1,13 @@
 <script setup lang="ts">
+/**
+ * Notice that the OpenStack credentials are missing, invalid or locked,
+ * with the one action that fixes it. ``next`` sends the person back here
+ * after they have set the credentials up.
+ */
 import { computed } from 'vue'
 import { useRouter, type RouteLocationRaw } from 'vue-router'
-import { AlertTriangle, AlertCircle, Lock } from 'lucide-vue-next'
+import { Lock } from 'lucide-vue-next'
+import AlertBox, { type AlertTone } from '@/components/ui/AlertBox.vue'
 
 type Variant = 'warning' | 'error' | 'lock'
 
@@ -16,38 +22,7 @@ const props = withDefaults(defineProps<{
   variant: 'warning',
 })
 
-const styles = computed(() => {
-  switch (props.variant) {
-    case 'error':
-      return {
-        wrapper: 'bg-danger-dot/[.06] border-danger-dot/30',
-        iconBox: 'bg-danger-dot/10 text-danger',
-        title: 'text-danger',
-        message: 'text-fg',
-        cta: 'btn-primary',
-        icon: AlertCircle,
-      }
-    case 'lock':
-      return {
-        wrapper: 'bg-line/[.04] border-subtle',
-        iconBox: 'bg-line/[.07] text-icon',
-        title: 'text-fg',
-        message: 'text-fg-muted',
-        cta: 'btn-secondary',
-        icon: Lock,
-      }
-    case 'warning':
-    default:
-      return {
-        wrapper: 'bg-warning-dot/[.08] border-warning-dot/40',
-        iconBox: 'bg-warning-dot/15 text-warning',
-        title: 'text-warning',
-        message: 'text-fg',
-        cta: 'btn-primary',
-        icon: AlertTriangle,
-      }
-  }
-})
+const TONE: Record<Variant, AlertTone> = { warning: 'warning', error: 'danger', lock: 'info' }
 
 const router = useRouter()
 
@@ -65,27 +40,16 @@ const ctaLocation = computed(() => {
 </script>
 
 <template>
-  <div
-    class="rounded-panel border p-4 flex items-start gap-4"
-    :class="styles.wrapper"
-  >
-    <div
-      class="w-10 h-10 rounded-control flex items-center justify-center shrink-0"
-      :class="styles.iconBox"
-    >
-      <component :is="styles.icon" :size="20" />
-    </div>
-    <div class="flex-1 min-w-0">
-      <p v-if="title" class="font-semibold" :class="styles.title">{{ title }}</p>
-      <p v-if="message" class="text-sm mt-0.5" :class="styles.message">{{ message }}</p>
-    </div>
-    <router-link
-      v-if="cta && ctaLocation"
-      :to="ctaLocation"
-      class="shrink-0 px-4 py-2 rounded-control text-sm font-semibold transition"
-      :class="styles.cta"
-    >
-      {{ cta }}
-    </router-link>
-  </div>
+  <AlertBox :tone="TONE[variant]" :title="title" :icon="variant === 'lock' ? Lock : undefined">
+    <p v-if="message">{{ message }}</p>
+    <template v-if="cta && ctaLocation" #actions>
+      <RouterLink
+        :to="ctaLocation"
+        class="btn"
+        :class="variant === 'lock' ? 'btn-secondary' : 'btn-primary'"
+      >
+        {{ cta }}
+      </RouterLink>
+    </template>
+  </AlertBox>
 </template>

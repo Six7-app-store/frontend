@@ -14,10 +14,18 @@ export interface DeploymentGroup {
   students: string[]
 }
 
-function parseUserInputVar(userInputVar: string | Record<string, any>): Record<string, any> {
-  return typeof userInputVar === 'string'
-    ? JSON.parse(userInputVar)
-    : userInputVar
+/**
+ * ``userInputVar`` as an object: a plain object passes through, a non-empty
+ * string is parsed as JSON (throws on malformed JSON), anything else is ``{}``.
+ */
+export function parseUserInputVar(userInputVar: unknown): Record<string, any> {
+  if (userInputVar && typeof userInputVar === 'object' && !Array.isArray(userInputVar)) {
+    return userInputVar as Record<string, any>
+  }
+  if (typeof userInputVar === 'string' && userInputVar.trim() !== '') {
+    return JSON.parse(userInputVar)
+  }
+  return {}
 }
 
 export function parseDeploymentGroups(userInputVar: UserInputVar): DeploymentGroup[] {

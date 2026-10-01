@@ -3,7 +3,6 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 
 import AppsView from '@/views/AppsView.vue'
-import { Server, Globe, Box, Layers } from 'lucide-vue-next'
 
 // ---------------------------------------------------------
 // 1. Abhängigkeiten (Dependencies) "mocken"
@@ -27,7 +26,7 @@ vi.mock('@/composables/useToast', () => ({
 }))
 
 vi.mock('@/stores/auth.store', () => ({
-    useAuthStore: () => ({ userId: 'other-user-id', isTeacherOrAdmin: false })
+    useAuthStore: () => ({ userId: 'other-user-id' })
 }))
 
 vi.mock('@/api/app.api', () => ({
@@ -58,6 +57,7 @@ describe('AppsView.vue', () => {
                 },
                 stubs: {
                     RouterLink: {
+                        name: 'RouterLink',
                         props: ['to'],
                         template: '<a :href="to.name" class="router-link-stub"><slot /></a>'
                     },
@@ -112,22 +112,17 @@ describe('AppsView.vue', () => {
         expect(mockToastError).toHaveBeenCalledWith('AppsView.loadError')
     })
 
-    it('navigiert zur Detailseite, wenn auf "Details" geklickt wird', async () => {
-        const mockApps = [{ id: 'app-999', name: 'Test App' }]
+    it('verlinkt die ganze Karte auf die Detailseite der App', async () => {
+        const mockApps = [{ appId: 'app-999', name: 'Test App' }]
         ;(appApi.list as any).mockResolvedValue({ data: mockApps })
 
         const wrapper = mountComponent()
         await flushPromises()
 
-        const buttons = wrapper.findAll('button')
-        const detailButton = buttons.find(b => b.text().includes('AppsView.detailsDeploy'))
-
-        await detailButton!.trigger('click')
-
-        expect(mockPush).toHaveBeenCalledWith({
-            name: 'apps.detail',
-            params: { id: 'app-999' }
-        })
+        const card = wrapper.findComponent('[data-testid="app-card"]' as any)
+        expect(card.text()).toContain('Test App')
+        expect(card.text()).toContain('AppsView.detailsDeploy')
+        expect(card.props('to')).toEqual({ name: 'apps.detail', params: { id: 'app-999' } })
     })
 
     // --- Erweiterte Tests (Edge Cases & UI Logik) ---
@@ -151,22 +146,41 @@ describe('AppsView.vue', () => {
         expect(addLink.attributes('href')).toBe('apps.create')
     })
 
-    it('Icons: rendert das richtige Icon basierend auf dem App-Namen', async () => {
-        const mockApps = [
-                { id: '1', name: 'Meine Node App' },     // Sollte 'Server' Icon auslösen
-                { id: '2', name: 'React Dashboard' },    // Sollte 'Globe' Icon auslösen
-                { id: '3', name: 'Python Skript' },      // Sollte 'Box' Icon auslösen
-                { id: '4', name: 'Unbekannte App' }      // Sollte 'Layers' Icon (Default) auslösen
-            ]
+    it('zeigt statt eines Icons die Überschrift und den ersten Absatz der Beschreibung als Klartext', async () => {
+        const mockApps = [{
+            appId: 'a1',
+            name: 'GitLab-CE',
+            description: [
+                '# GitLab CE – Git pro Team',
+                '',
+                'Deployt **pro Team** eine Instanz.',
+                '',
+                '## Details',
+                '',
+                'Nicht auf der Karte.',
+            ].join('\n'),
+        }]
         ;(appApi.list as any).mockResolvedValue({ data: mockApps })
 
         const wrapper = mountComponent()
         await flushPromises()
 
-        expect(wrapper.findComponent(Server).exists()).toBe(true)
-        expect(wrapper.findComponent(Globe).exists()).toBe(true)
-        expect(wrapper.findComponent(Box).exists()).toBe(true)
-        expect(wrapper.findComponent(Layers).exists()).toBe(true)
+        const card = wrapper.get('[data-testid="app-card"]')
+        expect(card.find('svg').exists()).toBe(true) // only the chevron
+        expect(card.findAll('svg')).toHaveLength(1)
+        expect(card.text()).toContain('GitLab CE – Git pro Team')
+        expect(card.text()).toContain('Deployt pro Team eine Instanz.')
+        expect(card.text()).not.toContain('**')
+        expect(card.text()).not.toContain('Nicht auf der Karte.')
+    })
+
+    it('sagt es, wenn eine App keine Beschreibung hat', async () => {
+        ;(appApi.list as any).mockResolvedValue({ data: [{ appId: 'a1', name: 'Leer', description: '' }] })
+
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        expect(wrapper.get('[data-testid="app-card"]').text()).toContain('AppsView.noDescription')
     })
 
     it('zeigt einen Lade-Text/Spinner an, während die Daten geladen werden', async () => {
@@ -180,21 +194,5 @@ describe('AppsView.vue', () => {
 
         expect(wrapper.text()).toContain('AppsView.loading')
         resolveApi({ data: [] })
-    })
-
-    it('zeigt ein Bild anstelle eines Icons, wenn die App ein eigenes Bild hat', async () => {
-        const mockApps = [{
-                id: 'custom-img',
-                name: 'App mit Logo',
-                image: 'https://mein-server.de/logo.png'
-            }]
-        ;(appApi.list as any).mockResolvedValue({ data: mockApps })
-
-        const wrapper = mountComponent()
-        await flushPromises()
-
-        const img = wrapper.find('img')
-        expect(img.exists()).toBe(true)
-        expect(img.attributes('src')).toBe('https://mein-server.de/logo.png')
     })
 })

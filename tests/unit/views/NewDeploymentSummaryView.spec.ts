@@ -239,3 +239,112 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(routerPushMock).not.toHaveBeenCalledWith({ name: 'deployments.list' })
   })
 })
+
+describe('NewDeploymentSummaryView.vue — Charakterisierung', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(useRouter).mockReturnValue({ push: vi.fn() } as any)
+  })
+
+  const mountWith = (variableDefinitions: any[], variables: Record<string, unknown>) => {
+    const pinia = createTestingPinia({
+      createSpy: vi.fn,
+      initialState: {
+        app: { apps: [{ appId: 'app-1', name: 'Test App' }] },
+        deployment: {
+          studentCache: new Map(),
+          draft: {
+            name: 'D', appId: 'app-1', releaseTag: 'v1', groupCount: 1, groupMode: 'one',
+            studentIds: [], assignments: {}, groupNames: [], fileUploads: {},
+            variableDefinitions, variables,
+          },
+        },
+      },
+    })
+    return mount(DeploymentSummary, {
+      global: { plugins: [pinia], stubs: { DeploymentProgressBar: true } },
+    })
+  }
+
+  /** label → value of every summary row. */
+  const rows = (wrapper: ReturnType<typeof mountWith>) =>
+    Object.fromEntries(
+      wrapper.findAll('[data-testid="summary-var-row"]').map((row) => {
+        const [label, value] = row.findAll('span')
+        return [label!.text(), value!.text()]
+      }),
+    )
+
+  it('formatiert Werte: Ja/Nein, Listen, Anführungszeichen, leer als Strich', async () => {
+    const wrapper = mountWith([
+      { name: 'on', source: 'terraform', type: 'bool' },
+      { name: 'tags', source: 'terraform', type: 'list(string)' },
+      { name: 'quoted', source: 'terraform', type: 'string' },
+      { name: 'empty', source: 'terraform', type: 'string' },
+    ], { on: true, tags: ['"a"', 'b'], quoted: '"x"', empty: '' })
+    await flushPromises()
+
+    expect(rows(wrapper)).toEqual({
+      on: 'deployment.summary.yes',
+      tags: 'a, b',
+      quoted: 'x',
+      empty: '-',
+    })
+  })
+
+  it('stellt Packer-Werte eines Multi-Image-Deployments mit Template-Präfix dar', async () => {
+    const wrapper = mountWith([
+      { name: 'size', source: 'packer', type: 'string', template_key: 'web', default: 'm' },
+      { name: 'size', source: 'packer', type: 'string', template_key: 'db', default: 'l' },
+    ], { packer: { web: { size: 's' }, db: {} } })
+    await flushPromises()
+
+    expect(rows(wrapper)).toEqual({ '[web] size': 's', '[db] size': 'l' })
+  })
+
+  it('zeigt OpenStack-Werte mit Namen und den übermittelten Wert als Tooltip', async () => {
+    const wrapper = mountWith([
+      { name: 'flavor', source: 'terraform', type: 'string', osType: 'flavor', osMode: 'id' },
+      { name: 'nets', source: 'terraform', type: 'list(string)', osType: 'network', osMulti: true },
+    ], { flavor: 'f-1', nets: 'n-1, n-2' })
+    await flushPromises()
+
+    expect(rows(wrapper)).toEqual({ flavor: 'OS-Name-f-1', nets: 'OS-Name-n-1, OS-Name-n-2' })
+    const flavorValue = wrapper.findAll('[data-testid="summary-var-row"]')[0]!.findAll('span')[1]!
+    expect(flavorValue.attributes('title')).toBe('deployment.summary.submittedValue')
+  })
+
+  describe('Fehler beim Absenden', () => {
+    const submitFailing = async (error: unknown) => {
+      const wrapper = mountWith([], {})
+      await flushPromises()
+      const store = useDeploymentStore()
+      store.submitDraft = vi.fn().mockRejectedValue(error)
+      await wrapper.findAll('button').find((b) => b.text().includes('deployment.actions.deploy'))!.trigger('click')
+      await flushPromises()
+      return useToastStore().error as any
+    }
+    const withDetail = (detail: unknown, message?: string) => ({ message, response: { data: { detail } } })
+
+    it.each([
+      [{ reason: 'file_too_large', filename: 'a.zip', actual_bytes: 1, limit_bytes: 2 }, 'deployment.summary.errors.fileTooLarge'],
+      [{ reason: 'deployment_files_too_large', limit_bytes: 2 }, 'deployment.summary.errors.deploymentFilesTooLarge'],
+      [{ reason: 'file_extension_rejected', variable: 'cert', slot: 'all', allowed: ['pem'] }, 'deployment.summary.errors.fileExtensionRejected'],
+      [{ reason: 'file_b64_invalid', filename: 'a' }, 'deployment.summary.errors.fileB64Invalid'],
+      [{ reason: 'file_size_mismatch', filename: 'a' }, 'deployment.summary.errors.fileSizeMismatch'],
+    ])('übersetzt %j', async (detail, key) => {
+      const toastError = await submitFailing(withDetail(detail))
+      expect(toastError).toHaveBeenCalledWith(key, undefined)
+    })
+
+    it.each([
+      ['einen String-detail', withDetail('Kontingent erschöpft', 'Request failed'), 'Kontingent erschöpft'],
+      ['einen unbekannten Grund über die Fehlermeldung', withDetail({ reason: 'neu' }, 'Request failed'), 'Request failed'],
+      ['sonst den Standardtext', withDetail(undefined), 'deployment.summary.submitError'],
+    ])('meldet %s', async (_label, error, expected) => {
+      const toastError = await submitFailing(error)
+      expect(toastError).toHaveBeenCalledWith(expected, undefined)
+    })
+  })
+})
+

@@ -51,14 +51,13 @@ for (const [lng, msgs] of Object.entries(locales)) {
       expectHref('https://github.com/six7-click-n-deploy/worker')
     })
 
-    it('renders icon visuals (stub or svg)', () => {
-      const html = wrapper.html()
-      // lucide icons render as inline SVG with classnames like 'lucide-...'
-      expect(
-        html.includes('helpcircle-stub') || html.includes('lucide-circle-question-mark')
-      ).toBe(true)
-      expect(html.includes('layers-stub') || html.includes('lucide-layers')).toBe(true)
-      expect(html.includes('bookopen-stub') || html.includes('lucide-book-open')).toBe(true)
+    it('links every entry of "on this page" to a section of the page', () => {
+      const anchors = wrapper.findAll('nav a[href^="#"]')
+      expect(anchors).toHaveLength(5)
+      for (const a of anchors) {
+        const id = a.attributes('href')!.slice(1)
+        expect(wrapper.find(`[id="${id}"]`).exists()).toBe(true)
+      }
     })
 
     it('key i18n strings used in template appear in the DOM', () => {

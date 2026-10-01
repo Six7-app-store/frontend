@@ -9,19 +9,12 @@
  * would drop the user into a different account, or none at all.
  */
 import { Clock } from 'lucide-vue-next'
+import StatusPage from '@/components/ui/StatusPage.vue'
+import StatusScreen from '@/components/ui/StatusScreen.vue'
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen">
-    <div class="flex flex-col items-center gap-4 text-center max-w-md px-4">
-      <Clock class="text-icon" :size="48" />
-      <div>
-        <p class="font-semibold">Sitzung abgelaufen</p>
-        <p class="text-sm text-fg-muted mt-2">
-          Die Anmeldung über Moodle ist abgelaufen. Bitte die Aktivität im
-          Moodle-Kurs erneut öffnen, um weiterzuarbeiten.
-        </p>
-      </div>
-    </div>
-  </div>
+  <StatusPage>
+    <StatusScreen :icon="Clock" :title="$t('lti.expired.title')" :text="$t('lti.expired.text')" />
+  </StatusPage>
 </template>

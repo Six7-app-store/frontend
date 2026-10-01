@@ -6,22 +6,22 @@ import { useRouter } from 'vue-router'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
 import { useToast } from '@/composables/useToast'
-import {
-  effectiveVariableScope,
-  isMultiImagePackerLayout as detectMultiImagePackerLayout,
-} from '@/services/deployment-variables.service'
-import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
-import DeploymentProgressBar from '@/components/DeploymentProgressBar.vue'
-import {
-  BarChart3,
-  ArrowRight,
-  ArrowLeft,
-  Box,
-  Layers
-} from 'lucide-vue-next'
+import { getErrorStatus } from '@/utils/http-error'
+import { fileSummaries, packerRows, terraformRows, type SummaryContext } from '@/services/deployment-summary.service'
+import { formatSubmitError } from '@/services/deployment-submit-error.service'
+import WizardStepLayout from '@/components/deployment-wizard/WizardStepLayout.vue'
+import Spinner from '@/components/ui/Spinner.vue'
+import SummaryVariableCard from '@/components/deployment-wizard/SummaryVariableCard.vue'
+import { Box, FileText, Layers, Pencil } from 'lucide-vue-next'
+import Badge from '@/components/ui/Badge.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import Card from '@/components/ui/Card.vue'
+import InfoList, { type InfoItem } from '@/components/ui/InfoList.vue'
 import type { AppVariable } from '@/types'
 import type { OsResourceType } from '@/api/openstack-resources.api'
-import { formatBytes } from '@/utils/format'
+import { userDisplayName } from '@/utils/user-display'
+import { releaseVersion } from '@/services/deployment-draft.service'
+import { parseUserInputVar } from '@/services/deployment-input.service'
 import {
   ensureLoaded as ensureOsCacheLoaded,
   getDisplayName as getOsDisplayName,
@@ -52,13 +52,7 @@ const selectedApp = computed(() => {
   return appStore.apps.find(a => a.appId === deploymentStore.draft.appId)
 })
 
-// Version Display
-const versionDisplay = computed(() => {
-  const rawTag: any = deploymentStore.draft.releaseTag
-  if (rawTag && typeof rawTag === 'object' && rawTag.version) return rawTag.version
-  if (typeof rawTag === 'string' && rawTag.trim() !== '') return rawTag
-  return 'latest'
-})
+const version = computed(() => releaseVersion(deploymentStore.draft.releaseTag))
 
 // Group Mode Display
 const groupModeDisplay = computed(() => {
@@ -68,254 +62,33 @@ const groupModeDisplay = computed(() => {
   return t('deployment.groups.custom')
 })
 
-// Separate lists for Packer and Terraform variables. Display-name reactivity
-// comes from ``getDisplayName``, which reads ``cacheVersion.value`` so Vue
-// re-computes once the cache is populated.
-//
-// Multi-image Packer is the tricky case: step 3 writes such apps' Packer values
-// nested under ``draft.variables.packer[<tkey>][<name>]`` instead of flat under
-// ``draft.variables[<name>]``, so we mirror that nesting here to avoid falling
-// back to ``apiDef.default``. Detection: ``draft.variables.packer`` is a
-// non-empty object whose every top-level element is itself an object (a
-// ``tkey`` bucket). A false positive would at worst render one skewed line.
-const isMultiImagePackerLayout = computed<boolean>(() =>
-  detectMultiImagePackerLayout(deploymentStore.draft.variables)
-)
+const baseFacts = computed<InfoItem[]>(() => [
+  { label: t('deployment.summary.deploymentNameLabel'), value: deploymentStore.draft.name || '-' },
+  { label: t('deployment.summary.appLabel'), value: selectedApp.value?.name || t('deployment.summary.appNotFound') },
+  { label: t('deployment.summary.versionLabel'), value: version.value, mono: true },
+])
 
-const _resolvePackerValue = (apiDef: AppVariable): any => {
-  const currentVars = deploymentStore.draft.variables as any
-  if (isMultiImagePackerLayout.value) {
-    const tkey = apiDef.template_key ?? 'default'
-    const fromNested = currentVars?.packer?.[tkey]?.[apiDef.name]
-    if (fromNested !== undefined) return fromNested
-  }
-  if (currentVars?.[apiDef.name] !== undefined) return currentVars[apiDef.name]
-  return apiDef.default
+const teamFacts = computed<InfoItem[]>(() => [
+  { label: t('deployment.summary.teamCountLabel'), value: deploymentStore.draft.groupCount },
+  { label: t('deployment.summary.modeLabel'), value: groupModeDisplay.value },
+])
+
+// Display names come from the OpenStack cache; reading it inside these
+// computeds makes them re-run once the cache is filled (see
+// ``useOpenStackResourceCache``).
+const summaryContext: SummaryContext = {
+  t,
+  osName: (osType, mode, value) => getOsDisplayName(osType as OsResourceType, mode, value)?.name ?? null,
 }
 
-const packerVars = computed(() => {
-  const defs = appVariables.value || []
-  const result: Array<{label: string, value: string, raw?: string}> = []
-  defs.forEach((apiDef: AppVariable) => {
-    if (apiDef.source !== 'packer') return
-    const val = _resolvePackerValue(apiDef)
-    // In multi-image mode prepend the template key so users can tell
-    // which image the value belongs to — three packer entries called
-    // "region" with no qualifier would be confusing.
-    if (isMultiImagePackerLayout.value) {
-      const tkey = apiDef.template_key ?? 'default'
-      const entry = toSummaryEntry(apiDef, val)
-      result.push({ ...entry, label: `[${tkey}] ${entry.label}` })
-    } else {
-      result.push(toSummaryEntry(apiDef, val))
-    }
-  })
-  return result
-})
+const packerVars = computed(() =>
+  packerRows(appVariables.value || [], deploymentStore.draft.variables, summaryContext))
 
-const terraformVars = computed(() => {
-  const currentVars = deploymentStore.draft.variables || {}
-  const defs = appVariables.value || []
-  const result: Array<{label: string, value: string, raw?: string}> = []
-  defs.forEach((apiDef: AppVariable) => {
-    // File variables have a separate renderer below; skip them here so the
-    // summary doesn't show their ``default = {}`` instead of the uploaded files.
-    if (apiDef.osType === 'file') return
-    if (apiDef.source === 'terraform') {
-      const val = currentVars[apiDef.name] !== undefined ? currentVars[apiDef.name] : apiDef.default
-      result.push(toSummaryEntry(apiDef, val))
-    }
-  })
-  return result
-})
+const terraformVars = computed(() =>
+  terraformRows(appVariables.value || [], deploymentStore.draft.variables, summaryContext))
 
-/**
- * Translate a backend submit-error into a user-facing toast string.
- *
- * The backend signals size / extension / encoding violations with
- * HTTP 413 or 422 and a structured detail body:
- *   { reason: "file_too_large" | "deployment_files_too_large"
- *           | "file_extension_rejected" | "file_b64_invalid"
- *           | "file_size_mismatch",
- *     variable, slot, filename?, limit_bytes?, actual_bytes?, allowed? }
- *
- * Every known reason maps to a dedicated i18n key with the size
- * numbers the user needs to act on. Unknown reasons fall back to the
- * generic submitError string so an unexpected payload still surfaces
- * something rather than ``[object Object]`` (which is what the
- * previous "stringify the detail object" code produced).
- */
-function _formatSubmitError(err: any): string {
-  const detail = getErrorDetail(err) as any
-  const fallback = (typeof detail === 'string' ? detail : null)
-    ?? err?.message
-    ?? t('deployment.summary.submitError')
-
-  if (!detail || typeof detail !== 'object' || !detail.reason) {
-    return fallback
-  }
-
-  // Filename: prefer the explicit field; fall back to "<variable>/<slot>"
-  // so the user can at least identify which input failed when the
-  // variable definition omitted the filename (older backend versions).
-  const filename = String(
-    detail.filename
-      ?? (detail.variable && detail.slot ? `${detail.variable}/${detail.slot}` : ''),
-  )
-  // Bytes-to-MB with one decimal — the user thinks in MB, the API
-  // returns bytes; rendering with 1 decimal makes "2.7 MB > 2 MB"
-  // useful (an integer "2 MB > 2 MB" would confuse).
-  const mb = (b: number) => (Number(b || 0) / (1024 * 1024)).toFixed(1)
-
-  switch (detail.reason) {
-    case 'file_too_large':
-      return t('deployment.summary.errors.fileTooLarge', {
-        filename,
-        actualMb: mb(detail.actual_bytes),
-        limitMb: mb(detail.limit_bytes),
-      })
-    case 'deployment_files_too_large':
-      return t('deployment.summary.errors.deploymentFilesTooLarge', {
-        limitMb: mb(detail.limit_bytes),
-      })
-    case 'file_extension_rejected':
-      return t('deployment.summary.errors.fileExtensionRejected', {
-        filename,
-        allowed: Array.isArray(detail.allowed) ? detail.allowed.join(', ') : '',
-      })
-    case 'file_b64_invalid':
-      return t('deployment.summary.errors.fileB64Invalid', { filename })
-    case 'file_size_mismatch':
-      return t('deployment.summary.errors.fileSizeMismatch', { filename })
-    default:
-      return fallback
-  }
-}
-
-
-/**
- * Files section of the summary. One card per ``@openstack:file:*`` variable,
- * with a chip list of uploaded slots showing filename + size (never the base64
- * content). Size is formatted in KB/MB.
- */
-const fileVarSummaries = computed(() => {
-  const defs = appVariables.value || []
-  const uploads = deploymentStore.draft.fileUploads || {}
-  const out: Array<{
-    name: string
-    scope: 'all' | 'team' | 'user'
-    chips: Array<{ slot: string; filename: string; size: string }>
-  }> = []
-  defs.forEach((apiDef: AppVariable) => {
-    if (apiDef.osType !== 'file') return
-    const slotMap = uploads[apiDef.name] || {}
-    const chips: Array<{ slot: string; filename: string; size: string }> = []
-    for (const [slotKey, file] of Object.entries(slotMap)) {
-      if (!file) continue
-      chips.push({
-        slot: slotKey,
-        filename: file.name,
-        size: formatBytes(file.size || 0),
-      })
-    }
-    out.push({
-      name: apiDef.name,
-      scope: (apiDef.osScope || 'all') as 'all' | 'team' | 'user',
-      chips,
-    })
-  })
-  return out
-})
-
-/**
- * Builds the summary row for a variable.
- *
- * - Marker variables (osType set): always show the display name from the
- *   frontend cache. In id-mode the raw value (UUID) is added as a ``title``
- *   tooltip, but the submitted value goes to the backend unchanged.
- * - Plain variables: format the raw value.
- */
-function toSummaryEntry(def: AppVariable, val: any): {label: string, value: string, raw?: string} {
-  // Scoped variables (``varScope``/``osScope`` = team|user) arrive as a map
-  // (slotKey → value). Render as ``"slotKey: value"`` lines so the
-  // summary makes the per-recipient configuration obvious — same
-  // detail level the wizard step shows.
-  if (effectiveVariableScope(def) !== 'all' && def.osType !== 'file') {
-    if (!val || typeof val !== 'object' || Array.isArray(val)) {
-      return { label: def.name, value: '-' }
-    }
-    const entries = Object.entries(val)
-    if (entries.length === 0) return { label: def.name, value: '-' }
-    const lines = entries.map(([slot, raw]) => {
-      let display: string
-      if (def.osType) {
-        const mode = def.osMode || 'name'
-        display = renderOsValue(def.osType, mode, raw, !!def.osMulti)
-      } else {
-        display = formatValue(raw)
-      }
-      return `${slot}: ${display}`
-    })
-    return { label: def.name, value: lines.join(' · ') }
-  }
-
-  if (def.osType) {
-    const mode = def.osMode || 'name'
-    const display = renderOsValue(def.osType, mode, val, !!def.osMulti)
-    const rawString = formatValue(val)
-    return {
-      label: def.name,
-      value: display,
-      // Only pass raw if it differs from the display, to avoid a duplicate tooltip.
-      raw: display !== rawString ? rawString : undefined,
-    }
-  }
-  return { label: def.name, value: formatValue(val) }
-}
-
-/**
- * Display string for an OS-marker value. Single → one name; multi → comma-
- * separated names. Falls back to the raw value when the cache has no display
- * name yet.
- */
-function renderOsValue(
-  osType: NonNullable<AppVariable['osType']>,
-  mode: 'id' | 'name',
-  val: any,
-  isMulti: boolean,
-): string {
-  if (val === null || val === undefined || val === '') return '-'
-
-  // Split the value — may be a string, CSV, or array. Same as in the picker.
-  let parts: string[] = []
-  if (Array.isArray(val)) {
-    parts = val.map((v) => String(v).trim()).filter(Boolean)
-  } else if (typeof val === 'string') {
-    parts = isMulti
-      ? val.split(',').map((s) => s.trim()).filter(Boolean)
-      : [val.trim()].filter(Boolean)
-  } else {
-    parts = [String(val)]
-  }
-
-  if (parts.length === 0) return '-'
-
-  const names = parts.map((p) => {
-    const cached = getOsDisplayName(asOsResourceType(osType), mode, p)
-    if (cached) return cached.name
-    return p
-  })
-  return names.join(', ')
-}
-
-// Helper to format the values.
-const formatValue = (val: any): string => {
-  if (typeof val === 'boolean') return val ? t('deployment.summary.yes') : t('deployment.summary.no')
-  if (Array.isArray(val)) return val.map(item => String(item).replace(/^"|"$/g, '')).join(', ')
-  if (typeof val === 'string') return val.replace(/^["'\[]+|["'\]]+$/g, '')
-  if (val === null || val === undefined || val === '') return '-'
-  return String(val)
-}
+const fileVarSummaries = computed(() =>
+  fileSummaries(appVariables.value || [], deploymentStore.draft.fileUploads))
 
 /**
  * Ensures the display cache is loaded for all OS resource types present in the
@@ -371,43 +144,27 @@ const fetchAndSyncVariables = async () => {
   isLoadingVariables.value = true
 
   try {
-    // A. Ensure version (string vs object fix)
-    const rawTag: any = deploymentStore.draft.releaseTag
-    let versionString = 'latest'
-    if (rawTag && typeof rawTag === 'object' && rawTag.version) {
-      versionString = rawTag.version
-    } else if (typeof rawTag === 'string' && rawTag.trim() !== '') {
-      versionString = rawTag
-    }
-
-    // B. Load API variables — only reached when the cache from step 3 was
+    // A. Load API variables — only reached when the cache from step 3 was
     // empty. The backend endpoint sparse-clones the app repo and parses
     // variables.tf, which can take a few seconds. This fetch is the fallback
     // for deep-link / reload.
     let variables: AppVariable[] = []
     try {
-      variables = await appStore.fetchAppVariables(selectedApp.value.appId, versionString)
+      variables = (await appStore.fetchAppVariables(selectedApp.value.appId, version.value)) ?? []
       deploymentStore.draft.variableDefinitions = variables
     } catch (varError: any) {
       console.warn('Could not load variables:', varError)
       // Re-throw so the outer catch block shows the toast.
       throw varError
     }
-    appVariables.value = variables || []
+    appVariables.value = variables
 
-    // C. Parse user input. ``userInputVar`` can be either a JSON string or a
-    // Record (type ``Record<string, any> | string``), so branch on the type.
+    // C. Parse user input.
     let userOverrides: Record<string, any> = {}
-    const rawUserInput: any = deploymentStore.draft.userInputVar
-    if (rawUserInput && typeof rawUserInput === 'object' && !Array.isArray(rawUserInput)) {
-      userOverrides = rawUserInput
-    } else if (typeof rawUserInput === 'string' && rawUserInput.trim() !== '') {
-      try {
-        userOverrides = JSON.parse(rawUserInput)
-      } catch (e) {
-        console.warn('Invalid JSON in userInputVar', e)
-        toast.error(t('deployment.summary.invalidJson'))
-      }
+    try {
+      userOverrides = parseUserInputVar(deploymentStore.draft.userInputVar)
+    } catch {
+      toast.error(t('deployment.summary.invalidJson'))
     }
 
     // D. Initialize draft
@@ -473,8 +230,7 @@ const handleDeploy = async () => {
       // Backend returns ``{detail: {reason, variable, slot, limit_bytes,
       // actual_bytes, ...}}`` for size/extension/encoding violations (413/422).
       // Branch on ``reason`` and format a localized message with the size numbers.
-      const message = _formatSubmitError(err)
-      toast.error(message)
+      toast.error(formatSubmitError(err, t))
       return
     }
 
@@ -496,243 +252,121 @@ const handleBack = () => {
 </script>
 
 <template>
-  <div class="bg-panel rounded-2xl p-10 border shadow-sm max-w-7xl mx-auto min-h-[600px] flex flex-col">
-
-    <div class="mb-8">
-      <div class="flex items-center gap-3 mb-6">
-        <h1 class="text-3xl font-bold text-fg">
-          {{ t('deployment.title') }}
-        </h1>
-        <BarChart3 :size="32" class="text-icon" />
-      </div>
-
-      <DeploymentProgressBar :current-step="4" />
-      <div class="border-b border-subtle mt-4"></div>
-    </div>
-
-    <div class="text-center mb-8">
-      <h2 class="text-2xl font-bold text-fg">
-        {{ t('deployment.summary.title') }}
-      </h2>
-      <p class="text-fg-muted mt-2">{{ t('deployment.summary.subtitle') }}</p>
-    </div>
-
+  <WizardStepLayout
+    :step="4"
+    :title="t('deployment.summary.title')"
+    :subtitle="t('deployment.summary.subtitle')"
+    :next-label="t('deployment.actions.deploy')"
+    :next-disabled="isLoadingVariables"
+    :busy="isSubmitting || deploymentStore.isLoading"
+    :busy-label="t('deployment.summary.creating')"
+    @back="handleBack"
+    @next="handleDeploy"
+  >
     <div v-if="isLoadingVariables" class="flex flex-col items-center justify-center py-12 gap-3">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+      <Spinner />
       <span class="text-fg-muted text-sm">{{ t('deployment.summary.loadingConfig') }}</span>
     </div>
 
-    <div v-else class="flex-grow space-y-6">
-      
-      <div class="surface-sunken p-6">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">1</div>
-          <h3 class="text-xl font-bold text-fg">{{ t('deployment.summary.baseConfigTitle') }}</h3>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-panel rounded-lg p-4 border border-strong">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.deploymentNameLabel') }}</p>
-            <p class="text-lg font-bold text-fg">{{ deploymentStore.draft.name || '-' }}</p>
-          </div>
-          <div class="bg-panel rounded-lg p-4 border border-strong">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.appLabel') }}</p>
-            <div class="flex items-center gap-2">
-              <img
-                v-if="selectedApp?.image"
-                :src="selectedApp.image"
-                :alt="selectedApp.name"
-                class="w-7 h-7 object-contain rounded"
-              />
-              <p class="text-lg font-bold text-fg">{{ selectedApp?.name || t('deployment.summary.appNotFound') }}</p>
+    <div v-else class="flex flex-col gap-section">
+      <Card :title="t('deployment.summary.baseConfigTitle')">
+        <div class="flex flex-col gap-4">
+          <InfoList :items="baseFacts" />
+          <div class="flex flex-col gap-2 border-t border-faint pt-4">
+            <p class="text-sm text-fg-muted">
+              {{ t('deployment.summary.selectedStudents', { count: deploymentStore.draft.studentIds.length }) }}
+            </p>
+            <div class="flex flex-wrap gap-1.5">
+              <Badge v-for="studentId in deploymentStore.draft.studentIds" :key="studentId">
+                {{ userDisplayName(deploymentStore.studentCache.get(studentId), studentId) }}
+              </Badge>
             </div>
           </div>
-          <div class="bg-panel rounded-lg p-4 border border-strong">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.versionLabel') }}</p>
-            <p class="text-lg font-bold text-fg">{{ versionDisplay }}</p>
-          </div>
         </div>
-          <div class="mt-4 bg-panel rounded-lg p-4 border border-strong">
-            <p class="text-xs text-fg-muted mb-2 uppercase tracking-wider font-semibold">{{ t('deployment.summary.selectedStudents', { count: deploymentStore.draft.studentIds.length }) }}</p>
-            <div class="flex flex-wrap gap-2">
-              <span v-for="studentId in deploymentStore.draft.studentIds" :key="studentId" 
-                class="px-3 py-1 bg-line/[.07] text-fg rounded-full text-sm font-medium border border-strong">
-                {{
-                  (deploymentStore.studentCache.get(studentId)?.firstName || deploymentStore.studentCache.get(studentId)?.lastName)
-                    ? `${deploymentStore.studentCache.get(studentId)?.firstName || ''} ${deploymentStore.studentCache.get(studentId)?.lastName || ''}`.trim()
-                    : (deploymentStore.studentCache.get(studentId)?.username || deploymentStore.studentCache.get(studentId)?.email || studentId)
-                }}
-              </span>
-            </div>
-          </div>
-      </div>
+      </Card>
 
-      <div class="surface-sunken p-6">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">2</div>
-          <h3 class="text-xl font-bold text-fg">{{ t('deployment.summary.teamAssignmentTitle') }}</h3>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div class="bg-panel rounded-lg p-4 border border-subtle">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.teamCountLabel') }}</p>
-            <p class="text-2xl font-bold text-fg">{{ deploymentStore.draft.groupCount }}</p>
-          </div>
-          <div class="bg-panel rounded-lg p-4 border border-subtle">
-            <p class="text-xs text-fg-muted mb-1 uppercase tracking-wider font-semibold">{{ t('deployment.summary.modeLabel') }}</p>
-            <p class="text-lg font-bold text-fg">{{ groupModeDisplay }}</p>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div v-for="(assignments, index) in deploymentStore.draft.assignments" :key="index" 
-            class="bg-panel rounded-lg p-4 border-2 border-subtle hover:border-strong transition-colors">
-            <div class="flex items-center justify-between mb-3">
-              <p class="font-bold text-fg">{{ deploymentStore.draft.groupNames[index] || t('deployment.assignment.vmDefaultName', { index: index + 1 }) }}</p>
-              <span class="px-2 py-1 bg-line/[.07] text-fg rounded-full text-xs font-bold">
-                {{ t('deployment.assignment.userCount', { count: assignments?.length || 0 }) }}
-              </span>
-            </div>
-            <div class="space-y-1 max-h-32 overflow-y-auto">
-              <div v-for="studentId in assignments" :key="studentId" 
-                class="text-sm text-fg bg-line/[.04] px-2 py-1 rounded border border-subtle">
-                {{
-                  (deploymentStore.studentCache && deploymentStore.studentCache.get(studentId)?.firstName || deploymentStore.studentCache.get(studentId)?.lastName)
-                    ? `${deploymentStore.studentCache.get(studentId)?.firstName || ''} ${deploymentStore.studentCache.get(studentId)?.lastName || ''}`.trim()
-                    : (deploymentStore.studentCache && (deploymentStore.studentCache.get(studentId)?.username || deploymentStore.studentCache.get(studentId)?.email) || studentId)
-                }}
+      <Card :title="t('deployment.summary.teamAssignmentTitle')">
+        <div class="flex flex-col gap-4">
+          <InfoList :items="teamFacts" />
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <div
+              v-for="(assignments, index) in deploymentStore.draft.assignments"
+              :key="index"
+              class="rounded-panel border border-subtle p-4"
+            >
+              <div class="mb-2 flex items-baseline justify-between gap-2">
+                <p class="font-semibold text-heading">
+                  {{ deploymentStore.draft.groupNames[index] || t('deployment.assignment.vmDefaultName', { index: index + 1 }) }}
+                </p>
+                <span class="text-sm tabular-nums text-fg-muted">
+                  {{ t('deployment.assignment.userCount', { count: assignments?.length || 0 }) }}
+                </span>
               </div>
-              <p v-if="!assignments || assignments.length === 0" class="text-xs text-fg-muted italic">{{ t('deployment.summary.noUsersAssigned') }}</p>
+              <ul class="max-h-32 overflow-y-auto text-sm text-fg-body">
+                <li v-for="studentId in assignments" :key="studentId" class="py-0.5">
+                  {{ userDisplayName(deploymentStore.studentCache.get(studentId), studentId) }}
+                </li>
+              </ul>
+              <p v-if="!assignments || assignments.length === 0" class="text-sm text-fg-muted">
+                {{ t('deployment.summary.noUsersAssigned') }}
+              </p>
             </div>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <div class="surface-sunken p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <div class="avatar w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">3</div>
-            <h3 class="text-xl font-bold text-fg">{{ t('deployment.summary.variablesConfigTitle') }}</h3>
-          </div>
-          <button @click="handleCustomize"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-line/[.07] text-fg font-semibold hover:bg-line/[.12] transition-colors border border-strong text-sm">
-            <ArrowRight :size="16" />
+      <Card :title="t('deployment.summary.variablesConfigTitle')">
+        <template #actions>
+          <BaseButton variant="secondary" size="sm" @click="handleCustomize">
+            <Pencil :size="14" aria-hidden="true" />
             {{ t('deployment.summary.editBtn') }}
-          </button>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div class="bg-panel rounded-lg border-2 border-subtle overflow-hidden">
-            <div class="bg-line/[.07] px-4 py-2 border-b border-subtle flex items-center gap-2">
-              <Box :size="18" class="text-icon" />
-              <h4 class="font-bold text-fg text-sm">{{ t('deployment.summary.packerVars') }}</h4>
-              <span class="ml-auto text-xs bg-line/[.12] text-fg px-2 py-0.5 rounded-full font-bold">
-                {{ packerVars.length }}
-              </span>
-            </div>
-            <div class="p-4 space-y-2 max-h-64 overflow-y-auto">
-              <div v-for="item in packerVars" :key="item.label"
-                class="flex justify-between items-start gap-3 py-2 border-b border-subtle last:border-0">
-                <span class="text-sm font-semibold text-fg flex-shrink-0">{{ item.label }}</span>
-                <span
-                  class="text-sm text-fg font-medium text-right break-all"
-                  :title="item.raw ? t('deployment.summary.submittedValue', { value: item.raw }) : undefined"
-                >
-                  {{ item.value }}
-                </span>
-              </div>
-              <p v-if="packerVars.length === 0" class="text-sm text-fg-muted italic text-center py-4">
-                {{ t('deployment.summary.noPackerVars') }}
-              </p>
-            </div>
-          </div>
+          </BaseButton>
+        </template>
 
-          <div class="bg-panel rounded-lg border-2 border-subtle overflow-hidden">
-            <div class="bg-line/[.07] px-4 py-2 border-b border-subtle flex items-center gap-2">
-              <Layers :size="18" class="text-icon" />
-              <h4 class="font-bold text-fg text-sm">{{ t('deployment.summary.terraformVars') }}</h4>
-              <span class="ml-auto text-xs bg-line/[.12] text-fg px-2 py-0.5 rounded-full font-bold">
-                {{ terraformVars.length }}
-              </span>
-            </div>
-            <div class="p-4 space-y-2 max-h-64 overflow-y-auto">
-              <div v-for="item in terraformVars" :key="item.label"
-                class="flex justify-between items-start gap-3 py-2 border-b border-subtle last:border-0">
-                <span class="text-sm font-semibold text-fg flex-shrink-0">{{ item.label }}</span>
-                <span
-                  class="text-sm text-fg font-medium text-right break-all"
-                  :title="item.raw ? t('deployment.summary.submittedValue', { value: item.raw }) : undefined"
-                >
-                  {{ item.value }}
-                </span>
-              </div>
-              <p v-if="terraformVars.length === 0" class="text-sm text-fg-muted italic text-center py-4">
-                {{ t('deployment.summary.noTerraformVars') }}
-              </p>
-            </div>
-          </div>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <SummaryVariableCard :title="t('deployment.summary.packerVars')" :icon="Box" :rows="packerVars"
+            :empty-label="t('deployment.summary.noPackerVars')" />
 
-          <!-- Files section. One card per file variable; chips list the
-               uploaded slots (filename + size). Hidden when the app declares
-               no file variables. -->
+          <SummaryVariableCard :title="t('deployment.summary.terraformVars')" :icon="Layers" :rows="terraformVars"
+            :empty-label="t('deployment.summary.noTerraformVars')" />
+
+          <!-- One entry per file variable; chips list the uploaded slots
+               (filename + size). Hidden when the app declares no file variables. -->
           <div
             v-if="fileVarSummaries.length > 0"
-            class="bg-panel rounded-lg border-2 border-warning-dot/30 overflow-hidden col-span-1 md:col-span-2"
+            class="overflow-hidden rounded-panel border border-subtle lg:col-span-2"
           >
-            <div class="bg-warning-dot/10 px-4 py-2 border-b border-warning-dot/30 flex items-center gap-2">
-              <Layers :size="18" class="text-warning" />
-              <h4 class="font-bold text-warning text-sm">Hochgeladene Dateien</h4>
-              <span class="ml-auto text-xs bg-warning-dot/20 text-warning px-2 py-0.5 rounded-full font-bold">
+            <div class="flex items-center gap-2 border-b border-faint bg-line/[.03] px-4 py-2">
+              <FileText :size="16" class="text-icon" aria-hidden="true" />
+              <h4 class="text-sm font-semibold text-heading">{{ t('deployment.summary.uploadedFiles') }}</h4>
+              <span class="ml-auto text-sm tabular-nums text-fg-muted">
                 {{ fileVarSummaries.reduce((acc, v) => acc + v.chips.length, 0) }}
               </span>
             </div>
-            <div class="p-4 space-y-3">
+            <div class="flex flex-col gap-3 p-4">
               <div v-for="entry in fileVarSummaries" :key="entry.name">
-                <div class="text-xs font-semibold text-fg mb-1">
-                  {{ entry.name }}
-                  <span class="text-[10px] font-normal text-fg-muted ml-1">
-                    (Scope: {{ entry.scope }})
-                  </span>
+                <div class="mb-1 text-sm text-fg">
+                  <span class="font-mono">{{ entry.name }}</span>
+                  <span class="ml-1 text-fg-muted">({{ t('deployment.summary.fileScope', { scope: entry.scope }) }})</span>
                 </div>
-                <div v-if="entry.chips.length === 0" class="text-xs text-fg-muted italic">
-                  Keine Datei hochgeladen
-                </div>
+                <p v-if="entry.chips.length === 0" class="text-sm text-fg-muted">
+                  {{ t('deployment.summary.noFileUploaded') }}
+                </p>
                 <div v-else class="flex flex-wrap gap-1.5">
                   <span
                     v-for="chip in entry.chips"
                     :key="`${entry.name}::${chip.slot}`"
-                    class="inline-flex items-center gap-1 text-xs bg-warning-dot/10 border border-warning-dot/30 text-warning px-2 py-1 rounded"
+                    class="code-chip inline-flex items-center gap-1"
                   >
-                    <span class="font-medium">{{ chip.filename }}</span>
-                    <span class="text-warning">·</span>
-                    <span>{{ chip.size }}</span>
-                    <span v-if="entry.scope !== 'all'" class="text-warning">·</span>
-                    <span v-if="entry.scope !== 'all'" class="text-[10px] text-warning">
-                      {{ chip.slot }}
-                    </span>
+                    {{ chip.filename }} · {{ chip.size }}<template v-if="entry.scope !== 'all'"> · {{ chip.slot }}</template>
                   </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
+      </Card>
     </div>
 
-    <div class="flex justify-between items-center mt-8 pt-6 border-t-2 border-subtle">
-      <button @click="handleBack"
-        class="btn-secondary flex items-center gap-2 px-8 py-3 rounded-control font-semibold transition">
-        <ArrowLeft :size="18" />
-        {{ t('deployment.actions.back') }}
-      </button>
-
-      <button @click="handleDeploy"
-        :disabled="isLoadingVariables || isSubmitting || deploymentStore.isLoading"
-        class="btn-primary flex items-center gap-3 px-10 py-3 rounded-control font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
-
-        <span v-if="isSubmitting || deploymentStore.isLoading" class="animate-spin rounded-full h-5 w-5 border-2 border-surface border-t-transparent"></span>
-        <span v-if="isSubmitting || deploymentStore.isLoading">{{ t('deployment.summary.creating') }}</span>
-        <span v-else>{{ t('deployment.actions.deploy') }}</span>
-      </button>
-    </div>
-
-  </div>
+  </WizardStepLayout>
 </template>

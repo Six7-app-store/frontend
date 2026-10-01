@@ -12,6 +12,10 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { createI18n } from 'vue-i18n'
+import de from '@/i18n/locales/de'
+
+const i18n = createI18n({ legacy: false, locale: 'de', messages: { de } })
 
 let mockQuery: Record<string, unknown> = {}
 const replace = vi.fn()
@@ -38,7 +42,7 @@ import LtiCallbackView from '@/views/LtiCallbackView.vue'
 
 const land = async (query: Record<string, unknown>) => {
   mockQuery = query
-  const wrapper = mount(LtiCallbackView)
+  const wrapper = mount(LtiCallbackView, { global: { plugins: [i18n] } })
   await flushPromises()
   return wrapper
 }

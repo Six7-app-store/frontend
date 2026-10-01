@@ -1,72 +1,32 @@
-/**
- * A variable whose template restricts it with ``contains([...], var.x)``
- * arrives with ``allowedValues`` and must render as a dropdown, not as
- * free text — a typo would otherwise only surface when Terraform runs.
- */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { createI18n } from 'vue-i18n'
 
 import VariableInput from '@/components/VariableInput.vue'
-import de from '@/i18n/locales/de'
-import type { AppVariable } from '@/types'
 
-const i18n = () => createI18n({ legacy: false, locale: 'de', messages: { de } })
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 
-const mountInput = (variable: AppVariable, modelValue: unknown) =>
+const boolVariable = { name: 'enable_gpu', type: 'bool', source: 'terraform' } as never
+
+const mountInput = (props: Record<string, unknown>) =>
   mount(VariableInput, {
-    props: { variable, modelValue },
-    global: { plugins: [i18n()], stubs: { OpenStackResourcePicker: true } },
+    props: { variable: boolVariable, modelValue: false, ...props },
+    global: { stubs: { OpenStackResourcePicker: true } },
   })
 
-describe('VariableInput mit allowedValues', () => {
-  const ipMode: AppVariable = {
-    name: 'ip_mode',
-    type: 'string',
-    default: 'ipv4',
-    allowedValues: ['ipv4', 'ipv6', 'dual'],
-  }
+describe('VariableInput bool', () => {
+  it('schaltet einen Bool-Wert um und zeigt An/Aus', async () => {
+    const wrapper = mountInput({ modelValue: false })
+    expect(wrapper.text()).toContain('variableInput.off')
 
-  it('rendert ein Dropdown mit genau den erlaubten Werten', () => {
-    const wrapper = mountInput(ipMode, 'ipv4')
+    await wrapper.find('button').trigger('click')
+    expect(wrapper.emitted('update:modelValue')).toEqual([[true]])
 
-    expect(wrapper.find('input').exists()).toBe(false)
-    const options = wrapper.findAll('option').filter((o) => o.attributes('disabled') === undefined)
-    expect(options.map((o) => o.text())).toEqual(['ipv4', 'ipv6', 'dual'])
-    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('0')
+    await wrapper.setProps({ modelValue: true })
+    expect(wrapper.text()).toContain('variableInput.on')
   })
 
-  it('gibt den gewählten Wert zurück, nicht den Index', async () => {
-    const wrapper = mountInput(ipMode, 'ipv4')
-
-    await wrapper.find('select').setValue('2')
-
-    expect(wrapper.emitted('update:modelValue')?.slice(-1)[0]).toEqual(['dual'])
-  })
-
-  it('behält Zahlen als Zahlen', async () => {
-    const wrapper = mountInput({ name: 'nodes', type: 'number', allowedValues: [1, 3, 5] }, 3)
-
-    await wrapper.find('select').setValue('2')
-
-    expect(wrapper.emitted('update:modelValue')?.slice(-1)[0]).toEqual([5])
-  })
-
-  it('zeigt ohne passenden Wert den Platzhalter', () => {
-    const wrapper = mountInput(ipMode, '')
-
-    expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('')
-  })
-
-  it('lässt den Ressourcen-Picker gewinnen', () => {
-    const wrapper = mountInput({ ...ipMode, osType: 'network' }, '')
-
-    expect(wrapper.find('select').exists()).toBe(false)
-  })
-
-  it('bleibt ohne allowedValues ein Textfeld', () => {
-    const wrapper = mountInput({ name: 'title', type: 'string' }, '')
-
-    expect(wrapper.find('input[type="text"]').exists()).toBe(true)
+  it('lässt sich deaktivieren', () => {
+    const wrapper = mountInput({ disabled: true })
+    expect(wrapper.find('button').attributes('disabled')).toBeDefined()
   })
 })

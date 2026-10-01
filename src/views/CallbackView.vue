@@ -3,10 +3,13 @@ import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
-import { Loader2 } from 'lucide-vue-next'
+import StatusPage from '@/components/ui/StatusPage.vue'
+import StatusScreen from '@/components/ui/StatusScreen.vue'
+import { isInAppPath } from '@/utils/safe-redirect'
 
 const router = useRouter()
 const authStore = useAuthStore()
+// The error text to show; '' when the failure came without a message.
 const error = ref<string | null>(null)
 
 onMounted(async () => {
@@ -14,11 +17,12 @@ onMounted(async () => {
     // Handle OAuth callback
     const returnUrl = await authStore.handleCallback()
     
-    // Redirect to original destination or dashboard
-    router.push(returnUrl || { name: ROUTE_NAMES.dashboard })
+    // Back to where the sign-in started, if that is one of our pages. The
+    // value round-trips through ?returnUrl=, so it is not trusted.
+    router.push(isInAppPath(returnUrl) ? returnUrl : { name: ROUTE_NAMES.dashboard })
   } catch (err: any) {
     console.error('Callback error:', err)
-    error.value = err.message || 'Authentication failed'
+    error.value = err?.message || ''
     
     // Redirect to login after short delay
     setTimeout(() => {
@@ -29,20 +33,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen">
-    <div class="text-center">
-      <div v-if="!error" class="flex flex-col items-center gap-4">
-        <Loader2 class="animate-spin text-icon" :size="48" />
-        <p class="text-fg-muted">Completing authentication...</p>
-      </div>
-      
-      <div v-else class="flex flex-col items-center gap-4">
-        <div class="text-danger">
-          <p class="font-semibold">Authentication Error</p>
-          <p class="text-sm mt-2">{{ error }}</p>
-        </div>
-        <p class="text-sm text-fg-muted">Redirecting to login...</p>
-      </div>
-    </div>
-  </div>
+  <StatusPage>
+    <StatusScreen v-if="error === null" loading :text="$t('auth.callback.working')" />
+    <StatusScreen
+      v-else
+      tone="danger"
+      :title="$t('auth.callback.errorTitle')"
+      :text="error || $t('auth.callback.failed')"
+    >
+      <p class="text-sm text-fg-muted">{{ $t('auth.callback.redirecting') }}</p>
+    </StatusScreen>
+  </StatusPage>
 </template>

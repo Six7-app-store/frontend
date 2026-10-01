@@ -39,7 +39,11 @@ vi.mock('@/composables/useToast', () => ({
 vi.mock('@/api/app.api', () => ({
     appApi: {
         getById: vi.fn(),
-        delete: vi.fn()
+        delete: vi.fn(),
+        submitVersion: vi.fn(),
+        withdrawVersion: vi.fn(),
+        update: vi.fn(),
+        listVersionApprovals: vi.fn(),
     }
 }))
 import { appApi } from '@/api/app.api'
@@ -64,7 +68,6 @@ vi.mock('@/stores/openstack-credentials.store', () => ({
 
 vi.mock('@/stores/auth.store', () => ({
     useAuthStore: () => ({
-        isTeacherOrAdmin: false,
         userId: 'user-1'
     })
 }))
@@ -77,10 +80,11 @@ describe('AppsDetailView.vue', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
+        ;(appApi.listVersionApprovals as any).mockResolvedValue({ data: [] })
         // Standard-Antwort der API
         ;(appApi.getById as any).mockResolvedValue({
             data: {
-                id: 'app-123',
+                appId: 'app-123',
                 name: 'Test App',
                 description: 'Detail Beschreibung',
                 userId: 'user-1',
@@ -157,7 +161,7 @@ describe('AppsDetailView.vue', () => {
     it('deaktiviert den Deploy-Button und warnt (Fallback), wenn keine Version ausgewählt ist', async () => {
         // API liefert App OHNE Versionen
         ;(appApi.getById as any).mockResolvedValue({
-            data: { id: 'app-123', name: 'Leere App', versions: [] }
+            data: { appId: 'app-123', name: 'Leere App', versions: [] }
         })
 
         const wrapper = mountComponent()
@@ -177,32 +181,48 @@ describe('AppsDetailView.vue', () => {
 
     // --- 3. Löschen (Modal & API) ---
 
-    it('zeigt den Lösch-Button an, wenn der Nutzer der Besitzer ist, und öffnet das Modal', async () => {
+    // Deleting sits at the bottom of the store tab and in the header's "…" menu.
+    const openDeleteDialog = async (wrapper: ReturnType<typeof mountComponent>) => {
+        await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.tabStore'))!.trigger('click')
+        await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteZoneButton'))!.trigger('click')
+        await nextTick()
+    }
+
+    it('bietet dem Besitzer das Löschen im Store-Tab an und öffnet den Dialog', async () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        const deleteButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteApp'))!
-        expect(deleteButton.exists()).toBe(true)
-
-        await deleteButton.trigger('click')
-        await nextTick()
+        await openDeleteDialog(wrapper)
 
         const modal = wrapper.find('.modal')
         expect(modal.exists()).toBe(true)
         expect(modal.text()).toContain('AppsDetailView.confirmDeleteTitle')
     })
 
+    it('öffnet denselben Dialog über das "…"-Menü im Kopf', async () => {
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        await wrapper.get('button[aria-haspopup]').trigger('click')
+        await nextTick()
+        const entry = document.body.querySelector<HTMLButtonElement>('[role="menuitem"]')!
+        expect(entry.textContent).toContain('AppsDetailView.deleteApp')
+        entry.click()
+        await nextTick()
+
+        expect(wrapper.find('.modal').text()).toContain('AppsDetailView.confirmDeleteTitle')
+        wrapper.unmount()
+    })
+
     it('rendert den App-Namen im Lösch-Modal als Text, nicht als HTML', async () => {
         const evilName = '<img src=x onerror="alert(1)">'
         ;(appApi.getById as any).mockResolvedValue({
-            data: { id: 'app-123', name: evilName, description: '', userId: 'user-1', versions: [] }
+            data: { appId: 'app-123', name: evilName, description: '', userId: 'user-1', versions: [] }
         })
         const wrapper = mountComponent()
         await flushPromises()
 
-        const deleteButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteApp'))!
-        await deleteButton.trigger('click')
-        await nextTick()
+        await openDeleteDialog(wrapper)
 
         const modal = wrapper.find('.modal')
         expect(modal.find('img').exists()).toBe(false)
@@ -215,9 +235,7 @@ describe('AppsDetailView.vue', () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        const deleteButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deleteApp'))!
-        await deleteButton.trigger('click')
-        await nextTick()
+        await openDeleteDialog(wrapper)
 
         const confirmBtn = wrapper.findAll('.modal button').find(b => b.text().includes('AppsDetailView.confirmButton'))!
         await confirmBtn.trigger('click')
@@ -230,13 +248,268 @@ describe('AppsDetailView.vue', () => {
 
     // --- 4. Navigation ---
 
-    it('navigiert zurück, wenn der Zurück-Button geklickt wird', async () => {
+    describe('Version einreichen', () => {
+        const openSubmitDialog = async () => {
+            const wrapper = mountComponent()
+            await flushPromises()
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.tabStore'))!.trigger('click')
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.submitButton'))!.trigger('click')
+            return wrapper
+        }
+        const submitButton = (wrapper: ReturnType<typeof mountComponent>) =>
+            wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.submitModal.submit'))!
+
+        it('reicht die Version mit getrimmter Notiz ein und schließt den Dialog', async () => {
+            ;(appApi.submitVersion as any).mockResolvedValue({})
+            const wrapper = await openSubmitDialog()
+
+            await wrapper.find('textarea').setValue('  bitte prüfen  ')
+            await submitButton(wrapper).trigger('click')
+            await flushPromises()
+
+            expect(appApi.submitVersion).toHaveBeenCalledWith('app-123', 'v1.0', undefined, 'bitte prüfen')
+            expect(mockToastSuccess).toHaveBeenCalledWith('AppsDetailView.toasts.submitSuccess')
+            expect(wrapper.find('textarea').exists()).toBe(false)
+        })
+
+        it('reicht ohne Notiz ein (Notiz ist optional)', async () => {
+            ;(appApi.submitVersion as any).mockResolvedValue({})
+            const wrapper = await openSubmitDialog()
+
+            await submitButton(wrapper).trigger('click')
+            await flushPromises()
+
+            expect(appApi.submitVersion).toHaveBeenCalledWith('app-123', 'v1.0', undefined, undefined)
+        })
+
+        it('zeigt Marker-Fehler einer 422 im offenen Dialog', async () => {
+            ;(appApi.submitVersion as any).mockRejectedValue({
+                response: { status: 422, data: { detail: { marker_errors: [
+                    { variable: 'flavor', code: 'unknown_type', message: 'Unbekannter Typ', location: 'variables.tf:3' },
+                ] } } },
+            })
+            const wrapper = await openSubmitDialog()
+
+            await submitButton(wrapper).trigger('click')
+            await flushPromises()
+
+            expect(wrapper.find('textarea').exists()).toBe(true)
+            expect(wrapper.text()).toContain('flavor')
+            expect(wrapper.text()).toContain('Unbekannter Typ')
+            expect(wrapper.text()).toContain('variables.tf:3')
+            expect(mockToastError).not.toHaveBeenCalled()
+        })
+    })
+
+    it('schaltet die Sichtbarkeit im Store-Tab um', async () => {
+        ;(appApi.getById as any).mockResolvedValue({
+            data: { appId: 'app-123', name: 'Test App', userId: 'user-1', is_private: false, versions: ['v1.0'] },
+        })
+        ;(appApi.update as any).mockResolvedValue({ data: {} })
         const wrapper = mountComponent()
         await flushPromises()
+        await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.tabStore'))!.trigger('click')
 
-        const backButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.backToOverview'))!
-        await backButton.trigger('click')
+        const toggle = (w: { findAll: (s: string) => any[] }) =>
+      w.findAll('button').find((b: any) => b.find('.toggle-knob').exists())!
+        await toggle(wrapper).trigger('click')
+        await flushPromises()
 
-        expect(mockBack).toHaveBeenCalledTimes(1)
+        expect(appApi.update).toHaveBeenCalledWith('app-123', { is_private: true })
+        expect(mockToastSuccess).toHaveBeenCalledWith('AppsDetailView.toasts.setPrivate')
+        expect(wrapper.text()).toContain('AppsDetailView.visibilityPrivate')
+    })
+
+    describe('App bearbeiten: Bild', () => {
+        beforeEach(() => {
+            global.URL.createObjectURL = vi.fn(() => 'blob:mocked-url')
+            global.URL.revokeObjectURL = vi.fn()
+            ;(appApi.getById as any).mockResolvedValue({
+                data: { appId: 'app-123', name: 'Test App', description: '', userId: 'user-1', image: 'data:image/png;base64,ALT', versions: ['v1.0'] },
+            })
+            ;(appApi.update as any).mockResolvedValue({ data: {} })
+        })
+
+        const openEditDialog = async () => {
+            const wrapper = mountComponent()
+            await flushPromises()
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editApp'))!.trigger('click')
+            return wrapper
+        }
+        const save = async (wrapper: ReturnType<typeof mountComponent>) => {
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editModal.saveButton'))!.trigger('click')
+            await flushPromises()
+        }
+        const chooseFile = async (wrapper: ReturnType<typeof mountComponent>, file: File) => {
+            const input = wrapper.find('input[type="file"]')
+            Object.defineProperty(input.element, 'files', { value: [file], configurable: true })
+            await input.trigger('change')
+        }
+
+        it('ruft ohne Änderung nichts auf', async () => {
+            const wrapper = await openEditDialog()
+            await save(wrapper)
+            expect(appApi.update).not.toHaveBeenCalled()
+        })
+
+        it('ersetzt das Bild durch eine Data-URL', async () => {
+            const wrapper = await openEditDialog()
+            await chooseFile(wrapper, new File(['neu'], 'neu.png', { type: 'image/png' }))
+            expect(wrapper.text()).toContain('neu.png')
+
+            await save(wrapper)
+            // The file is read with a FileReader, which resolves outside the promise queue.
+            await vi.waitFor(() => expect(appApi.update).toHaveBeenCalled())
+            expect(appApi.update).toHaveBeenCalledWith('app-123', { image: expect.stringMatching(/^data:image\/png;base64,/) })
+        })
+
+        it('entfernt das Bild mit einem leeren String', async () => {
+            const wrapper = await openEditDialog()
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editModal.imageRemove'))!.trigger('click')
+            // Removing asks first.
+            expect(wrapper.text()).toContain('AppsDetailView.editModal.removeConfirmTitle')
+            await wrapper.get('[data-testid="confirm-remove-image"]').trigger('click')
+
+            await save(wrapper)
+            expect(appApi.update).toHaveBeenCalledWith('app-123', { image: '' })
+        })
+
+        it('lehnt Nicht-Bilder mit einem Hinweis ab', async () => {
+            const wrapper = await openEditDialog()
+            await chooseFile(wrapper, new File(['x'], 'notes.txt', { type: 'text/plain' }))
+
+            expect(mockToastError).toHaveBeenCalledWith('image.onlyImages')
+            await save(wrapper)
+            expect(appApi.update).not.toHaveBeenCalled()
+        })
+    })
+    describe('Store-Tab', () => {
+        const approval = (version_tag: string, status: string, extra = {}) =>
+            ({ version_tag, status, created_at: '2026-01-02T00:00:00Z', rejection_reason: null, ...extra })
+
+        const openStoreTab = async () => {
+            const wrapper = mountComponent()
+            await flushPromises()
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.tabStore'))!.trigger('click')
+            return wrapper
+        }
+
+        it('mahnt eine öffentliche App ohne Einreichung an', async () => {
+            const wrapper = await openStoreTab()
+            expect(wrapper.text()).toContain('AppsDetailView.bannerNoSubmission')
+            expect(wrapper.text()).not.toContain('AppsDetailView.bannerPending')
+        })
+
+        it('meldet eine wartende Einreichung und bietet das Zurückziehen an', async () => {
+            ;(appApi.listVersionApprovals as any).mockResolvedValue({ data: [approval('v1.0', 'pending')] })
+            ;(appApi.withdrawVersion as any).mockResolvedValue({})
+            const wrapper = await openStoreTab()
+            expect(wrapper.text()).toContain('AppsDetailView.bannerPending')
+
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.withdrawButton'))!.trigger('click')
+            await nextTick()
+            // Withdrawing is confirmed first.
+            expect(appApi.withdrawVersion).not.toHaveBeenCalled()
+            const dialog = wrapper.find('.modal')
+            expect(dialog.text()).toContain('AppsDetailView.withdrawConfirmTitle')
+            await dialog.findAll('button').find(b => b.text().includes('AppsDetailView.withdrawButton'))!.trigger('click')
+            await flushPromises()
+
+            expect(appApi.withdrawVersion).toHaveBeenCalledWith('app-123', 'v1.0')
+            expect(mockToastSuccess).toHaveBeenCalledWith('AppsDetailView.toasts.withdrawSuccess')
+            // Die Freigaben werden danach neu geladen.
+            expect(appApi.listVersionApprovals).toHaveBeenCalledTimes(2)
+        })
+
+        it('zeigt bei einer abgelehnten Version den Grund und das erneute Einreichen', async () => {
+            ;(appApi.listVersionApprovals as any).mockResolvedValue({
+                data: [approval('v1.0', 'rejected', { rejection_reason: 'Zu groß' })],
+            })
+            const wrapper = await openStoreTab()
+
+            expect(wrapper.text()).toContain('Zu groß')
+            expect(wrapper.text()).toContain('AppsDetailView.resubmitButton')
+        })
+
+        it('zeigt keinen Banner mehr, sobald eine Version freigegeben ist', async () => {
+            ;(appApi.listVersionApprovals as any).mockResolvedValue({
+                data: [approval('v1.0', 'approved'), approval('v2.0', 'pending')],
+            })
+            const wrapper = await openStoreTab()
+            expect(wrapper.text()).not.toContain('AppsDetailView.bannerPending')
+            expect(wrapper.text()).not.toContain('AppsDetailView.bannerNoSubmission')
+        })
+
+        it('warnt bei einer doppelten Einreichung (409)', async () => {
+            ;(appApi.submitVersion as any).mockRejectedValue({ response: { status: 409 } })
+            const wrapper = await openStoreTab()
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.submitButton'))!.trigger('click')
+            await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.submitModal.submit'))!.trigger('click')
+            await flushPromises()
+
+            expect(mockToastWarning).toHaveBeenCalledWith('AppsDetailView.toasts.submitDuplicate')
+        })
+
+        it('zeigt für private Apps statt der Tabelle einen Hinweis', async () => {
+            ;(appApi.getById as any).mockResolvedValue({
+                data: { appId: 'app-123', name: 'Test App', userId: 'user-1', is_private: true, versions: ['v1.0'] },
+            })
+            const wrapper = await openStoreTab()
+            expect(wrapper.text()).toContain('AppsDetailView.privateAppStoreHint')
+            expect(wrapper.find('table').exists()).toBe(false)
+        })
+
+        it('bietet fremden Nutzern keinen Store-Tab und lädt keine Freigaben', async () => {
+            ;(appApi.getById as any).mockResolvedValue({
+                data: { appId: 'app-123', name: 'Test App', userId: 'someone-else', versions: ['v1.0'] },
+            })
+            const wrapper = mountComponent()
+            await flushPromises()
+
+            expect(wrapper.text()).not.toContain('AppsDetailView.tabStore')
+            expect(wrapper.text()).not.toContain('AppsDetailView.editApp')
+            expect(appApi.listVersionApprovals).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('Versionsdetails', () => {
+        it('zeigt die Angaben der gewählten Version aus einem Release-Objekt', async () => {
+            ;(appApi.getById as any).mockResolvedValue({
+                data: {
+                    appId: 'app-123', name: 'Test App', userId: 'user-1',
+                    versions: [{ version: 'v3', name: 'Dritte', commit_sha: 'abc123', commit_author: 'Ada', prerelease: true, url: 'https://example.test/v3' }],
+                },
+            })
+            const wrapper = mountComponent()
+            await flushPromises()
+
+            const text = wrapper.text()
+            expect(text).toContain('Dritte')
+            expect(text).toContain('abc123')
+            expect(text).toContain('Ada')
+            expect(text).toContain('AppsDetailView.yes')
+            expect(text).toContain('https://example.test/v3')
+        })
+
+        it('sagt, dass es keine Angaben gibt, wenn die Version nur ein Tag ist', async () => {
+            const wrapper = mountComponent()
+            await flushPromises()
+            expect(wrapper.text()).toContain('AppsDetailView.noVersionInfo')
+        })
+    })
+
+    it('sendet beim Bearbeiten nur geänderte Felder', async () => {
+        ;(appApi.update as any).mockResolvedValue({ data: { name: 'Neu' } })
+        const wrapper = mountComponent()
+        await flushPromises()
+        await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editApp'))!.trigger('click')
+
+        await wrapper.find('.modal input[type="text"]').setValue('  Neu  ')
+        await wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.editModal.saveButton'))!.trigger('click')
+        await flushPromises()
+
+        expect(appApi.update).toHaveBeenCalledWith('app-123', { name: 'Neu' })
+        expect(mockToastSuccess).toHaveBeenCalledWith('AppsDetailView.toasts.editSuccess')
+        expect(wrapper.find('h1').text()).toBe('Neu')
     })
 })

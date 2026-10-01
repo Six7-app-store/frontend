@@ -1,0 +1,136 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
+
+import AdminAppsView from '@/views/AdminAppsView.vue'
+
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({ t: (key: string) => key }),
+}))
+
+vi.mock('@/composables/useToast', () => ({
+  useToast: () => ({ success: vi.fn(), error: vi.fn() }),
+}))
+
+vi.mock('@/api/app.api', () => ({
+  appApi: {
+    list: vi.fn(),
+    listVersionApprovals: vi.fn(),
+    admin: {
+      listPendingApprovals: vi.fn(),
+      approveVersion: vi.fn(),
+      rejectVersion: vi.fn(),
+      revokeVersion: vi.fn(),
+    },
+  },
+}))
+import { appApi } from '@/api/app.api'
+
+const mountView = () =>
+  mount(AdminAppsView, {
+    global: {
+      mocks: { $t: (key: string) => key },
+      stubs: { RouterLink: { template: '<a><slot /></a>' } },
+    },
+  })
+
+describe('AdminAppsView.vue', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    ;(appApi.list as any).mockResolvedValue({
+      data: [{ appId: 'a1', name: 'Jupyter Lab', is_private: false }],
+    })
+    ;(appApi.admin.listPendingApprovals as any).mockResolvedValue({
+      data: [{ appId: 'a1', version_tag: 'v1.0.0', status: 'pending' }],
+    })
+    ;(appApi.listVersionApprovals as any).mockResolvedValue({
+      data: [{ approvalId: 'p1', appId: 'a1', version_tag: 'v1.0.0', status: 'pending', created_at: '2026-09-01' }],
+    })
+  })
+
+  const expandFirstApp = async () => {
+    const wrapper = mountView()
+    await flushPromises()
+    await wrapper.find('button.w-full').trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  const buttonWithText = (wrapper: ReturnType<typeof mountView>, text: string) =>
+    wrapper.findAll('button').find((b) => b.text().includes(text))!
+
+  it('names the app in the reject dialog', async () => {
+    const wrapper = await expandFirstApp()
+
+    await buttonWithText(wrapper, 'AdminAppsView.rejectBtn').trigger('click')
+
+    const dialog = wrapper.find('.surface-overlay')
+    expect(dialog.text()).toContain('v1.0.0')
+    expect(dialog.text()).toContain('Jupyter Lab')
+  })
+
+  it('approves a pending version by app id and tag', async () => {
+    ;(appApi.admin.approveVersion as any).mockResolvedValue({})
+    const wrapper = await expandFirstApp()
+
+    await buttonWithText(wrapper, 'AdminAppsView.approveBtn').trigger('click')
+    await flushPromises()
+
+    expect(appApi.admin.approveVersion).toHaveBeenCalledWith('a1', 'v1.0.0')
+  })
+
+  const dialog = (wrapper: ReturnType<typeof mountView>) => wrapper.find('.surface-overlay')
+  const dialogButton = (wrapper: ReturnType<typeof mountView>, text: string) =>
+    dialog(wrapper).findAll('button').find((b) => b.text().includes(text))!
+
+  it('rejects only with a reason and sends it trimmed', async () => {
+    ;(appApi.admin.rejectVersion as any).mockResolvedValue({})
+    const wrapper = await expandFirstApp()
+    await buttonWithText(wrapper, 'AdminAppsView.rejectBtn').trigger('click')
+
+    const submit = dialogButton(wrapper, 'AdminAppsView.rejectModal.submit')
+    expect(submit.attributes('disabled')).toBeDefined()
+
+    await dialog(wrapper).find('textarea').setValue('  Keine Lizenzangabe  ')
+    expect(dialogButton(wrapper, 'AdminAppsView.rejectModal.submit').attributes('disabled')).toBeUndefined()
+    await dialogButton(wrapper, 'AdminAppsView.rejectModal.submit').trigger('click')
+    await flushPromises()
+
+    expect(appApi.admin.rejectVersion).toHaveBeenCalledWith('a1', 'v1.0.0', 'Keine Lizenzangabe')
+    expect(dialog(wrapper).exists()).toBe(false)
+  })
+
+  it('revokes an approved version only with a reason and sends it trimmed', async () => {
+    ;(appApi.listVersionApprovals as any).mockResolvedValue({
+      data: [{ approvalId: 'p1', appId: 'a1', version_tag: 'v1.0.0', status: 'approved', created_at: '2026-09-01' }],
+    })
+    ;(appApi.admin.revokeVersion as any).mockResolvedValue({})
+    const wrapper = await expandFirstApp()
+    await buttonWithText(wrapper, 'AdminAppsView.revokeBtn').trigger('click')
+
+    expect(dialogButton(wrapper, 'AdminAppsView.revokeModal.submit').attributes('disabled')).toBeDefined()
+    await dialog(wrapper).find('textarea').setValue(' Sicherheitslücke ')
+    await dialogButton(wrapper, 'AdminAppsView.revokeModal.submit').trigger('click')
+    await flushPromises()
+
+    expect(appApi.admin.revokeVersion).toHaveBeenCalledWith('a1', 'v1.0.0', 'Sicherheitslücke')
+    expect(dialog(wrapper).exists()).toBe(false)
+  })
+
+  it('zeigt über den Filter-Schalter auch Apps ohne Einreichung', async () => {
+    ;(appApi.list as any).mockResolvedValue({
+      data: [
+        { appId: 'a1', name: 'Jupyter Lab', is_private: false },
+        { appId: 'a2', name: 'Ohne Einreichung', is_private: false },
+      ],
+    })
+    const wrapper = mountView()
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('Ohne Einreichung')
+
+    const toggle = (w: { findAll: (s: string) => any[] }) =>
+    w.findAll('button').find((b: any) => b.find('.toggle-knob').exists())!
+    await toggle(wrapper).trigger('click')
+
+    expect(wrapper.text()).toContain('Ohne Einreichung')
+  })
+})

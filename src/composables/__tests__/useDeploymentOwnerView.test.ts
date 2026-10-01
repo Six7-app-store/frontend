@@ -52,3 +52,23 @@ describe('useDeploymentOwnerView', () => {
     expect(isOwnerView.value).toBe(true)
   })
 })
+
+describe('useDeploymentOwnerView canOperate', () => {
+  beforeEach(() => {
+    auth.user = null
+  })
+
+  it('lets the owner and admins operate', () => {
+    auth.user = { userId: 'owner-1', role: 'teacher' }
+    expect(useDeploymentOwnerView(deploymentOf('owner-1')).canOperate.value).toBe(true)
+    auth.user = { userId: 'someone', role: 'admin' }
+    expect(useDeploymentOwnerView(deploymentOf('owner-1')).canOperate.value).toBe(true)
+  })
+
+  it('lets a teacher inspect but not operate someone else\'s deployment', () => {
+    auth.user = { userId: 'someone', role: 'teacher' }
+    const { isOwnerView, canOperate } = useDeploymentOwnerView(deploymentOf('owner-1'))
+    expect(isOwnerView.value).toBe(true)
+    expect(canOperate.value).toBe(false)
+  })
+})

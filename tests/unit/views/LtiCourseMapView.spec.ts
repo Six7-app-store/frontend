@@ -11,6 +11,10 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { createI18n } from 'vue-i18n'
+import de from '@/i18n/locales/de'
+
+const i18n = createI18n({ legacy: false, locale: 'de', messages: { de } })
 
 let mockQuery: Record<string, unknown> = {}
 const replace = vi.fn()
@@ -39,11 +43,17 @@ vi.mock('@/api/course.api', () => ({
 vi.mock('lucide-vue-next', () => {
   const icon = { template: '<span />' }
   return {
+    ChevronDown: icon, // BaseSelect
     Loader2: icon,
     GraduationCap: icon,
     CheckCircle2: icon,
     AlertCircle: icon,
     DownloadCloud: icon,
+    // AlertBox (skipped members)
+    AlertOctagon: icon,
+    AlertTriangle: icon,
+    CheckCircle: icon,
+    Info: icon,
   }
 })
 
@@ -61,7 +71,7 @@ const context = (courseId: string | null = null) => ({
 
 const open = async (query: Record<string, unknown> = { context: CONTEXT_ID }) => {
   mockQuery = query
-  const wrapper = mount(LtiCourseMapView)
+  const wrapper = mount(LtiCourseMapView, { global: { plugins: [i18n] } })
   await flushPromises()
   return wrapper
 }
@@ -135,7 +145,7 @@ describe('LtiCourseMapView', () => {
 
     await wrapper.find('[data-testid="map-skip"]').trigger('click')
 
-    expect(replace).toHaveBeenCalledWith('/deployments')
+    expect(replace).toHaveBeenCalledWith({ name: 'deployments.list' })
     expect(mapContext).not.toHaveBeenCalled()
   })
 

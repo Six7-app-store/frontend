@@ -18,8 +18,10 @@
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import type { DeploymentResource } from '@/types'
-import { formatUptime, pillToneClass } from '@/composables/useVmPresentation'
+import { formatUptime, lifecyclePillClass } from '@/composables/useVmPresentation'
+import { formatMegabytes } from '@/utils/format'
 import { RefreshCcw, AlertTriangle, Cpu, Network } from 'lucide-vue-next'
 
 const { t } = useI18n()
@@ -30,6 +32,8 @@ const props = defineProps<{
    *  button shows a spinner and is disabled. Identified by address
    *  because the parent owns the redeploy state, not the card. */
   redeploying?: boolean
+  /** Hides the redeploy button for users who may only inspect. */
+  canRedeploy?: boolean
   /** Whether the inline detail panel under this card is currently
    *  expanded. Drives the Details button label (``Details`` vs.
    *  ``Ausblenden``) and a subtle accent on the card border so the
@@ -55,17 +59,7 @@ const pillText = computed(() => {
   return base
 })
 
-const pillTone = computed<'green' | 'amber' | 'red' | 'grey'>(() => {
-  const status = props.resource.lifecycle?.status
-  if (!status) return 'grey'
-  if (status === 'ACTIVE') return 'green'
-  if (status === 'ERROR') return 'red'
-  if (status === 'BUILD' || status === 'REBUILD') return 'amber'
-  // SHUTOFF / PAUSED / SUSPENDED / MIGRATING / ... — neutral
-  return 'grey'
-})
-
-const pillClass = computed(() => pillToneClass(pillTone.value))
+const pillClass = computed(() => lifecyclePillClass(props.resource.lifecycle?.status))
 
 // --- Drift banner ---
 // Three states, only two visible: ``in_sync`` shows nothing,
@@ -97,7 +91,7 @@ const flavorBrief = computed(() => {
   const parts: string[] = []
   if (hw.flavor_name) parts.push(hw.flavor_name)
   if (hw.vcpus != null) parts.push(`${hw.vcpus} ${t('vm.units.vcpu')}`)
-  if (hw.ram_mb != null) parts.push(`${(hw.ram_mb / 1024).toFixed(0)} ${t('vm.units.gb')} RAM`)
+  if (hw.ram_mb != null) parts.push(`${formatMegabytes(hw.ram_mb)} RAM`)
   if (hw.disk_gb != null) parts.push(`${hw.disk_gb} ${t('vm.units.gb')}`)
   return parts.length > 0 ? parts.join(' · ') : null
 })
@@ -107,14 +101,14 @@ const cardBorderClass = computed(() => {
   if (props.resource.drift === 'stale') return 'border-warning-dot/30'
   // Subtle accent when the detail panel underneath is open, so the
   // user instantly knows which card the panel belongs to.
-  if (props.isExpanded) return 'border-strong ring-1 ring-accent/30'
+  if (props.isExpanded) return 'border-icon'
   return 'border-subtle'
 })
 </script>
 
 <template>
   <div
-    class="bg-panel rounded-lg p-4 border-2 shadow-sm flex flex-col gap-3 transition-colors"
+    class="flex flex-col gap-3 rounded-panel border bg-panel p-4 transition-colors"
     :class="cardBorderClass"
   >
     <!-- Header: Team-Badge + VM-Name + Lifecycle-Pill -->
@@ -122,7 +116,7 @@ const cardBorderClass = computed(() => {
       <div class="flex-1 min-w-0">
         <div class="flex items-center gap-2 mb-1">
           <span
-            class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border"
+            class="text-xs font-semibold px-2 py-0.5 rounded border"
             :class="resource.team
               ? 'bg-line/[.07] text-fg border-subtle'
               : 'bg-line/[.07] text-fg-muted border-subtle'"
@@ -130,12 +124,12 @@ const cardBorderClass = computed(() => {
             {{ resource.team || t('vm.sharedTeam') }}
           </span>
         </div>
-        <h3 class="text-base font-bold text-fg truncate" :title="resource.display_name">
+        <h3 class="text-base font-semibold text-fg truncate" :title="resource.display_name">
           {{ resource.display_name }}
         </h3>
       </div>
       <span
-        class="text-[11px] font-semibold uppercase tracking-wider px-2 py-1 rounded border whitespace-nowrap"
+        class="text-[11px] font-semibold px-2 py-1 rounded border whitespace-nowrap"
         :class="pillClass"
       >
         {{ pillText }}
@@ -204,26 +198,28 @@ const cardBorderClass = computed(() => {
 
     <!-- Footer: actions -->
     <div class="flex gap-2 mt-1 pt-2 border-t border-subtle">
-      <button
+      <BaseButton
+        variant="secondary"
+        size="sm"
+        class="flex-1"
+        :aria-expanded="isExpanded"
         @click="emit('open-details', resource.address)"
-        class="flex-1 text-xs font-semibold py-1.5 px-3 rounded border transition-colors"
-        :class="isExpanded
-          ? 'bg-line/[.12] text-fg border-strong'
-          : 'border-subtle hover:bg-line/[.04]'"
       >
         {{ isExpanded ? t('vm.actions.hideDetails') : t('vm.actions.showDetails') }}
-      </button>
-      <button
-        @click="emit('redeploy', resource.address)"
+      </BaseButton>
+      <!-- Recreating a VM is destructive: grey until hovered. Only for a VM
+           that is gone from OpenStack is it the one thing to do, so red. -->
+      <BaseButton
+        v-if="canRedeploy"
+        :variant="resource.drift === 'missing' ? 'primary' : 'danger'"
+        size="sm"
+        class="flex-1"
         :disabled="redeploying"
-        class="flex-1 text-xs font-semibold py-1.5 px-3 rounded border transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
-        :class="resource.drift === 'missing'
-          ? 'bg-danger-dot/10 text-danger border-danger-dot/30 hover:bg-danger-dot/10'
-          : 'bg-panel text-danger border-danger-dot/30 hover:bg-danger-dot/10'"
+        @click="emit('redeploy', resource.address)"
       >
-        <RefreshCcw :size="12" :class="redeploying ? 'animate-spin' : ''" />
+        <RefreshCcw :size="12" :class="redeploying ? 'animate-spin' : ''" aria-hidden="true" />
         {{ redeploying ? t('vm.actions.redeploying') : t('vm.actions.redeploy') }}
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

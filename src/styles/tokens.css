@@ -3,46 +3,113 @@
  *
  * Light is the default (`:root`); dark overrides the same names under
  * `[data-theme="dark"]` on <html>. Components never branch on the theme.
+ * tests/unit/design/tokens.spec.ts guards this: same names in both themes,
+ * text contrast >= 4.5:1, no colour literal outside this file.
  *
  * Flat colours are RGB triplets so Tailwind can add opacity
  * (`rgb(var(--color-x) / <alpha-value>)`, see tailwind.config.js).
  * Layered backgrounds and shadows hold the complete CSS value.
+ * Sizes, radii and layout measures are theme-independent and live in `:root` only.
  */
 
 :root {
   color-scheme: light;
 
-  /* Accent: DHBW red. Max. 1–2 red elements per screen area. */
+  /* ---------------------------------------------------------------
+   * Typography
+   * ------------------------------------------------------------- */
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: Consolas, 'Cascadia Mono', ui-monospace, monospace;
+
+  --text-xs: 0.75rem;      /* 12 — table head, labels, segment buttons */
+  --text-sm: 0.8125rem;    /* 13 — meta, status, mono chips */
+  --text-base: 0.875rem;   /* 14 — body, buttons, nav */
+  --text-md: 0.9375rem;    /* 15 — panel title, article text */
+  --text-lg: 1.0625rem;    /* 17 — card title, article H3 */
+  --text-xl: 1.125rem;     /* 18 — help H2 */
+  --text-2xl: 1.25rem;     /* 20 — article H2 */
+  --text-3xl: 1.375rem;    /* 22 — greeting, login claim */
+  --text-4xl: 1.625rem;    /* 26 — list page title */
+  --text-5xl: 1.75rem;     /* 28 — detail page title */
+  --text-6xl: 1.875rem;    /* 30 — KPI number */
+
+  --leading-tight: 1.35;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  /* ---------------------------------------------------------------
+   * Shape and layout (8px grid; Tailwind's 4px steps stay available)
+   * ------------------------------------------------------------- */
+  --radius-tag: 4px;
+  --radius-control: 6px;
+  --radius-panel: 8px;
+
+  --sidebar-w: 216px;
+  --sidebar-w-collapsed: 64px;
+  --topbar-h: 56px;
+  --control-h: 36px;
+  --control-h-sm: 28px;
+  --control-h-lg: 44px;
+  --control-h-icon: 32px;
+  --aside-w: 288px;
+  --login-panel-w: 520px;
+  --login-panel-pad-x: 72px;
+
+  --page-max: none;        /* overview pages: fill the content area */
+  --detail-max: none;      /* detail pages: fill the content area */
+  --narrow-max: none;      /* narrow detail pages: fill the content area */
+  --reading-max: 720px;    /* help and long texts */
+
+  --page-pad-x: 40px;
+  --page-pad-y: 32px;
+  --section-gap: 24px;
+  --card-gap: 16px;
+  --panel-pad: 20px;
+
+  /* ---------------------------------------------------------------
+   * Colour: accent — DHBW red, only for the main action, the active
+   * nav item and active switches/tabs
+   * ------------------------------------------------------------- */
   --color-accent: 226 0 26;            /* #E2001A */
   --color-accent-strong: 133 20 31;    /* #85141F — hover, pressed, button border */
   --color-accent-fg: 194 0 22;         /* red text/links, 4.5:1 on light surfaces */
   --color-on-accent: 255 255 255;
+  --color-focus: 226 0 26;
 
-  /* Neutrals */
+  /* Colour: neutrals */
   --color-canvas: 237 241 245;         /* #EDF1F5 */
   --color-surface: 255 255 255;
-  --color-fg: 20 28 38;
-  --color-fg-muted: 86 99 107;         /* text — #6C7A82 is below 4.5:1 as text */
+  --color-heading: 17 18 20;           /* #111214 */
+  --color-fg: 27 28 31;                /* #1B1C1F — default text */
+  --color-fg-body: 58 66 75;           /* #3A424B — running text */
+  --color-fg-muted: 81 92 103;         /* #515C67 — secondary text */
+  --color-fg-subtle: 92 104 116;       /* #5C6874 — group labels, hints */
+  --color-nav: 54 62 71;               /* #363E47 */
   --color-icon: 108 122 130;           /* #6C7A82 — icons and borders */
+  --color-disabled-fg: 138 150 161;    /* #8A96A1 — disabled controls, exempt from contrast */
   --color-line: 15 25 40;              /* used with low alpha */
   --color-tooltip: 20 28 38;
   --color-on-tooltip: 255 255 255;
 
-  /* Status — green and yellow exist only as status colours */
+  /* Colour: status — green and yellow exist only as status colours */
   --color-success: 30 122 69;          /* #1E7A45 */
   --color-success-dot: 62 158 98;      /* #3E9E62 */
-  --color-warning: 122 84 0;
+  --color-warning: 122 78 0;           /* #7A4E00 */
   --color-warning-dot: 214 161 43;     /* #D6A12B */
   --color-danger: 180 35 24;           /* #B42318 */
   --color-danger-dot: 226 0 26;
-  --color-neutral: 86 99 107;
+  --color-neutral: 81 92 103;
   --color-neutral-dot: 108 122 130;
 
   /* Lines */
-  --line-subtle: rgba(15, 25, 40, 0.09);
-  --line-strong: rgba(15, 25, 40, 0.16);
+  --line-faint: rgba(15, 25, 40, 0.06);     /* row dividers */
+  --line-subtle: rgba(15, 25, 40, 0.09);    /* panels, chrome */
+  --line-strong: rgba(15, 25, 40, 0.14);    /* controls, table head */
+  --line-hover: rgba(15, 25, 40, 0.18);     /* card hover */
 
-  /* Page canvas */
+  /* ---------------------------------------------------------------
+   * Surfaces
+   * ------------------------------------------------------------- */
   --canvas-bg:
     radial-gradient(900px 520px at 12% -8%, rgba(226, 0, 26, 0.06) 0%, rgba(226, 0, 26, 0) 70%),
     radial-gradient(1100px 640px at 100% 110%, rgba(160, 185, 215, 0.14) 0%, rgba(160, 185, 215, 0) 70%),
@@ -50,17 +117,12 @@
 
   /* Glass chrome */
   --surface-topbar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.80) 0%, rgba(239, 243, 247, 0.74) 100%);
-  --surface-topbar-shadow: inset 0 1px 0 #FFFFFF, 0 1px 3px rgba(15, 25, 40, 0.04);
+  --surface-topbar-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 1px 3px rgba(15, 25, 40, 0.04);
   --surface-sidebar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.62) 0%, rgba(233, 238, 244, 0.74) 100%);
   --surface-sidebar-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.8);
-  /* The logo's dark base slab carries its lettering, so the plate follows the theme. */
-  --logo-plate-bg: linear-gradient(180deg, #FFFFFF 0%, #EEF2F6 100%);
-  --logo-plate-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(15, 25, 40, 0.09);
+  --glass-blur: 16px;
 
-  /* Dashboard background accent */
-  --mesh-bg:
-    radial-gradient(at top left, rgba(226, 0, 26, 0.05) 0px, transparent 50%),
-    radial-gradient(at bottom right, rgba(160, 185, 215, 0.20) 0px, transparent 55%);
+
 
   /* Avatar chip */
   --avatar-bg: linear-gradient(180deg, #FFFFFF 0%, #E6EBF0 100%);
@@ -70,24 +132,60 @@
   --surface-panel-shadow: inset 0 1px 0 #FFFFFF, 0 1px 3px rgba(15, 25, 40, 0.06);
   --surface-sunken-bg: rgba(255, 255, 255, 0.65);
   --surface-sunken-shadow: inset 0 1px 0 #FFFFFF;
-  --surface-banner-bg: linear-gradient(180deg, #FFFFFF 0%, #F1F4F8 100%);
-  --surface-banner-shadow: inset 0 1px 0 #FFFFFF, 0 6px 18px rgba(15, 25, 40, 0.07);
   --surface-overlay-bg: linear-gradient(180deg, #FFFFFF 0%, #F5F7FA 100%);
   --surface-overlay-shadow: inset 0 1px 0 #FFFFFF, 0 12px 32px rgba(15, 25, 40, 0.14);
   --scrim: rgba(15, 25, 40, 0.35);
+  --row-hover-bg: rgba(15, 25, 40, 0.03);
 
-  /* Navigation */
+  /* Notice box (warning) */
+  --notice-bg: linear-gradient(180deg, rgba(214, 161, 43, 0.10) 0%, rgba(214, 161, 43, 0.05) 100%);
+  --notice-border: rgba(214, 161, 43, 0.35);
+  --notice-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  /* Inline code chip */
+  --code-bg: rgba(15, 25, 40, 0.06);
+  --code-border: rgba(15, 25, 40, 0.08);
+
+  /* Login */
+  --login-hero-bg:
+    radial-gradient(700px 460px at 18% 12%, rgba(226, 0, 26, 0.10) 0%, rgba(226, 0, 26, 0) 70%),
+    radial-gradient(900px 600px at 80% 110%, rgba(160, 185, 215, 0.28) 0%, rgba(160, 185, 215, 0) 70%),
+    linear-gradient(160deg, #FFFFFF 0%, #F1F4F8 55%, #E4EAF0 100%);
+  --login-panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 244, 248, 0.96) 100%);
+  --login-panel-shadow: inset 1px 0 0 #FFFFFF, -24px 0 48px rgba(15, 25, 40, 0.08);
+  --login-hero-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.7) 50%, rgba(255, 255, 255, 0) 100%);
+  /* Fades the short ends of the rotated sheen band. An alpha ramp, not a
+     colour, so it is the same in both themes. */
+  --login-hero-sheen-mask: linear-gradient(90deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
+
+  /* ---------------------------------------------------------------
+   * Navigation
+   * ------------------------------------------------------------- */
   --nav-hover-bg: rgba(15, 25, 40, 0.04);
   --nav-active-bg: linear-gradient(180deg, #FFFFFF 0%, #EDF1F5 100%);
   --nav-active-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(15, 25, 40, 0.06);
 
-  /* Controls: secondary buttons, icon buttons, segmented controls */
-  --control-bg: linear-gradient(180deg, #FFFFFF 0%, #EEF2F6 100%);
-  --control-hover-bg: linear-gradient(180deg, #FFFFFF 0%, #E6EBF0 100%);
+  /* ---------------------------------------------------------------
+   * Controls: secondary buttons, icon buttons, segmented controls
+   * ------------------------------------------------------------- */
+  --control-bg: linear-gradient(180deg, #FFFFFF 0%, #EBEFF4 100%);
+  --control-hover-bg: linear-gradient(180deg, #FFFFFF 0%, #E2E8EF 100%);
   --control-active-bg: rgba(226, 0, 26, 0.10);
   --control-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(15, 25, 40, 0.06);
+  --icon-btn-hover-bg: rgba(15, 25, 40, 0.05);
+  --icon-btn-hover-border: rgba(15, 25, 40, 0.08);
   --segment-bg: rgba(15, 25, 40, 0.05);
   --segment-shadow: inset 0 1px 2px rgba(15, 25, 40, 0.08);
+  --segment-active-bg: linear-gradient(180deg, #FFFFFF 0%, #EDF1F5 100%);
+  --segment-active-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(15, 25, 40, 0.08);
+
+  /* Danger affordance: neutral until hover, then red */
+  --danger-hover-bg: rgba(226, 0, 26, 0.10);
+  --danger-hover-border: rgba(226, 0, 26, 0.45);
+
+  /* Disabled: grey and flat */
+  --btn-disabled-bg: rgba(15, 25, 40, 0.04);
+  --btn-disabled-border: rgba(15, 25, 40, 0.08);
 
   /* Primary button: same red in both themes, only the drop shadow differs */
   --btn-primary-bg:
@@ -99,19 +197,19 @@
   --field-bg: #FFFFFF;
   --field-shadow: inset 0 1px 2px rgba(15, 25, 40, 0.06);
 
-  /* Meters (utilisation, progress) */
-  --meter-track-bg: #E3E8EE;
-  --meter-track-shadow: inset 0 1px 2px rgba(15, 25, 40, 0.15);
-  --meter-low-bg: linear-gradient(180deg, #62C487 0%, #3E9E62 55%, #338553 100%);
-  --meter-mid-bg: linear-gradient(180deg, #EBC150 0%, #D6A12B 55%, #B98820 100%);
-  --meter-high-bg: linear-gradient(180deg, #F0213A 0%, #B30015 100%);
+  /* Meters (utilisation, progress): green below 50 %, yellow from 50 % */
+  --meter-track-bg: #E0E5EB;
+  --meter-track-shadow: inset 0 1px 1px rgba(15, 25, 40, 0.15);
+  --meter-low-bg: linear-gradient(180deg, #62C487 0%, #3E9E62 100%);
+  --meter-mid-bg: linear-gradient(180deg, #EBC150 0%, #D6A12B 100%);
 
   /* Switches */
   --toggle-on-bg: linear-gradient(180deg, #F0213A 0%, #B30015 100%);
+  --toggle-on-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
   --toggle-off-bg: linear-gradient(180deg, #D9DEE4 0%, #C6CDD6 100%);
-  --toggle-off-border: rgba(15, 25, 40, 0.12);
+  --toggle-off-border: rgba(15, 25, 40, 0.14);
+  --toggle-off-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
   --toggle-knob-bg: linear-gradient(180deg, #FFFFFF 0%, #D4D9DC 100%);
-  --toggle-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 2px rgba(0, 0, 0, 0.35);
   --toggle-knob-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
@@ -119,73 +217,94 @@
   color-scheme: dark;
 
   --color-accent-fg: 255 77 87;        /* #FF4D57 — #E2001A is below 4.5:1 on near-black */
+  --color-focus: 255 77 87;
 
   --color-canvas: 11 9 10;             /* #0B090A */
   --color-surface: 20 17 19;           /* #141113 */
-  --color-fg: 238 236 237;
-  --color-fg-muted: 142 155 163;       /* #8E9BA3 */
-  --color-icon: 142 155 163;
+  --color-heading: 255 255 255;
+  --color-fg: 242 242 243;             /* #F2F2F3 */
+  --color-fg-body: 217 221 224;        /* #D9DDE0 */
+  --color-fg-muted: 169 179 185;       /* #A9B3B9 */
+  --color-fg-subtle: 125 138 146;      /* #7D8A92 */
+  --color-nav: 201 206 210;            /* #C9CED2 */
+  --color-icon: 142 155 163;           /* #8E9BA3 */
+  --color-disabled-fg: 125 138 146;
   --color-line: 255 255 255;
   --color-tooltip: 42 37 40;
 
-  --color-success: 127 217 160;        /* #7FD9A0 */
+  --color-success: 143 217 168;        /* #8FD9A8 */
   --color-warning: 235 193 80;         /* #EBC150 */
-  --color-danger: 255 122 128;         /* #FF7A80 */
+  --color-danger: 255 138 144;         /* #FF8A90 */
   --color-danger-dot: 255 77 87;       /* #FF4D57 */
-  --color-neutral: 142 155 163;
+  --color-neutral: 169 179 185;
   --color-neutral-dot: 142 155 163;
 
+  --line-faint: rgba(255, 255, 255, 0.06);
   --line-subtle: rgba(255, 255, 255, 0.08);
-  --line-strong: rgba(255, 255, 255, 0.14);
+  --line-strong: rgba(255, 255, 255, 0.12);
+  --line-hover: rgba(255, 255, 255, 0.16);
 
   --canvas-bg:
     radial-gradient(900px 520px at 12% -8%, rgba(43, 0, 6, 0.85) 0%, rgba(43, 0, 6, 0) 70%),
     linear-gradient(180deg, #181416 0%, #0E0B0C 55%, #0A0809 100%);
 
-  --surface-topbar-bg: linear-gradient(180deg, rgba(44, 38, 41, 0.60) 0%, rgba(22, 19, 21, 0.70) 100%);
-  --surface-topbar-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
-  --surface-sidebar-bg: linear-gradient(180deg, rgba(34, 29, 32, 0.55) 0%, rgba(18, 15, 17, 0.70) 100%);
+  --surface-topbar-bg: linear-gradient(180deg, rgba(44, 38, 41, 0.55) 0%, rgba(22, 19, 21, 0.65) 100%);
+  --surface-topbar-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --surface-sidebar-bg: linear-gradient(180deg, rgba(34, 29, 32, 0.55) 0%, rgba(18, 15, 17, 0.72) 100%);
   --surface-sidebar-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.4);
-  --logo-plate-bg: linear-gradient(180deg, #2C2629 0%, #161315 100%);
-  --logo-plate-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 -1px 0 rgba(0, 0, 0, 0.35);
 
-  --mesh-bg:
-    radial-gradient(at top left, rgba(226, 0, 26, 0.07) 0px, transparent 50%),
-    radial-gradient(at bottom right, rgba(255, 255, 255, 0.03) 0px, transparent 55%);
 
   --avatar-bg: linear-gradient(180deg, #3A3438 0%, #1C181A 100%);
 
-  --surface-panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%), #141113;
-  --surface-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  --surface-panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.012) 100%), #141113;
+  --surface-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --surface-sunken-bg: rgba(0, 0, 0, 0.22);
   --surface-sunken-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --surface-banner-bg:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 100%),
-    linear-gradient(180deg, #1E1A1C 0%, #141113 100%);
-  --surface-banner-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 24px rgba(0, 0, 0, 0.35);
   --surface-overlay-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.015) 100%), #171416;
   --surface-overlay-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 16px 40px rgba(0, 0, 0, 0.55);
   --scrim: rgba(0, 0, 0, 0.55);
+  --row-hover-bg: rgba(255, 255, 255, 0.025);
 
-  --nav-hover-bg: rgba(255, 255, 255, 0.05);
-  --nav-active-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.03) 100%);
-  --nav-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --notice-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
-  --control-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%);
-  --control-hover-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.05) 100%);
+  --code-bg: rgba(255, 255, 255, 0.06);
+  --code-border: rgba(255, 255, 255, 0.08);
+
+  --login-hero-bg:
+    radial-gradient(700px 460px at 18% 12%, rgba(226, 0, 26, 0.22) 0%, rgba(226, 0, 26, 0) 70%),
+    radial-gradient(900px 600px at 80% 110%, rgba(133, 20, 31, 0.30) 0%, rgba(133, 20, 31, 0) 70%),
+    linear-gradient(160deg, #1D1719 0%, #0F0C0D 55%, #070506 100%);
+  --login-panel-bg: linear-gradient(180deg, rgba(40, 34, 37, 0.92) 0%, rgba(20, 17, 19, 0.96) 100%);
+  --login-panel-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05), -24px 0 48px rgba(0, 0, 0, 0.35);
+  --login-hero-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0) 100%);
+
+  --nav-hover-bg: rgba(255, 255, 255, 0.04);
+  --nav-active-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.03) 100%);
+  --nav-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10);
+
+  --control-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.035) 100%);
+  --control-hover-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.06) 100%);
   --control-active-bg: rgba(133, 20, 31, 0.35);
-  --control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 1px 2px rgba(0, 0, 0, 0.40);
+  --control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --icon-btn-hover-bg: rgba(255, 255, 255, 0.06);
+  --icon-btn-hover-border: rgba(255, 255, 255, 0.10);
   --segment-bg: rgba(0, 0, 0, 0.35);
   --segment-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  --segment-active-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+  --segment-active-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 
-  --btn-primary-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 6px rgba(0, 0, 0, 0.45);
+  --btn-disabled-bg: rgba(255, 255, 255, 0.04);
+  --btn-disabled-border: rgba(255, 255, 255, 0.07);
 
-  --field-bg: rgba(0, 0, 0, 0.28);
+  --btn-primary-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), 0 1px 4px rgba(0, 0, 0, 0.4);
+
+  --field-bg: rgba(0, 0, 0, 0.35);
   --field-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
 
   --meter-track-bg: #080607;
-  --meter-track-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7);
+  --meter-track-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.7);
 
   --toggle-off-bg: linear-gradient(180deg, #2A2528 0%, #1A1618 100%);
   --toggle-off-border: rgba(255, 255, 255, 0.14);
+  --toggle-off-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20);
 }

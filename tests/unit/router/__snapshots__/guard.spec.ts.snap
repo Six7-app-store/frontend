@@ -1,0 +1,312 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guards gleich 1`] = `
+[
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "auth",
+      "requiresGuest": true,
+    },
+    "name": "login",
+    "path": "/login",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "auth",
+    },
+    "name": "callback",
+    "path": "/callback",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "auth",
+    },
+    "name": "lti.expired",
+    "path": "/lti/expired",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "auth",
+    },
+    "name": "lti.callback",
+    "path": "/lti/callback",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "auth",
+    },
+    "name": "lti.link",
+    "path": "/lti/link",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "auth",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+    },
+    "name": "lti.mapCourse",
+    "path": "/lti/kurs-zuordnen",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "auth",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+    },
+    "name": "lti.deepLink",
+    "path": "/lti/auswahl",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "titleKey": "nav.dashboard",
+    },
+    "name": "home",
+    "path": "/",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "titleKey": "nav.dashboard",
+    },
+    "name": "dashboard",
+    "path": "/dashboard",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+      "titleKey": "nav.courses",
+    },
+    "name": "courses",
+    "path": "/courses",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+      "titleKey": "nav.courses",
+    },
+    "name": "courses.detail",
+    "path": "/courses/:id",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "titleKey": "nav.apps",
+    },
+    "name": "apps",
+    "path": "/apps",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "titleKey": "nav.apps",
+    },
+    "name": "apps.create",
+    "path": "/apps/create",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "titleKey": "nav.apps",
+    },
+    "name": "apps.detail",
+    "path": "/apps/:id",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "titleKey": "nav.help",
+    },
+    "name": "help",
+    "path": "/help",
+  },
+  {
+    "children": [
+      {
+        "children": undefined,
+        "guarded": false,
+        "meta": undefined,
+        "name": "deployments.list",
+        "path": "",
+      },
+      {
+        "children": undefined,
+        "guarded": false,
+        "meta": undefined,
+        "name": "deployments.detail",
+        "path": "/deployments/:id",
+      },
+    ],
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "titleKey": "nav.deployments",
+    },
+    "name": undefined,
+    "path": "/deployments",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+    },
+    "name": "user",
+    "path": "/user",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+    },
+    "name": "deployment.config",
+    "path": "/deployment/new/config",
+  },
+  {
+    "children": undefined,
+    "guarded": true,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+    },
+    "name": "deployment.teams",
+    "path": "/deployment/new/teams",
+  },
+  {
+    "children": undefined,
+    "guarded": true,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+    },
+    "name": "deployment.variables",
+    "path": "/deployment/new/variables",
+  },
+  {
+    "children": undefined,
+    "guarded": true,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+    },
+    "name": "deployment.summary",
+    "path": "/deployment/new/summary",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "requiresRole": [
+        "admin",
+      ],
+      "titleKey": "nav.approvals",
+    },
+    "name": "admin.apps",
+    "path": "/admin/apps",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+    },
+    "name": "user.openstack",
+    "path": "/user/openstack",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+    },
+    "name": "forbidden",
+    "path": "/forbidden",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+    },
+    "name": "not-found",
+    "path": "/:pathMatch(.*)*",
+  },
+]
+`;
