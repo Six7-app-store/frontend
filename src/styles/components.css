@@ -37,10 +37,9 @@
     transform: rotate(-14deg);
     background: var(--login-hero-sheen);
     /* The gradient only fades top and bottom; without this the short ends
-       of the rotated band show up as a hard diagonal edge. The mask is an
-       alpha ramp, not a colour. */
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
-    mask-image: linear-gradient(90deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
+       of the rotated band show up as a hard diagonal edge. */
+    -webkit-mask-image: var(--login-hero-sheen-mask);
+    mask-image: var(--login-hero-sheen-mask);
     pointer-events: none;
   }
   .login-panel {
