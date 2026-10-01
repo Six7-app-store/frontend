@@ -4,11 +4,7 @@
  * - :func:`readFileAsDataUrl` — read a file into a ``data:`` URL.
  * - :func:`validateImageFile` — the client-side image checks (type + size).
  */
-/**
- * Maximum accepted size (in bytes) for an uploaded app logo/image. Shared by the
- * app create + detail views so the client-side size check stays consistent.
- */
-export const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+import { MAX_IMAGE_BYTES } from '@/utils/format'
 
 /** Read ``file`` as a ``data:`` URL; ``null`` if the reader yields no string. */
 export function readFileAsDataUrl(file: File): Promise<string | null> {

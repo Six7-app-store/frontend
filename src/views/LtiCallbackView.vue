@@ -18,27 +18,35 @@
  * dashboard they then have to navigate out of.
  */
 import { onMounted, ref } from 'vue'
-import { isInAppPath } from '@/utils/safe-redirect'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useLtiSession } from '@/composables/useLtiSession'
-import { useI18n } from 'vue-i18n'
-import StatusPage from '@/components/ui/StatusPage.vue'
-import StatusScreen from '@/components/ui/StatusScreen.vue'
+import { Loader2 } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const ltiSession = useLtiSession()
 
-const { t } = useI18n()
 const error = ref<string | null>(null)
 
 const FALLBACK_TARGET = '/dashboard'
 
-/** The landing path of the launch, if it is one of ours; else the dashboard. */
+/**
+ * Accept the landing path only if it is one of ours.
+ *
+ * The value arrives through the address bar, so a crafted launch URL
+ * must not be able to turn this redirect into a trip to another site.
+ * Anything that is not a plain in-app path is dropped in favour of the
+ * dashboard — landing a page too early is a nuisance, an open redirect
+ * is a phishing tool.
+ */
 function safeTarget(raw: unknown): string {
-  return isInAppPath(raw) ? raw : FALLBACK_TARGET
+  if (typeof raw !== 'string' || !raw.startsWith('/')) return FALLBACK_TARGET
+  // ``//host`` and ``/\host`` are protocol-relative: a browser reads
+  // both as a different origin.
+  if (raw.startsWith('//') || raw.startsWith('/\\')) return FALLBACK_TARGET
+  return raw
 }
 
 onMounted(async () => {
@@ -46,7 +54,7 @@ onMounted(async () => {
   const target = safeTarget(route.query.target)
 
   if (!token) {
-    error.value = t('lti.callback.noToken')
+    error.value = 'Kein Sitzungstoken übergeben. Bitte die Aktivität in Moodle erneut öffnen.'
     return
   }
 
@@ -59,14 +67,25 @@ onMounted(async () => {
   } catch (err) {
     console.error('LTI callback failed:', err)
     ltiSession.clear()
-    error.value = t('lti.callback.failed')
+    error.value = 'Die Anmeldung konnte nicht abgeschlossen werden. Bitte die Aktivität in Moodle erneut öffnen.'
   }
 })
 </script>
 
 <template>
-  <StatusPage>
-    <StatusScreen v-if="!error" loading :text="$t('lti.callback.working')" />
-    <StatusScreen v-else tone="danger" :title="$t('lti.callback.failedTitle')" :text="error" />
-  </StatusPage>
+  <div class="flex flex-col items-center justify-center min-h-screen">
+    <div class="text-center">
+      <div v-if="!error" class="flex flex-col items-center gap-4">
+        <Loader2 class="animate-spin text-icon" :size="48" />
+        <p class="text-fg-muted">Anmeldung über Moodle wird abgeschlossen…</p>
+      </div>
+
+      <div v-else class="flex flex-col items-center gap-4">
+        <div class="text-danger">
+          <p class="font-semibold">Anmeldung fehlgeschlagen</p>
+          <p class="text-sm mt-2">{{ error }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>

@@ -19,31 +19,29 @@ describe('ThemeToggle', () => {
     localStorage.clear()
   })
 
-  it('is a real button whose label names the theme it switches to', async () => {
+  it('is a real button, labelled via i18n, not pressed by default', async () => {
     const wrapper = await mountToggle()
     const button = wrapper.get('button')
     expect(button.attributes('type')).toBe('button')
-    expect(button.attributes('aria-label')).toBe(de.theme.toDark)
-    expect(button.attributes('aria-pressed')).toBeUndefined()
+    expect(button.attributes('aria-label')).toBe(de.theme.dark)
+    expect(button.attributes('aria-pressed')).toBe('false')
   })
 
   it('uses the English label when the locale is en', async () => {
     const wrapper = await mountToggle('en')
-    expect(wrapper.get('button').attributes('aria-label')).toBe(en.theme.toDark)
+    expect(wrapper.get('button').attributes('aria-label')).toBe(en.theme.dark)
   })
 
-  it('switches to dark and back on click and updates the label', async () => {
+  it('switches to dark and back on click', async () => {
     const wrapper = await mountToggle()
     const button = wrapper.get('button')
 
     await button.trigger('click')
-    expect(button.attributes('aria-label')).toBe(de.theme.toLight)
+    expect(button.attributes('aria-pressed')).toBe('true')
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
-    expect(localStorage.getItem('theme')).toBe('dark')
 
     await button.trigger('click')
-    expect(button.attributes('aria-label')).toBe(de.theme.toDark)
+    expect(button.attributes('aria-pressed')).toBe('false')
     expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
-    expect(localStorage.getItem('theme')).toBe('light')
   })
 })

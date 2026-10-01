@@ -4,6 +4,42 @@ import { useQuotas } from '@/composables/useQuotas'
 import i18n from '@/i18n'
 import type { QuotaOverview } from '@/types/quota'
 
+const { getColorClass, getTextColorClass, isQuotaCritical } = useQuotas()
+
+// One scale for bar, text and warning icon (see QUOTA_THRESHOLDS).
+describe('Quota-Schwellen', () => {
+  it.each([
+    [0, 'meter-fill-low'],
+    [49, 'meter-fill-low'],
+    [50, 'meter-fill-mid'],
+    [74, 'meter-fill-mid'],
+    [75, 'meter-fill-mid'],
+    [89, 'meter-fill-mid'],
+    [90, 'meter-fill-high'],
+    [100, 'meter-fill-high'],
+  ])('färbt den Balken bei %s%% %s', (percentage, expected) => {
+    expect(getColorClass(percentage)).toBe(expected)
+  })
+
+  it.each([
+    [0, 'text-fg-muted'],
+    [74, 'text-fg-muted'],
+    [75, 'text-warning'],
+    [89, 'text-warning'],
+    [90, 'text-danger'],
+  ])('färbt den Text bei %s%% %s', (percentage, expected) => {
+    expect(getTextColorClass(percentage)).toBe(expected)
+  })
+
+  it.each([
+    [89, false],
+    [90, true],
+    [100, true],
+  ])('meldet %s%% als kritisch: %s', (percentage, expected) => {
+    expect(isQuotaCritical(percentage)).toBe(expected)
+  })
+})
+
 const overview = {
   compute: {
     instances: { used: 1, limit: 4 },

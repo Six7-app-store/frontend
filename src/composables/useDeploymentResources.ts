@@ -1,8 +1,8 @@
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { deploymentApi } from '@/api/deployment.api'
 import { useToast } from '@/composables/useToast'
-import { getErrorDetailMessage, getErrorReason, getErrorStatus, openStackFailure } from '@/utils/http-error'
+import { getErrorReason, getErrorStatus } from '@/utils/http-error'
 import type { DeploymentResource } from '@/types'
 
 export interface DeploymentResourcesOptions {
@@ -40,12 +40,9 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
   // list as soon as the task finishes.
   const redeployInFlight = ref<Set<string>>(new Set())
   // Address of the VM whose detail drawer is currently open. ``null``
-  // means the drawer is closed. Its Stage-2 detail loads whenever the
-  // address changes.
+  // means the drawer is closed; the drawer component lazy-loads on
+  // mount, so toggling this prop is enough.
   const openDrawerAddress = ref<string | null>(null)
-  const drawerDetail = ref<DeploymentResource | null>(null)
-  const drawerLoading = ref(false)
-  const drawerError = ref<string | null>(null)
   // Per-VM redeploy confirmation. Mirrors the Delete-modal pattern, but
   // the action targets a single resource (identified by its TF state
   // address), so we also remember which VM the user clicked while the
@@ -60,64 +57,24 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
     try {
       const response = await deploymentApi.listResources(deploymentId, { refresh })
       resources.value = response.data.resources
-    } catch (err) {
-      const failure = openStackFailure(err)
-      if (failure === 'credentials_missing') {
+    } catch (err: any) {
+      const status = getErrorStatus(err)
+      if (status === 412) {
         resourcesError.value = t('vm.resourcesErrors.missingCredentials')
-      } else if (failure === 'unavailable') {
+      } else if (status === 502) {
         resourcesError.value = t('vm.resourcesErrors.unreachable')
-      } else if (failure === 'not_found') {
+      } else if (status === 404) {
         // Deployment was soft-deleted upstream (e.g. right after a
         // successful destroy). The resources are gone; the stream watcher
         // handles the ``gone`` path, so just clear silently here.
         resources.value = []
       } else {
-        resourcesError.value = t('vm.resourcesErrors.generic')
+        resourcesError.value = err?.message || t('vm.resourcesErrors.generic')
       }
     } finally {
       resourcesLoading.value = false
     }
   }
-
-  /**
-   * Loads the Stage-2 detail of the open VM. Not found (removed since the
-   * list was rendered) and missing credentials (lost between mount and
-   * click) are shown inline in the drawer like the other failures; the
-   * page-level toast is kept for harder errors. A response for a VM that
-   * is no longer the open one is dropped.
-   */
-  const loadDrawerDetail = async () => {
-    const address = openDrawerAddress.value
-    if (!address) return
-    drawerLoading.value = true
-    drawerError.value = null
-    try {
-      const response = await deploymentApi.getResourceDetail(deploymentId, address)
-      if (openDrawerAddress.value === address) drawerDetail.value = response.data
-    } catch (err) {
-      if (openDrawerAddress.value !== address) return
-      const messageKey = {
-        not_found: 'vm.drawer.errors.notFound',
-        credentials_missing: 'vm.drawer.errors.missingCredentials',
-        unavailable: 'vm.drawer.errors.unreachable',
-        other: 'vm.drawer.errors.generic',
-      }[openStackFailure(err)]
-      drawerError.value = t(messageKey)
-    } finally {
-      drawerLoading.value = false
-    }
-  }
-
-  // Switching VMs keeps the old detail visible until the new one is there;
-  // closing forgets it, so reopening starts from the loading state.
-  watch(openDrawerAddress, (address) => {
-    if (address) {
-      loadDrawerDetail()
-    } else {
-      drawerDetail.value = null
-      drawerError.value = null
-    }
-  })
 
   // Separate compute groups for the three sub-sections.
   const vmResources = computed(() => resources.value.filter(r => r.category === 'instance'))
@@ -165,7 +122,7 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       // Without this poll, the new task only becomes visible on
       // the next manual page reload.
       await onRedeployStarted()
-    } catch (err) {
+    } catch (err: any) {
       redeployInFlight.value.delete(address)
       const reason = getErrorReason(err)
       if (reason === 'non_redeployable_resource_type') {
@@ -173,9 +130,9 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       } else if (reason === 'resource_not_in_state') {
         toast.error(t('DeploymentDetailView.redeployNotInState'))
       } else if (getErrorStatus(err) === 409) {
-        toast.error(t('DeploymentDetailView.lifecycleBusy'))
+        toast.error(t('DeploymentDetailView.redeployBusy'))
       } else {
-        toast.error(getErrorDetailMessage(err) ?? t('DeploymentDetailView.redeployError'))
+        toast.error(err?.message || t('DeploymentDetailView.redeployError'))
       }
     }
   }
@@ -204,10 +161,6 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
     securityResources,
     redeployInFlight,
     openDrawerAddress,
-    drawerDetail,
-    drawerLoading,
-    drawerError,
-    loadDrawerDetail,
     showRedeployModal,
     redeployTargetAddress,
     loadResources,

@@ -4,11 +4,14 @@
  *
  * Both components render the same two derived values: the VM uptime
  * (from ``hardware.launched_at``) and the lifecycle pill's colour
- * classes (from the OpenStack status). These helpers are the single source
+ * classes (from a resolved tone). These helpers are the single source
  * of truth for that formatting so the two components stay in lockstep.
  */
 
-type PillTone = 'green' | 'amber' | 'red' | 'grey'
+/** Lifecycle pill tone. Both spellings of the neutral tone are accepted
+ *  because the two callers historically differ (``'grey'`` vs.
+ *  ``'gray'``); both resolve to the same neutral classes. */
+export type PillTone = 'green' | 'amber' | 'red' | 'grey' | 'gray'
 
 /**
  * Format a VM's uptime relative to the user's browser clock.
@@ -34,21 +37,12 @@ export function formatUptime(launchedAt?: string | null): string | null {
 }
 
 /**
- * Tone of a VM's OpenStack lifecycle status: healthy, being built, broken,
- * or anything else (SHUTOFF, PAUSED, SUSPENDED, MIGRATING, …) as neutral.
- * This is the only place the frontend interprets OpenStack lifecycle
- * vocabulary — keep it tight.
+ * Map a resolved lifecycle tone to its Tailwind pill classes. The
+ * colour palette is the only place the frontend interprets OpenStack
+ * lifecycle vocabulary — keep it tight.
  */
-function lifecycleTone(status?: string | null): PillTone {
-  if (status === 'ACTIVE') return 'green'
-  if (status === 'ERROR') return 'red'
-  if (status === 'BUILD' || status === 'REBUILD') return 'amber'
-  return 'grey'
-}
-
-/** Tailwind pill classes for a VM's OpenStack lifecycle status. */
-export function lifecyclePillClass(status?: string | null): string {
-  switch (lifecycleTone(status)) {
+export function pillToneClass(tone: PillTone): string {
+  switch (tone) {
     case 'green':
       return 'status-success'
     case 'red':

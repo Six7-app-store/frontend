@@ -1,10 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { createI18n } from 'vue-i18n'
-import de from '@/i18n/locales/de'
-
-const i18n = createI18n({ legacy: false, locale: 'de', messages: { de } })
-const mountView = () => mount(LtiLinkView, { global: { plugins: [i18n] } })
 
 let routeQuery: Record<string, string> = {}
 const login = vi.fn()
@@ -34,7 +29,7 @@ describe('LtiLinkView', () => {
   })
 
   it('asks an unauthenticated visitor to sign in, and links nothing yet', async () => {
-    const wrapper = mountView()
+    const wrapper = mount(LtiLinkView)
     await flushPromises()
 
     const { ltiApi } = await import('@/api/lti.api')
@@ -49,7 +44,7 @@ describe('LtiLinkView', () => {
   it('takes the challenge out of the URL', async () => {
     const replaceState = vi.spyOn(window.history, 'replaceState')
 
-    mountView()
+    mount(LtiLinkView)
     await flushPromises()
 
     // Kept for the return trip, but not left in the address bar.
@@ -60,7 +55,7 @@ describe('LtiLinkView', () => {
   it('links the account once the visitor is signed in', async () => {
     auth.isAuthenticated = true
 
-    const wrapper = mountView()
+    const wrapper = mount(LtiLinkView)
     await flushPromises()
 
     const { ltiApi } = await import('@/api/lti.api')
@@ -75,7 +70,7 @@ describe('LtiLinkView', () => {
     routeQuery = {}
     sessionStorage.setItem('lti_link_challenge', 'challenge-from-before')
 
-    mountView()
+    mount(LtiLinkView)
     await flushPromises()
 
     const { ltiApi } = await import('@/api/lti.api')
@@ -89,7 +84,7 @@ describe('LtiLinkView', () => {
       response: { status: 409, data: { detail: { code: 'lti_link_challenge_spent' } } },
     })
 
-    const wrapper = mountView()
+    const wrapper = mount(LtiLinkView)
     await flushPromises()
 
     expect(wrapper.find('[data-testid="link-error"]').text()).toContain('Moodle')
@@ -99,7 +94,7 @@ describe('LtiLinkView', () => {
   it('says so when there is nothing to link', async () => {
     routeQuery = {}
 
-    const wrapper = mountView()
+    const wrapper = mount(LtiLinkView)
     await flushPromises()
 
     expect(wrapper.find('[data-testid="link-error"]').exists()).toBe(true)

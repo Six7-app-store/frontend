@@ -22,12 +22,12 @@ describe('DeploymentGroupsCard', () => {
       },
     })
 
-    const cards = wrapper.findAll('[data-testid="group-card"]')
+    const cards = wrapper.findAll('div.cursor-pointer')
     await cards[1]!.trigger('click')
 
     expect(wrapper.text()).toContain('s3')
     expect(wrapper.text()).toContain('s4')
     expect(wrapper.text()).not.toContain('s1')
-    expect(wrapper.find('[data-testid="group-name"]').text()).toBe('C')
+    expect(wrapper.find('div.font-semibold.text-lg').text()).toBe('C')
   })
 })

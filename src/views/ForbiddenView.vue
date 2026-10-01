@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import { ShieldAlert } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import EmptyState from '@/components/ui/EmptyState.vue'
 
 /**
  * 403 hint view. Rendered when the router guard blocks a route change due to a
@@ -20,16 +19,20 @@ const goHome = () => {
 </script>
 
 <template>
-  <div class="flex min-h-[60vh] items-center justify-center">
-    <EmptyState
-      :icon="ShieldAlert"
-      title-tag="h1"
-      :title="t('ForbiddenView.title')"
-      :description="t('ForbiddenView.description')"
-    >
+  <div class="min-h-[60vh] flex items-center justify-center p-6">
+    <div class="text-center max-w-md">
+      <div class="mx-auto w-16 h-16 rounded-full bg-danger-dot/10 flex items-center justify-center mb-4">
+        <ShieldAlert :size="32" class="text-danger" />
+      </div>
+      <h1 class="text-2xl font-bold text-fg mb-2">
+        {{ t('ForbiddenView.title') }}
+      </h1>
+      <p class="text-fg-muted mb-6">
+        {{ t('ForbiddenView.description') }}
+      </p>
       <BaseButton @click="goHome">
         {{ t('ForbiddenView.backToDashboard') }}
       </BaseButton>
-    </EmptyState>
+    </div>
   </div>
 </template>

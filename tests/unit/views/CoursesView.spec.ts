@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { nextTick, ref } from 'vue'
 
 import CoursesView from '@/views/CoursesView.vue'
@@ -106,7 +106,7 @@ describe('CoursesView.vue', () => {
                     $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
                 },
                 stubs: {
-                    RouterLink: RouterLinkStub,
+                    Card: { template: '<div class="stub-card" @click="$emit(\'click\')"><slot /></div>' },
                     BaseButton: { template: '<button><slot /></button>' },
                     BaseInput: {
                         props: ['modelValue'],
@@ -119,16 +119,6 @@ describe('CoursesView.vue', () => {
                 }
             }
         })
-    }
-
-    // Deleting sits in the row's "…" menu, which renders into document.body.
-    const openDelete = async (wrapper: ReturnType<typeof mountComponent>) => {
-        await wrapper.get('button[aria-haspopup]').trigger('click')
-        await nextTick()
-        const entry = [...document.body.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')]
-            .find((b) => b.textContent?.includes('CoursesView.deleteTitle'))!
-        entry.click()
-        await nextTick()
     }
 
     // --- 1. Lade- und Leerzustände ---
@@ -191,15 +181,17 @@ describe('CoursesView.vue', () => {
         expect(wrapper.text()).toContain('0 CoursesView.memberPlural')
     })
 
-    it('verlinkt jede Kurszeile auf die Detailseite', async () => {
+    it('navigiert zur Detailseite, wenn ein Kurs geklickt wird', async () => {
         mockCourses = [{ courseId: 'c-99', name: 'Klick Test' }]
         ;(courseApi.listMembers as any).mockResolvedValue({ data: [] })
 
         const wrapper = mountComponent()
         await flushPromises()
 
-        const link = wrapper.findAllComponents(RouterLinkStub).find((l) => l.text().includes('Klick Test'))!
-        expect(link.props('to')).toEqual({ name: 'courses.detail', params: { id: 'c-99' } })
+        const card = wrapper.find('.stub-card')
+        await card.trigger('click')
+
+        expect(mockPush).toHaveBeenCalledWith({ name: 'courses.detail', params: { id: 'c-99' } })
     })
 
     // --- 3. Rechteverwaltung (Permissions) ---
@@ -224,7 +216,7 @@ describe('CoursesView.vue', () => {
         await flushPromises()
 
         expect(courseApi.listMembers).not.toHaveBeenCalled()
-        expect(wrapper.find('button[aria-haspopup]').exists()).toBe(false)
+        expect(wrapper.find('button[title="CoursesView.deleteTitle"]').exists()).toBe(false)
         expect(wrapper.text()).not.toContain('CoursesView.memberPlural')
     })
 
@@ -288,7 +280,9 @@ describe('CoursesView.vue', () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        await openDelete(wrapper)
+        const deleteBtn = wrapper.find('button[title="CoursesView.deleteTitle"]')
+        await deleteBtn.trigger('click')
+        await nextTick()
 
         const modal = wrapper.find('.modal')
         expect(modal.text()).toContain('Zu löschender Kurs')
@@ -310,7 +304,8 @@ describe('CoursesView.vue', () => {
         const wrapper = mountComponent()
         await flushPromises()
 
-        await openDelete(wrapper)
+        await wrapper.find('button[title="CoursesView.deleteTitle"]').trigger('click')
+        await nextTick()
 
         const modal = wrapper.find('.modal')
         expect(modal.find('img').exists()).toBe(false)

@@ -16,14 +16,13 @@ import {
   type PauseResumeAction,
 } from '@/services/deployment-lifecycle.service'
 import { sortTasksNewestFirst } from '@/services/deployment-tasks.service'
-import { getErrorDetailMessage, getErrorReason } from '@/utils/http-error'
+import { extractErrorMessage } from '@/utils/http-error'
 import type { DeploymentWithRelations, Task } from '@/types'
 
 export interface DeploymentLifecycleOptions {
   deploymentId: string
   deployment: Ref<DeploymentWithRelations | null>
-  /** Admin or owner — see ``useDeploymentOwnerView``. */
-  canOperate: Ref<boolean>
+  isOwnerView: Ref<boolean>
   tasks: Ref<Task[]>
   activeTask: Ref<Task | null>
   /** Live-stream connection state; ``'ended'`` triggers the outcome handling. */
@@ -41,27 +40,26 @@ export interface DeploymentLifecycleOptions {
  * watcher registers after the stream's own watchers.
  */
 export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
-  const { deploymentId, deployment, canOperate, tasks, activeTask, connectionState, loadTasks } = options
+  const { deploymentId, deployment, isOwnerView, tasks, activeTask, connectionState, loadTasks } = options
   const { t } = useI18n()
   const router = useRouter()
   const deploymentStore = useDeploymentStore()
   const toast = useToast()
 
   // Lifecycle action gating — the status matrix lives in
-  // ``services/deployment-lifecycle.service``. Only the owner or an admin
-  // may act on a deployment, so every action is also gated on ``canOperate``.
-  const canDelete = computed(() => canOperate.value && canDeleteDeployment(deployment.value?.status))
+  // ``services/deployment-lifecycle.service``. Members can never act on
+  // lifecycle, so every action is additionally gated on ``isOwnerView``.
+  const canDelete = computed(() => isOwnerView.value && canDeleteDeployment(deployment.value?.status))
 
   const deleteDisabledReason = computed(() => canDelete.value ? '' : DELETE_DISABLED_REASON)
 
   // One Pause/Resume button — what it does depends on status.
-  const canPause = computed(() => canOperate.value && canPauseDeployment(deployment.value?.status))
-  const canResume = computed(() => canOperate.value && canResumeDeployment(deployment.value?.status))
+  const canPause = computed(() => isOwnerView.value && canPauseDeployment(deployment.value?.status))
+  const canResume = computed(() => isOwnerView.value && canResumeDeployment(deployment.value?.status))
   const canPauseOrResume = computed(() => canPause.value || canResume.value)
   const pauseResumeAction = computed<PauseResumeAction | null>(() => pauseResumeActionFor(deployment.value?.status))
 
   const showDeleteModal = ref(false)
-  const deleteBusy = ref(false)
   const showPauseResumeModal = ref(false)
   const pauseResumeBusy = ref(false)
 
@@ -128,19 +126,8 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
   //     attaches to the new DESTROY task; the stream-ended
   //     watcher routes back to the list when the task completes.
   //   * 204 → leave immediately with a success toast.
-  // "<what failed>: <why>". The why is the backend's own message, or the
-  // translated text for a lifecycle action already running; a bare
-  // machine code would mean nothing to the user, so it is left out.
-  const failureMessage = (base: string, err: unknown): string => {
-    const why = getErrorReason(err) === 'deployment_busy'
-      ? t('DeploymentDetailView.lifecycleBusy')
-      : getErrorDetailMessage(err)
-    return why ? `${base}: ${why}` : base
-  }
-
   const confirmDelete = async () => {
-    if (!deploymentId || deleteBusy.value) return
-    deleteBusy.value = true
+    if (!deploymentId) return
     try {
       const response = await deploymentStore.deleteDeployment(deploymentId)
       if (response?.status === 202) {
@@ -157,9 +144,8 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
         router.push({ name: ROUTE_NAMES.deploymentsList })
       }
     } catch (err) {
-      toast.error(failureMessage(t('DeploymentDetailView.deleteErrorToast'), err))
+      toast.error(`${t('DeploymentDetailView.deleteErrorToast')}: ` + extractErrorMessage(err))
     } finally {
-      deleteBusy.value = false
       showDeleteModal.value = false
     }
   }
@@ -187,9 +173,11 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
       await deploymentStore.fetchDeploymentById(deploymentId)
       await loadTasks()
     } catch (err) {
-      toast.error(failureMessage(action === 'pause'
+      toast.error((action === 'pause'
           ? t('DeploymentDetailView.pauseErrorToast')
-          : t('DeploymentDetailView.resumeErrorToast'), err))
+          : t('DeploymentDetailView.resumeErrorToast'))
+          + ': '
+          + extractErrorMessage(err))
     } finally {
       pauseResumeBusy.value = false
       showPauseResumeModal.value = false
@@ -202,7 +190,6 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     canPauseOrResume,
     pauseResumeAction,
     showDeleteModal,
-    deleteBusy,
     showPauseResumeModal,
     pauseResumeBusy,
     confirmDelete,

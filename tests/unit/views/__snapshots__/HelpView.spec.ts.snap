@@ -1,137 +1,201 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`HelpView (de) > matches snapshot 1`] = `
-"<div class="grid max-w-detail grid-cols-1 items-start gap-16 lg:grid-cols-[minmax(0,var(--reading-max))_220px]">
-  <article class="min-w-0">
-    <div class="mb-section flex flex-wrap justify-between gap-4 items-end">
-      <div class="min-w-0">
-        <h1 class="font-semibold text-heading text-4xl tracking-[-0.01em]">Hilfe &amp; Q/A</h1>
-        <p class="mt-1.5 text-base text-fg-muted">Support &amp; häufige Fragen.</p>
+"<div class="bg-panel rounded-2xl p-10 border shadow-sm">
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+    <div class="flex items-center gap-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-question-mark-icon lucide-circle-question-mark">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+        <path d="M12 17h.01"></path>
+      </svg>
+      <div>
+        <h1 class="text-2xl font-bold">Hilfe &amp; Q/A</h1>
+        <p class="text-sm text-fg-muted">Support &amp; häufige Fragen.</p>
       </div>
-      <!--v-if-->
     </div>
-    <div class="help-article flex flex-col gap-4">
-      <p>Diese Seite erklärt die wichtigsten Schritte für Nutzer, die bereits eingeloggt sind. Du erhältst hier konkrete Hinweise für Deployments, Quotas und die nächsten praktischen Schritte.</p>
-      <h2 id="help-problems">Wenn etwas nicht funktioniert</h2>
-      <p>Diese Checkliste hilft dir, die häufigsten Blocker schnell zu finden und zu verstehen, was du als nächstes prüfen solltest.</p>
-      <ul class="list-disc pl-5">
+  </div>
+  <p class="text-fg-muted leading-7 max-w-3xl mb-8">Diese Seite erklärt die wichtigsten Schritte für Nutzer, die bereits eingeloggt sind. Du erhältst hier konkrete Hinweise für Deployments, Quotas und die nächsten praktischen Schritte.</p>
+  <div class="grid gap-4 lg:grid-cols-2">
+    <article class="rounded-3xl border border-subtle bg-line/[.04] p-6">
+      <div class="flex items-center gap-3 mb-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers-icon lucide-layers">
+          <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path>
+          <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path>
+          <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path>
+        </svg>
+        <h2 class="text-lg font-semibold">Wenn etwas nicht funktioniert</h2>
+      </div>
+      <p class="text-fg-muted leading-7 mb-4">Diese Checkliste hilft dir, die häufigsten Blocker schnell zu finden und zu verstehen, was du als nächstes prüfen solltest.</p>
+      <ul class="list-disc list-inside space-y-2 text-fg-muted">
         <li>Prüfe, ob du dein Quota-Limit erreicht hast.</li>
         <li>Sieh dir die Deployment-Details und Logs an, um den Fehler einzugrenzen.</li>
       </ul>
-      <h2 id="help-steps">Schritt-für-Schritt-Anleitung</h2>
-      <h3>Deployment-Prozess</h3>
-      <ol class="list-decimal pl-[22px]">
+    </article>
+    <article class="rounded-3xl border border-subtle bg-line/[.04] p-6">
+      <div class="flex items-center gap-3 mb-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-icon lucide-book-open">
+          <path d="M12 7v14"></path>
+          <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
+        </svg>
+        <h2 class="text-lg font-semibold">Schritt-für-Schritt-Anleitung</h2>
+      </div>
+      <p class="text-sm font-semibold text-fg mb-3">Deployment-Prozess</p>
+      <ol class="list-decimal list-inside space-y-3 text-fg-muted">
         <li>Öffne die Deployments-Übersicht und starte ein neues Deployment.</li>
         <li>Wähle die gewünschte App und App-Version aus.</li>
         <li>Ordne das Deployment einem Kurs oder Team zu und passe die Einstellungen an.</li>
         <li>Kontrolliere deine aktuellen Quotas, bevor du das Deployment ausführst.</li>
         <li>Starte das Deployment und überwache den Status sowie die Logs in der Detailansicht.</li>
       </ol>
-      <h2 id="help-areas">Die Bereiche der App</h2>
-      <dl class="flex flex-col gap-0.5">
-        <dt class="font-semibold text-heading">Dashboard</dt>
-        <dd class="mb-3">Schneller Überblick über Deployments, Systemstatus und verfügbare Ressourcen.</dd>
-        <dt class="font-semibold text-heading">Apps</dt>
-        <dd class="mb-3">Apps prüfen, Versionen auswählen und neue Anwendungen bereitstellen.</dd>
-        <dt class="font-semibold text-heading">Kurse</dt>
-        <dd class="mb-3">Deployments mit Kursen verknüpfen und Teilnehmergruppen organisieren.</dd>
-        <dt class="font-semibold text-heading">Deployments</dt>
-        <dd class="mb-3">Neue Deployments anlegen, den Status prüfen und Fehler analysieren.</dd>
-      </dl>
-      <h2 id="help-links">Nützliche Projektlinks</h2>
-      <p>Direkter Zugriff auf die relevanten GitHub-Repositories.</p>
-      <ul class="list-disc pl-5">
-        <li><a href="https://github.com/six7-click-n-deploy/frontend" target="_blank" rel="noopener noreferrer" class="link">GitHub: Frontend-Repository</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/backend" target="_blank" rel="noopener noreferrer" class="link">GitHub: Backend-Repository</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/deployment" target="_blank" rel="noopener noreferrer" class="link">GitHub: Deployment-Repository</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/worker" target="_blank" rel="noopener noreferrer" class="link">GitHub: Worker-Repository</a></li>
+      <div class="mt-6 space-y-4 text-fg">
+        <div>
+          <h3 class="font-semibold text-base">Dashboard</h3>
+          <p class="text-fg-muted">Schneller Überblick über Deployments, Systemstatus und verfügbare Ressourcen.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-base">Apps</h3>
+          <p class="text-fg-muted">Apps prüfen, Versionen auswählen und neue Anwendungen bereitstellen.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-base">Kurse</h3>
+          <p class="text-fg-muted">Deployments mit Kursen verknüpfen und Teilnehmergruppen organisieren.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-base">Deployments</h3>
+          <p class="text-fg-muted">Neue Deployments anlegen, den Status prüfen und Fehler analysieren.</p>
+        </div>
+      </div>
+    </article>
+    <article class="rounded-3xl border border-subtle bg-line/[.04] p-6">
+      <div class="flex items-center gap-3 mb-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-icon lucide-book-open">
+          <path d="M12 7v14"></path>
+          <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
+        </svg>
+        <h2 class="text-lg font-semibold">Nützliche Projektlinks</h2>
+      </div>
+      <p class="text-fg-muted leading-7 mb-4">Direkter Zugriff auf die relevanten GitHub-Repositories.</p>
+      <ul class="list-disc list-inside space-y-2 text-fg-muted">
+        <li><a href="https://github.com/six7-click-n-deploy/frontend" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">GitHub: Frontend-Repository</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/backend" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">GitHub: Backend-Repository</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/deployment" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">GitHub: Deployment-Repository</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/worker" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">GitHub: Worker-Repository</a></li>
       </ul>
-      <h2 id="help-docs">Dokumentation</h2>
-      <p>Direkter Zugriff auf die relevanten Projekt-Dokumentationen.</p>
-      <ul class="list-disc pl-5">
-        <li><a href="https://github.com/six7-click-n-deploy/deployment/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="link">Dokumentation bzgl. Installations und Administration</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/.github/blob/main/docs/technologiestack.md" target="_blank" rel="noopener noreferrer" class="link">Dokumentation bzgl. Technologiestack und Architektur</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/template-app/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="link">Dokumentation für App Entwickler: Entwicklung eines neuen App Templates</a></li>
+    </article>
+    <article class="rounded-3xl border border-subtle bg-line/[.04] p-6">
+      <div class="flex items-center gap-3 mb-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text-icon lucide-file-text">
+          <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path>
+          <path d="M14 2v5a1 1 0 0 0 1 1h5"></path>
+          <path d="M10 9H8"></path>
+          <path d="M16 13H8"></path>
+          <path d="M16 17H8"></path>
+        </svg>
+        <h2 class="text-lg font-semibold">Dokumentation</h2>
+      </div>
+      <p class="text-fg-muted leading-7 mb-4">Direkter Zugriff auf die relevanten Projekt-Dokumentationen.</p>
+      <ul class="list-disc list-inside space-y-3 text-fg-muted">
+        <li><a href="https://github.com/six7-click-n-deploy/deployment/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">Dokumentation bzgl. Installations und Administration</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/.github/blob/main/docs/technologiestack.md" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">Dokumentation bzgl. Technologiestack und Architektur</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/template-app/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">Dokumentation für App Entwickler: Entwicklung eines neuen App Templates</a></li>
       </ul>
-    </div>
-  </article>
-  <nav aria-label="Auf dieser Seite" class="hidden pt-2 lg:sticky lg:top-0 lg:block">
-    <p class="mb-2 text-xs font-semibold text-fg-subtle">Auf dieser Seite</p>
-    <ul class="flex flex-col border-l border-subtle">
-      <li><a href="#help-problems" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Wenn etwas nicht funktioniert</a></li>
-      <li><a href="#help-steps" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Schritt-für-Schritt-Anleitung</a></li>
-      <li><a href="#help-areas" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Die Bereiche der App</a></li>
-      <li><a href="#help-links" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Nützliche Projektlinks</a></li>
-      <li><a href="#help-docs" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Dokumentation</a></li>
-    </ul>
-  </nav>
+    </article>
+  </div>
 </div>"
 `;
 
 exports[`HelpView (en) > matches snapshot 1`] = `
-"<div class="grid max-w-detail grid-cols-1 items-start gap-16 lg:grid-cols-[minmax(0,var(--reading-max))_220px]">
-  <article class="min-w-0">
-    <div class="mb-section flex flex-wrap justify-between gap-4 items-end">
-      <div class="min-w-0">
-        <h1 class="font-semibold text-heading text-4xl tracking-[-0.01em]">Help &amp; Q/A</h1>
-        <p class="mt-1.5 text-base text-fg-muted">Support &amp; frequently asked questions.</p>
+"<div class="bg-panel rounded-2xl p-10 border shadow-sm">
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+    <div class="flex items-center gap-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-question-mark-icon lucide-circle-question-mark">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+        <path d="M12 17h.01"></path>
+      </svg>
+      <div>
+        <h1 class="text-2xl font-bold">Help &amp; Q/A</h1>
+        <p class="text-sm text-fg-muted">Support &amp; frequently asked questions.</p>
       </div>
-      <!--v-if-->
     </div>
-    <div class="help-article flex flex-col gap-4">
-      <p>This page explains the most important steps for users who are already signed in. You get concrete guidance for deployments, quotas and next practical steps.</p>
-      <h2 id="help-problems">If something does not work</h2>
-      <p>This checklist helps you find the most common blockers quickly and understand what to check next.</p>
-      <ul class="list-disc pl-5">
+  </div>
+  <p class="text-fg-muted leading-7 max-w-3xl mb-8">This page explains the most important steps for users who are already signed in. You get concrete guidance for deployments, quotas and next practical steps.</p>
+  <div class="grid gap-4 lg:grid-cols-2">
+    <article class="rounded-3xl border border-subtle bg-line/[.04] p-6">
+      <div class="flex items-center gap-3 mb-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layers-icon lucide-layers">
+          <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path>
+          <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path>
+          <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path>
+        </svg>
+        <h2 class="text-lg font-semibold">If something does not work</h2>
+      </div>
+      <p class="text-fg-muted leading-7 mb-4">This checklist helps you find the most common blockers quickly and understand what to check next.</p>
+      <ul class="list-disc list-inside space-y-2 text-fg-muted">
         <li>Check whether you have reached your quota limit.</li>
         <li>Look at deployment details and logs to narrow down the issue.</li>
       </ul>
-      <h2 id="help-steps">Step-by-step guide</h2>
-      <h3>Deployment process</h3>
-      <ol class="list-decimal pl-[22px]">
+    </article>
+    <article class="rounded-3xl border border-subtle bg-line/[.04] p-6">
+      <div class="flex items-center gap-3 mb-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-icon lucide-book-open">
+          <path d="M12 7v14"></path>
+          <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
+        </svg>
+        <h2 class="text-lg font-semibold">Step-by-step guide</h2>
+      </div>
+      <p class="text-sm font-semibold text-fg mb-3">Deployment process</p>
+      <ol class="list-decimal list-inside space-y-3 text-fg-muted">
         <li>Open the deployments overview and start a new deployment.</li>
         <li>Choose the desired app and app version.</li>
         <li>Assign the deployment to a course or team and adjust the settings.</li>
         <li>Review your current quotas before launching the deployment.</li>
         <li>Start the deployment and monitor status and logs in the detail view.</li>
       </ol>
-      <h2 id="help-areas">Areas of the app</h2>
-      <dl class="flex flex-col gap-0.5">
-        <dt class="font-semibold text-heading">Dashboard</dt>
-        <dd class="mb-3">Quickly see active deployments, system health, and available resources.</dd>
-        <dt class="font-semibold text-heading">Apps</dt>
-        <dd class="mb-3">Verify the app you need or add new applications and versions.</dd>
-        <dt class="font-semibold text-heading">Courses</dt>
-        <dd class="mb-3">Link deployments to courses and organize participant groups.</dd>
-        <dt class="font-semibold text-heading">Deployments</dt>
-        <dd class="mb-3">Create deployments, check status, and investigate errors.</dd>
-      </dl>
-      <h2 id="help-links">Useful project links</h2>
-      <p>Quick access to the relevant GitHub repositories.</p>
-      <ul class="list-disc pl-5">
-        <li><a href="https://github.com/six7-click-n-deploy/frontend" target="_blank" rel="noopener noreferrer" class="link">GitHub: frontend repository</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/backend" target="_blank" rel="noopener noreferrer" class="link">GitHub: backend repository</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/deployment" target="_blank" rel="noopener noreferrer" class="link">GitHub: deployment repository</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/worker" target="_blank" rel="noopener noreferrer" class="link">GitHub: worker repository</a></li>
+      <div class="mt-6 space-y-4 text-fg">
+        <div>
+          <h3 class="font-semibold text-base">Dashboard</h3>
+          <p class="text-fg-muted">Quickly see active deployments, system health, and available resources.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-base">Apps</h3>
+          <p class="text-fg-muted">Verify the app you need or add new applications and versions.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-base">Courses</h3>
+          <p class="text-fg-muted">Link deployments to courses and organize participant groups.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-base">Deployments</h3>
+          <p class="text-fg-muted">Create deployments, check status, and investigate errors.</p>
+        </div>
+      </div>
+    </article>
+    <article class="rounded-3xl border border-subtle bg-line/[.04] p-6">
+      <div class="flex items-center gap-3 mb-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-icon lucide-book-open">
+          <path d="M12 7v14"></path>
+          <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path>
+        </svg>
+        <h2 class="text-lg font-semibold">Useful project links</h2>
+      </div>
+      <p class="text-fg-muted leading-7 mb-4">Quick access to the relevant GitHub repositories.</p>
+      <ul class="list-disc list-inside space-y-2 text-fg-muted">
+        <li><a href="https://github.com/six7-click-n-deploy/frontend" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">GitHub: frontend repository</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/backend" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">GitHub: backend repository</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/deployment" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">GitHub: deployment repository</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/worker" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">GitHub: worker repository</a></li>
       </ul>
-      <h2 id="help-docs">Documentation</h2>
-      <p>Direct access to the relevant project documentation.</p>
-      <ul class="list-disc pl-5">
-        <li><a href="https://github.com/six7-click-n-deploy/deployment/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="link">Documentation regarding Installation and Administration</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/.github/blob/main/docs/technologiestack.md" target="_blank" rel="noopener noreferrer" class="link">Documentation regarding Technology Stack and Architecture</a></li>
-        <li><a href="https://github.com/six7-click-n-deploy/template-app/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="link">Documentation for App Developers: Creating a new App Template</a></li>
+    </article>
+    <article class="rounded-3xl border border-subtle bg-line/[.04] p-6">
+      <div class="flex items-center gap-3 mb-4 text-fg"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text-icon lucide-file-text">
+          <path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path>
+          <path d="M14 2v5a1 1 0 0 0 1 1h5"></path>
+          <path d="M10 9H8"></path>
+          <path d="M16 13H8"></path>
+          <path d="M16 17H8"></path>
+        </svg>
+        <h2 class="text-lg font-semibold">Documentation</h2>
+      </div>
+      <p class="text-fg-muted leading-7 mb-4">Direct access to the relevant project documentation.</p>
+      <ul class="list-disc list-inside space-y-3 text-fg-muted">
+        <li><a href="https://github.com/six7-click-n-deploy/deployment/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">Documentation regarding Installation and Administration</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/.github/blob/main/docs/technologiestack.md" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">Documentation regarding Technology Stack and Architecture</a></li>
+        <li><a href="https://github.com/six7-click-n-deploy/template-app/blob/main/README.md" target="_blank" rel="noopener noreferrer" class="text-accent-fg hover:underline">Documentation for App Developers: Creating a new App Template</a></li>
       </ul>
-    </div>
-  </article>
-  <nav aria-label="On this page" class="hidden pt-2 lg:sticky lg:top-0 lg:block">
-    <p class="mb-2 text-xs font-semibold text-fg-subtle">On this page</p>
-    <ul class="flex flex-col border-l border-subtle">
-      <li><a href="#help-problems" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">If something does not work</a></li>
-      <li><a href="#help-steps" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Step-by-step guide</a></li>
-      <li><a href="#help-areas" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Areas of the app</a></li>
-      <li><a href="#help-links" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Useful project links</a></li>
-      <li><a href="#help-docs" class="block py-1 pl-3 text-sm text-fg-muted transition-colors hover:text-heading">Documentation</a></li>
-    </ul>
-  </nav>
+    </article>
+  </div>
 </div>"
 `;

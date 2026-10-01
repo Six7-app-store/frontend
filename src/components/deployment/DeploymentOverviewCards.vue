@@ -1,14 +1,11 @@
 <script setup lang="ts">
 /**
  * The three overview cards of the deployment detail page: deployment
- * (name, release tag, creation date), app and owner.
+ * info (name, release tag, creation date), app info and owner info.
  */
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { Calendar, GitBranch, Package, User } from 'lucide-vue-next'
 import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
-import Card from '@/components/ui/Card.vue'
-import InfoList, { type InfoItem } from '@/components/ui/InfoList.vue'
-import { roleLabelKey } from '@/i18n/role-labels'
 import { formatDateTime } from '@/utils/format'
 import type { DeploymentWithRelations } from '@/types'
 
@@ -16,67 +13,118 @@ const props = defineProps<{
   deployment: DeploymentWithRelations
 }>()
 
-const { t } = useI18n()
-
-const deploymentFacts = computed<InfoItem[]>(() => [
-  { label: t('DeploymentsView.deploymentName'), value: props.deployment.name },
-  { label: t('DeploymentDetailView.releaseTag'), value: props.deployment.releaseTag, mono: true },
-  {
-    label: t('DeploymentDetailView.deploymentCreated'),
-    value: props.deployment.created_at ? formatDateTime(props.deployment.created_at) : '-',
-  },
-])
-
-const appFacts = computed<InfoItem[]>(() => {
-  const app = props.deployment.app
-  if (!app) return []
-  return [
-    { label: t('DeploymentDetailView.appName'), value: app.name },
-    {
-      label: t('DeploymentDetailView.gitRepository'),
-      value: app.git_link?.replace(/^https?:\/\//, ''),
-      href: app.git_link ?? undefined,
-      mono: true,
-    },
-  ]
-})
-
-const ownerFacts = computed<InfoItem[]>(() => {
-  const user = props.deployment.user
-  if (!user) return []
-  return [
-    { label: t('DeploymentDetailView.deploymentUserName'), value: user.username },
-    { label: t('DeploymentDetailView.email'), value: user.email },
-    { label: t('DeploymentDetailView.deploymentUserRole'), value: t(roleLabelKey(user.role)) },
-  ]
+const deploymentTimestamp = computed(() => {
+  return props.deployment.created_at ? formatDateTime(props.deployment.created_at) : '-'
 })
 </script>
 
 <template>
-  <div class="grid grid-cols-1 gap-card lg:grid-cols-3">
-    <Card :title="$t('DeploymentDetailView.deploymentInfo')">
-      <InfoList :items="deploymentFacts" />
-    </Card>
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <Card :title="$t('DeploymentsView.deploymentApp')">
-      <div v-if="deployment.app" class="flex flex-col gap-3">
-        <InfoList :items="appFacts" />
-        <MarkdownRenderer
-          v-if="deployment.app.description && deployment.app.description.trim()"
-          :source="deployment.app.description"
-          variant="compact"
-          :clamp="3"
-          :expandable="true"
-          class="text-sm"
-        />
-        <p v-else class="text-sm italic text-fg-muted">{{ $t('DeploymentDetailView.noDescription') }}</p>
+    <!-- Deployment info card -->
+    <div class="bg-panel rounded-xl border border-subtle p-6 shadow-sm">
+      <h2 class="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
+        <Package :size="20" class="text-icon" />
+        Deployment Info
+      </h2>
+      <div class="space-y-4">
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">
+            {{ $t('DeploymentsView.deploymentName') }}
+          </div>
+          <div class="text-sm font-medium text-fg">{{ deployment.name }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.releaseTag') }}</div>
+          <div class="text-sm">
+            <span
+              class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-line/[.07] text-fg border border-strong">
+              <GitBranch :size="12" class="mr-1" />
+              {{ deployment.releaseTag }}
+            </span>
+          </div>
+        </div>
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">
+            {{ $t('DeploymentDetailView.deploymentCreated') }}
+          </div>
+          <div class="text-sm font-medium text-fg flex items-center gap-1">
+            <Calendar :size="14" />
+            {{ deploymentTimestamp }}
+          </div>
+        </div>
       </div>
-      <p v-else class="text-sm text-fg-muted">{{ $t('DeploymentDetailView.noAppInfo') }}</p>
-    </Card>
+    </div>
 
-    <Card :title="$t('DeploymentDetailView.deploymentOwner')">
-      <InfoList v-if="deployment.user" :items="ownerFacts" />
-      <p v-else class="text-sm text-fg-muted">{{ $t('DeploymentDetailView.noUserInfo') }}</p>
-    </Card>
+    <!-- App info card -->
+    <div class="bg-panel rounded-xl border border-subtle p-6 shadow-sm">
+      <h2 class="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
+        <Package :size="20" class="text-icon" />
+        {{ $t('DeploymentsView.deploymentApp') }}
+      </h2>
+      <div class="space-y-4" v-if="deployment.app">
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.appName') }}</div>
+          <div class="text-sm font-medium text-fg">{{ deployment.app.name }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{
+            $t('DeploymentDetailView.deploymentDescription') }}</div>
+          <MarkdownRenderer
+            v-if="deployment.app.description && deployment.app.description.trim()"
+            :source="deployment.app.description"
+            variant="compact"
+            :clamp="3"
+            :expandable="true"
+            class="text-sm"
+          />
+          <div v-else class="text-sm text-fg-muted italic">{{ $t('DeploymentDetailView.noDescription') }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.gitRepository') }}</div>
+          <a :href="deployment.app.git_link ?? undefined" target="_blank"
+            class="text-sm text-accent-fg hover:text-accent-fg underline break-all">
+            {{ deployment.app.git_link }}
+          </a>
+        </div>
+      </div>
+      <div v-else class="text-sm text-fg-muted">{{ $t('DeploymentDetailView.noAppInfo') }}</div>
+    </div>
+
+    <!-- User info card -->
+    <div class="bg-panel rounded-xl border border-subtle p-6 shadow-sm">
+      <h2 class="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
+        <User :size="20" class="text-icon" />
+        {{ $t('DeploymentDetailView.deploymentOwner') }}
+      </h2>
+      <div class="space-y-4" v-if="deployment.user">
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{
+            $t('DeploymentDetailView.deploymentUserName') }}</div>
+          <div class="text-sm font-medium text-fg flex items-center gap-2">
+            <div
+              class="avatar w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold">
+              {{ deployment.user.username.substring(0, 2).toUpperCase() }}
+            </div>
+            {{ deployment.user.username }}
+          </div>
+        </div>
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.email') }}</div>
+          <div class="text-sm text-fg">{{ deployment.user.email }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{
+            $t('DeploymentDetailView.deploymentUserRole') }}</div>
+          <div class="text-sm">
+            <span
+              class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-line/[.07] text-fg border border-strong capitalize">
+              {{ deployment.user.role }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div v-else class="text-sm text-fg-muted">{{ $t('DeploymentDetailView.noUserInfo') }}</div>
+    </div>
   </div>
 </template>

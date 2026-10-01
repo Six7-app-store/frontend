@@ -140,9 +140,9 @@ const clearFile = () => {
     <!-- Empty state: drop zone + click to pick. -->
     <div
       v-if="!hasValue"
-      class="drop-zone flex cursor-pointer items-center gap-3 px-4 py-3"
+      class="border-2 border-dashed rounded-md px-4 py-3 cursor-pointer transition-colors flex items-center gap-3"
       :class="[
-        isDragging ? 'drop-zone-active' : '',
+        isDragging ? 'border-success-dot bg-success-dot/10' : 'border-strong hover:border-strong',
         disabled ? 'opacity-50 cursor-not-allowed' : '',
       ]"
       @dragover.prevent="!disabled && (isDragging = true)"

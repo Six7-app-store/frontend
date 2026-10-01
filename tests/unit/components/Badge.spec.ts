@@ -6,17 +6,18 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 
 import Badge from '@/components/ui/Badge.vue'
-import { BADGE_TONE_CLASSES } from '@/components/ui/badge-tones'
-import type { BadgeTone } from '@/types/tone'
+import { BADGE_VARIANT_CLASSES, type BadgeVariant } from '@/components/ui/badge-variants'
 
 describe('Badge', () => {
-  it.each(Object.keys(BADGE_TONE_CLASSES) as BadgeTone[])('rendert die Farben des Tons %s', (tone) => {
-    const wrapper = mount(Badge, { props: { tone }, slots: { default: 'Text' } })
+  it.each(Object.keys(BADGE_VARIANT_CLASSES) as BadgeVariant[])('rendert die Farben der Variante %s', (variant) => {
+    const wrapper = mount(Badge, { props: { variant }, slots: { default: 'Text' } })
 
-    expect(wrapper.classes()).toContain(BADGE_TONE_CLASSES[tone])
+    for (const cls of BADGE_VARIANT_CLASSES[variant].split(' ')) {
+      expect(wrapper.classes()).toContain(cls)
+    }
   })
 
-  it('fällt ohne Ton auf neutral zurück', () => {
+  it('fällt ohne Variante auf grau zurück', () => {
     const wrapper = mount(Badge, { slots: { default: 'Text' } })
 
     expect(wrapper.classes()).toContain('status-neutral')

@@ -12,10 +12,6 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { createI18n } from 'vue-i18n'
-import de from '@/i18n/locales/de'
-
-const i18n = createI18n({ legacy: false, locale: 'de', messages: { de } })
 
 let mockQuery: Record<string, unknown> = {}
 const selectDeepLink = vi.fn()
@@ -37,9 +33,7 @@ vi.mock('@/api/app.api', () => ({
 
 vi.mock('lucide-vue-next', () => {
   const icon = { template: '<span />' }
-  return {
-    ChevronDown: icon, // BaseSelect
-    Loader2: icon, Link2: icon, AlertCircle: icon }
+  return { Loader2: icon, Link2: icon, AlertCircle: icon }
 })
 
 import LtiDeepLinkView from '@/views/LtiDeepLinkView.vue'
@@ -49,7 +43,7 @@ const RETURN_URL = 'https://moodle.test/mod/lti/contentitem_return.php'
 
 const open = async (query: Record<string, unknown> = { dl: HANDLE }) => {
   mockQuery = query
-  const wrapper = mount(LtiDeepLinkView, { attachTo: document.body, global: { plugins: [i18n] } })
+  const wrapper = mount(LtiDeepLinkView, { attachTo: document.body })
   await flushPromises()
   return wrapper
 }

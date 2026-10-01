@@ -16,16 +16,6 @@ const ltiSession = useLtiSession()
 let initializePromise: Promise<void> | null = null
 let fetchMePromise: Promise<void> | null = null
 
-// Sign-in work still running (initialize, callback). The router guard
-// waits for it instead of guessing how long it takes.
-const inFlight = new Set<Promise<unknown>>()
-function track<T>(promise: Promise<T>): Promise<T> {
-  inFlight.add(promise)
-  const done = () => { inFlight.delete(promise) }
-  promise.then(done, done)
-  return promise
-}
-
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
@@ -42,15 +32,23 @@ export const useAuthStore = defineStore('auth', {
     // difference matters wherever the Keycloak path would redirect:
     // an LTI session cannot be renewed, only launched again.
     isLtiSession: () => ltiSession.isActive(),
-
-
+    
+    userRole: (state): UserRole | null => state.user?.role || null,
+    
+    isStudent: (state) => state.user?.role === 'student',
+    isTeacher: (state) => state.user?.role === 'teacher',
+    isAdmin: (state) => state.user?.role === 'admin',
+    
+    isTeacherOrAdmin: (state) => 
+      state.user?.role === 'teacher' || state.user?.role === 'admin',
+    
     userId: (state) => state.user?.userId || null,
   },
 
   actions: {
     async initialize() {
       if (initializePromise) return initializePromise
-      initializePromise = track((async () => {
+      initializePromise = (async () => {
         this.isLoading = true
         try {
           // A launched session already has its token; running the
@@ -80,7 +78,7 @@ export const useAuthStore = defineStore('auth', {
         } finally {
           this.isLoading = false
         }
-      })())
+      })()
       return initializePromise
     },
 
@@ -94,15 +92,11 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    /**
-     * Finalize the Authorization Code + PKCE flow.
-     * Resolves return URL from Keycloak, then loads the current user from backend.
-     */
-    handleCallback() {
-      return track(this.finishCallback())
-    },
-
-    async finishCallback() {
+    async handleCallback() {
+      /**
+       * Finalize the Authorization Code + PKCE flow.
+       * Resolves return URL from Keycloak, then loads the current user from backend.
+       */
       this.isLoading = true
       this.error = null
       
@@ -118,11 +112,6 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.isLoading = false
       }
-    },
-
-    /** Resolves once no sign-in work is running; never rejects. */
-    async whenSettled() {
-      await Promise.allSettled([...inFlight])
     },
 
     async fetchMe() {
@@ -169,6 +158,10 @@ export const useAuthStore = defineStore('auth', {
         // logout must not block the user, so only log it.
         console.error('Logout failed:', error)
       }
+    },
+
+    hasRole(role: UserRole): boolean {
+      return this.user?.role === role
     },
 
     hasAnyRole(...roles: UserRole[]): boolean {

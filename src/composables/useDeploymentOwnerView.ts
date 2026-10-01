@@ -4,30 +4,26 @@ import { useRole } from '@/composables/useRole'
 import type { DeploymentWithRelations } from '@/types'
 
 /**
- * Who may see and who may act on a deployment — mirrors
- * ``backend/app/utils/capabilities.py``. The backend stays the source of
- * truth (it answers 403 or filters data); these computeds only hide the
- * affordances so the user doesn't see buttons that would fail.
+ * Owner-view vs member-view — mirrors backend/app/utils/permissions.py
+ * ``is_deployment_owner_view``. Drives every gated UI element on the
+ * deployment detail page: tasks/logs sections, terraform-state/outputs
+ * blocks, the Delete button, the SSE live-stream connection, and the
+ * resend-credentials buttons of *other* members in the same team.
  *
- * - ``isOwnerView``: tasks/logs, terraform state/outputs, the SSE live
- *   stream and the resend buttons of *other* members. Staff or owner.
- *   (The backend narrows a teacher to the owner's course teachers; the
- *   list endpoint already only returns deployments they may open.)
- * - ``canOperate``: delete, pause/resume and per-VM redeploy — the
- *   backend's ``can_operate_deployment``. Admin or owner only, so a
- *   teacher inspecting someone else's deployment gets no action buttons.
+ * We trust the backend on the source-of-truth side (it returns 403
+ * or filters data when the caller isn't owner-view); this computed
+ * just hides the affordances so the user doesn't see buttons that
+ * would 403 on click.
  */
 export function useDeploymentOwnerView(deployment: Ref<DeploymentWithRelations | null>) {
   const authStore = useAuthStore()
-  const { isAdmin, isStaff } = useRole()
+  const { isStaff } = useRole()
 
-  const isOwner = computed(() => {
+  const isOwnerView = computed(() => {
+    if (isStaff.value) return true
     const ownerId = deployment.value?.userId
     return !!ownerId && String(ownerId) === String(authStore.userId)
   })
 
-  const isOwnerView = computed(() => isStaff.value || isOwner.value)
-  const canOperate = computed(() => isAdmin.value || isOwner.value)
-
-  return { isOwnerView, canOperate }
+  return { isOwnerView }
 }

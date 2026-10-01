@@ -13,6 +13,6 @@ defineEmits(['update:modelValue'])
     :placeholder="placeholder"
     :value="modelValue"
     @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-    class="field w-full px-3 transition"
+    class="field w-full px-4 py-2 transition"
   />
 </template>

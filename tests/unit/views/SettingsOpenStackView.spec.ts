@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 
 import SettingsOpenStackView from '@/views/SettingsOpenStackView.vue'
@@ -88,10 +88,9 @@ vi.mock('@/stores/openstack-credentials.store', () => ({
     })
 }))
 
-// Löschen fragt über einen ConfirmModal nach: der erste Button mit dem
-// Label öffnet ihn, der letzte (im Dialog) bestätigt.
-const deleteButtons = (wrapper: { findAll: (s: string) => any[] }) =>
-    wrapper.findAll('button').filter((b: any) => b.text().includes('SettingsOpenStackView.status.delete'))
+// Globalen confirm-Dialog simulieren
+const originalConfirm = window.confirm
+const mockConfirm = vi.fn()
 
 // ---------------------------------------------------------
 // 2. Die Tests
@@ -103,6 +102,7 @@ describe('SettingsOpenStackView.vue', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
+        window.confirm = mockConfirm
 
         // Reset Store State
         storeState = {
@@ -115,6 +115,10 @@ describe('SettingsOpenStackView.vue', () => {
             error: null,
             status: {}
         }
+    })
+
+    afterEach(() => {
+        window.confirm = originalConfirm
     })
 
     const mountComponent = () => {
@@ -262,28 +266,29 @@ describe('SettingsOpenStackView.vue', () => {
 
     // --- 5. Löschen ---
 
-    it('bricht das Löschen ab, wenn der User im Dialog auf "Abbrechen" klickt', async () => {
+    it('bricht das Löschen ab, wenn der User im nativem Dialog auf "Abbrechen" klickt', async () => {
         storeState.hasCredential = true
+        mockConfirm.mockReturnValue(false)
 
         const wrapper = mountComponent()
         await flushPromises()
 
-        await deleteButtons(wrapper)[0]!.trigger('click')
-        expect(wrapper.text()).toContain('SettingsOpenStackView.confirmDelete')
+        const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.status.delete'))!
+        await deleteBtn.trigger('click')
 
-        await wrapper.findAll('button').find(b => b.text().includes('action.cancel'))!.trigger('click')
-        expect(wrapper.text()).not.toContain('SettingsOpenStackView.confirmDelete')
+        expect(mockConfirm).toHaveBeenCalled()
         expect(mockRemove).not.toHaveBeenCalled()
     })
 
     it('löscht die Credentials erfolgreich, wenn der User auf "Ja" klickt', async () => {
         storeState.hasCredential = true
+        mockConfirm.mockReturnValue(true)
 
         const wrapper = mountComponent()
         await flushPromises()
 
-        await deleteButtons(wrapper)[0]!.trigger('click')
-        await deleteButtons(wrapper).slice(-1)[0]!.trigger('click')
+        const deleteBtn = wrapper.findAll('button').find(b => b.text().includes('SettingsOpenStackView.status.delete'))!
+        await deleteBtn.trigger('click')
         await flushPromises()
 
         expect(mockRemove).toHaveBeenCalledTimes(1)
@@ -437,6 +442,8 @@ describe('SettingsOpenStackView.vue — Speichern', () => {
 describe('SettingsOpenStackView.vue — Fehlschläge ohne Store-Fehlertext', () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        window.confirm = mockConfirm
+        mockConfirm.mockReturnValue(true)
         routeState.query = {}
         storeState = {
             isLocked: false,
@@ -450,6 +457,10 @@ describe('SettingsOpenStackView.vue — Fehlschläge ohne Store-Fehlertext', () 
             error: null,
             status: { has_credential: true, auth_type: 'v3applicationcredential' }
         }
+    })
+
+    afterEach(() => {
+        window.confirm = originalConfirm
     })
 
     const mountView = () => mount(SettingsOpenStackView, {
@@ -466,7 +477,6 @@ describe('SettingsOpenStackView.vue — Fehlschläge ohne Store-Fehlertext', () 
         }
         const btn = wrapper.findAll('button').find(b => b.text().includes(label))!
         await btn.trigger('click')
-        if (label === 'SettingsOpenStackView.status.delete') await deleteButtons(wrapper).slice(-1)[0]!.trigger('click')
         await flushPromises()
         return wrapper
     }

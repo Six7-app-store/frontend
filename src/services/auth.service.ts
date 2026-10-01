@@ -1,6 +1,5 @@
 import { userApi } from '@/api/user.api'
 import type { User } from '@/types'
-import { USER_STORAGE_KEY } from '@/utils/storage-keys'
 
 // ----------------------------------------------------------------
 // AUTH SERVICE (Keycloak Integration)
@@ -12,7 +11,7 @@ export class AuthService {
    */
   static async fetchMe(): Promise<User> {
     const { data: user } = await userApi.getMe()
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
+    localStorage.setItem('user', JSON.stringify(user))
     return user
   }
 
@@ -20,7 +19,7 @@ export class AuthService {
    * Get stored user from localStorage
    */
   static getStoredUser(): User | null {
-    const userStr = localStorage.getItem(USER_STORAGE_KEY)
+    const userStr = localStorage.getItem('user')
     if (!userStr) return null
     
     try {
@@ -35,6 +34,6 @@ export class AuthService {
    * Clear stored user data
    */
   static clearStoredUser(): void {
-    localStorage.removeItem(USER_STORAGE_KEY)
+    localStorage.removeItem('user')
   }
 }
