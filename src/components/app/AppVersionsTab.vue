@@ -67,8 +67,8 @@ const details = computed<InfoItem[]>(() =>
   tags.value.flatMap((tag) => {
     const info = versionInfo(findVersion(props.versions, tag))
     return [
-      { label: `${tag} ${t('AppsDetailView.versionType')}`, value: info?.type },
-      { label: `${tag} ${t('AppsDetailView.versionCommit')}`, value: info?.commit?.slice(0, 8), mono: true },
+      { label: `${tag} ${t('AppsDetailView.versionType')}`, value: info.type },
+      { label: `${tag} ${t('AppsDetailView.versionCommit')}`, value: info.commit.slice(0, 8), mono: true },
     ]
   }),
 )

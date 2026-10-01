@@ -12,26 +12,24 @@ bleiben die Basis.
 - Weiter gültig: `app-store/design-vorlage-v2/` und die Regeln unten.
 - Plan (freigegeben): `C:\Users\luish\.claude\plans\c-users-luish-onedrive-desktop-uni-app-s-sparkling-lightning.md`.
 
-## Etappen
+## Etappen (alle erledigt)
 Auf Wunsch des Nutzers **wenige, große Commits**: a–d in einem Commit, e (Aufräumen) im zweiten.
 - [x] a) Reiterleiste und Routing
 - [x] b) Übersicht und Dokumentation
 - [x] c) Konfiguration und Versionen
 - [x] d) Einstellungen mit Rechten und Lösch-Dialog
-  → Commit 1 „Split the app detail page into routed tabs“ (`git log -1`)
-- [ ] e) Aufräumen → Commit 2
+  → `6537f7b` „Split the app detail page into routed tabs“
+- [x] e) Aufräumen → „Remove the old store tab and what only it used“ (`git log -1`)
+  - `AppStoreTab.vue` gelöscht. Die alte einspaltige Übersicht samt Inhaltsverzeichnis und Versionsdetails ist mit Commit 1
+    ersetzt.
+  - 15 ungenutzte i18n-Keys in DE und EN gelöscht, jeder per `grep` auf den vollen Schlüssel geprüft:
+    - `tabOverview`, `tabStore`, `moreActions`, `deleteApp`, `descriptionTitle`, `unknownUser`, `versionLabel`
+    - `versionName`, `versionAuthor`, `versionPublishedAt`, `versionPreRelease`, `versionLink`, `versionDescTitle`
+    - `noVersionInfo`, `versionTableTitle`
+  - `versionInfo()` liefert nur noch `{ type, commit }`, mit angepasstem Test.
+  - `ActionMenu` und `--aside-w` bleiben, sie werden anderswo genutzt.
 
-**Nächster konkreter Schritt (e):**
-- `src/components/app/AppStoreTab.vue` löschen. Es wird nirgends mehr importiert.
-- Unbenutzte i18n-Keys in `de.ts` und `en.ts` löschen. Jeden per `rg` auf den vollen Schlüssel prüfen, dazu auf
-  `AppsDetailView.tabs.${…}`, das dynamisch ist. Kandidaten:
-  - `tabOverview`, `tabStore`, `moreActions`, `deleteApp`, `descriptionTitle`, `unknownUser`
-  - `versionName`, `versionAuthor`, `versionPublishedAt`, `versionPreRelease`, `versionLink`, `versionDescTitle`
-  - `noVersionInfo`, `versionTableTitle`, `cancelButton`
-- `VersionInfo`: Felder, die nur die alte Übersicht brauchte, prüfen. `versionInfo()` nutzt jetzt nur noch `AppVersionsTab`
-  (type, commit). Funktion verschlanken oder lassen, mit Test.
-- Ungenutzte Klassen und Tokens prüfen.
-- Danach Checks, HANDOVER mit dem Endstand, Commit 2.
+**Offen:** nichts aus dem Auftrag. Pushen, PR und eine Prüfung mit echtem `GIT_ACCESS_TOKEN` entscheidet der Nutzer.
 
 ## Entscheidungen
 - **Datenquellen (Analyse):**
@@ -127,7 +125,9 @@ rg -in 'online-ide|gp1\.small|assignment_files|team_flavor' src            # nur
 - Commit-Stil: englischer Imperativ mit Co-Authored-By-Trailer. HANDOVER mit jedem Commit aktualisieren.
 - Budget nach jedem Commit prüfen. Bei 7 % oder weniger sofort stoppen und übergeben.
 
-## Stand Checks (Commit 1)
+## Endstand Checks
 - vue-tsc grün, eslint leer, `Harness aktuell.`
 - 111 Dateien, 1122 Tests grün
-- Coverage siehe Commit-Nachricht
+- Coverage 91,94 / 87,98 / 76,05 / 91,94 (Start: 91,84 / 87,6 / 75,67 / 91,84)
+- Keine Hex-Treffer außerhalb von `tokens.css`, keine Inline-Styles in `components/app/`
+- Online-IDE-Suche: nur alte Kommentare (Breadcrumb) und Test-Fixtures

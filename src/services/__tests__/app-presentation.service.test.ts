@@ -123,19 +123,17 @@ describe('findVersion', () => {
 })
 
 describe('versionInfo', () => {
-  it('reads the GitHub release fields', () => {
-    expect(versionInfo({ name: 'R', commit: 'c', author: 'a', published_at: 'p', html_url: 'u', prerelease: false }))
-      .toMatchObject({ name: 'R', commit: 'c', author: 'a', published_at: 'p', html_url: 'u', prerelease: false })
+  it('reads type and commit', () => {
+    expect(versionInfo({ type: 'tag', commit: 'c' })).toEqual({ type: 'tag', commit: 'c' })
   })
 
-  it('falls back to the git commit fields', () => {
-    expect(versionInfo({ commit_sha: 's', commit_author: 'x', commit_date: 'd', url: 'l' }))
-      .toMatchObject({ commit: 's', author: 'x', published_at: 'd', html_url: 'l', name: '' })
+  it('falls back to the git commit field', () => {
+    expect(versionInfo({ commit_sha: 's' })).toEqual({ type: '', commit: 's' })
   })
 
-  it('is null for a version without any detail', () => {
-    expect(versionInfo({ version: 'v1' })).toBeNull()
-    expect(versionInfo(null)).toBeNull()
+  it('is empty for a version without any detail', () => {
+    expect(versionInfo({ version: 'v1' })).toEqual({ type: '', commit: '' })
+    expect(versionInfo(null)).toEqual({ type: '', commit: '' })
   })
 })
 

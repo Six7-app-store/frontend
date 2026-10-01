@@ -108,38 +108,19 @@ export function findVersion(
   return typeof match === 'string' ? { version: match } : match
 }
 
-const VERSION_INFO_KEYS = [
-  'name', 'type', 'commit', 'description', 'author', 'published_at', 'prerelease', 'html_url',
-  'commit_sha', 'commit_author', 'commit_date', 'url',
-]
-
 export interface VersionInfo {
-  name: string
   type: string
   commit: string
-  description: string
-  author: string
-  published_at: string
-  prerelease: unknown
-  html_url: string
 }
 
 /**
- * What the detail page shows about a version, from either field naming
- * the backend uses (GitHub release or git commit). ``null`` when the
- * version carries no such detail at all.
+ * Type and commit of a version, from either field naming the backend uses
+ * (git tag or commit). Empty strings where the repository gives nothing.
  */
-export function versionInfo(details: Record<string, any> | null): VersionInfo | null {
-  if (!details || !VERSION_INFO_KEYS.some((k) => Boolean(details[k]))) return null
+export function versionInfo(details: Record<string, any> | null): VersionInfo {
   return {
-    name: details.name ?? '',
-    type: details.type ?? '',
-    commit: details.commit ?? details.commit_sha ?? '',
-    description: details.description ?? '',
-    author: details.author ?? details.commit_author ?? '',
-    published_at: details.published_at ?? details.commit_date ?? '',
-    prerelease: details.prerelease ?? '',
-    html_url: details.html_url ?? details.url ?? '',
+    type: details?.type ?? '',
+    commit: details?.commit ?? details?.commit_sha ?? '',
   }
 }
 
