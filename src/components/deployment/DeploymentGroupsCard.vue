@@ -37,7 +37,7 @@ const currentGroup = computed(() => {
       enter-from-class="opacity-0 translate-x-2" enter-to-class="opacity-100 translate-x-0"
       leave-active-class="transition-all duration-200 ease-out absolute top-0 left-0 right-0"
       leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 -translate-x-2">
-      <div v-if="currentGroup" key="detail" class="bg-line/[.04] rounded-lg p-4">
+      <div v-if="currentGroup" key="detail" class="surface-sunken p-4">
 
         <button @click="deselectGroup"
           class="flex items-center gap-2 text-fg hover:text-heading transition-colors mb-3 group">

@@ -277,7 +277,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
              skip the section entirely so they don't see an empty/
              permission-error panel. Visually mirrors the other
              page sections (Teams, Tasks, Outputs): same
-             ``bg-panel rounded-xl border ... p-6 shadow-sm`` shell,
+             ``surface-panel`` shell,
              same icon-tile header, same sub-section spacing. -->
         <DeploymentInfrastructureSection
             v-if="isOwnerView"

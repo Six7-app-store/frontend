@@ -107,28 +107,30 @@ kein Push, `.claude/` nicht anfassen.
   Stand: 110 Dateien / 1077 Tests grün (−5 = gelöschte Tests von `iconForAppName`), Coverage 91,9/87,6/75,7/91,9, eslint leer,
   keine Hex-Treffer, keine `<style>`-Blöcke.
 
+- g2) Commit „Drop unused i18n keys and move the last panel shells to v2“ (`git log -1`), Rest von g:
+  - 23 ungenutzte i18n-Keys in DE und EN gelöscht (je per `rg` auf den vollen Schlüssel und auf dynamische Template-Strings
+    geprüft): `AppsDetailView.{backToOverview,appInfoTitle,versionDetailsTitle,versionsAvailable,visibilityLabel,
+    storeVisibilityTitle,visibilityPublic,visibilityPrivate}`, `CourseDetailView.back`, `AppsCreateView.preview.{logoAlt,deployBtn}`,
+    `DashboardView.{title,subtitle,noCredentialsTitle,noCredentialsHint,setUpNow,quotaUsed}`, `AppsView.badge*`,
+    `AdminAppsView.filterLabel`, `DeploymentDetailView.detailsSubtitle`. `AppsDetailView.visibilityPrivateDesc/PublicDesc` bleiben
+    (die Spec prüft `visibilityPrivate` nur als Teilstring davon).
+  - Panel-Hüllen auf `surface-panel` (nur Klassen): `DeploymentActiveTaskCard`, `InfrastructureVmDrawer` (Außenhülle + Kommentare),
+    `MarkdownEditor`, `DeploymentTaskDetail` (vier Blöcke), `DeploymentGroupsCard` Detailansicht → `surface-sunken`,
+    `NewDeploymentVariableView` `rounded-xl` → `rounded-panel`. Innere Unterkarten des Drawers (`bg-line/[.04] rounded-lg`) bleiben.
+  - Token-Check: kein ungenutztes Token, keine ungenutzte Klasse (Toast-Klassen über `TransitionGroup`; `--text-4xl…6xl` über
+    `PageHeader`/`StatStrip`). Hex-Suche leer. Snapshot `DeploymentDetailView.characterization` nach Diff-Prüfung aktualisiert
+    (nur die genannten Klassen + ein Kommentar).
+  - Stand: vue-tsc grün, harness `Harness aktuell.`, 110 Dateien / 1077 Tests grün, Coverage 91,8/87,6/75,7/91,8, eslint leer.
+  - Nicht gemacht: Sichtprüfung im Browser der geänderten Hüllen (Task-Detail, Drawer, Markdown-Editor).
+
 ## Offen (Reihenfolge)
-g Rest (siehe „Nächster Schritt“) · Abschluss (alle Harness-Checks, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo,
+Abschluss (Sichtprüfung der g2-Hüllen, Komponenten-Inventar, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo,
 Schlussbericht laut Plan)
 
 ## Nächster Schritt (als Erstes)
 1. `git pull` auf `feat/more_rebranding`, Dev-Stack starten (`docker start …-dev` bzw. `make dev-up`), `docker restart frontend-dev`.
-2. Etappe g fortsetzen:
-   - **i18n-Keys löschen**, jeweils vorher per `rg` bestätigen, dass sie nirgends mehr benutzt werden (auch nicht dynamisch über
-     Template-Strings wie `` `HelpView.quickHelp.page${area}` `` oder `DeploymentsView.${key}`):
-     `AppsDetailView.{backToOverview,appInfoTitle,versionDetailsTitle,versionsAvailable,visibilityLabel,storeVisibilityTitle,
-     visibilityPublic,visibilityPrivate}`, `CourseDetailView.back`, `AppsCreateView.preview.{logoAlt,deployBtn}`,
-     `DashboardView.{title,subtitle,noCredentialsTitle,noCredentialsHint,setUpNow,quotaUsed}`, `AppsView.badge*`,
-     `AdminAppsView.filterLabel`, `DeploymentDetailView.detailsSubtitle`, `HelpView`-Icons sind weg (Keys bleiben).
-     DE und EN müssen dieselben Keys behalten (`HelpView`-Paritätstest).
-   - **Altreste der Panel-Hüllen** auf v2 bringen (nur Klassen): `bg-panel rounded-lg/xl … shadow-sm` in
-     `DeploymentTaskDetail.vue`, `InfrastructureVmDrawer.vue`, `DeploymentActiveTaskCard.vue`, `MarkdownEditor.vue`,
-     `NewDeploymentVariableView.vue` (→ `surface-panel`/`rounded-panel border border-subtle`), `DeploymentGroupsCard` Detailansicht.
-     `surface-sunken` bleibt (Log-Bereich, Variablenlisten).
-   - **Token-Check**: `--color-surface` wird nur noch von `tokens.spec.ts` (Kontrastpaare) genutzt – drin lassen. Danach erneut
-     ungenutzte Klassen/Tokens suchen (Python-Skript: Klassen aus `components.css` gegen `src/**/*.{vue,ts}`; Toast-Klassen
-     `toast-enter-*` sind über `<TransitionGroup name="toast">` benutzt).
-   - Hex-Suche, Komponenten-Inventar vorher/nachher (vorher: 23 Dateien in `components/ui/` + Inline-Shell in `AppLayout`).
+2. Komponenten-Inventar vorher/nachher (vorher: 23 Dateien in `components/ui/` + Inline-Shell in `AppLayout`), kurze Sichtprüfung
+   von Task-Detail, Infrastruktur-Drawer und Markdown-Editor (Light/Dark).
 3. Abschluss: alle Checks, `HANDOVER.md` = Endstand, ADR (Design v2: Tokens als einzige Quelle, Light Standard/Dark per Schalter,
    Komponenten-Set) als eigener Commit im `deployment`-Repo unter `docs/adr/` (Skill `adr-schreiben`), Schlussbericht laut Plan
    (Befehle + Ergebnis, Commits, Inventar, geänderte/gelöschte Dateien, Hex-Ergebnis, Abweichungen – siehe „Entscheidungen“).

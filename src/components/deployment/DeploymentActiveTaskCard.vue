@@ -20,7 +20,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="bg-panel rounded-xl border border-strong shadow-sm overflow-hidden">
+  <div class="surface-panel overflow-hidden">
     <!-- Header strip: live indicator + task type/status -->
     <div class="bg-line/[.04] px-6 py-4 border-b border-subtle">
       <div class="flex items-center justify-between">

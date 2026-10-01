@@ -5,7 +5,7 @@
  *
  * Renders as part of the parent's flow, like another card in the section.
  *
- * Layout: a rounded panel card (``bg-panel border shadow-sm``) matching the surrounding
+ * Layout: a panel card (``surface-panel``) matching the surrounding
  * sections, with tinted (``bg-line/[.04]``) sub-cards per data group (Identity, Lifecycle,
  * Hardware, Addresses, Ports, SGs, Volumes, Metadata).
  *
@@ -73,7 +73,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
 <template>
   <!--
     The outer container blends into the parent's Infrastruktur
-    section: same ``bg-panel rounded-xl border shadow-sm`` shell as
+    section: same ``surface-panel`` shell as
     the deployment-page cards. ``flex flex-col`` lets the body
     consume remaining height when the parent constrains us via
     ``flex-1 min-h-0`` (sidebar context); inline-card contexts just
@@ -81,7 +81,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
     ``overflow-hidden`` on this wrapper keeps the rounded corners
     intact even when the inner body has its own ``overflow-y-auto``.
   -->
-  <div class="bg-panel rounded-xl border border-subtle shadow-sm overflow-hidden flex flex-col">
+  <div class="surface-panel overflow-hidden flex flex-col">
     <!-- Header — icon tile + title + close button. ``shrink-0`` so
          the body, not the header, absorbs any height squeeze. The
          gradient gives a soft visual top-edge without needing a

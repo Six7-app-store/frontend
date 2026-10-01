@@ -102,7 +102,7 @@ const taskLogsSplit = computed(() => {
                          is uniform and lets the browser handle search
                          (Cmd+F) consistently across all three blocks. -->
       <div v-if="selectedTask.logs" class="mb-4">
-        <div class="bg-panel rounded-lg border border-subtle overflow-hidden">
+        <div class="surface-panel overflow-hidden">
           <div
             class="bg-line/[.04] px-4 py-3 border-b border-subtle flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -119,7 +119,7 @@ const taskLogsSplit = computed(() => {
               :title="$t('DeploymentDetailView.copyToClipboard')" />
           </div>
           <div class="bg-line/[.04] p-4 overflow-y-auto max-h-[500px]">
-            <div class="bg-panel rounded-lg border border-subtle p-4">
+            <div class="surface-panel p-4">
               <!-- Failure case: for a backend-formatted
                                          ``Task failed: ...`` string, split the
                                          friendly headline (shown in red) from the
@@ -148,7 +148,7 @@ const taskLogsSplit = computed(() => {
         </div>
       </div>
       <div v-else class="mb-4">
-        <div class="bg-panel rounded-lg border border-subtle overflow-hidden">
+        <div class="surface-panel overflow-hidden">
           <div class="bg-line/[.04] px-4 py-3 border-b border-subtle">
             <div class="flex items-center gap-2">
               <Terminal :size="16" class="text-icon" />
@@ -163,7 +163,7 @@ const taskLogsSplit = computed(() => {
       </div>
 
       <div v-if="activeDataTask?.tf_state" class="mb-4">
-        <div class="bg-panel rounded-lg border border-subtle overflow-hidden shadow-sm">
+        <div class="surface-panel overflow-hidden">
 
           <div
             class="bg-line/[.04] px-4 py-3 border-b border-subtle flex items-center justify-between select-none">

@@ -176,7 +176,7 @@ const onList = () =>
 </script>
 
 <template>
- <div class="w-full rounded-lg border border-subtle bg-panel shadow-sm overflow-hidden">
+ <div class="surface-panel w-full overflow-hidden">
  <!-- Tab bar -->
  <div class="flex items-center gap-0.5 border-b border-subtle bg-line/[.04] px-2">
  <button

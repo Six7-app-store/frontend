@@ -59,7 +59,7 @@ const handleBack = () => {
         <span class="text-fg-muted">{{ t('deployment.variables.loading') }}</span>
       </div>
 
-      <div v-else-if="variables.length === 0" class="text-center py-12 text-fg-muted italic bg-line/[.04] rounded-xl border border-dashed">
+      <div v-else-if="variables.length === 0" class="text-center py-12 text-fg-muted italic bg-line/[.04] rounded-panel border border-dashed">
         {{ t('deployment.variables.noVariables') }}
       </div>
 

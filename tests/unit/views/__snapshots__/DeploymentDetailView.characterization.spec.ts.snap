@@ -137,7 +137,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
         <!-- Active Task — live progress + log tail for the currently
              running task. Replaces the previous mix of "Latest Task"
              info card + duplicate entry in the Tasks & Logs list. -->
-        <div class="bg-panel rounded-xl border border-strong shadow-sm overflow-hidden">
+        <div class="surface-panel overflow-hidden">
           <!-- Header strip: live indicator + task type/status -->
           <div class="bg-line/[.04] px-6 py-4 border-b border-subtle">
             <div class="flex items-center justify-between">
@@ -453,7 +453,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
              skip the section entirely so they don't see an empty/
              permission-error panel. Visually mirrors the other
              page sections (Teams, Tasks, Outputs): same
-             \`\`bg-panel rounded-xl border ... p-6 shadow-sm\`\` shell,
+             \`\`surface-panel\`\` shell,
              same icon-tile header, same sub-section spacing. -->
         <section class="surface-panel">
           <header class="panel-head">
@@ -893,7 +893,7 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
              skip the section entirely so they don't see an empty/
              permission-error panel. Visually mirrors the other
              page sections (Teams, Tasks, Outputs): same
-             \`\`bg-panel rounded-xl border ... p-6 shadow-sm\`\` shell,
+             \`\`surface-panel\`\` shell,
              same icon-tile header, same sub-section spacing. -->
         <!--v-if-->
         <!-- Tasks / Logs Section — history of finished tasks. The active
@@ -1312,7 +1312,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
              skip the section entirely so they don't see an empty/
              permission-error panel. Visually mirrors the other
              page sections (Teams, Tasks, Outputs): same
-             \`\`bg-panel rounded-xl border ... p-6 shadow-sm\`\` shell,
+             \`\`surface-panel\`\` shell,
              same icon-tile header, same sub-section spacing. -->
         <section class="surface-panel">
           <header class="panel-head">
@@ -1848,7 +1848,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
              skip the section entirely so they don't see an empty/
              permission-error panel. Visually mirrors the other
              page sections (Teams, Tasks, Outputs): same
-             \`\`bg-panel rounded-xl border ... p-6 shadow-sm\`\` shell,
+             \`\`surface-panel\`\` shell,
              same icon-tile header, same sub-section spacing. -->
         <section class="surface-panel">
           <header class="panel-head">
@@ -2028,7 +2028,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                          is uniform and lets the browser handle search
                          (Cmd+F) consistently across all three blocks. -->
                 <div class="mb-4">
-                  <div class="bg-panel rounded-lg border border-subtle overflow-hidden">
+                  <div class="surface-panel overflow-hidden">
                     <div class="bg-line/[.04] px-4 py-3 border-b border-subtle flex items-center justify-between">
                       <div class="flex items-center gap-2">
                         <div class="p-1.5 bg-panel rounded-md border border-strong"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon lucide-terminal-icon lucide-terminal text-icon">
@@ -2041,7 +2041,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                         </svg> Kopieren</button>
                     </div>
                     <div class="bg-line/[.04] p-4 overflow-y-auto max-h-[500px]">
-                      <div class="bg-panel rounded-lg border border-subtle p-4">
+                      <div class="surface-panel p-4">
                         <!-- Failure case: for a backend-formatted
                                          \`\`Task failed: ...\`\` string, split the
                                          friendly headline (shown in red) from the
@@ -2064,7 +2064,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                   </div>
                 </div>
                 <div class="mb-4">
-                  <div class="bg-panel rounded-lg border border-subtle overflow-hidden shadow-sm">
+                  <div class="surface-panel overflow-hidden">
                     <div class="bg-line/[.04] px-4 py-3 border-b border-subtle flex items-center justify-between select-none">
                       <div class="flex items-center gap-2">
                         <div class="p-1.5 bg-panel rounded-md border border-subtle"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon lucide-settings-icon lucide-settings text-icon">
