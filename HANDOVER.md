@@ -123,17 +123,22 @@ kein Push, `.claude/` nicht anfassen.
   - Stand: vue-tsc grün, harness `Harness aktuell.`, 110 Dateien / 1077 Tests grün, Coverage 91,8/87,6/75,7/91,8, eslint leer.
   - Nicht gemacht: Sichtprüfung im Browser der geänderten Hüllen (Task-Detail, Drawer, Markdown-Editor).
 
-## Offen (Reihenfolge)
-Abschluss (Sichtprüfung der g2-Hüllen, Komponenten-Inventar, HANDOVER = Endstand, ADR-Commit im `deployment`-Repo,
-Schlussbericht laut Plan)
+## Offen
+Nur noch zwei Dinge, beide nicht automatisierbar:
+- **Sichtprüfung im Browser** der in g2 geänderten Hüllen (Task-Detail, Infrastruktur-Drawer, aktive Task, Gruppen-Detail,
+  Markdown-Editor), Light und Dark. Deployments gibt es in der Dev-DB nicht → API-Antworten wie unter „Sichtprüfung“ fälschen.
+- **Push/PR:** Frontend-Commits bis g2 liegen lokal auf `feat/more_rebranding` (g1 ist gepusht); der ADR-Commit liegt lokal auf
+  `deployment` Branch `docs/adr-design-v2` (von `develop`). Pushen entscheidet Katrin.
 
-## Nächster Schritt (als Erstes)
-1. `git pull` auf `feat/more_rebranding`, Dev-Stack starten (`docker start …-dev` bzw. `make dev-up`), `docker restart frontend-dev`.
-2. Komponenten-Inventar vorher/nachher (vorher: 23 Dateien in `components/ui/` + Inline-Shell in `AppLayout`), kurze Sichtprüfung
-   von Task-Detail, Infrastruktur-Drawer und Markdown-Editor (Light/Dark).
-3. Abschluss: alle Checks, `HANDOVER.md` = Endstand, ADR (Design v2: Tokens als einzige Quelle, Light Standard/Dark per Schalter,
-   Komponenten-Set) als eigener Commit im `deployment`-Repo unter `docs/adr/` (Skill `adr-schreiben`), Schlussbericht laut Plan
-   (Befehle + Ergebnis, Commits, Inventar, geänderte/gelöschte Dateien, Hex-Ergebnis, Abweichungen – siehe „Entscheidungen“).
+## Abschluss (erledigt)
+- ADR 0008 „Das Design v2 hat die Tokens als einzige Quelle, Light ist Standard“ in `deployment/docs/adr/`, eigener Commit
+  (`d5a1582`); README-Verzeichnis um 0007 und 0008 ergänzt.
+- Komponenten-Inventar: `components/ui/` vorher 23 Dateien, jetzt 31 `.vue` (neu: `ActionMenu`, `AlertBox`, `BaseSelect`,
+  `Breadcrumb`, `DataTable`, `EmptyState`, `FormField`, `InfoList`, `MeterBar`, `PageToc`, `SegmentedControl`, `StatStrip`;
+  weg: `BackLink`, `DetailSection`, `ScopeBadge`, `AppVersionStatusBadge` → `app/`). Die Shell steht in `components/layout/`
+  (6 Dateien) statt inline in `AppLayout`; `UserLayout` ist weg. Gesamt seit Start: 140 Dateien in `src/` geändert.
+- Endstand Checks: vue-tsc grün, `Harness aktuell.`, 110 Dateien / 1077 Tests grün, Coverage 91,8/87,6/75,7/91,8, eslint leer,
+  keine Hex-Treffer außerhalb `tokens.css`, keine `<style>`-Blöcke.
 
 ## Sichtprüfung (so geht's ohne Browser-MCP)
 Headless Chrome per `puppeteer-core` (im Scratchpad installiert, nicht im Repo). Login per Keycloak-Formular
