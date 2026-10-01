@@ -119,7 +119,7 @@ const rowMenu = computed<MenuItem[]>(() => [
 </script>
 
 <template>
-  <div class="max-w-narrow">
+  <div class="max-w-page">
     <PageHeader :title="$t('CoursesView.title')" :subtitle="$t('CoursesView.subtitle')">
       <template #actions>
         <BaseButton v-if="isStaff" @click="openCreateModal">

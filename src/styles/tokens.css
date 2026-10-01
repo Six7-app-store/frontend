@@ -55,9 +55,9 @@
   --login-panel-w: 520px;
   --login-panel-pad-x: 72px;
 
-  --page-max: 1280px;      /* overview pages */
-  --detail-max: 1040px;    /* detail pages */
-  --narrow-max: 960px;     /* narrow detail pages */
+  --page-max: none;        /* overview pages: fill the content area */
+  --detail-max: none;      /* detail pages: fill the content area */
+  --narrow-max: none;      /* narrow detail pages: fill the content area */
   --reading-max: 720px;    /* help and long texts */
 
   --page-pad-x: 40px;

@@ -58,7 +58,7 @@ const versionFacts = computed<InfoItem[]>(() => {
 
 <template>
   <div class="grid grid-cols-1 items-start gap-12 lg:grid-cols-[minmax(0,1fr)_var(--aside-w)]">
-    <article :id="ARTICLE_ID" :lang="locale" class="min-w-0 max-w-[660px] scroll-mt-6">
+    <article :id="ARTICLE_ID" :lang="locale" class="min-w-0 scroll-mt-6">
       <MarkdownRenderer v-if="hasDescription" :source="app.description" variant="full" />
       <p v-else class="text-md italic text-fg-muted">{{ $t('AppsDetailView.noDescription') }}</p>
     </article>
