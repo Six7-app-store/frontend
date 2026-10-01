@@ -2,7 +2,10 @@
  * Presentation rules for apps in the catalogue and detail view.
  */
 import { marked, type Tokens } from 'marked'
+import type { RouteLocationRaw } from 'vue-router'
 import { plainText } from '@/services/markdown.service'
+import { ROUTE_NAMES } from '@/router/route-names'
+import type { AppVersionBadgeStatus } from '@/types'
 
 /**
  * Where an app stands in the store, from its version approvals: one
@@ -25,6 +28,59 @@ export function appBannerStatus(
   if (!app || app.is_private) return 'none'
   const state = storeApprovalState(approvals)
   return state === 'none' ? 'no_submission' : state
+}
+
+/**
+ * The status in the detail header. Without edit rights the approvals are
+ * not loaded, but such a user only ever sees apps that are published.
+ */
+export function appStatus(
+  app: { is_private?: boolean } | null | undefined,
+  approvals: ReadonlyArray<{ status: string }>,
+  canEdit: boolean,
+): AppVersionBadgeStatus {
+  if (!canEdit) return 'published'
+  if (app?.is_private) return 'private'
+  const state = storeApprovalState(approvals)
+  if (state === 'approved') return 'published'
+  return state === 'pending' ? 'pending' : 'new'
+}
+
+/** The tabs of the app detail page, in display order. */
+export const APP_DETAIL_TABS = ['overview', 'docs', 'config', 'versions', 'settings'] as const
+export type AppDetailTab = (typeof APP_DETAIL_TABS)[number]
+
+/** What an app has to show; a tab without content is left out. */
+export interface AppDetailContent {
+  hasDescription: boolean
+  hasVariables: boolean
+  hasVersions: boolean
+  /** Owner or admin: only they get the settings. */
+  canEdit: boolean
+}
+
+export function appDetailTabs(content: AppDetailContent): AppDetailTab[] {
+  const shown: Record<AppDetailTab, boolean> = {
+    overview: true,
+    docs: content.hasDescription,
+    config: content.hasVariables,
+    versions: content.hasVersions,
+    settings: content.canEdit,
+  }
+  return APP_DETAIL_TABS.filter((tab) => shown[tab])
+}
+
+/** The tab a route parameter asks for; anything unknown or missing is the overview. */
+export function requestedAppDetailTab(param: unknown): AppDetailTab {
+  return APP_DETAIL_TABS.find((tab) => tab === param) ?? 'overview'
+}
+
+/** The URL of one tab. The overview has no segment of its own. */
+export function appDetailLocation(appId: string, tab: AppDetailTab): RouteLocationRaw {
+  return {
+    name: ROUTE_NAMES.appsDetail,
+    params: tab === 'overview' ? { id: appId } : { id: appId, tab },
+  }
 }
 
 /** An app's versions come as plain tags or as release objects. */

@@ -572,6 +572,33 @@ export default {
     }
   },
   AppsDetailView: {
+    tabs: {
+      overview: "Overview",
+      docs: "Documentation",
+      config: "Configuration",
+      versions: "Versions",
+      settings: "Settings",
+    },
+    overviewTeaser: {
+      docs: "Find the full details in the {link}.",
+      config: "The {link} lists the values you can set when deploying.",
+    },
+    currentVersion: "Current",
+    config: {
+      title: "Configurable variables",
+      hint: "These values can be set when deploying version {version}.",
+      loading: "Loading variables …",
+      variable: "Variable",
+      description: "Description",
+      required: "Required",
+      defaultPresent: "Default available",
+    },
+    versions: {
+      title: "Versions",
+    },
+    settings: {
+      editTitle: "Edit app data",
+    },
     versionCount: "{n} version | {n} versions",
     copyRepo: "Copy repository URL",
     moreActions: "More actions",
@@ -630,6 +657,7 @@ export default {
       editSuccess: "App updated.",
       editError: "Failed to update app.",
       nameRequired: "Name must not be empty.",
+      variablesError: "The variables of this app could not be loaded.",
     },
     visibilityPublicDesc: "Others can deploy this app once a version has been approved.",
     visibilityPrivateDesc: "Only you can deploy this app.",

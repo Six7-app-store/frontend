@@ -6,8 +6,22 @@ import {
   isMultiImagePackerLayout,
   storedPackerValue,
   templateKeyOf,
+  variableDisplayDescription,
 } from '@/services/deployment-variables.service'
 import type { AppVariable } from '@/types'
+
+describe('variableDisplayDescription', () => {
+  it.each([
+    ['Hauptnetzwerk @openstack:network:id', 'Hauptnetzwerk'],
+    ['@openstack:security_group:id:list Build-Security-Groups (TCP 5986)', 'Build-Security-Groups (TCP 5986)'],
+    ['Obergrenze  gleichzeitiger VMs @platform:limit', 'Obergrenze gleichzeitiger VMs'],
+    ['Ohne Marker', 'Ohne Marker'],
+    ['@openstack:flavor:name', ''],
+    [undefined, ''],
+  ])('macht aus %j den Text %j', (raw, shown) => {
+    expect(variableDisplayDescription(raw)).toBe(shown)
+  })
+})
 
 describe('isMultiImagePackerLayout', () => {
   it('detects packer values nested per template key', () => {

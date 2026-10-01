@@ -575,6 +575,33 @@ export default {
   },
 
   AppsDetailView: {
+    tabs: {
+      overview: "Übersicht",
+      docs: "Dokumentation",
+      config: "Konfiguration",
+      versions: "Versionen",
+      settings: "Einstellungen",
+    },
+    overviewTeaser: {
+      docs: "Ausführliche Informationen stehen in der {link}.",
+      config: "Welche Werte sich beim Deployment setzen lassen, zeigt die {link}.",
+    },
+    currentVersion: "Aktuell",
+    config: {
+      title: "Konfigurierbare Variablen",
+      hint: "Diese Werte lassen sich beim Deployment von Version {version} setzen.",
+      loading: "Lade Variablen …",
+      variable: "Variable",
+      description: "Beschreibung",
+      required: "Pflicht",
+      defaultPresent: "Default vorhanden",
+    },
+    versions: {
+      title: "Versionen",
+    },
+    settings: {
+      editTitle: "App-Daten bearbeiten",
+    },
     versionCount: "{n} Version | {n} Versionen",
     copyRepo: "Repository-URL kopieren",
     moreActions: "Weitere Aktionen",
@@ -633,6 +660,7 @@ export default {
       editSuccess: "App aktualisiert.",
       editError: "App konnte nicht aktualisiert werden.",
       nameRequired: "Name darf nicht leer sein.",
+      variablesError: "Die Variablen dieser App konnten nicht geladen werden.",
     },
     visibilityPublicDesc: "Andere können diese App deployen, sobald eine Version freigegeben wurde.",
     visibilityPrivateDesc: "Nur du kannst diese App deployen.",
