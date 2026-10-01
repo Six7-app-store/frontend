@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ROUTE_NAMES } from '@/router/route-names'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppDetail } from '@/composables/useAppDetail'
 import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
@@ -13,19 +13,25 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRole } from '@/composables/useRole'
 import {
   appBannerStatus,
-  findVersion,
-  versionInfo as describeVersion,
+  appDetailLocation,
+  appDetailTabs,
+  appStatus,
+  requestedAppDetailTab,
   versionOptions as versionTags,
+  type AppDetailTab,
 } from '@/services/app-presentation.service'
 import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import TabBar from '@/components/ui/TabBar.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import { provideCopyToClipboard } from '@/composables/useCopyToClipboard'
-import type { Tab } from '@/components/ui/tab'
+import { panelId, tabId, type Tab } from '@/components/ui/tab'
 import AppDetailHeader from '@/components/app/AppDetailHeader.vue'
 import AppOverviewTab from '@/components/app/AppOverviewTab.vue'
 import AppDeploySidebar from '@/components/app/AppDeploySidebar.vue'
-import AppStoreTab from '@/components/app/AppStoreTab.vue'
+import AppDocsTab from '@/components/app/AppDocsTab.vue'
+import AppConfigTab from '@/components/app/AppConfigTab.vue'
+import AppVersionsTab from '@/components/app/AppVersionsTab.vue'
+import AppSettingsTab from '@/components/app/AppSettingsTab.vue'
 import AppEditModal from '@/components/app/AppEditModal.vue'
 import SubmitVersionModal from '@/components/app/SubmitVersionModal.vue'
 import type { AppUpdate, AppVersionApproval, AppVariableMarkerError } from '@/types'
@@ -41,14 +47,15 @@ const { t } = useI18n()
 
 const appId = computed(() => route.params.id as string)
 const {
-  app, approvals, isLoading,
-  load, loadApprovals, submitVersion, withdrawVersion: withdraw, setPrivate, update, remove,
+  app, approvals, isLoading, variables, variablesState,
+  load, loadApprovals, loadVariables, submitVersion, withdrawVersion: withdraw, setPrivate, update, remove,
 } = useAppDetail(appId)
 useBreadcrumbEntity(() => app.value?.name)
 provideCopyToClipboard()
 
+const TAB_IDS = 'app-detail'
+
 const selectedVersion = ref('')
-const activeTab = ref<'overview' | 'store'>('overview')
 
 const showDeleteModal = ref(false)
 const isDeleting = ref(false)
@@ -77,25 +84,60 @@ const canEditApp = computed(() =>
   !!app.value && (isAdmin.value || isOwner.value)
 )
 
-// The store tab (submissions, visibility) is only for those who may edit the app.
-const tabs = computed(() => {
-  const all: Tab<'overview' | 'store'>[] = [
-    { key: 'overview', label: t('AppsDetailView.tabOverview') },
-    { key: 'store', label: t('AppsDetailView.tabStore') },
-  ]
-  return canEditApp.value ? all : all.filter((tab) => tab.key !== 'store')
-})
-
 // ----------------------------------------------------------------
 // Versions and store state
 // ----------------------------------------------------------------
 const bannerStatus = computed(() => appBannerStatus(app.value, approvals.value))
+const status = computed(() => appStatus(app.value, approvals.value, canEditApp.value))
 const versionOptions = computed(() => versionTags(app.value?.versions))
-const versionInfo = computed(() => describeVersion(findVersion(app.value?.versions, selectedVersion.value)))
+// The configuration shows the variables of the newest version.
+const currentVersion = computed(() => versionOptions.value[0] ?? '')
 const approvalByVersion = computed(() => {
   const map: Record<string, AppVersionApproval> = {}
   for (const a of approvals.value) map[a.version_tag] = a
   return map
+})
+
+// ----------------------------------------------------------------
+// Tabs: one URL each, a tab without content is left out
+// ----------------------------------------------------------------
+const requestedTab = computed(() => requestedAppDetailTab(route.params.tab))
+const variablesPending = computed(() =>
+  currentVersion.value !== '' && (variablesState.value === 'idle' || variablesState.value === 'loading'),
+)
+
+const availableTabs = computed<AppDetailTab[]>(() => appDetailTabs({
+  hasDescription: Boolean(app.value?.description?.trim()),
+  // While the variables are still coming, a link straight to the configuration waits for them.
+  hasVariables: variables.value.length > 0 || (requestedTab.value === 'config' && variablesPending.value),
+  hasVersions: versionOptions.value.length > 0,
+  canEdit: canEditApp.value,
+}))
+
+const activeTab = computed<AppDetailTab>(() =>
+  availableTabs.value.includes(requestedTab.value) ? requestedTab.value : 'overview',
+)
+
+const tabs = computed<Tab<AppDetailTab>[]>(() =>
+  availableTabs.value.map((key) => ({ key, label: t(`AppsDetailView.tabs.${key}`) })),
+)
+
+const tabLink = (tab: AppDetailTab) =>
+  availableTabs.value.includes(tab) ? appDetailLocation(appId.value, tab) : null
+
+const selectTab = (tab: AppDetailTab) => {
+  router.replace(appDetailLocation(appId.value, tab))
+}
+
+// A tab this app or user doesn't have (no rights, no variables, typo'd link)
+// falls back to the overview, and the URL says so. Only a failed load of the
+// variables is worth a word; a missing tab is not an error.
+watch([app, activeTab, requestedTab], () => {
+  if (!app.value || activeTab.value === requestedTab.value) return
+  if (requestedTab.value === 'config' && variablesState.value === 'error') {
+    toast.error(t('AppsDetailView.toasts.variablesError'))
+  }
+  selectTab('overview')
 })
 
 // ----------------------------------------------------------------
@@ -225,6 +267,8 @@ const confirmDelete = async () => {
 
 onMounted(async () => {
   await fetchAppDetails()
+  // Reading the variables clones the repository; the page doesn't wait for it.
+  if (currentVersion.value) void loadVariables(currentVersion.value)
   if (canEditApp.value) await loadApprovals()
 })
 </script>
@@ -237,46 +281,69 @@ onMounted(async () => {
     </div>
 
     <template v-else-if="app">
-      <AppDetailHeader :app="app" :can-edit="canEditApp" @edit="showEditModal = true" @delete="showDeleteModal = true" />
+      <AppDetailHeader :app="app" :status="status" />
 
-      <TabBar v-model="activeTab" :tabs="tabs" class="mb-section">
+      <TabBar
+        :model-value="activeTab"
+        :tabs="tabs"
+        :id-prefix="TAB_IDS"
+        class="mb-section"
+        @update:model-value="selectTab"
+      >
         <template #extra="{ tab }">
-          <!-- dot if action needed -->
+          <!-- The owner still has something to do in the review. -->
           <span
-            v-if="tab.key === 'store' && (bannerStatus === 'no_submission' || bannerStatus === 'pending')"
+            v-if="tab.key === 'versions' && canEditApp && (bannerStatus === 'no_submission' || bannerStatus === 'pending')"
             class="h-2 w-2 rounded-full bg-warning-dot"
+            data-testid="versions-hint"
           />
         </template>
       </TabBar>
 
-      <AppOverviewTab
-        v-if="activeTab === 'overview'"
-        :app="app"
-        :version-info="versionInfo"
-        :selected-version="selectedVersion"
-      >
-        <template #deploy>
-          <AppDeploySidebar
-            v-model:selected-version="selectedVersion"
-            :version-options="versionOptions"
-            :credentials-missing="credStore.isResolved && !credStore.hasCredential"
-            @deploy="handleDeploy" />
-        </template>
-      </AppOverviewTab>
+      <div :id="panelId(TAB_IDS, activeTab)" role="tabpanel" :aria-labelledby="tabId(TAB_IDS, activeTab)">
+        <AppOverviewTab
+          v-if="activeTab === 'overview'"
+          :app="app"
+          :current-version="currentVersion"
+          :docs-to="tabLink('docs')"
+          :config-to="tabLink('config')"
+        >
+          <template #deploy>
+            <AppDeploySidebar
+              v-model:selected-version="selectedVersion"
+              :version-options="versionOptions"
+              :credentials-missing="credStore.isResolved && !credStore.hasCredential"
+              @deploy="handleDeploy" />
+          </template>
+        </AppOverviewTab>
 
-      <AppStoreTab
-        v-else-if="activeTab === 'store'"
-        :app="app"
-        :banner-status="bannerStatus"
-        :version-options="versionOptions"
-        :approval-by-version="approvalByVersion"
-        :is-owner="isOwner"
-        :withdrawing-version="withdrawingVersion"
-        :toggling-privacy="isTogglingPrivacy"
-        @toggle-privacy="togglePrivacy"
-        @submit="openSubmitModal"
-        @withdraw="askWithdraw"
-        @delete="showDeleteModal = true" />
+        <AppDocsTab v-else-if="activeTab === 'docs'" :description="app.description" />
+
+        <AppConfigTab
+          v-else-if="activeTab === 'config'"
+          :variables="variables"
+          :version="currentVersion"
+          :loading="variablesPending" />
+
+        <AppVersionsTab
+          v-else-if="activeTab === 'versions'"
+          :versions="app.versions"
+          :approval-by-version="approvalByVersion"
+          :banner-status="bannerStatus"
+          :can-edit="canEditApp"
+          :is-private="Boolean(app.is_private)"
+          :withdrawing-version="withdrawingVersion"
+          @submit="openSubmitModal"
+          @withdraw="askWithdraw" />
+
+        <AppSettingsTab
+          v-else-if="activeTab === 'settings'"
+          :app="app"
+          :toggling-privacy="isTogglingPrivacy"
+          @toggle-privacy="togglePrivacy"
+          @edit="showEditModal = true"
+          @delete="showDeleteModal = true" />
+      </div>
     </template>
 
     <!-- Delete modal -->

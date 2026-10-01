@@ -32,7 +32,7 @@ const toc = computed<TocItem[]>(() => [
 </script>
 
 <template>
-  <div class="grid max-w-detail grid-cols-1 items-start gap-16 lg:grid-cols-[minmax(0,var(--reading-max))_220px]">
+  <div class="grid max-w-detail grid-cols-1 items-start gap-16 lg:grid-cols-[minmax(0,var(--reading-max))_var(--toc-w)]">
     <article class="min-w-0">
       <PageHeader :title="$t('HelpView.title')" :subtitle="$t('HelpView.subtitle')" />
 

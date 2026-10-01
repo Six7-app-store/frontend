@@ -159,7 +159,7 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
       "titleKey": "nav.apps",
     },
     "name": "apps.detail",
-    "path": "/apps/:id",
+    "path": "/apps/:id/:tab(docs|config|versions|settings)?",
   },
   {
     "children": undefined,

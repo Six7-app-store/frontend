@@ -14,6 +14,8 @@ describe('Routentabelle', () => {
   it.each([
     '/gibt-es-nicht',
     '/apps/app-1/unbekannt',
+    '/apps/app-1/overview',
+    '/apps/app-1/docs/extra',
     '/deployments/dep-1/extra',
   ])('löst die unbekannte URL %s auf die 404-Route auf', (path) => {
     const resolved = router().resolve(path)
@@ -27,6 +29,10 @@ describe('Routentabelle', () => {
   it.each([
     ['/', ROUTE_NAMES.home],
     ['/apps/app-1', ROUTE_NAMES.appsDetail],
+    ['/apps/app-1/docs', ROUTE_NAMES.appsDetail],
+    ['/apps/app-1/config', ROUTE_NAMES.appsDetail],
+    ['/apps/app-1/versions', ROUTE_NAMES.appsDetail],
+    ['/apps/app-1/settings', ROUTE_NAMES.appsDetail],
     ['/deployments/dep-1', ROUTE_NAMES.deploymentsDetail],
     ['/forbidden', ROUTE_NAMES.forbidden],
   ])('lässt die bekannte URL %s unverändert', (path, name) => {

@@ -21,6 +21,17 @@ export function variableScopeLabelKey(scope: 'all' | 'team' | 'user' | undefined
   return null
 }
 
+/**
+ * A variable's description for people: without the ``@openstack:…`` and
+ * ``@platform:…`` markers the platform reads from it.
+ */
+export function variableDisplayDescription(description: string | null | undefined): string {
+  return (description ?? '')
+    .replace(/@(?:openstack|platform):\S*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 /** Packer template a variable belongs to; single-image apps use ``default``. */
 export function templateKeyOf(variable: AppVariable): string {
   return variable.template_key ?? 'default'

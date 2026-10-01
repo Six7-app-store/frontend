@@ -3,11 +3,70 @@ import { describe, it, expect } from 'vitest'
 import {
   descriptionPreview,
   appBannerStatus,
+  appDetailLocation,
+  appDetailTabs,
+  appStatus,
   findVersion,
+  requestedAppDetailTab,
   storeApprovalState,
   versionInfo,
   versionOptions,
 } from '@/services/app-presentation.service'
+import { ROUTE_NAMES } from '@/router/route-names'
+
+describe('appStatus', () => {
+  it('counts as published for those without edit rights', () => {
+    expect(appStatus({ is_private: false }, [], false)).toBe('published')
+  })
+
+  it('shows a private app as private, whatever was approved', () => {
+    expect(appStatus({ is_private: true }, [{ status: 'approved' }], true)).toBe('private')
+  })
+
+  it('follows the approvals for a public app', () => {
+    expect(appStatus({}, [{ status: 'approved' }], true)).toBe('published')
+    expect(appStatus({}, [{ status: 'pending' }], true)).toBe('pending')
+    expect(appStatus({}, [{ status: 'rejected' }], true)).toBe('new')
+    expect(appStatus({}, [], true)).toBe('new')
+  })
+})
+
+describe('appDetailTabs', () => {
+  const nothing = { hasDescription: false, hasVariables: false, hasVersions: false, canEdit: false }
+
+  it('always has the overview', () => {
+    expect(appDetailTabs(nothing)).toEqual(['overview'])
+  })
+
+  it('adds every tab that has content, in a fixed order', () => {
+    expect(appDetailTabs({ hasDescription: true, hasVariables: true, hasVersions: true, canEdit: true }))
+      .toEqual(['overview', 'docs', 'config', 'versions', 'settings'])
+  })
+
+  it('leaves out the settings without edit rights and the configuration without variables', () => {
+    expect(appDetailTabs({ ...nothing, hasDescription: true, hasVersions: true }))
+      .toEqual(['overview', 'docs', 'versions'])
+  })
+})
+
+describe('requestedAppDetailTab', () => {
+  it('takes a known tab from the route', () => {
+    expect(requestedAppDetailTab('config')).toBe('config')
+  })
+
+  it('falls back to the overview', () => {
+    expect(requestedAppDetailTab(undefined)).toBe('overview')
+    expect(requestedAppDetailTab('')).toBe('overview')
+    expect(requestedAppDetailTab(['docs'])).toBe('overview')
+  })
+})
+
+describe('appDetailLocation', () => {
+  it('gives the overview no segment and every other tab its own', () => {
+    expect(appDetailLocation('a1', 'overview')).toEqual({ name: ROUTE_NAMES.appsDetail, params: { id: 'a1' } })
+    expect(appDetailLocation('a1', 'docs')).toEqual({ name: ROUTE_NAMES.appsDetail, params: { id: 'a1', tab: 'docs' } })
+  })
+})
 
 describe('storeApprovalState', () => {
   it('is approved as soon as one version is approved', () => {
@@ -64,19 +123,17 @@ describe('findVersion', () => {
 })
 
 describe('versionInfo', () => {
-  it('reads the GitHub release fields', () => {
-    expect(versionInfo({ name: 'R', commit: 'c', author: 'a', published_at: 'p', html_url: 'u', prerelease: false }))
-      .toMatchObject({ name: 'R', commit: 'c', author: 'a', published_at: 'p', html_url: 'u', prerelease: false })
+  it('reads type and commit', () => {
+    expect(versionInfo({ type: 'tag', commit: 'c' })).toEqual({ type: 'tag', commit: 'c' })
   })
 
-  it('falls back to the git commit fields', () => {
-    expect(versionInfo({ commit_sha: 's', commit_author: 'x', commit_date: 'd', url: 'l' }))
-      .toMatchObject({ commit: 's', author: 'x', published_at: 'd', html_url: 'l', name: '' })
+  it('falls back to the git commit field', () => {
+    expect(versionInfo({ commit_sha: 's' })).toEqual({ type: '', commit: 's' })
   })
 
-  it('is null for a version without any detail', () => {
-    expect(versionInfo({ version: 'v1' })).toBeNull()
-    expect(versionInfo(null)).toBeNull()
+  it('is empty for a version without any detail', () => {
+    expect(versionInfo({ version: 'v1' })).toEqual({ type: '', commit: '' })
+    expect(versionInfo(null)).toEqual({ type: '', commit: '' })
   })
 })
 
