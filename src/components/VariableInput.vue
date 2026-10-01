@@ -11,14 +11,11 @@
  * File-typed variables are NOT handled here — the wizard renders the
  * ``FileDropZone`` block separately because file uploads travel through
  * a different draft channel (``fileUploads``) than scalar inputs.
- *
- * The visual styling (border / focus colors) is sourced from the
- * ``accent`` prop so both wizard sections (Packer = blue, Terraform =
- * purple) stay visually distinct without duplicating five separate
- * input variants per color.
  */
 import OpenStackResourcePicker from '@/components/OpenStackResourcePicker.vue'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
 import { useI18n } from 'vue-i18n'
+import { isBool, isList, isNumber } from '@/services/variable-types'
 import type { AppVariable } from '@/types'
 import type { OsResourceType } from '@/api/openstack-resources.api'
 
@@ -31,9 +28,6 @@ const props = defineProps<{
    *  picker. Caller supplies it because cross-variable lookups live
    *  in the wizard's variables list, not in this component. */
   filterNetworkId?: string | null
-  /** Accent color used for borders + focus ring; the wizard's two
-   *  sections (Packer / Terraform) drive different palettes. */
-  accent?: 'blue' | 'purple'
   /** DOM ``id`` to put on the underlying input. The single-input
    *  variant uses the variable name verbatim for ``<label>``
    *  click-targeting; scope-iterated variants pass a suffixed id so
@@ -47,13 +41,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void
 }>()
-
-const isBool = (type: string) => ['bool', 'boolean'].includes(type.toLowerCase())
-const isNumber = (type: string) => ['number', 'int', 'integer'].includes(type.toLowerCase())
-const isList = (type: string) =>
-  type.toLowerCase().startsWith('list') ||
-  type.toLowerCase().startsWith('set') ||
-  type.toLowerCase().startsWith('array')
 
 // The picker takes precedence over type-based inputs, including list(...)
 // variables, since it handles multi itself. File variables are rendered by the
@@ -78,11 +65,6 @@ const selectedIndex = (v: AppVariable): number | '' => {
 
 const update = (value: any) => emit('update:modelValue', value)
 
-// Explicit class maps — Tailwind's JIT can't read class names assembled
-// from template-literal segments. Listing both palettes here keeps
-// every utility visible to the content scanner.
-// Both accents share the token look; the prop only picked a hue before.
-const borderClass = 'border-subtle focus:border-accent/60'
 </script>
 
 <template>
@@ -106,26 +88,19 @@ const borderClass = 'border-subtle focus:border-accent/60'
     @change="update(variable.allowedValues![Number(($event.target as HTMLSelectElement).value)])"
     :id="inputId || variable.name"
     :disabled="disabled"
-    class="w-full px-3 py-2 rounded-lg border-2 outline-none transition-all font-medium text-gray-800 bg-white disabled:bg-gray-50 disabled:text-gray-500"
-    :class="borderClass"
+    class="field w-full px-3"
   >
     <option value="" disabled>{{ t('variableInput.chooseValue') }}</option>
     <option v-for="(opt, i) in variable.allowedValues" :key="i" :value="i">{{ opt }}</option>
   </select>
 
   <div v-else-if="isBool(variable.type)" class="flex items-center gap-3">
-    <button
-      type="button"
+    <ToggleSwitch
+      :model-value="!!modelValue"
+      :label="variable.name"
       :disabled="disabled"
-      @click="update(!modelValue)"
-      class="relative inline-flex h-6 w-11 items-center rounded-full border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      :class="modelValue ? 'toggle-on' : 'toggle-off'"
-    >
-      <span
-        class="toggle-knob inline-block h-4 w-4 transform rounded-full transition-transform"
-        :class="modelValue ? 'translate-x-6' : 'translate-x-1'"
-      />
-    </button>
+      @update:model-value="update"
+    />
     <span class="text-sm font-medium text-fg">
       {{ modelValue ? t('variableInput.on') : t('variableInput.off') }}
     </span>
@@ -138,8 +113,7 @@ const borderClass = 'border-subtle focus:border-accent/60'
     type="number"
     :id="inputId || variable.name"
     :disabled="disabled"
-    class="field w-full px-3 py-2 transition-all font-medium text-fg disabled:bg-line/[.04] disabled:text-fg-muted"
-    :class="borderClass"
+    class="field w-full px-3"
     placeholder="0"
   />
 
@@ -150,8 +124,7 @@ const borderClass = 'border-subtle focus:border-accent/60'
     :id="inputId || variable.name"
     :disabled="disabled"
     rows="3"
-    class="field w-full px-3 py-2 transition-all font-mono text-sm text-fg disabled:bg-line/[.04] disabled:text-fg-muted"
-    :class="borderClass"
+    class="field w-full px-3 py-2 font-mono text-sm"
     :placeholder="t('variableInput.listPlaceholder')"
   />
 
@@ -162,8 +135,7 @@ const borderClass = 'border-subtle focus:border-accent/60'
     type="text"
     :id="inputId || variable.name"
     :disabled="disabled"
-    class="field w-full px-3 py-2 transition-all font-medium text-fg disabled:bg-line/[.04] disabled:text-fg-muted"
-    :class="borderClass"
+    class="field w-full px-3"
     :placeholder="variable.default ? t('variableInput.defaultPlaceholder', { value: variable.default }) : t('variableInput.enterValue')"
   />
 </template>

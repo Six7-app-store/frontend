@@ -171,7 +171,7 @@ describe('DeploymentConfig.vue', () => {
 
     expect(courseApi.getById).toHaveBeenCalledTimes(12)
     expect(maxInFlight).toBeLessThanOrEqual(5)
-    expect(wrapper.text()).toContain('DeploymentDetailView.deploymentStudentCount')
+    expect(wrapper.text()).toContain('common.studentCount')
 
     // Re-rendering must not trigger further requests.
     await wrapper.vm.$forceUpdate()
@@ -303,8 +303,8 @@ describe('DeploymentConfig.vue', () => {
   })
 
   it.each([
-    ['Ladefehler', () => vi.mocked(courseApi.getById).mockRejectedValue(new Error('offline')), 'error', 'CourseDetailView.toasts.loadUsersError'],
-    ['leerer Kurs', () => vi.mocked(courseApi.getById).mockResolvedValue({ data: { users: [] } } as any), 'warning', 'CourseDetailView.addModal.noUsersFound'],
+    ['Ladefehler', () => vi.mocked(courseApi.getById).mockRejectedValue(new Error('offline')), 'error', 'common.loadUsersError'],
+    ['leerer Kurs', () => vi.mocked(courseApi.getById).mockResolvedValue({ data: { users: [] } } as any), 'warning', 'common.noUsersFound'],
   ])('meldet beim Kursklick %s passend', async (_label, arrange, type, key) => {
     arrange()
     const wrapper = createWrapper()
@@ -333,7 +333,7 @@ describe('DeploymentConfig.vue', () => {
     vi.advanceTimersByTime(300)
     await flushPromises()
 
-    expect(toastErrorMock).toHaveBeenCalledWith('CourseDetailView.toasts.loadUsersError')
+    expect(toastErrorMock).toHaveBeenCalledWith('common.loadUsersError')
     vi.useRealTimers()
   })
 

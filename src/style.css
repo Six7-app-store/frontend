@@ -15,6 +15,9 @@
     background: var(--canvas-bg);
     background-attachment: fixed;
     min-height: 100vh;
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    -webkit-font-smoothing: antialiased;
   }
 
   input[type="checkbox"],
@@ -30,7 +33,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgb(var(--color-accent) / 0.7);
+    outline: 2px solid rgb(var(--color-focus) / 0.75);
     outline-offset: 2px;
   }
 }

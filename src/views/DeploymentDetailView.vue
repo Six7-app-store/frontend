@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { Loader2 } from 'lucide-vue-next'
+import EntityListState from '@/components/ui/EntityListState.vue'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { ROUTE_NAMES } from '@/router/route-names'
@@ -20,6 +20,7 @@ import DeploymentRedeployModal from '@/components/deployment/DeploymentRedeployM
 import DeploymentPauseResumeModal from '@/components/deployment/DeploymentPauseResumeModal.vue'
 import { provideCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useDeploymentOwnerView } from '@/composables/useDeploymentOwnerView'
+import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
 import { useDeploymentTasks } from '@/composables/useDeploymentTasks'
 import { useDeploymentLiveStream } from '@/composables/useDeploymentLiveStream'
 import { useDeploymentCredentials } from '@/composables/useDeploymentCredentials'
@@ -42,13 +43,15 @@ const deployment = computed(() => {
     return current?.deploymentId === deploymentId ? current : null
 })
 
+useBreadcrumbEntity(() => deployment.value?.name)
+
 // True when the initial load found no deployment (not found, server or
 // network error); the page then shows an error instead of the spinner.
 const loadFailed = ref(false)
 
 // Owner-view vs member-view — gates tasks/logs, lifecycle actions, the
 // live stream and other members' resend buttons (see ``useDeploymentOwnerView``).
-const { isOwnerView } = useDeploymentOwnerView(deployment)
+const { isOwnerView, canOperate } = useDeploymentOwnerView(deployment)
 
 // Task list, active task, opened task detail and the newest task's
 // outputs (see ``useDeploymentTasks``).
@@ -85,6 +88,10 @@ const {
     securityResources,
     redeployInFlight,
     openDrawerAddress,
+    drawerDetail,
+    drawerLoading,
+    drawerError,
+    loadDrawerDetail,
     showRedeployModal,
     redeployTargetAddress,
     loadResources,
@@ -129,22 +136,12 @@ onMounted(async () => {
 // Stream wiring, DB seed and stepper values live in
 // ``useDeploymentLiveStream``.
 //
-// Refs are destructured out of the composable so Vue's template
-// auto-unwrap recognises them as top-level setup bindings — without
-// destructuring, ``stream.currentPhase`` in the template would be the
-// ref *object*, not the string, and downstream calls like
-// ``phase.split(...)`` would crash.
+// ``live`` is a reactive object, so the card reads plain values from it;
+// the refs used elsewhere in this script are destructured.
 const {
-    progress: streamProgress,
-    currentPhase: streamCurrentPhase,
-    currentPhaseIndex: streamCurrentPhaseIndex,
-    liveLogs: streamLiveLogs,
-    totalLogCount: streamTotalLogCount,
     connectionState: streamConnectionState,
     isStreamRelevant,
-    phaseStepCount,
-    phaseStepLabel,
-    activeStepIndex: currentPhaseIndex,
+    live,
 } = useDeploymentLiveStream({
     deploymentId,
     isOwnerView,
@@ -180,6 +177,7 @@ const {
     canPauseOrResume,
     pauseResumeAction,
     showDeleteModal,
+    deleteBusy,
     showPauseResumeModal,
     pauseResumeBusy,
     confirmDelete,
@@ -187,7 +185,7 @@ const {
 } = useDeploymentLifecycle({
     deploymentId,
     deployment,
-    isOwnerView,
+    canOperate,
     tasks,
     activeTask,
     connectionState: streamConnectionState,
@@ -215,19 +213,19 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
 </script>
 
 <template>
-    <div v-if="deployment" class="space-y-6">
+    <div v-if="deployment" :class="openDrawerAddress ? 'max-w-page' : 'max-w-detail'">
         <!--
             Two-column layout: the deployment detail content stays on the left,
             and the VM-detail sidebar anchors as a sticky right column when an
             inline VM is selected. The left column expands to full width otherwise.
         -->
-        <div class="flex gap-6 items-start">
-            <div class="flex-1 min-w-0 space-y-6">
+        <div class="flex flex-col items-start gap-section xl:flex-row">
+            <div class="w-full min-w-0 flex-1">
 
-        <!-- Header with back button and status badge -->
+        <!-- Header with name, status and the lifecycle actions -->
         <DeploymentDetailHeader
             :deployment="deployment"
-            :is-owner-view="isOwnerView"
+            :can-operate="canOperate"
             :can-delete="canDelete"
             :delete-disabled-reason="deleteDisabledReason"
             :can-pause-or-resume="canPauseOrResume"
@@ -236,6 +234,8 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             @delete="showDeleteModal = true"
             @pause-resume="showPauseResumeModal = true"
         />
+
+        <div class="flex flex-col gap-section">
 
         <!-- Main info grid with 3 cards -->
         <DeploymentOverviewCards :deployment="deployment" />
@@ -257,22 +257,13 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
         <DeploymentActiveTaskCard
             v-if="isStreamRelevant && activeTask"
             :active-task="activeTask"
-            :stream-connection-state="streamConnectionState"
-            :stream-current-phase-index="streamCurrentPhaseIndex"
-            :stream-current-phase="streamCurrentPhase"
-            :stream-progress="streamProgress"
-            :phase-step-count="phaseStepCount"
-            :phase-step-label="phaseStepLabel"
-            :current-phase-index="currentPhaseIndex"
-            :stream-live-logs="streamLiveLogs"
-            :stream-total-log-count="streamTotalLogCount"
+            :live="live"
         />
 
         <!-- Teams & Members section — appears above Infrastructure so
              the human-readable view (who has access to what) precedes
              the technical resource listing. -->
         <DeploymentTeamsCard
-            :teams="deployment.teams"
             :enriched-teams="enrichedTeams"
             :is-owner-view="isOwnerView"
             :current-user-id="authStore.userId"
@@ -286,7 +277,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
              skip the section entirely so they don't see an empty/
              permission-error panel. Visually mirrors the other
              page sections (Teams, Tasks, Outputs): same
-             ``bg-panel rounded-xl border ... p-6 shadow-sm`` shell,
+             ``surface-panel`` shell,
              same icon-tile header, same sub-section spacing. -->
         <DeploymentInfrastructureSection
             v-if="isOwnerView"
@@ -297,6 +288,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             :security-resources="securityResources"
             :redeploy-in-flight="redeployInFlight"
             :open-drawer-address="openDrawerAddress"
+            :can-redeploy="canOperate"
             @refresh="loadResources()"
             @open-details="openVmDrawer"
             @redeploy="redeployVm"
@@ -320,6 +312,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             @deselect="deselectTask"
         />
 
+        </div>
             </div>
             <!--
                 VM detail sidebar — sticky right column, rendered only when the
@@ -332,10 +325,13 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
                 class="w-full xl:w-[420px] xl:shrink-0 xl:sticky xl:top-0 xl:self-start xl:max-h-[calc(100vh-3.5rem)] xl:flex xl:flex-col"
             >
                 <InfrastructureVmDrawer
-                    :deployment-id="deploymentId"
                     :address="openDrawerAddress"
+                    :detail="drawerDetail"
+                    :is-loading="drawerLoading"
+                    :error-message="drawerError"
                     class="xl:flex-1 xl:min-h-0"
                     @close="closeVmDrawer"
+                    @reload="loadDrawerDetail"
                 />
             </aside>
         </div>
@@ -344,6 +340,7 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
         <DeploymentDeleteModal
             :show="showDeleteModal"
             :deployment-name="deployment.name"
+            :busy="deleteBusy"
             @close="showDeleteModal = false"
             @confirm="confirmDelete"
         />
@@ -375,16 +372,17 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
         />
     </div>
 
-    <!-- Load error: the deployment could not be loaded -->
-    <div v-else-if="loadFailed" class="flex flex-col items-center justify-center py-20 gap-3 text-center">
-        <p class="text-fg-muted">{{ $t('DeploymentDetailView.loadError') }}</p>
-        <RouterLink :to="{ name: ROUTE_NAMES.deploymentsList }" class="text-sm font-medium text-accent-fg hover:underline">
-            {{ $t('DeploymentDetailView.backToList') }}
-        </RouterLink>
-    </div>
-
-    <!-- Loading State -->
-    <div v-else class="flex items-center justify-center py-20">
-        <Loader2 class="animate-spin text-icon" :size="40" />
-    </div>
+    <!-- Still loading, or the deployment could not be loaded -->
+    <EntityListState
+        v-else
+        :is-loading="!loadFailed"
+        :is-error="loadFailed"
+        :error-message="$t('DeploymentDetailView.loadError')"
+    >
+        <template #error-action>
+            <RouterLink :to="{ name: ROUTE_NAMES.deploymentsList }" class="text-sm font-medium text-accent-fg hover:underline">
+                {{ $t('DeploymentDetailView.backToList') }}
+            </RouterLink>
+        </template>
+    </EntityListState>
 </template>

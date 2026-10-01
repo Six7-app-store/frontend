@@ -14,6 +14,12 @@ import type {
 // ----------------------------------------------------------------
 export const deploymentApi = {
   /**
+   * Path of the live progress/log stream (SSE). Not an axios call: the
+   * stream is read with ``fetch`` in ``useDeploymentStream``.
+   */
+  streamPath: (deploymentId: string) => `/deployments/${deploymentId}/stream`,
+
+  /**
    * Get all deployments (filtered by role)
    */
   list: (params?: DeploymentQueryParams) => {

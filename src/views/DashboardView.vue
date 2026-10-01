@@ -2,16 +2,19 @@
 import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  BarChart3, Layers, GraduationCap, ArrowRight,
-  XCircle, Loader2, AlertCircle, Rocket
-} from 'lucide-vue-next'
+import { Loader2, Plus } from 'lucide-vue-next'
 import { useDashboard } from '@/composables/useDashboard'
 import { useQuotas } from '@/composables/useQuotas'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouteAccess } from '@/composables/useRouteAccess'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import Card from '@/components/ui/Card.vue'
+import DataTable, { type DataTableColumn } from '@/components/ui/DataTable.vue'
+import MeterBar from '@/components/ui/MeterBar.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import StatStrip, { type Stat } from '@/components/ui/StatStrip.vue'
 
 const { stats, fetchStats } = useDashboard()
 const {
@@ -20,9 +23,6 @@ const {
   needsCredentials,
   hasCachedQuotas,
   fetchQuotas,
-  getColorClass,
-  getTextColorClass,
-  isQuotaCritical,
 } = useQuotas()
 const credStore = useOpenStackCredentialsStore()
 const authStore = useAuthStore()
@@ -41,6 +41,29 @@ const timeGreeting = computed(() => {
   return t('DashboardView.timeGreetings.evening')
 })
 
+const greeting = computed(() => (firstName.value ? `${timeGreeting.value}, ${firstName.value}` : timeGreeting.value))
+
+// Without credentials no deployment can be created, so the main action waits for them.
+const credentialsMissing = computed(() => credStore.isResolved && !credStore.hasCredential)
+
+const statItems = computed<Stat[]>(() => [
+  { id: 'deployments', label: t('DashboardView.deployments'), value: stats.value.deployments, to: { name: ROUTE_NAMES.deploymentsList } },
+  { id: 'apps', label: t('DashboardView.apps'), value: stats.value.apps, to: { name: ROUTE_NAMES.apps } },
+  // Students have no access to courses (staff-only route), so their tile is left out instead of leading to a 403.
+  ...(canAccess({ name: ROUTE_NAMES.courses })
+    ? [{ id: 'courses', label: t('DashboardView.courses'), value: stats.value.courses, to: { name: ROUTE_NAMES.courses } }]
+    : []),
+])
+
+type QuotaRow = (typeof formattedQuotas.value)[number]
+
+const quotaColumns = computed<DataTableColumn[]>(() => [
+  { id: 'label', label: t('DashboardView.resourceColumns.resource'), class: 'w-[200px]' },
+  { id: 'used', label: t('DashboardView.resourceColumns.usedLimit'), class: 'w-[160px]' },
+  { id: 'meter', label: t('DashboardView.resourceColumns.usage') },
+  { id: 'percentage', label: t('DashboardView.resourceColumns.percent'), class: 'w-[88px]', align: 'right', hideLabel: true },
+])
+
 onMounted(() => {
   fetchStats()
   fetchQuotas()
@@ -49,218 +72,99 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6">
-
-    <!-- Banners -->
-    <CredentialMissingBanner
-      v-if="credStore.isResolved && !credStore.hasCredential"
-      variant="warning"
-      :title="t('banners.credentialsMissing.title')"
-      :message="t('banners.credentialsMissing.message')"
-      :cta="t('banners.credentialsMissing.cta')"
-      :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
-    />
-    <CredentialMissingBanner
-      v-else-if="credStore.isResolved && credStore.lastError"
-      variant="error"
-      :title="t('banners.credentialsInvalid.title')"
-      :message="credStore.lastError"
-      :cta="t('banners.credentialsInvalid.cta')"
-      :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
-    />
-
-    <!-- Hero banner -->
-    <div class="surface-banner hero-banner">
-      <div>
-        <p class="text-fg-muted text-xs font-semibold uppercase tracking-[0.08em] mb-2">{{ timeGreeting }}</p>
-        <h1 class="text-fg text-[28px] leading-tight font-semibold tracking-[-0.01em] mb-2">{{ firstName }}</h1>
-        <p class="text-fg-muted text-sm">{{ $t('DashboardView.subtitle') }}</p>
-      </div>
-      <RouterLink
-        :to="{ name: ROUTE_NAMES.apps }"
-        class="btn-primary group inline-flex items-center gap-2 h-10 px-5 rounded-control text-sm font-semibold whitespace-nowrap"
-      >
-        <Rocket :size="16" class="group-hover:translate-x-0.5 transition-transform" />
-        {{ $t('DashboardView.deploymentNew') }}
-      </RouterLink>
-    </div>
-
-    <!-- KPI row -->
-    <div class="surface-panel kpi-row">
-      <RouterLink :to="{ name: ROUTE_NAMES.deploymentsList }" class="kpi-item group">
-        <div class="kpi-icon-wrap">
-          <BarChart3 :size="16" class="text-icon" />
-        </div>
-        <div>
-          <p class="kpi-num">{{ stats.deployments }}</p>
-          <p class="kpi-lbl">{{ $t('DashboardView.deployments') }}</p>
-        </div>
-        <ArrowRight :size="14" class="ml-auto text-icon group-hover:text-fg group-hover:translate-x-0.5 transition-all" />
-      </RouterLink>
-
-      <div class="kpi-divider" />
-
-      <RouterLink :to="{ name: ROUTE_NAMES.apps }" class="kpi-item group">
-        <div class="kpi-icon-wrap">
-          <Layers :size="16" class="text-icon" />
-        </div>
-        <div>
-          <p class="kpi-num">{{ stats.apps }}</p>
-          <p class="kpi-lbl">{{ $t('DashboardView.apps') }}</p>
-        </div>
-        <ArrowRight :size="14" class="ml-auto text-icon group-hover:text-fg group-hover:translate-x-0.5 transition-all" />
-      </RouterLink>
-
-      <!-- Courses tile: students have no courses access (staff-only route),
-           so hide the tile via RoleGate instead of 404 on click. -->
-      <template v-if="canAccess({ name: ROUTE_NAMES.courses })">
-      <div class="kpi-divider" />
-
-      <RouterLink :to="{ name: ROUTE_NAMES.courses }" class="kpi-item group">
-        <div class="kpi-icon-wrap">
-          <GraduationCap :size="16" class="text-icon" />
-        </div>
-        <div>
-          <p class="kpi-num">{{ stats.courses }}</p>
-          <p class="kpi-lbl">{{ $t('DashboardView.courses') }}</p>
-        </div>
-        <ArrowRight :size="14" class="ml-auto text-icon group-hover:text-fg group-hover:translate-x-0.5 transition-all" />
-      </RouterLink>
-      </template>
-    </div>
-
-    <!-- Available resources — full width, two-column quotas list -->
-    <div class="surface-panel overflow-hidden">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-subtle">
-        <h2 class="text-[15px] font-semibold text-fg">{{ $t('DashboardView.availableResources') }}</h2>
-        <span v-if="quotasLoading && hasCachedQuotas" class="flex items-center gap-1.5 text-xs text-fg-muted">
-          <Loader2 :size="12" class="animate-spin" />
-        </span>
-      </div>
-
-      <!-- Skeleton (initial load) -->
-      <div v-if="quotasLoading && !hasCachedQuotas" class="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-        <div v-for="i in 6" :key="i" class="animate-pulse space-y-2">
-          <div class="flex justify-between">
-            <div class="h-3 bg-line/[.07] rounded w-20" />
-            <div class="h-3 bg-line/[.07] rounded w-10" />
-          </div>
-          <div class="meter-track h-2" />
-        </div>
-      </div>
-
-      <!-- Quotas: two columns on >= md -->
-      <div v-else-if="formattedQuotas.length > 0" class="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
-        <div v-for="quota in formattedQuotas" :key="quota.label">
-          <div class="flex items-center justify-between mb-1.5">
-            <div class="flex items-center gap-1.5">
-              <component :is="quota.icon" :size="13" class="text-fg-muted" />
-              <span class="text-xs font-medium text-fg">{{ quota.label }}</span>
-            </div>
-            <span
-              class="text-xs font-semibold tabular-nums"
-              :class="getTextColorClass(quota.percentage)"
-            >
-              {{ quota.used }}/{{ quota.limit }}{{ quota.unit }}
-            </span>
-          </div>
-          <div class="meter-track w-full h-2">
-            <div
-              :class="getColorClass(quota.percentage)"
-              class="h-full transition-all duration-700"
-              :style="{ width: `${quota.percentage}%` }"
-            />
-          </div>
-          <div class="flex items-center justify-between mt-1.5">
-            <p class="text-xs text-fg-muted">{{ t('DashboardView.quotaUsed', { percentage: quota.percentage }) }}</p>
-            <AlertCircle v-if="isQuotaCritical(quota.percentage)" :size="11" class="text-danger" />
-          </div>
-        </div>
-      </div>
-      <!-- No credentials -->
-      <div v-else-if="needsCredentials" class="px-6 py-12 text-center">
-        <div class="w-12 h-12 rounded-full bg-line/[.07] flex items-center justify-center mx-auto mb-3">
-          <XCircle :size="22" class="text-icon" />
-        </div>
-        <p class="text-sm font-medium text-fg">{{ t('DashboardView.noCredentialsTitle') }}</p>
-        <p class="text-xs text-fg-muted mt-1 mb-4">{{ t('DashboardView.noCredentialsHint') }}</p>
-        <RouterLink
-          :to="{ name: ROUTE_NAMES.userOpenStack }"
-          class="btn-secondary inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-control transition"
-        >
-          {{ t('DashboardView.setUpNow') }} <ArrowRight :size="12" />
+  <div class="max-w-page">
+    <PageHeader size="greeting" :title="greeting">
+      <template #actions>
+        <BaseButton v-if="credentialsMissing" disabled :disabled-reason="t('DashboardView.deploymentNeedsCredentials')">
+          {{ $t('DashboardView.deploymentNew') }}
+        </BaseButton>
+        <RouterLink v-else :to="{ name: ROUTE_NAMES.apps }" class="btn btn-primary">
+          <Plus :size="16" :stroke-width="2.2" aria-hidden="true" />
+          {{ $t('DashboardView.deploymentNew') }}
         </RouterLink>
-      </div>
+      </template>
+    </PageHeader>
 
-      <!-- Error / no data -->
-      <div v-else class="px-6 py-12 text-center">
-        <p class="text-sm text-fg-muted">{{ t('DashboardView.quotaLoadError') }}</p>
-      </div>
+    <div class="flex flex-col gap-section">
+      <CredentialMissingBanner
+        v-if="credentialsMissing"
+        variant="warning"
+        :title="t('banners.credentialsMissing.title')"
+        :message="t('banners.credentialsMissing.message')"
+        :cta="t('banners.credentialsMissing.cta')"
+        :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
+      />
+      <CredentialMissingBanner
+        v-else-if="credStore.isResolved && credStore.lastError"
+        variant="error"
+        :title="t('banners.credentialsInvalid.title')"
+        :message="credStore.lastError"
+        :cta="t('banners.credentialsInvalid.cta')"
+        :ctaTo="{ name: ROUTE_NAMES.userOpenStack }"
+      />
+
+      <StatStrip :items="statItems" :aria-label="t('DashboardView.statsLabel')" />
+
+      <Card :title="t('DashboardView.availableResources')" flush>
+        <template #actions>
+          <Loader2
+            v-if="quotasLoading && hasCachedQuotas"
+            :size="14"
+            class="animate-spin text-icon"
+            aria-hidden="true"
+          />
+          <span v-if="formattedQuotas.length" class="flex gap-4 text-xs text-fg-muted">
+            <span class="flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-[2px] bg-success-dot" aria-hidden="true" />{{ t('DashboardView.legendLow') }}
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="h-2 w-2 rounded-[2px] bg-warning-dot" aria-hidden="true" />{{ t('DashboardView.legendMid') }}
+            </span>
+          </span>
+        </template>
+
+        <!-- Skeleton (first load, nothing cached yet) -->
+        <div v-if="quotasLoading && !hasCachedQuotas" data-testid="quota-skeleton" class="flex flex-col" aria-busy="true">
+          <div v-for="i in 6" :key="i" class="flex h-12 animate-pulse items-center gap-6 border-t border-faint px-panel first:border-t-0">
+            <div class="h-3 w-32 rounded-tag bg-line/[.07]" />
+            <div class="h-3 w-16 rounded-tag bg-line/[.07]" />
+            <div class="meter-track flex-1" />
+          </div>
+        </div>
+
+        <DataTable
+          v-else-if="formattedQuotas.length > 0"
+          dense
+          :columns="quotaColumns"
+          :rows="formattedQuotas"
+          :row-key="(quota: QuotaRow) => quota.label"
+          :caption="t('DashboardView.availableResources')"
+        >
+          <template #cell-label="{ row }">
+            <span class="font-semibold">{{ row.label }}</span>
+          </template>
+          <template #cell-used="{ row }">
+            <span class="tabular-nums">
+              <span class="text-heading">{{ row.used }}</span>
+              <span class="text-fg-muted"> / {{ row.limit }}{{ row.unit ? ` ${row.unit}` : '' }}</span>
+            </span>
+          </template>
+          <template #cell-meter="{ row }">
+            <MeterBar :value="row.percentage" :label="row.label" />
+          </template>
+          <template #cell-percentage="{ row }">
+            <span class="text-sm tabular-nums text-fg-muted">{{ row.percentage }} %</span>
+          </template>
+        </DataTable>
+
+        <p v-else-if="needsCredentials || credentialsMissing" class="p-6 text-base text-fg-muted">
+          {{ t('DashboardView.resourcesNeedCredentials') }}
+        </p>
+
+        <p v-else class="p-6 text-base text-fg-muted" role="alert">
+          {{ t('DashboardView.quotaLoadError') }}
+        </p>
+      </Card>
     </div>
-
   </div>
 </template>
-
-<style scoped>
-.hero-banner {
-  padding: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.kpi-row {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr auto 1fr;
-  overflow: hidden;
-}
-
-.kpi-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 24px;
-  text-decoration: none;
-  transition: background 150ms;
-}
-
-.kpi-item:hover {
-  background: var(--nav-hover-bg);
-}
-
-.kpi-divider {
-  width: 1px;
-  background: var(--line-subtle);
-  margin: 16px 0;
-}
-
-.kpi-icon-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  background: var(--segment-bg);
-  border: 1px solid var(--line-subtle);
-}
-
-.kpi-num {
-  font-size: 2rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: rgb(var(--color-fg));
-  line-height: 1;
-}
-
-.kpi-lbl {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgb(var(--color-fg-muted));
-  margin-top: 4px;
-}
-</style>

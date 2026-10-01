@@ -4,121 +4,63 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetailMessage, getErrorStatus, getErrorStatusText, hasErrorResponse } from '@/utils/http-error'
-import { appApi } from '@/api/app.api'
-import { useI18n } from 'vue-i18n' // <-- i18n Import hinzugefügt
+import { useNewApp } from '@/composables/useNewApp'
+import { useI18n } from 'vue-i18n'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
-import MarkdownRenderer from '@/components/MarkdownRenderer.vue'
+import AppCard from '@/components/app/AppCard.vue'
+import AlertBox from '@/components/ui/AlertBox.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
+import BaseInput from '@/components/ui/BaseInput.vue'
+import Card from '@/components/ui/Card.vue'
+import FormField from '@/components/ui/FormField.vue'
+import SegmentedControl from '@/components/ui/SegmentedControl.vue'
+import type { SegmentOption } from '@/components/ui/segment'
+import ToggleSwitch from '@/components/ui/ToggleSwitch.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import ImageDropZone from '@/components/ui/ImageDropZone.vue'
+import { useImageUpload } from '@/composables/useImageUpload'
 
-// Icons
-import {
-  IdCard,
-  MessageSquare,
-  Link as LinkIcon,
-  Server,
-  Layers,
-  Shield,
-  Box,
-  Info,
-  Image as ImageIcon,
-  Globe,
-  Lock,
-  Send,
-} from 'lucide-vue-next'
+import { Globe, Lock } from 'lucide-vue-next'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const router = useRouter()
 const toast = useToast()
 const isLoading = ref(false)
 
+const { githubAppInstallUrl, loadGithubAppInstallUrl, create } = useNewApp()
+
 const form = ref({
   name: '',
   description: '',
-  logo: null as File | null,
   repoUrl: '',
   isPrivate: false,
   submitAllVersions: false,
 })
 
-const imagePreviewUrl = ref<string | null>(null)
-const isDragging = ref(false)
-const fileInputRef = ref<HTMLInputElement | null>(null)
+const {
+  file: logoFile,
+  previewUrl: logoPreviewUrl,
+  choose: chooseLogo,
+  remove: removeLogo,
+} = useImageUpload()
 
-// Every installation runs its own GitHub App, so the link comes from the
-// backend. Stays null when none is configured; the hint then has no link.
-const githubAppInstallUrl = ref<string | null>(null)
+onMounted(loadGithubAppInstallUrl)
 
-onMounted(async () => {
-  try {
-    const { data } = await appApi.getGithubApp()
-    githubAppInstallUrl.value = data.install_url
-  } catch {
-    githubAppInstallUrl.value = null
-  }
+type Visibility = 'public' | 'private'
+
+const visibility = computed<Visibility>({
+  get: () => (form.value.isPrivate ? 'private' : 'public'),
+  set: (next) => { form.value.isPrivate = next === 'private' },
 })
 
-const previewIcon = computed(() => {
-  const name = form.value.name.toLowerCase()
-  if (name.includes('kali') || name.includes('hack') || name.includes('security')) return Shield
-  if (name.includes('node')) return Server
-  if (name.includes('python')) return Box
-  return Layers
-})
-
-const triggerFileInput = () => {
-  fileInputRef.value?.click()
-}
-
-const processFile = (file: File) => {
-  const problem = validateImageFile(file)
-  if (problem === 'not_image') {
-    toast.error(t('AppsCreateView.messages.onlyImages'))
-    return
-  }
-  if (problem === 'too_large') {
-    // Pass the MB value to i18n.
-    toast.error(t('AppsCreateView.messages.imageTooLarge', { size: MAX_IMAGE_MB }))
-    return
-  }
-
-  if (imagePreviewUrl.value) {
-    URL.revokeObjectURL(imagePreviewUrl.value)
-  }
-
-  form.value.logo = file
-  imagePreviewUrl.value = URL.createObjectURL(file)
-}
-
-const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  if (target.files && target.files.length > 0) {
-    const file = target.files[0]
-    if (file) {
-      processFile(file)
-    }
-  }
-  if (target) target.value = ''
-}
-
-const handleDrop = (event: DragEvent) => {
-  isDragging.value = false
-  if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
-    const file = event.dataTransfer.files[0]
-    if (file) {
-      processFile(file)
-    }
-  }
-}
+const visibilityOptions = computed<SegmentOption<Visibility>[]>(() => [
+  { value: 'public', label: t('AppsCreateView.form.visibilityPublic'), icon: Globe },
+  { value: 'private', label: t('AppsCreateView.form.visibilityPrivate'), icon: Lock },
+])
 
 const isValidGitUrl = (url: string) => {
   const regex = /^(https?:\/\/|git@)[\w.-]+[\/:].+/
   return regex.test(url)
-}
-
-const fileToDataUrl = (file: File | null): Promise<string | null> => {
-  if (!file) return Promise.resolve(null)
-  return readFileAsDataUrl(file)
 }
 
 const handleSubmit = async () => {
@@ -134,16 +76,7 @@ const handleSubmit = async () => {
 
   isLoading.value = true
   try {
-    const imageDataUrl = await fileToDataUrl(form.value.logo)
-
-    await appApi.create({
-      name: form.value.name,
-      description: form.value.description,
-      git_link: form.value.repoUrl,
-      image: imageDataUrl,
-      is_private: form.value.isPrivate,
-      submit_all_versions: !form.value.isPrivate && form.value.submitAllVersions,
-    })
+    await create(form.value, logoFile.value)
 
     toast.success(t('AppsCreateView.messages.success'))
     router.push({ name: ROUTE_NAMES.apps })
@@ -172,229 +105,105 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="bg-panel rounded-2xl p-10 border min-h-[600px] flex flex-col">
+  <div class="max-w-detail">
+    <PageHeader :title="$t('AppsCreateView.title')" :subtitle="$t('AppsCreateView.form.subtitle')" />
 
-    <h1 class="text-4xl font-bold text-fg mb-12">{{ $t('AppsCreateView.title') }}</h1>
+    <div class="grid grid-cols-1 items-start gap-12 lg:grid-cols-[minmax(0,1fr)_var(--aside-w)]">
+      <form class="flex min-w-0 flex-col gap-section" novalidate @submit.prevent="handleSubmit">
+        <Card>
+          <div class="flex flex-col gap-5">
+            <FormField v-slot="{ id }" :label="$t('AppsCreateView.form.nameLabel')" required>
+              <BaseInput :id="id" v-model="form.name" :placeholder="$t('AppsCreateView.form.namePlaceholder')" />
+            </FormField>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-16 items-start mb-8">
+            <FormField v-slot="{ id }" :label="$t('AppsCreateView.form.repoLabel')" required>
+              <BaseInput :id="id" v-model="form.repoUrl" class="font-mono" :placeholder="$t('AppsCreateView.form.repoPlaceholder')" />
+            </FormField>
 
-      <div class="space-y-6">
+            <FormField :label="$t('AppsCreateView.form.descLabel')" :hint="$t('AppsCreateView.form.descMarkdownHint')">
+              <MarkdownEditor
+                v-model="form.description"
+                :placeholder="$t('AppsCreateView.form.descPlaceholder')"
+                :min-height-px="120"
+                :max-height-px="320"
+              />
+            </FormField>
 
-        <div class="bg-line/[.07] rounded-lg p-3 flex items-center shadow-sm">
-          <div class="p-2">
-            <IdCard class="text-icon" :size="28" />
+            <FormField :label="$t('AppsCreateView.form.logoLabel')">
+              <ImageDropZone
+                :preview-url="logoPreviewUrl"
+                :caption="logoFile?.name ?? ''"
+                :placeholder="$t('AppsCreateView.form.logoSelect')"
+                :remove-label="$t('AppsCreateView.form.logoRemove')"
+                @select="chooseLogo"
+                @remove="removeLogo"
+              />
+            </FormField>
           </div>
-          <div class="font-bold text-fg w-48 pl-2">{{ $t('AppsCreateView.form.nameLabel') }}</div>
-          <input
-              v-model="form.name"
-              type="text"
-              :placeholder="$t('AppsCreateView.form.namePlaceholder')"
-              class="field flex-1 py-1.5 px-3 text-fg mx-2"
-          />
-        </div>
+        </Card>
 
-        <div class="bg-line/[.07] rounded-lg p-3 flex items-start shadow-sm">
-          <div class="p-2 mt-0.5">
-            <MessageSquare class="text-icon" :size="28" />
-          </div>
-          <div class="font-bold text-fg w-48 pl-2 mt-2">{{ $t('AppsCreateView.form.descLabel') }}</div>
-          <div class="flex-1 min-w-0 mx-2">
-            <MarkdownEditor
-              v-model="form.description"
-              :placeholder="$t('AppsCreateView.form.descPlaceholder')"
-              :min-height-px="80"
-              :max-height-px="240"
-            />
-            <p class="mt-1 text-xs text-fg-muted">{{ $t('AppsCreateView.form.descMarkdownHint') }}</p>
-          </div>
-        </div>
-
-        <div class="bg-line/[.07] rounded-lg p-3 flex items-center shadow-sm">
-          <div class="p-2">
-            <ImageIcon class="text-icon" :size="28" />
-          </div>
-          <div class="font-bold text-fg w-48 pl-2">{{ $t('AppsCreateView.form.logoLabel') }}</div>
-          <div
-              class="flex-1 bg-panel rounded py-1.5 px-3 text-fg shadow-sm mx-2 border-2 transition-all cursor-pointer flex items-center min-h-[36px]"
-              :class="isDragging ? 'border-success-dot bg-success-dot/10 border-dashed' : 'border-transparent hover:border-strong border-dashed'"
-              @dragover.prevent="isDragging = true"
-              @dragleave.prevent="isDragging = false"
-              @drop.prevent="handleDrop"
-              @click="triggerFileInput"
-          >
-            <input
-                ref="fileInputRef"
-                type="file"
-                accept="image/*"
-                class="hidden"
-                @change="handleFileChange"
-            />
-            <span v-if="!imagePreviewUrl" class="text-sm text-fg-muted">
-              {{ $t('AppsCreateView.form.logoSelect') }}
-            </span>
-            <div v-else class="flex justify-between items-center w-full">
-              <span class="text-sm text-success font-medium truncate">{{ form.logo?.name }}</span>
-              <span class="text-xs text-fg-muted hover:text-danger ml-2" @click.stop="imagePreviewUrl = null; form.logo = null">{{ $t('AppsCreateView.form.logoRemove') }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="bg-line/[.07] rounded-lg p-3 flex items-center shadow-sm">
-          <div class="p-2">
-            <LinkIcon class="text-icon" :size="28" />
-          </div>
-          <div class="font-bold text-fg w-48 pl-2">{{ $t('AppsCreateView.form.repoLabel') }}</div>
-          <input
-              v-model="form.repoUrl"
-              type="text"
-              :placeholder="$t('AppsCreateView.form.repoPlaceholder')"
-              class="field flex-1 py-1.5 px-3 text-fg mx-2"
-          />
-        </div>
-
-        <!-- Visibility Toggle -->
-        <div class="bg-line/[.07] rounded-lg p-3 flex items-start shadow-sm">
-          <div class="p-2">
-            <component :is="form.isPrivate ? Lock : Globe" class="text-icon" :size="28" />
-          </div>
-          <div class="font-bold text-fg w-48 pl-2 pt-1">{{ $t('AppsCreateView.form.visibilityLabel') }}</div>
-          <div class="flex-1 mx-2">
-            <div class="flex gap-3">
-              <button
-                type="button"
-                @click="form.isPrivate = false"
-                class="flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all"
-                :class="!form.isPrivate ? 'border-accent bg-accent/[.06] text-fg' : 'border-strong bg-panel text-fg-muted hover:text-fg'"
-              >
-                <Globe :size="16" />
-                {{ $t('AppsCreateView.form.visibilityPublic') }}
-              </button>
-              <button
-                type="button"
-                @click="form.isPrivate = true"
-                class="flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all"
-                :class="form.isPrivate ? 'border-accent bg-accent/[.06] text-fg' : 'border-strong bg-panel text-fg-muted hover:text-fg'"
-              >
-                <Lock :size="16" />
-                {{ $t('AppsCreateView.form.visibilityPrivate') }}
-              </button>
-            </div>
-            <p class="mt-2 text-sm text-fg-muted">
-              {{ form.isPrivate ? $t('AppsCreateView.form.visibilityPrivateHint') : $t('AppsCreateView.form.visibilityPublicHint') }}
-            </p>
-          </div>
-        </div>
-
-        <!-- Submit all versions toggle (public only) -->
-        <div v-if="!form.isPrivate" class="bg-line/[.07] rounded-lg p-3 flex items-center shadow-sm">
-          <div class="p-2">
-            <Send class="text-icon" :size="28" />
-          </div>
-          <div class="font-bold text-fg w-48 pl-2">{{ $t('AppsCreateView.form.submitAllLabel') }}</div>
-          <div class="flex-1 mx-2 flex items-center justify-between">
-            <p class="text-sm text-fg-muted">{{ $t('AppsCreateView.form.submitAllHint') }}</p>
-            <button
-              type="button"
-              @click="form.submitAllVersions = !form.submitAllVersions"
-              class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full border p-px transition-colors duration-200 ml-4"
-              :class="form.submitAllVersions ? 'toggle-on' : 'toggle-off'"
+        <Card>
+          <div class="flex flex-col gap-5">
+            <FormField
+              :label="$t('AppsCreateView.form.visibilityLabel')"
+              :hint="form.isPrivate ? $t('AppsCreateView.form.visibilityPrivateHint') : $t('AppsCreateView.form.visibilityPublicHint')"
             >
-              <span
-                class="toggle-knob inline-block h-5 w-5 transform rounded-full transition duration-200"
-                :class="form.submitAllVersions ? 'translate-x-5' : 'translate-x-0'"
+              <SegmentedControl
+                v-model="visibility"
+                size="md"
+                class="self-start"
+                :options="visibilityOptions"
+                :ariaLabel="$t('AppsCreateView.form.visibilityLabel')"
               />
-            </button>
-          </div>
-        </div>
+            </FormField>
 
-      </div>
-
-      <div class="flex flex-col items-center pt-4">
-        <!-- Container matching the overview design (p-6, flex-col) -->
-        <div class="w-full surface-sunken p-6 flex flex-col relative min-h-[250px]">
-
-          <!-- Badge -->
-          <span class="absolute top-3 right-3 text-[10px] text-fg-muted uppercase tracking-widest font-bold">
-            {{ $t('AppsCreateView.preview.badge') }}
-          </span>
-
-          <!-- Header: Icon & Titel nebeneinander -->
-          <div class="flex items-center gap-4 mb-4 mt-2">
-            <!-- Icon/logo box, matching the overview -->
-            <div class="bg-panel p-3 rounded-lg shadow-sm text-fg flex items-center justify-center w-[56px] h-[56px] flex-shrink-0">
-              <img
-                  v-if="imagePreviewUrl"
-                  :src="imagePreviewUrl"
-                  :alt="$t('AppsCreateView.preview.logoAlt')"
-                  class="w-full h-full object-contain"
-              />
-              <component
-                  v-else
-                  :is="previewIcon"
-                  :size="32"
-                  class="text-icon"
-              />
+            <!-- Submitting versions only makes sense for apps others can see. -->
+            <div v-if="!form.isPrivate" class="flex items-center justify-between gap-6 border-t border-faint pt-5">
+              <div class="flex min-w-0 flex-col gap-0.5">
+                <p class="text-sm font-semibold text-fg">{{ $t('AppsCreateView.form.submitAllLabel') }}</p>
+                <p class="text-sm text-fg-muted">{{ $t('AppsCreateView.form.submitAllHint') }}</p>
+              </div>
+              <ToggleSwitch v-model="form.submitAllVersions" :label="$t('AppsCreateView.form.submitAllLabel')" />
             </div>
-
-            <h3 class="font-bold text-xl text-fg leading-tight pr-12 text-left">
-              {{ form.name || $t('AppsCreateView.preview.defaultName') }}
-            </h3>
           </div>
+        </Card>
 
-          <!-- Description (left-aligned with line-clamp) -->
-          <div :lang="locale" class="text-sm mb-6 flex-grow text-left break-words hyphens-auto">
-            <MarkdownRenderer
-              v-if="form.description.trim()"
-              :source="form.description"
-              variant="compact"
-              :clamp="5"
-            />
-            <p v-else class="text-fg-muted leading-relaxed">
-              {{ $t('AppsCreateView.preview.defaultDesc') }}
-            </p>
-          </div>
-
-          <!-- Preview button — same look as on the app overview
-               (BaseButton variant="green"), not clickable since it's a preview. -->
-          <div class="mt-auto">
-            <BaseButton
-                variant="green"
-                class="w-full flex items-center justify-center gap-2 cursor-default opacity-80"
-                @click.prevent
+        <AlertBox tone="info" :title="$t('AppsCreateView.info.important')">
+          <span v-html="$t('AppsCreateView.info.installText')"></span>
+          <template v-if="githubAppInstallUrl">
+            <br>
+            <a
+              :href="githubAppInstallUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="github-app-install-link"
+              class="link break-all"
             >
-              {{ $t('AppsView.detailsDeploy') }}
-            </BaseButton>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="mt-auto grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-16 items-end">
-
-      <div>
-        <div class="bg-line/[.04] text-fg p-4 rounded-lg text-sm leading-relaxed border border-subtle flex gap-3 items-start shadow-sm">
-          <Info class="shrink-0 mt-0.5 text-icon" :size="20" />
-          <div>
-            <span class="font-semibold block mb-1">{{ $t('AppsCreateView.info.important') }}</span>
-            <span v-html="$t('AppsCreateView.info.inviteText')"></span><br>
-            <a href="https://github.com/six7clickndeploy" target="_blank" class="text-accent-fg underline hover:text-accent-fg break-all">
-              https://github.com/six7clickndeploy
+              {{ githubAppInstallUrl }}
             </a>
-          </div>
+          </template>
+        </AlertBox>
+
+        <div class="flex justify-end gap-3">
+          <RouterLink :to="{ name: ROUTE_NAMES.apps }" class="btn btn-secondary">
+            {{ $t('AppsCreateView.form.cancel') }}
+          </RouterLink>
+          <BaseButton type="submit" :disabled="isLoading">
+            {{ isLoading ? $t('AppsCreateView.buttons.saving') : $t('AppsCreateView.buttons.add') }}
+          </BaseButton>
         </div>
-      </div>
+      </form>
 
-      <div class="flex justify-center lg:justify-end pb-1">
-        <button
-            @click="handleSubmit"
-            :disabled="isLoading"
-            class="btn-primary text-base px-10 py-3 rounded-control font-semibold transition flex items-center justify-center w-full lg:w-auto"
-        >
-          {{ isLoading ? $t('AppsCreateView.buttons.saving') : $t('AppsCreateView.buttons.add') }}
-        </button>
-      </div>
-
+      <!-- The card exactly as the catalogue will show it -->
+      <aside class="flex flex-col gap-2 lg:sticky lg:top-0">
+        <p class="text-xs text-fg-subtle">{{ $t('AppsCreateView.preview.badge') }}</p>
+        <AppCard
+          :name="form.name || $t('AppsCreateView.preview.defaultName')"
+          :description="form.description"
+          :status="form.isPrivate ? 'private' : 'new'"
+          :empty-text="$t('AppsCreateView.preview.defaultDesc')"
+        />
+      </aside>
     </div>
-
   </div>
 </template>

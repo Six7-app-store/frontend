@@ -9,6 +9,11 @@ export function isLiveTaskStatus(status: string | null | undefined): boolean {
   return status === 'pending' || status === 'running'
 }
 
+/** ``success`` / ``failed`` / ``cancelled`` — no further events will come. */
+export function isTerminalTaskStatus(status: string | null | undefined): boolean {
+  return status === 'success' || status === 'failed' || status === 'cancelled'
+}
+
 /** Copy of ``tasks`` sorted newest first by ``created_at`` (ISO strings). */
 export function sortTasksNewestFirst(tasks: Task[]): Task[] {
   return [...tasks].sort((a, b) => b.created_at.localeCompare(a.created_at))

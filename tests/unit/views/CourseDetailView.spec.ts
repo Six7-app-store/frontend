@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import { ref } from 'vue'
 
 import CourseDetailView from '@/views/CourseDetailView.vue'
@@ -113,7 +113,8 @@ describe('CourseDetailView.vue', () => {
                     $t: (key: string, vars?: any) => vars ? `${key} ${JSON.stringify(vars)}` : key
                 },
                 stubs: {
-                    Card: { template: '<div class="stub-card"><slot /></div>' },
+                    RouterLink: RouterLinkStub,
+                    Card: { template: '<div class="stub-card"><slot name="actions" /><slot /></div>' },
                     BaseButton: { template: '<button><slot /></button>' },
                     BaseInput: {
                         props: ['modelValue'],
@@ -301,22 +302,13 @@ describe('CourseDetailView.vue', () => {
         expect(wrapper.find('.modal').exists()).toBe(false)
     })
 
-    it.each([
-        ['admin', ['status-emphasis']],
-        ['teacher', ['status-info']],
-        ['student', ['status-neutral']],
-        ['irgendwas', ['status-neutral']],
-    ])('färbt die Rolle %s wie die zentrale Rollenzuordnung', async (role, expectedClasses) => {
+    it.each(['admin', 'teacher', 'student', 'irgendwas'])('zeigt die Rolle %s mit ihrem zentralen Namen als Text', async (role) => {
         mockCurrentMembers = [{ userId: 'u-1', username: 'TestUser', role }]
 
         const wrapper = mountComponent()
         await flushPromises()
 
-        const pill = wrapper.findAll('span').find(s => s.text() === `roleLabels.${role === 'irgendwas' ? 'unknown' : role}`)!
-        expect(pill.exists()).toBe(true)
-        for (const cls of expectedClasses) {
-            expect(pill.classes()).toContain(cls)
-        }
+        expect(wrapper.get('[data-testid="member-role"]').text()).toBe(`roleLabels.${role === 'irgendwas' ? 'unknown' : role}`)
     })
 
     it('zeigt beim Entfernen den eigenen Text statt [object Object], wenn detail ein Objekt ist', async () => {

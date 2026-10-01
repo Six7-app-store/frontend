@@ -22,11 +22,8 @@
  * reactivity and re-run as soon as another component updates the cache.
  */
 import { ref } from 'vue'
-import {
-  openstackResourcesApi,
-  type OsResourceType,
-  type OsResourceBase,
-} from '@/api/openstack-resources.api'
+import type { OsResourceType, OsResourceBase } from '@/api/openstack-resources.api'
+import { listOsResources } from '@/api/openstack-resource-list'
 
 interface CachedItem {
   id: string
@@ -83,7 +80,7 @@ export async function ensureLoaded(osType: OsResourceType): Promise<void> {
 
   const loading = (async () => {
     try {
-      const res = await fetchList(osType)
+      const res = await listOsResources(osType)
       cache.set(osType, {
         items: res.map(toCachedItem),
         loadedAt: Date.now(),
@@ -188,34 +185,6 @@ export function getDisplayName(
     return { name: fallback.name, known: true, modeMismatch: true }
   }
   return { name: value, known: false }
-}
-
-// ----------------------------------------------------------------
-// Internal: per-type Fetcher
-// ----------------------------------------------------------------
-async function fetchList(osType: OsResourceType): Promise<any[]> {
-  switch (osType) {
-    case 'network':
-      return (await openstackResourcesApi.listNetworks()).data
-    case 'subnet':
-      return (await openstackResourcesApi.listSubnets()).data
-    case 'flavor':
-      return (await openstackResourcesApi.listFlavors()).data
-    case 'image':
-      return (await openstackResourcesApi.listImages('active')).data
-    case 'keypair':
-      return (await openstackResourcesApi.listKeypairs()).data
-    case 'security_group':
-      return (await openstackResourcesApi.listSecurityGroups()).data
-    case 'floating_ip_pool':
-      return (await openstackResourcesApi.listFloatingIpPools()).data
-    case 'volume':
-      return (await openstackResourcesApi.listVolumes()).data
-    case 'router':
-      return (await openstackResourcesApi.listRouters()).data
-    case 'availability_zone':
-      return (await openstackResourcesApi.listAvailabilityZones('compute')).data
-  }
 }
 
 function toCachedItem(raw: any): CachedItem {

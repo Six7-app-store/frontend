@@ -5,10 +5,6 @@ import { useAppStore } from '../app.store'
 vi.mock('@/api/app.api', () => ({
   appApi: {
     list: vi.fn(() => Promise.resolve({ data: [] })),
-    getById: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
     getVariables: vi.fn(),
   },
 }))
@@ -25,7 +21,6 @@ describe('AppStore', () => {
   it('initializes with empty state', () => {
     const store = useAppStore()
     expect(store.apps).toEqual([])
-    expect(store.currentApp).toBeNull()
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()
   })

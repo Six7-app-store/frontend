@@ -9,11 +9,13 @@
  * state when switching between tasks.
  */
 import { ref } from 'vue'
-import { AlertCircle, ChevronDown, CircleArrowLeft, Loader2, Terminal } from 'lucide-vue-next'
+import { AlertCircle, ChevronDown, CircleArrowLeft, Loader2 } from 'lucide-vue-next'
 import DeploymentTaskDetail from '@/components/deployment/DeploymentTaskDetail.vue'
-import { formatDateTime as formatDate } from '@/utils/format'
+import { formatDateTime } from '@/utils/format'
 import { getStatusStyles } from '@/utils/deployment-status-styles'
+import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
 import type { Task } from '@/types'
+import Card from '@/components/ui/Card.vue'
 
 defineProps<{
   isOwnerView: boolean
@@ -35,38 +37,24 @@ const showTaskLogsTrace = ref(false)
 </script>
 
 <template>
-  <div v-if="!isOwnerView" class="bg-panel rounded-xl border border-subtle p-6 shadow-sm">
-    <div class="flex items-center gap-3 mb-3">
-      <div class="p-2 bg-line/[.07] rounded-lg">
-        <Terminal :size="20" class="text-icon" />
-      </div>
-      <span class="text-lg font-semibold text-fg">{{ $t('DeploymentDetailView.tasksAndLogs') }}</span>
-    </div>
+  <Card v-if="!isOwnerView" :title="$t('DeploymentDetailView.tasksAndLogs')">
     <div class="text-sm text-fg-muted flex items-start gap-2 px-2">
       <AlertCircle :size="16" class="text-icon mt-0.5 flex-shrink-0" />
       <span>{{ $t('DeploymentDetailView.tasksOwnerOnly') }}</span>
     </div>
-  </div>
-  <div v-else class="bg-panel rounded-xl border border-subtle p-6 shadow-sm">
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-3">
-        <div class="p-2 bg-line/[.07] rounded-lg">
-          <Terminal :size="20" class="text-icon" />
-        </div>
-        <span class="text-lg font-semibold text-fg">
-          {{ isStreamRelevant ? $t('DeploymentDetailView.taskHistory') : $t('DeploymentDetailView.tasksAndLogs') }}
-        </span>
-        <span v-if="historyTasks.length > 0"
-          class="px-2 py-0.5 bg-line/[.07] text-fg-muted text-xs font-bold rounded">
-          {{ historyTasks.length }}
-        </span>
-      </div>
+  </Card>
+  <Card
+    v-else
+    :title="isStreamRelevant ? $t('DeploymentDetailView.taskHistory') : $t('DeploymentDetailView.tasksAndLogs')"
+    :count="historyTasks.length"
+  >
+    <template #actions>
       <button v-if="selectedTask" @click="$emit('deselect')"
-        class="flex items-center gap-2 text-fg hover:text-accent-fg transition-colors text-sm">
+        class="flex items-center gap-2 text-fg hover:text-heading transition-colors text-sm">
         <CircleArrowLeft :size="16" />
         <span>{{ $t('DeploymentDetailView.backToTaskList') }}</span>
       </button>
-    </div>
+    </template>
 
     <!-- Task List View -->
     <div v-if="!selectedTask">
@@ -79,28 +67,23 @@ const showTaskLogsTrace = ref(false)
       </div>
 
       <div v-else class="space-y-2">
-        <div v-for="task in historyTasks" :key="task.taskId" @click="$emit('select', task)"
-          class="flex items-center justify-between p-4 bg-line/[.04] rounded-lg hover:bg-line/[.07] transition-colors cursor-pointer border border-subtle hover:border-strong">
-          <div class="flex items-center gap-4 flex-1">
-            <component :is="getStatusStyles(task.status).icon" :size="18" :class="task.status === 'success' ? 'text-success' :
-              task.status === 'failed' ? 'text-danger' :
-                task.status === 'running' ? 'text-fg-muted' : 'text-warning'" />
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-1">
-                <span class="font-medium text-fg capitalize">{{ task.type }}</span>
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize"
-                  :class="getStatusStyles(task.status).badgeClass">
-                  {{ task.status }}
-                </span>
-              </div>
-              <div class="text-xs text-fg-muted">
-                Created: {{ formatDate(task.created_at) }}
-              </div>
-            </div>
-          </div>
-          <ChevronDown :size="20" class="text-icon transform -rotate-90" />
-        </div>
+        <button v-for="task in historyTasks" :key="task.taskId" type="button" data-testid="task-row"
+          class="hover-tint flex w-full items-center justify-between rounded-panel border border-subtle p-4 text-left transition-colors hover:border-strong"
+          @click="$emit('select', task)">
+          <span class="flex flex-1 items-center gap-4">
+            <component :is="getStatusStyles(task.status).icon" :size="18" :class="getStatusStyles(task.status).iconClass" aria-hidden="true" />
+            <span class="flex-1">
+              <span class="mb-1 flex items-center gap-3">
+                <span class="font-semibold capitalize text-heading">{{ task.type }}</span>
+                <DeploymentStatusBadge :status="task.status" />
+              </span>
+              <span class="block text-sm text-fg-muted">
+                {{ $t('DeploymentDetailView.taskCreatedAt') }}: {{ formatDateTime(task.created_at) }}
+              </span>
+            </span>
+          </span>
+          <ChevronDown :size="18" class="-rotate-90 text-disabled" aria-hidden="true" />
+        </button>
       </div>
     </div>
 
@@ -111,5 +94,5 @@ const showTaskLogsTrace = ref(false)
       :active-data-task="activeDataTask"
       :show-task-logs-trace="showTaskLogsTrace"
       @toggle-trace="showTaskLogsTrace = !showTaskLogsTrace" />
-  </div>
+  </Card>
 </template>

@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
-import { useAppStore } from './app.store'
-import { useAuthStore } from './auth.store'
-import { runRequest, type RequestContext } from './_request'
-import { getErrorDetail, getErrorStatus } from '@/utils/http-error'
-import { isMultiImagePackerLayout as detectMultiImagePackerLayout } from '@/services/deployment-variables.service'
+import { requestContext, runRequest } from './_request'
+import { getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
+import { buildDeploymentPayload } from '@/services/deployment-draft.service'
 
 import type {
   Deployment,
@@ -14,15 +12,6 @@ import type {
   DeploymentDraft,
   AppVariable
 } from '@/types'
-
-// Loading/error bookkeeping for ``runRequest`` (same shape as in the app
-// and course stores).
-function requestContext(store: { isLoading: boolean; error: string | null }): RequestContext {
-  return {
-    setLoading: (v: boolean) => { store.isLoading = v },
-    setError: (e: string | null) => { store.error = e },
-  }
-}
 
 const defaultDraft: DeploymentDraft = {
   appId: null,
@@ -58,28 +47,10 @@ export const useDeploymentStore = defineStore('deployment', {
     // The wizard state (draft).
     draft: JSON.parse(JSON.stringify(defaultDraft)) as DeploymentDraft,
 
-    // Global cache for students and courses (userId/courseId → object).
+    // Global cache for students (userId → object).
     studentCache: new Map<string, any>(),
-    courseCache: new Map<string, any>(),
   }),
 
-  getters: {
-    myDeployments: (state) => {
-      const authStore = useAuthStore()
-      return state.deployments.filter((d) => d.userId === authStore.userId)
-    },
-
-    deploymentsByStatus: (state) => {
-      return (status: DeploymentStatus) =>
-        state.deployments.filter((d) => d.status === status)
-    },
-
-    draftAppDetails: (state) => {
-      const appStore = useAppStore()
-      if (!state.draft.appId) return null
-      return appStore.apps.find(a => a.appId === state.draft.appId) || null
-    }
-  },
   actions: {
     async fetchDeployments(params?: { userId?: string; appId?: string; status?: DeploymentStatus }) {
       await runRequest(requestContext(this), async () => {
@@ -103,7 +74,7 @@ export const useDeploymentStore = defineStore('deployment', {
         if (status === 404) {
           this.currentDeployment = null
         } else {
-          this.error = (getErrorDetail(err) as string | undefined) || 'Failed to fetch deployment'
+          this.error = getErrorDetailMessage(err) || 'Failed to fetch deployment'
         }
       } finally {
         this.isLoading = false
@@ -164,165 +135,15 @@ export const useDeploymentStore = defineStore('deployment', {
       this.draft = JSON.parse(JSON.stringify(defaultDraft))
     },
 
+    /**
+     * Submit the current draft (see ``buildDeploymentPayload``) and return
+     * the created deployment.
+     */
     async submitDraft() {
-      /**
-       * Prepare and submit the current draft as a DeploymentCreate payload.
-       * - Normalizes `releaseTag` which may come as string or object from UI
-       * - Packs wizard selections (courses, groups, variables) into `userInputVar`
-       * - Delegates creation to the API and returns the created deployment
-       */
       if (!this.draft.appId || !this.draft.name) {
         throw new Error("App und Name sind Pflichtfelder")
       }
-
-      const rawTag: any = this.draft.releaseTag
-      let finalVersion = 'latest'
-
-      if (rawTag && typeof rawTag === 'object') {
-        finalVersion = rawTag.version || rawTag.name || 'latest'
-      } else if (typeof rawTag === 'string' && rawTag.trim() !== '') {
-        finalVersion = rawTag
-      }
-
-      // Teams: Array<{ name: string, userIds: string[] }>
-      let teams: Array<{ name: string; userIds: string[] }> = []
-      if (Array.isArray(this.draft.groupNames) && Array.isArray(this.draft.assignments)) {
-        // assignments: Record<number, string[]>; groupNames: string[]
-        teams = this.draft.groupNames.map((name: string, idx: number) => ({
-          name,
-          userIds: Array.isArray((this.draft.assignments as any)[idx]) ? (this.draft.assignments as any)[idx] : []
-        }))
-      }
-
-      // Fallback: if no teams are defined, auto-create teams based on studentIds.
-      if (teams.length === 0 && this.draft.studentIds.length > 0) {
-        // Create teams based on groupCount.
-        const groupCount = this.draft.groupCount
-        const studentsPerGroup = Math.floor(this.draft.studentIds.length / groupCount)
-        const remainder = this.draft.studentIds.length % groupCount
-        
-        teams = []
-        let currentIndex = 0
-        for (let i = 0; i < groupCount; i++) {
-          const groupSize = studentsPerGroup + (i < remainder ? 1 : 0)
-          const groupStudents = this.draft.studentIds.slice(currentIndex, currentIndex + groupSize)
-          teams.push({
-            name: this.draft.groupNames[i] || `Team-${i + 1}`,
-            userIds: groupStudents
-          })
-          currentIndex += groupSize
-        }
-      }
-
-      // Ensure all userIds are formatted as UUID strings.
-      teams = teams.map(team => ({
-        name: team.name,
-        userIds: team.userIds.map(id => typeof id === 'string' ? id : String(id))
-      }))
-
-      // userInputVar: { packer: {...}, terraform: {...} }
-      const userInputVarObj: any = { packer: {}, terraform: {} }
-      if (this.draft.variables && typeof this.draft.variables === 'object') {
-        // Detect multi-image Packer layout: such apps store Packer values nested
-        // under ``draft.variables.packer[<template_key>][<name>]`` rather than
-        // flat under ``draft.variables[<name>]``. Reading only flat would leave
-        // ``val`` undefined for those variables. Same detection as in
-        // ``NewDeploymentSummaryView`` (``detectMultiImagePackerLayout``); the
-        // value resolution below differs on purpose (packer-only, no default).
-        const draftVars = this.draft.variables as Record<string, any>
-        const packerContainer = draftVars.packer
-        const isMultiImagePackerLayout = detectMultiImagePackerLayout(draftVars)
-
-        const resolveValue = (def: AppVariable): any => {
-          if (def.source === 'packer' && isMultiImagePackerLayout) {
-            const tkey = def.template_key ?? 'default'
-            const fromNested = packerContainer?.[tkey]?.[def.name]
-            if (fromNested !== undefined) return fromNested
-          }
-          return draftVars[def.name]
-        }
-
-        // variableDefinitions carries whether each var is packer/terraform.
-        if (Array.isArray(this.draft.variableDefinitions)) {
-          for (const def of this.draft.variableDefinitions) {
-            // File-typed variables travel through ``files`` instead of
-            // ``userInputVar``. Skipping them here keeps the variables
-            // dict free of accidental ``undefined`` entries that would
-            // confuse the backend's terraform encoder.
-            if (def.osType === 'file') continue
-            const val = resolveValue(def)
-            // Skip empty / undefined values — they would otherwise be
-            // forwarded to Terraform as ``-var=name=null`` and bypass
-            // the variable's HCL ``default = ...``. Critical for any
-            // variable whose default is structurally non-trivial
-            // (e.g. ``map(object(...))``) — the user not touching it
-            // must mean "use the default", not "set to null". An
-            // empty string is also treated as "no input".
-            if (val === undefined || val === null) continue
-            if (typeof val === 'string' && val.trim() === '') continue
-            // Scoped variables (``varScope = team|user``) arrive as a
-            // map. An empty map means no slot was filled — same logic
-            // applies: ship nothing so the HCL default wins.
-            if (
-              typeof val === 'object'
-              && !Array.isArray(val)
-              && (def.varScope === 'team' || def.varScope === 'user')
-              && Object.keys(val).length === 0
-            ) {
-              continue
-            }
-            if (def.source === 'packer') {
-              // Multi-image: nest under the template key so the worker
-              // finds it at ``user_vars["packer"][template_key][name]``
-              // (siehe worker/app/tasks.py). Single-image/legacy stays
-              // flat at ``user_vars["packer"][name]``.
-              if (isMultiImagePackerLayout) {
-                const tkey = def.template_key ?? 'default'
-                ;(userInputVarObj.packer[tkey] ??= {})[def.name] = val
-              } else {
-                userInputVarObj.packer[def.name] = val
-              }
-            }
-            else if (def.source === 'terraform') userInputVarObj.terraform[def.name] = val
-          }
-        } else {
-          // Fallback: alles in terraform
-          userInputVarObj.terraform = { ...this.draft.variables }
-        }
-      }
-
-      // Drop empty file-variable entries — the wizard may have rendered
-      // a slot that the user never filled (optional file with default
-      // ``{}``). Sending it would still hit the backend's ``file_var_empty``
-      // guard with a confusing error.
-      const fileUploads: Record<string, Record<string, any>> = {}
-      if (this.draft.fileUploads) {
-        for (const [varName, slotMap] of Object.entries(this.draft.fileUploads)) {
-          const filledSlots: Record<string, any> = {}
-          for (const [slotKey, file] of Object.entries(slotMap || {})) {
-            if (file && file.content_b64) {
-              filledSlots[slotKey] = file
-            }
-          }
-          if (Object.keys(filledSlots).length > 0) {
-            fileUploads[varName] = filledSlots
-          }
-        }
-      }
-
-      const payload: any = {
-        name: this.draft.name,
-        appId: this.draft.appId,
-        releaseTag: finalVersion,
-        userInputVar: userInputVarObj,
-        teams
-      }
-      if (Object.keys(fileUploads).length > 0) {
-        payload.files = fileUploads
-      }
-
-      const response = await this.createDeployment(payload as DeploymentCreate)
-      return response
+      return this.createDeployment(buildDeploymentPayload(this.draft))
     }
   }
 })

@@ -2,8 +2,9 @@
 /**
  * Unified loading / empty / content wrapper for entity-list pages.
  *
- * Three states, one component:
- *   * ``isLoading`` → centered ``Loader2`` spinner + optional text
+ * Four states, one component:
+ *   * ``isLoading`` → centered spinner + optional text
+ *   * ``isError``   → centered error message + optional action
  *   * ``isEmpty``   → centered icon + empty message + optional action
  *   * otherwise     → the default slot (the entity list itself)
  *
@@ -13,13 +14,15 @@
  * shapes here gives the whole app a consistent feel without each
  * page rebuilding the same div-with-Tailwind block.
  *
- * Order of precedence: ``isLoading`` wins over ``isEmpty``. That
+ * Order of precedence: loading, then error, then empty.
+ * ``isLoading`` wins over ``isEmpty``. That
  * matters because while data is being fetched, ``items.length === 0``
  * is also true, and you don't want to flash the "empty" CTA before
  * the spinner has had a chance to appear.
  */
-import { Loader2 } from 'lucide-vue-next'
-import type { FunctionalComponent } from 'vue'
+import type { Component } from 'vue'
+import EmptyState from './EmptyState.vue'
+import Spinner from './Spinner.vue'
 
 defineProps<{
   /** Whether the page is currently fetching its first batch of data.
@@ -29,10 +32,14 @@ defineProps<{
    *  Callers usually express this as
    *  ``!store.isLoading && store.items.length === 0``. */
   isEmpty?: boolean
+  /** Whether loading failed; shows ``errorMessage`` and the
+   *  ``error-action`` slot (e.g. a link back to a list). */
+  isError?: boolean
+  errorMessage?: string
   /** Lucide icon component for the empty state (e.g. ``Inbox``,
    *  ``GraduationCap``). Falls back to no icon — the empty message
    *  alone is still rendered. */
-  icon?: FunctionalComponent
+  icon?: Component
   /** Visible text for the empty state. */
   emptyMessage?: string
   /** Optional text shown next to the loading spinner. Leave undefined
@@ -43,38 +50,21 @@ defineProps<{
 </script>
 
 <template>
-  <!-- Loading: spinner + optional one-line label. ``py-12`` matches
-       the empty-state vertical air so the page doesn't jump between
-       states. -->
-  <div v-if="isLoading" class="flex flex-col items-center justify-center py-12 gap-3 text-fg-muted">
-    <Loader2 :size="32" class="animate-spin text-icon" />
+  <div v-if="isLoading" class="flex flex-col items-center justify-center gap-3 py-12 text-fg-muted">
+    <Spinner />
     <p v-if="loadingMessage" class="text-sm">{{ loadingMessage }}</p>
   </div>
 
-  <!-- Empty: icon + message + optional CTA. Icon is muted so the
-       primary visual is still the message + action. -->
-  <div v-else-if="isEmpty" class="flex flex-col items-center justify-center py-12 text-center">
-    <component
-      v-if="icon"
-      :is="icon"
-      :size="64"
-      :stroke-width="1.5"
-      class="text-icon/60 mb-4"
-      aria-hidden="true"
-    />
-    <p v-if="emptyMessage" class="text-fg-muted mb-4">{{ emptyMessage }}</p>
-    <!--
-      Action slot — callers commonly drop a ``<BaseButton>`` here that
-      mirrors the page-header create button (so an empty page has a
-      visible call-to-action without the user having to find the
-      header button). Slot stays optional; many empty states are
-      view-only (e.g. approvals, when nothing is pending).
-    -->
-    <slot name="empty-action" />
-  </div>
+  <EmptyState v-else-if="isError" :title="errorMessage">
+    <slot name="error-action" />
+  </EmptyState>
 
-  <!-- Default slot: the actual list rendering. Callers wrap their
-       grid/table here. We don't impose a wrapper — keeps it flexible
-       (grid, table, accordion all work). -->
+  <!-- The action slot usually holds the same button as the page header, so an
+       empty page has a visible call to action; many empty states have none. -->
+  <EmptyState v-else-if="isEmpty" :icon="icon" :title="emptyMessage">
+    <slot name="empty-action" />
+  </EmptyState>
+
+  <!-- The list itself; no wrapper, so grids, tables and accordions all work. -->
   <slot v-else />
 </template>

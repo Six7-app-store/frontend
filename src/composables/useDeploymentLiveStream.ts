@@ -1,5 +1,5 @@
-import { computed, onBeforeUnmount, watch, type Ref } from 'vue'
-import { useDeploymentStream } from '@/composables/useDeploymentStream'
+import { computed, onBeforeUnmount, reactive, watch, type Ref } from 'vue'
+import { useDeploymentStream, type ConnectionState, type LogEntry } from '@/composables/useDeploymentStream'
 import {
   estimatePhaseIndexFromPercent,
   resolveCurrentPhaseIndex,
@@ -19,6 +19,21 @@ export interface DeploymentLiveStreamOptions {
    * finished task changed (tasks, resources, …).
    */
   onStreamFinished: () => void
+}
+
+/** What the live task card shows, see ``DeploymentActiveTaskCard``. */
+export interface LiveTaskView {
+  connectionState: ConnectionState
+  /** 1-based phase index from the stream or the DB seed; ``null`` before either. */
+  phaseIndex: number | null
+  phase: string | null
+  progress: number | null
+  stepCount: number
+  stepLabel: (idx: number) => string
+  /** 0-based index of the active stepper dot. */
+  activeStepIndex: number
+  logs: LogEntry[]
+  totalLogCount: number
 }
 
 /**
@@ -138,6 +153,20 @@ export function useDeploymentLiveStream(options: DeploymentLiveStreamOptions) {
     stopStream()
   })
 
+  // Everything the live card shows, as one object — the card takes it
+  // as a single prop instead of nine.
+  const live: LiveTaskView = reactive({
+    connectionState,
+    phaseIndex: currentPhaseIndex,
+    phase: currentPhase,
+    progress,
+    stepCount: phaseStepCount,
+    stepLabel: phaseStepLabel,
+    activeStepIndex,
+    logs: liveLogs,
+    totalLogCount,
+  })
+
   return {
     progress,
     currentPhase,
@@ -149,5 +178,6 @@ export function useDeploymentLiveStream(options: DeploymentLiveStreamOptions) {
     phaseStepCount,
     phaseStepLabel,
     activeStepIndex,
+    live,
   }
 }

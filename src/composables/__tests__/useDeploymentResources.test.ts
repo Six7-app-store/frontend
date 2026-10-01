@@ -4,7 +4,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 
-const deploymentApi = vi.hoisted(() => ({ listResources: vi.fn(), redeployResource: vi.fn() }))
+const deploymentApi = vi.hoisted(() => ({ listResources: vi.fn(), redeployResource: vi.fn(), getResourceDetail: vi.fn() }))
 vi.mock('@/api/deployment.api', () => ({ deploymentApi }))
 
 import { useDeploymentResources } from '@/composables/useDeploymentResources'
@@ -72,7 +72,7 @@ describe('useDeploymentResources', () => {
   it.each([
     [httpError(412), de.vm.resourcesErrors.missingCredentials],
     [httpError(502), de.vm.resourcesErrors.unreachable],
-    [httpError(500, undefined, 'Boom'), 'Boom'],
+    [httpError(500, undefined, 'Boom'), de.vm.resourcesErrors.generic],
     [httpError(500), de.vm.resourcesErrors.generic],
     [httpError(404), null],
   ])('maps load errors to messages (%#)', async (err, message) => {
@@ -126,7 +126,8 @@ describe('useDeploymentResources', () => {
     [httpError(422, { reason: 'non_redeployable_resource_type' }), 'Nur Compute-Instanzen können einzeln redeployed werden.'],
     [httpError(422, { reason: 'resource_not_in_state' }), 'Diese Resource ist nicht mehr im aktuellen State.'],
     [httpError(409, 'busy'), 'Es läuft bereits eine Lifecycle-Aktion für dieses Deployment.'],
-    [httpError(500, undefined, 'Boom'), 'Boom'],
+    [httpError(500, undefined, 'Boom'), 'Redeploy fehlgeschlagen.'],
+    [httpError(500, 'Kontingent erschöpft'), 'Kontingent erschöpft'],
     [httpError(500), 'Redeploy fehlgeschlagen.'],
   ])('reports redeploy errors and releases the address (%#)', async (err, message) => {
     deploymentApi.redeployResource.mockRejectedValue(err)
@@ -147,5 +148,63 @@ describe('useDeploymentResources', () => {
     await api.confirmRedeploy()
     expect(api.showRedeployModal.value).toBe(false)
     expect(deploymentApi.redeployResource).not.toHaveBeenCalled()
+  })
+  describe('VM drawer detail', () => {
+    beforeEach(() => {
+      deploymentApi.getResourceDetail.mockReset()
+    })
+
+    it('loads the detail of the VM that is opened', async () => {
+      deploymentApi.getResourceDetail.mockResolvedValue({ data: resource('vm', 'instance') })
+      const { api } = setup()
+
+      api.openVmDrawer('vm')
+      await flushPromises()
+
+      expect(deploymentApi.getResourceDetail).toHaveBeenCalledWith('dep-1', 'vm')
+      expect(api.drawerDetail.value?.address).toBe('vm')
+      expect(api.drawerLoading.value).toBe(false)
+      expect(api.drawerError.value).toBeNull()
+    })
+
+    it('shows a VM removed since the list was rendered as an inline error', async () => {
+      deploymentApi.getResourceDetail.mockRejectedValue(httpError(404))
+      const { api } = setup()
+
+      api.openVmDrawer('vm')
+      await flushPromises()
+
+      expect(api.drawerError.value).toBe(de.vm.drawer.errors.notFound)
+      expect(api.drawerDetail.value).toBeNull()
+    })
+
+    it('drops the answer for a VM that is no longer open', async () => {
+      let resolveFirst!: (v: unknown) => void
+      deploymentApi.getResourceDetail
+        .mockReturnValueOnce(new Promise((r) => { resolveFirst = r }))
+        .mockResolvedValueOnce({ data: resource('b', 'instance') })
+      const { api } = setup()
+
+      api.openVmDrawer('a')
+      await flushPromises()
+      api.openVmDrawer('b')
+      await flushPromises()
+      resolveFirst({ data: resource('a', 'instance') })
+      await flushPromises()
+
+      expect(api.drawerDetail.value?.address).toBe('b')
+    })
+
+    it('forgets the detail when the drawer closes', async () => {
+      deploymentApi.getResourceDetail.mockResolvedValue({ data: resource('vm', 'instance') })
+      const { api } = setup()
+      api.openVmDrawer('vm')
+      await flushPromises()
+
+      api.closeVmDrawer()
+      await flushPromises()
+
+      expect(api.drawerDetail.value).toBeNull()
+    })
   })
 })

@@ -3,8 +3,10 @@
  * MarkdownRenderer — sanitised markdown → HTML output.
  *
  * Two visual variants:
- *  - ``full``    — Tailwind's ``prose`` styling, used on the detail page
- *                  where the description owns its own column.
+ *  - ``full``    — Tailwind's ``prose`` styling (configured in
+ *                  tailwind.config.js), used on the detail page where the
+ *                  description owns its own column. Headings get anchor
+ *                  ids (``markdown.service``) for the page's table of contents.
  *  - ``compact`` — collapses headings to ``<strong>`` and code blocks to
  *                  inline code, used inside app cards / inline rows where
  *                  a giant H1 would explode the layout.
@@ -20,9 +22,9 @@
  * markdown like ``<img src=x onerror=alert(1)>`` is neutralised.
  */
 import { computed, ref, onMounted, watch, nextTick } from 'vue'
-import { marked, Renderer } from 'marked'
 import DOMPurify from 'dompurify'
 import { useI18n } from 'vue-i18n'
+import { renderMarkdown } from '@/services/markdown.service'
 
 const props = withDefaults(defineProps<{
   /** Raw markdown source. ``null`` / empty renders nothing. */
@@ -61,37 +63,10 @@ watch(() => props.source, () => {
   nextTick(checkTruncation)
 })
 
-// ``compact`` neutralises block-level constructs that would blow up an
-// inline / card layout: headings render as bold, code blocks as inline
-// code. In ``marked`` v18 the heading callback only receives
-// ``tokens``/``depth`` (no ``text``), so we read the source off the
-// token slice ourselves.
-const buildRenderer = (): Renderer => {
-  const r = new Renderer()
-  if (props.variant === 'compact') {
-    r.heading = ({ tokens }) => {
-      const text = tokens.map(tok => ('text' in tok ? tok.text : tok.raw)).join('')
-      return `<strong>${escapeHtml(text)}</strong> `
-    }
-    r.code = ({ text }) => `<code>${escapeHtml(text)}</code> `
-    r.hr = () => ' · '
-  }
-  return r
-}
-
-const escapeHtml = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-
+// Rendering is a pure function (markdown.service); only sanitising happens here.
 const html = computed(() => {
-  const raw = (props.source ?? '').trim()
-  if (!raw) return ''
-  const renderer = buildRenderer()
-  const parsed = marked.parse(raw, {
-    gfm: true,
-    breaks: true,
-    renderer,
-    async: false,
-  }) as string
+  const parsed = renderMarkdown(props.source, props.variant)
+  if (!parsed) return ''
   return DOMPurify.sanitize(parsed, {
     USE_PROFILES: { html: true },
     ADD_ATTR: ['target', 'rel'],
@@ -101,13 +76,9 @@ const html = computed(() => {
 const contentClass = computed(() => {
   const base: string[] = []
   if (props.variant === 'full') {
-    base.push('prose prose-sm md:prose-base max-w-none')
-    base.push('prose-a:no-underline hover:prose-a:underline')
-    base.push('prose-code:bg-line/5 prose-code:px-1 prose-code:rounded')
+    base.push('prose max-w-none')
   } else {
-    base.push('text-fg-muted leading-relaxed break-words')
-    base.push('[&_a]:text-accent-fg [&_a]:underline')
-    base.push('[&_code]:bg-line/5 [&_code]:px-1 [&_code]:rounded [&_code]:text-xs')
+    base.push('md-compact text-fg-muted leading-relaxed break-words')
     base.push('[&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5')
     base.push('[&_p]:my-0 [&_strong]:font-semibold')
   }
@@ -149,7 +120,7 @@ const onToggle = () => {
     <button
       v-if="showToggle"
       type="button"
-      class="mt-1 text-xs text-accent-fg hover:underline "
+      class="mt-1 text-xs text-accent-fg hover:underline"
       @click.stop="onToggle"
     >
       {{ expanded ? t('markdownRenderer.less') : t('markdownRenderer.more') }}

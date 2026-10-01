@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { ROUTE_NAMES } from '@/router/route-names'
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { GraduationCap, Trash2, Plus, Users } from 'lucide-vue-next'
+import { GraduationCap, Trash2, Plus } from 'lucide-vue-next'
 import { useCourseStore } from '@/stores/course.store'
 import { useToast } from '@/composables/useToast'
 import { getErrorDetailMessage } from '@/utils/http-error'
 import { useRole } from '@/composables/useRole'
-import { courseApi } from '@/api/course.api'
-import { useI18n } from 'vue-i18n' // <-- i18n importiert
-import Card from '@/components/ui/Card.vue'
+import { useCourseMemberCounts } from '@/composables/useCourseMemberCounts'
+import { useI18n } from 'vue-i18n'
+import ActionMenu from '@/components/ui/ActionMenu.vue'
+import DataTable, { type DataTableColumn } from '@/components/ui/DataTable.vue'
+import type { MenuItem } from '@/components/ui/menu'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import Modal from '@/components/ui/Modal.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
 
@@ -24,7 +27,7 @@ const toast = useToast()
 // ``can.createCourse`` / ``can.deleteCourse`` semantics.
 const { isStaff } = useRole()
 const router = useRouter()
-const { t } = useI18n() // <-- i18n initialisiert
+const { t } = useI18n()
 
 const showModal = ref(false)
 const formData = ref({ name: '' })
@@ -32,22 +35,7 @@ const formData = ref({ name: '' })
 const showDeleteModal = ref(false)
 const courseToDelete = ref<{ courseId: string; name: string } | null>(null)
 const isDeleting = ref(false)
-const memberCounts = ref<Record<string, number>>({})
-
-const fetchMemberCounts = async () => {
-  const entries = await Promise.all(
-      courseStore.courses.map(async (c) => {
-        try {
-          const { data } = await courseApi.listMembers(c.courseId)
-          return [c.courseId, data.length] as const
-        } catch {
-          // An unloadable member list only affects the counter on the card.
-          return [c.courseId, 0] as const
-        }
-      })
-  )
-  memberCounts.value = Object.fromEntries(entries)
-}
+const { counts: memberCounts, load: loadMemberCounts } = useCourseMemberCounts()
 
 onMounted(async () => {
   try {
@@ -59,7 +47,7 @@ onMounted(async () => {
       return
     }
     if (isStaff.value) {
-      await fetchMemberCounts()
+      await loadMemberCounts(courseStore.courses.map((c) => c.courseId))
     }
   } catch {
     toast.error(t('CoursesView.toasts.loadError'))
@@ -114,21 +102,28 @@ const confirmDelete = async () => {
   }
 }
 
-const goToDetail = (courseId: string) => {
-  router.push({ name: ROUTE_NAMES.coursesDetail, params: { id: courseId } })
-}
+type Course = (typeof courseStore.courses)[number]
+
+// Member counts are only loaded for staff, so only they get the column.
+const columns = computed<DataTableColumn[]>(() => [
+  { id: 'name', label: t('CoursesView.columns.course') },
+  ...(isStaff.value ? [{ id: 'members', label: t('CoursesView.columns.members'), class: 'w-[200px]' }] : []),
+  ...(isStaff.value ? [{ id: 'actions', label: t('CoursesView.columns.actions'), class: 'w-16', align: 'right' as const, hideLabel: true, interactive: true }] : []),
+])
+
+const memberLabel = (n: number) => `${n} ${n === 1 ? t('CoursesView.memberSingular') : t('CoursesView.memberPlural')}`
+
+const rowMenu = computed<MenuItem[]>(() => [
+  { id: 'delete', label: t('CoursesView.deleteTitle'), icon: Trash2, danger: true },
+])
 </script>
 
 <template>
-  <div class="p-6">
+  <div class="max-w-page">
     <PageHeader :title="$t('CoursesView.title')" :subtitle="$t('CoursesView.subtitle')">
       <template #actions>
-        <BaseButton
-            v-if="isStaff"
-            @click="openCreateModal"
-            class="flex items-center gap-2"
-        >
-          <Plus :size="16" />
+        <BaseButton v-if="isStaff" @click="openCreateModal">
+          <Plus :size="16" :stroke-width="2.2" aria-hidden="true" />
           {{ $t('CoursesView.newCourse') }}
         </BaseButton>
       </template>
@@ -147,55 +142,28 @@ const goToDetail = (courseId: string) => {
         </BaseButton>
       </template>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card
-            v-for="course in courseStore.courses"
-            :key="course.courseId"
-            class="flex flex-col group h-full relative cursor-pointer hover:border-strong"
-            @click="goToDetail(course.courseId)"
+      <div class="surface-panel overflow-hidden">
+        <DataTable
+          :columns="columns"
+          :rows="courseStore.courses"
+          :row-key="(c: Course) => c.courseId"
+          :row-to="(c: Course) => ({ name: ROUTE_NAMES.coursesDetail, params: { id: c.courseId } })"
+          :caption="$t('CoursesView.title')"
         >
-          <!-- Delete action (top-right) -->
-          <button
-              v-if="isStaff"
-              @click.stop="requestDelete(course)"
-              class="absolute top-3 right-3 p-2 hover:bg-danger-dot/10 rounded-lg transition z-10"
-              :title="$t('CoursesView.deleteTitle')"
-          >
-            <Trash2 :size="16" class="text-danger" />
-          </button>
-
-          <div class="flex items-center gap-4 mb-4">
-            <div class="bg-line/[.04] p-3 rounded-lg text-fg-muted group-hover:text-accent-fg transition-colors flex items-center justify-center w-[56px] h-[56px] flex-shrink-0 border border-subtle">
-              <GraduationCap :size="32" />
-            </div>
-            <h3 class="font-bold text-xl text-fg leading-tight pr-10">
-              {{ course.name }}
-            </h3>
-          </div>
-
-          <p class="text-fg-muted text-sm mb-6 flex-grow leading-relaxed text-left flex items-center gap-2">
-            <template v-if="isStaff">
-              <Users :size="14" class="text-icon" />
-              <span>
-                {{ memberCounts[course.courseId] ?? 0 }}
-                {{ (memberCounts[course.courseId] ?? 0) === 1 ? $t('CoursesView.memberSingular') : $t('CoursesView.memberPlural') }}
-              </span>
-            </template>
-            <span v-else class="text-fg-muted italic">
-              {{ $t('CoursesView.openToView') }}
-            </span>
-          </p>
-
-          <div class="mt-auto">
-            <BaseButton
-                variant="green"
-                class="w-full flex items-center justify-center gap-2"
-                @click.stop="goToDetail(course.courseId)"
-            >
-              {{ $t('CoursesView.openDetails') }}
-            </BaseButton>
-          </div>
-        </Card>
+          <template #cell-name="{ row }">
+            <span class="font-semibold text-heading" data-testid="course-name">{{ row.name }}</span>
+          </template>
+          <template #cell-members="{ row }">
+            <span class="tabular-nums text-fg-muted">{{ memberLabel(memberCounts[row.courseId] ?? 0) }}</span>
+          </template>
+          <template #cell-actions="{ row }">
+            <ActionMenu
+              :items="rowMenu"
+              :label="$t('CoursesView.actionsFor', { name: row.name })"
+              @select="(id) => id === 'delete' && requestDelete(row)"
+            />
+          </template>
+        </DataTable>
       </div>
     </EntityListState>
 
@@ -230,32 +198,23 @@ const goToDetail = (courseId: string) => {
       </template>
     </Modal>
 
-    <Modal :show="showDeleteModal" @close="closeDeleteModal">
-      <template #header>
-        <h2 class="text-xl font-semibold text-danger">{{ $t('CoursesView.deleteModal.title') }}</h2>
-      </template>
-
-      <template #body>
-        <div class="space-y-3">
-          <i18n-t keypath="CoursesView.deleteModal.confirmPrompt" tag="p" class="text-fg">
-            <template #name><strong>{{ courseToDelete?.name }}</strong></template>
-          </i18n-t>
-          <p class="text-sm text-fg-muted">
-            {{ $t('CoursesView.deleteModal.warning') }}
-          </p>
-        </div>
-      </template>
-
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <BaseButton variant="ghost" @click="closeDeleteModal" :disabled="isDeleting">
-            {{ $t('CoursesView.deleteModal.cancel') }}
-          </BaseButton>
-          <BaseButton variant="red" @click="confirmDelete" :disabled="isDeleting">
-            {{ isDeleting ? $t('CoursesView.deleteModal.deleting') : $t('CoursesView.deleteModal.delete') }}
-          </BaseButton>
-        </div>
-      </template>
-    </Modal>
+    <ConfirmModal
+      :show="showDeleteModal"
+      :busy="isDeleting"
+      :title="$t('CoursesView.deleteModal.title')"
+      :confirm-label="$t('CoursesView.deleteModal.delete')"
+      :busy-label="$t('CoursesView.deleteModal.deleting')"
+      @close="closeDeleteModal"
+      @confirm="confirmDelete"
+    >
+      <div class="space-y-3">
+        <i18n-t keypath="CoursesView.deleteModal.confirmPrompt" tag="p" class="text-fg">
+          <template #name><strong>{{ courseToDelete?.name }}</strong></template>
+        </i18n-t>
+        <p class="text-sm text-fg-muted">
+          {{ $t('CoursesView.deleteModal.warning') }}
+        </p>
+      </div>
+    </ConfirmModal>
   </div>
 </template>

@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   XCircle,
   CircleHelp,
-  Cloud,
   KeyRound,
   Trash2,
   RefreshCw,
@@ -16,11 +15,22 @@ import {
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useToast } from '@/composables/useToast'
 import CredentialMissingBanner from '@/components/CredentialMissingBanner.vue'
+import TabBar from '@/components/ui/TabBar.vue'
+import PageHeader from '@/components/ui/PageHeader.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 import { parseCloudsYaml, CloudsYamlError } from '@/utils/clouds-yaml'
-import type {
-  OpenStackAuthType,
-  OpenStackCredentialUpsert,
-} from '@/types/openstack-credential'
+import { isInAppPath } from '@/utils/safe-redirect'
+import { formatDateTime } from '@/utils/format'
+import {
+  buildCredentialPayload,
+  emptyAppForm,
+  emptyPasswordForm,
+  formFromCloudsYaml,
+  formFromStatus,
+  type CredentialTab,
+  type PasswordCredentialForm,
+} from '@/services/openstack-credential-form.service'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,92 +38,42 @@ const toast = useToast()
 const credStore = useOpenStackCredentialsStore()
 const { t } = useI18n()
 
-type Tab = 'app' | 'password'
-const activeTab = ref<Tab>('app')
+const activeTab = ref<CredentialTab>('app')
+const formApp = reactive(emptyAppForm())
+const formPwd = reactive(emptyPasswordForm())
+const showDeleteModal = ref(false)
 
-const formApp = reactive({
-  auth_url: '',
-  region_name: '',
-  identifier: '',
-  secret: '',
-})
+/** Switches to ``tab`` and writes ``fields`` into its form. */
+const fillForm = ({ tab, fields }: { tab: CredentialTab; fields: Partial<PasswordCredentialForm> }) => {
+  activeTab.value = tab
+  Object.assign(tab === 'app' ? formApp : formPwd, fields)
+}
 
-const formPwd = reactive({
-  auth_url: '',
-  region_name: '',
-  identifier: '',
-  secret: '',
-  project_id: '',
-  project_name: '',
-  user_domain_name: 'Default',
-  project_domain_name: '',
-})
+// Credentials in use by an active deployment can't be changed. Warns and
+// returns true when that is the case.
+const refuseWhileLocked = () => {
+  if (!credStore.isLocked) return false
+  toast.warning(t('SettingsOpenStackView.errors.lockedActiveDeployments', { count: credStore.activeDeployments }))
+  return true
+}
 
 const isDragging = ref(false)
 const yamlInputRef = ref<HTMLInputElement | null>(null)
 
 const lastValidated = computed(() => {
   if (!credStore.status?.last_validated_at) return null
-  return new Date(credStore.status.last_validated_at).toLocaleString('de-DE')
+  return formatDateTime(credStore.status.last_validated_at)
 })
 
 onMounted(async () => {
   await credStore.fetch()
-  // Pre-fill known non-secret fields if creds exist.
-  if (credStore.status?.has_credential) {
-    const c = credStore.status
-    activeTab.value = c.auth_type === 'v3applicationcredential' ? 'app' : 'password'
-    if (activeTab.value === 'app') {
-      formApp.auth_url = c.auth_url ?? ''
-      formApp.region_name = c.region_name ?? ''
-    } else {
-      formPwd.auth_url = c.auth_url ?? ''
-      formPwd.region_name = c.region_name ?? ''
-      formPwd.project_id = c.project_id ?? ''
-      formPwd.project_name = c.project_name ?? ''
-      formPwd.user_domain_name = c.user_domain_name ?? 'Default'
-      formPwd.project_domain_name = c.project_domain_name ?? ''
-    }
-  }
+  // Pre-fill the known non-secret fields if credentials exist.
+  if (credStore.status?.has_credential) fillForm(formFromStatus(credStore.status))
 })
 
-const buildPayload = (): OpenStackCredentialUpsert | null => {
-  if (activeTab.value === 'app') {
-    if (!formApp.auth_url || !formApp.identifier || !formApp.secret) return null
-    const payload: OpenStackCredentialUpsert = {
-      auth_type: 'v3applicationcredential' as OpenStackAuthType,
-      auth_url: formApp.auth_url,
-      region_name: formApp.region_name || null,
-      interface: 'public',
-      identity_api_version: '3',
-      identifier: formApp.identifier,
-      secret: formApp.secret,
-    }
-    return payload
-  }
-  if (!formPwd.auth_url || !formPwd.identifier || !formPwd.secret || !formPwd.user_domain_name) return null
-  if (!formPwd.project_id && !formPwd.project_name) return null
-  return {
-    auth_type: 'password' as OpenStackAuthType,
-    auth_url: formPwd.auth_url,
-    region_name: formPwd.region_name || null,
-    interface: 'public',
-    identity_api_version: '3',
-    identifier: formPwd.identifier,
-    secret: formPwd.secret,
-    project_id: formPwd.project_id || null,
-    project_name: formPwd.project_name || null,
-    user_domain_name: formPwd.user_domain_name,
-    project_domain_name: formPwd.project_domain_name || null,
-  }
-}
-
 const handleSave = async () => {
-  if (credStore.isLocked) {
-    toast.warning(t('SettingsOpenStackView.errors.lockedActiveDeployments', { count: credStore.activeDeployments }))
-    return
-  }
-  const payload = buildPayload()
+  if (refuseWhileLocked()) return
+  const payload = buildCredentialPayload(activeTab.value, formApp, formPwd)
   if (!payload) {
     toast.error(t('SettingsOpenStackView.errors.missingFields'))
     return
@@ -151,27 +111,26 @@ const handleTest = async () => {
   }
 }
 
-const handleDelete = async () => {
-  if (credStore.isLocked) {
-    toast.warning(t('SettingsOpenStackView.errors.lockedActiveDeployments', { count: credStore.activeDeployments }))
-    return
-  }
-  if (!confirm(t('SettingsOpenStackView.confirmDelete'))) return
+const handleDelete = () => {
+  if (refuseWhileLocked()) return
+  showDeleteModal.value = true
+}
+
+const confirmDelete = async () => {
   try {
     await credStore.remove()
+    showDeleteModal.value = false
     toast.success(t('SettingsOpenStackView.status.deleteSuccess'))
     formApp.secret = ''
     formPwd.secret = ''
   } catch {
+    showDeleteModal.value = false
     toast.error(credStore.error || t('SettingsOpenStackView.errors.deleteFailed'))
   }
 }
 
 const handleYamlFile = async (file: File) => {
-  if (credStore.isLocked) {
-    toast.warning(t('SettingsOpenStackView.errors.lockedActiveDeployments', { count: credStore.activeDeployments }))
-    return
-  }
+  if (refuseWhileLocked()) return
   let text: string
   try {
     text = await file.text()
@@ -195,24 +154,7 @@ const handleYamlFile = async (file: File) => {
     return
   }
 
-  if (parsed.auth_type === 'v3applicationcredential') {
-    activeTab.value = 'app'
-    formApp.auth_url = parsed.auth_url
-    formApp.region_name = parsed.region_name
-    formApp.identifier = parsed.identifier
-    formApp.secret = parsed.secret
-  } else {
-    activeTab.value = 'password'
-    formPwd.auth_url = parsed.auth_url
-    formPwd.region_name = parsed.region_name
-    formPwd.identifier = parsed.identifier
-    formPwd.secret = parsed.secret
-    formPwd.project_id = parsed.project_id
-    formPwd.project_name = parsed.project_name
-    formPwd.user_domain_name = parsed.user_domain_name || 'Default'
-    formPwd.project_domain_name = parsed.project_domain_name
-  }
-
+  fillForm(formFromCloudsYaml(parsed))
   toast.success(t('SettingsOpenStackView.cloudsYamlImported'))
 }
 
@@ -234,13 +176,11 @@ const onFilePick = (event: Event) => {
   input.value = ''
 }
 
-// Only follow ``next`` when it is an in-app path of a known route. Absolute or
-// protocol-relative URLs (``https://…``, ``//host``, ``/\host``) and unknown
-// paths are ignored, so the user simply stays on this page. Unknown paths end
-// up on the catch-all 404 route, so that one doesn't count as known either.
+// Only follow ``next`` when it is an in-app path of a known route; otherwise
+// the user simply stays on this page. Unknown paths end up on the catch-all
+// 404 route, so that one doesn't count as known either.
 const internalNextPath = (next: unknown): string | null => {
-  if (typeof next !== 'string' || !next.startsWith('/')) return null
-  if (next.startsWith('//') || next.startsWith('/\\')) return null
+  if (!isInAppPath(next)) return null
   const resolved = router.resolve(next)
   if (resolved.matched.length === 0 || resolved.name === ROUTE_NAMES.notFound) return null
   return next
@@ -253,17 +193,8 @@ const maybeReturnToWizard = () => {
 </script>
 
 <template>
-  <div class="p-6 max-w-4xl mx-auto">
-    <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-fg mb-1 flex items-center gap-2">
-        <Cloud :size="28" class="text-icon" />
-        {{ t('SettingsOpenStackView.title') }}
-      </h1>
-      <p class="text-fg-muted">
-        {{ t('SettingsOpenStackView.intro') }}
-      </p>
-    </div>
+  <div class="max-w-detail">
+    <PageHeader :title="t('SettingsOpenStackView.title')" :subtitle="t('SettingsOpenStackView.intro')" />
 
     <!-- Lock banner -->
     <CredentialMissingBanner
@@ -273,11 +204,11 @@ const maybeReturnToWizard = () => {
       :message="t('SettingsOpenStackView.lockBanner.message', { count: credStore.activeDeployments })"
       :cta="t('SettingsOpenStackView.lockBanner.cta')"
       :ctaTo="{ name: ROUTE_NAMES.deploymentsList }"
-      class="mb-6"
+      class="mb-section"
     />
 
     <!-- Status card -->
-    <div class="bg-panel rounded-xl border p-5 mb-6">
+    <div class="surface-panel mb-section p-panel">
       <div v-if="credStore.loading" class="text-fg-muted text-sm">
         {{ t('SettingsOpenStackView.status.loading') }}
       </div>
@@ -328,9 +259,9 @@ const maybeReturnToWizard = () => {
 
     <!-- clouds.yaml drop zone -->
     <div
-      class="border-2 border-dashed rounded-xl p-6 mb-6 transition-colors text-center"
+      class="drop-zone mb-section p-6 text-center"
       :class="[
-        isDragging ? 'border-accent bg-accent/[.05]' : 'border-strong bg-panel',
+        isDragging ? 'drop-zone-active' : '',
         credStore.isLocked ? 'opacity-50 pointer-events-none' : ''
       ]"
       @dragenter.prevent.stop="!credStore.isLocked && (isDragging = true)"
@@ -343,7 +274,7 @@ const maybeReturnToWizard = () => {
       <div class="text-sm text-fg-muted mb-3">
         {{ t('SettingsOpenStackView.dropZone.orPrefix') }}
         <button
-          class="text-accent-fg underline disabled:opacity-50 disabled:cursor-not-allowed"
+          class="link disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="credStore.isLocked"
           @click="yamlInputRef?.click()"
         >{{ t('SettingsOpenStackView.dropZone.pickFile') }}</button>
@@ -360,24 +291,19 @@ const maybeReturnToWizard = () => {
     </div>
 
     <!-- Tabs -->
-    <div class="bg-panel rounded-xl border">
-      <div class="flex border-b">
-        <button
-          class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-          :class="activeTab === 'app' ? 'text-fg border-b-2 border-accent' : 'text-fg-muted hover:text-fg'"
-          @click="activeTab = 'app'"
-        >
-          {{ t('SettingsOpenStackView.tabs.app') }}
-          <span class="ml-2 text-xs text-success">{{ t('SettingsOpenStackView.tabs.appRecommended') }}</span>
-        </button>
-        <button
-          class="flex-1 px-4 py-3 text-sm font-medium transition-colors"
-          :class="activeTab === 'password' ? 'text-fg border-b-2 border-accent' : 'text-fg-muted hover:text-fg'"
-          @click="activeTab = 'password'"
-        >
-          {{ t('SettingsOpenStackView.tabs.password') }}
-        </button>
-      </div>
+    <div class="surface-panel">
+      <TabBar
+        v-model="activeTab"
+        :tabs="[
+          { key: 'app', label: t('SettingsOpenStackView.tabs.app') },
+          { key: 'password', label: t('SettingsOpenStackView.tabs.password') },
+        ]"
+        fill
+      >
+        <template #extra="{ tab }">
+          <span v-if="tab.key === 'app'" class="text-xs text-success">{{ t('SettingsOpenStackView.tabs.appRecommended') }}</span>
+        </template>
+      </TabBar>
 
       <!-- Application Credential -->
       <div v-if="activeTab === 'app'" class="p-6 space-y-4">
@@ -464,16 +390,28 @@ const maybeReturnToWizard = () => {
       </div>
 
       <div class="px-6 pb-6 flex justify-end">
-        <button
-          class="btn-primary px-4 py-2 rounded-control font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        <BaseButton
+          size="sm"
           :disabled="credStore.loading || credStore.isLocked"
           :title="credStore.isLocked ? t('SettingsOpenStackView.tooltips.lockedActiveDeployments') : ''"
           @click="handleSave"
         >
           <KeyRound :size="16" />
           {{ t('SettingsOpenStackView.save') }}
-        </button>
+        </BaseButton>
       </div>
     </div>
+
+    <ConfirmModal
+      :show="showDeleteModal"
+      :busy="credStore.loading"
+      :title="t('SettingsOpenStackView.confirmDeleteTitle')"
+      :confirm-label="t('SettingsOpenStackView.status.delete')"
+      :cancel-label="t('action.cancel')"
+      @close="showDeleteModal = false"
+      @confirm="confirmDelete"
+    >
+      <p class="text-fg">{{ t('SettingsOpenStackView.confirmDelete') }}</p>
+    </ConfirmModal>
   </div>
 </template>

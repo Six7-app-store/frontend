@@ -99,9 +99,11 @@ vi.mock('@/composables/useDeploymentStream', () => ({
 const t = (key: string, named?: Record<string, unknown>): string => i18n.global.t(key, named ?? {})
 let i18n = createI18n({ legacy: false, locale: 'de', messages: { de } })
 
+// Default: the teacher who owns the deployment below (``owner-1``), i.e.
+// someone who may both inspect and operate it.
 const makeUser = (overrides: Partial<User> = {}): User =>
   ({
-    userId: 'staff-1',
+    userId: 'owner-1',
     username: 'teacher',
     email: 'teacher@example.com',
     role: 'teacher',
@@ -312,8 +314,8 @@ const toasts = () => useToastStore(pinia).toasts.map(({ type, message }) => ({ t
 
 const memberRow = (wrapper: VueWrapper, username: string) =>
   wrapper
-    .findAll('div.flex.flex-col.lg\\:flex-row')
-    .find((row) => row.find('.font-medium.text-fg.truncate').text() === username)!
+    .findAll('[data-testid="member-row"]')
+    .find((row) => row.find('[data-testid="member-username"]').text() === username)!
 
 enableAutoUnmount(afterEach)
 
@@ -372,7 +374,7 @@ describe('DeploymentDetailView — Laden', () => {
 
     expect(wrapper.find('h1').exists()).toBe(false)
     expect(wrapper.find('.animate-spin').exists()).toBe(true)
-    expect(wrapper.find('div.flex.items-center.justify-center.py-20').exists()).toBe(true)
+    expect(wrapper.text()).not.toContain(t('DeploymentDetailView.loadError'))
   })
 
   it.each([
@@ -429,19 +431,18 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     const text = wrapper.text()
 
     expect(wrapper.find('h1').text()).toBe('Data Lab')
-    expect(text).toContain(t('DeploymentDetailView.detailsSubtitle'))
     expect(text).toContain(t('DeploymentsView.deploymentSuccessful'))
-    expect(wrapper.findComponent(RouterLinkStub).props('to')).toEqual({ name: 'deployments.list' })
 
-    expect(text).toContain('Deployment Info')
+    expect(text).toContain(t('DeploymentDetailView.deploymentInfo'))
     expect(text).toContain('v1.2.3')
     expect(text).toContain('08.06.2026, 12:00:00')
     expect(text).toContain('Notebook Stack')
     expect(wrapper.find('strong').text()).toBe('deployment')
     expect(wrapper.find('a[href="https://git.example/app.git"]').exists()).toBe(true)
-    expect(text).toContain('OW')
+    // The initials avatar is gone in v2; the owner is named by username and e-mail.
     expect(text).toContain('owner@example.com')
-    expect(text).toContain('teacher')
+    // The role is shown with its translated label.
+    expect(text).toContain('Lehrender')
   })
 
   it('zeigt Platzhalter ohne App-Beschreibung, ohne App und ohne User', async () => {
@@ -463,7 +464,7 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
 
   it('zeigt Gruppen mit Drill-down und Fallback-Namen', async () => {
     const wrapper = await mountLoaded()
-    const groupCards = wrapper.findAll('div.cursor-pointer').filter((c) => c.text().includes('Studenten') || c.text().includes('Student'))
+    const groupCards = wrapper.findAll('[data-testid="group-card"]')
 
     expect(groupCards.map((c) => c.text())).toEqual([
       '1Group A2 Studenten',
@@ -484,8 +485,7 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
 
   it('zeigt bereinigte Deployment-Variablen', async () => {
     const wrapper = await mountLoaded()
-    const cards = wrapper.findAll('div.rounded-lg.p-4.border.border-subtle')
-      .filter((c) => c.find('.font-mono').exists())
+    const cards = wrapper.findAll('[data-testid="variable-card"]')
       .map((c) => c.text())
 
     expect(cards).toEqual(['imageubuntu:22.04', 'flavorm1.small', 'empty-'])
@@ -534,8 +534,8 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     expect(memberRow(wrapper, 'annabelle').text()).not.toContain('SSH:')
     expect(memberRow(wrapper, 'annabelle').text()).not.toContain('PW:')
 
-    expect(wrapper.text()).toContain('2 members')
-    expect(wrapper.text()).toContain('4 members')
+    expect(wrapper.text()).toContain('2 Mitglieder')
+    expect(wrapper.text()).toContain('4 Mitglieder')
   })
 
   it('schaltet die Passwort-Sichtbarkeit pro Account um', async () => {
@@ -619,20 +619,20 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
   it.each([
     [httpError(412, 'x'), de.vm.resourcesErrors.missingCredentials],
     [httpError(502, 'x'), de.vm.resourcesErrors.unreachable],
-    [httpError(500, 'x', 'Request failed with status code 500'), 'Request failed with status code 500'],
+    [httpError(500, 'x', 'Request failed with status code 500'), de.vm.resourcesErrors.generic],
     [httpError(500, 'x', ''), de.vm.resourcesErrors.generic],
   ])('zeigt den passenden Infrastruktur-Fehlertext (%#)', async (err, expected) => {
     h.deploymentApi.listResources.mockRejectedValue(err)
     const wrapper = await mountLoaded()
 
-    expect(wrapper.find('.text-danger.border-danger-dot\\/30 p').text()).toBe(expected)
+    expect(wrapper.find('[data-testid="resources-error"]').text()).toBe(expected)
   })
 
   it('leert die Ressourcen bei 404 ohne Fehlermeldung', async () => {
     h.deploymentApi.listResources.mockRejectedValue(httpError(404, 'gone'))
     const wrapper = await mountLoaded()
 
-    expect(wrapper.find('.text-danger.border-danger-dot\\/30').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="resources-error"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Keine VMs im aktuellen Terraform-State.')
   })
 
@@ -657,15 +657,15 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
 
 describe('DeploymentDetailView — Tasks & Logs', () => {
   const taskRows = (wrapper: VueWrapper) =>
-    wrapper.findAll('div.cursor-pointer').filter((row) => row.text().includes('Created:'))
+    wrapper.findAll('[data-testid="task-row"]')
 
   it('listet die Task-Historie neueste zuerst', async () => {
     const wrapper = await mountLoaded()
 
     expect(wrapper.text()).toMatch(/Tasks & Logs\s*2/)
     expect(taskRows(wrapper).map((r) => r.text())).toEqual([
-      'deploysuccess Created: 08.06.2026, 12:09:00',
-      'deployfailed Created: 01.06.2026, 08:00:00',
+      'deployerfolgreichErstellt am: 08.06.2026, 12:09:00',
+      'deployfehlgeschlagenErstellt am: 01.06.2026, 08:00:00',
     ])
   })
 
@@ -696,7 +696,7 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     await wrapper.findAll(`button[title="${t('DeploymentDetailView.copyToClipboard')}"]`)[0]!.trigger('click')
     await settle()
     expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(JSON.stringify(makeTask().logs, null, 2))
-    expect(buttonWithText(wrapper, t('DeploymentDetailView.copiedShort'))).toBeTruthy()
+    expect(buttonWithText(wrapper, t('common.copied'))).toBeTruthy()
 
     // Both copy buttons share the title; the logs one now reads "copied", so
     // the remaining match is the terraform-state button.
@@ -863,6 +863,26 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
   const setStatus = (status: DeploymentWithRelations['status']) =>
     h.deploymentApi.getById.mockResolvedValue({ data: makeDeployment({ status }) })
 
+  // The backend lets a teacher inspect a deployment of their course but
+  // only its owner or an admin operate it (can_operate_deployment).
+  it('zeigt einer fremden Lehrkraft Tasks, aber keine Lifecycle-Buttons', async () => {
+    authState.user = makeUser({ userId: 'staff-1' })
+    const wrapper = await mountLoaded()
+
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))).toBeUndefined()
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentPause'))).toBeUndefined()
+    expect(buttonWithText(wrapper, de.vm.actions.redeploy)).toBeUndefined()
+    expect(h.taskApi.listByDeployment).toHaveBeenCalled()
+  })
+
+  it('zeigt einem Admin die Lifecycle-Buttons auch für fremde Deployments', async () => {
+    authState.user = makeUser({ userId: 'admin-1', role: 'admin' })
+    const wrapper = await mountLoaded()
+
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))).toBeDefined()
+    expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentPause'))).toBeDefined()
+  })
+
   it.each([
     ['success', { deleteEnabled: true, action: 'deploymentPause' }],
     ['paused', { deleteEnabled: true, action: 'deploymentResume' }],
@@ -879,9 +899,10 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
 
     const del = buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))!
     expect(del.attributes('disabled') === undefined).toBe(expected.deleteEnabled)
+    // The reason only accompanies a disabled button.
     expect(del.attributes('title')).toBe(
       expected.deleteEnabled
-        ? ''
+        ? undefined
         : 'Delete available when status is success, failed, cancelled, paused, pause_failed, resume_failed',
     )
 
@@ -894,7 +915,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
   it('zeigt den Status-Badge-Text je Status', async () => {
     setStatus('paused')
     const wrapper = await mountLoaded()
-    expect(wrapper.find('span.capitalize.rounded-lg').text()).toBe(t('DeploymentsView.deploymentPaused'))
+    expect(wrapper.get('.status-dot').element.parentElement?.textContent?.trim()).toBe(t('DeploymentsView.deploymentPaused'))
   })
 
   it('löscht direkt bei 204: Erfolgstoast und Navigation zur Liste', async () => {
@@ -930,7 +951,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
     expect(wrapper.find('.fixed').exists()).toBe(false)
   })
 
-  it('zeigt beim Löschfehler den extrahierten Grund', async () => {
+  it('zeigt beim Löschfehler den übersetzten Grund', async () => {
     h.deploymentApi.delete.mockRejectedValue(httpError(409, { reason: 'deployment_busy' }))
     const wrapper = await mountLoaded()
 
@@ -939,7 +960,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
     await settle()
 
     expect(toasts()).toEqual([
-      { type: 'error', message: `${t('DeploymentDetailView.deleteErrorToast')}: deployment_busy` },
+      { type: 'error', message: `${t('DeploymentDetailView.deleteErrorToast')}: ${t('DeploymentDetailView.lifecycleBusy')}` },
     ])
     expect(wrapper.find('.fixed').exists()).toBe(false)
   })
@@ -948,7 +969,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
     const wrapper = await mountLoaded()
 
     await buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))!.trigger('click')
-    await buttonWithText(wrapper, t('DeploymentDetailView.cancelButton'))!.trigger('click')
+    await buttonWithText(wrapper, t('action.cancel'))!.trigger('click')
 
     expect(wrapper.find('.fixed').exists()).toBe(false)
     expect(h.deploymentApi.delete).not.toHaveBeenCalled()
@@ -1010,7 +1031,7 @@ describe('DeploymentDetailView — Redeploy', () => {
     await buttonWithText(wrapper, de.vm.actions.redeploy)!.trigger('click')
     await nextTick()
     expect(wrapper.text()).toContain('VM neu erstellen?')
-    expect(wrapper.find('.fixed .font-mono').text()).toBe(ADDRESS_VM)
+    expect(wrapper.find('[data-testid="redeploy-address"]').text()).toBe(ADDRESS_VM)
 
     const confirm = wrapper.findAll('.fixed button').find((b) => b.text() === 'Redeploy')!
     await confirm.trigger('click')
@@ -1026,9 +1047,10 @@ describe('DeploymentDetailView — Redeploy', () => {
   it.each([
     [httpError(422, { reason: 'non_redeployable_resource_type' }), t('DeploymentDetailView.redeployNotRedeployable')],
     [httpError(422, { reason: 'resource_not_in_state' }), t('DeploymentDetailView.redeployNotInState')],
-    [httpError(409, 'busy'), t('DeploymentDetailView.redeployBusy')],
-    [httpError(500, 'x', 'Request failed'), 'Request failed'],
-    [httpError(500, 'x', ''), t('DeploymentDetailView.redeployError')],
+    [httpError(409, 'busy'), t('DeploymentDetailView.lifecycleBusy')],
+    [httpError(500, 'Kontingent erschöpft', 'Request failed'), 'Kontingent erschöpft'],
+    [httpError(500, { reason: 'x' }, 'Request failed'), t('DeploymentDetailView.redeployError')],
+    [httpError(500, undefined, ''), t('DeploymentDetailView.redeployError')],
   ])('meldet Redeploy-Fehler verständlich (%#)', async (err, message) => {
     h.deploymentApi.redeployResource.mockRejectedValue(err)
     const wrapper = await mountLoaded()
@@ -1127,7 +1149,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
   }
 
   const stepLabels = (wrapper: VueWrapper) =>
-    wrapper.findAll('span.text-\\[10px\\].uppercase.whitespace-nowrap').map((s) => s.text())
+    wrapper.findAll('[data-testid="phase-label"]').map((s) => s.text())
 
   it('startet den Stream für einen laufenden Task und seedet Fortschritt aus der DB', async () => {
     withRunning(runningTask())
@@ -1139,9 +1161,9 @@ describe('DeploymentDetailView — Live-Stream', () => {
     expect(stream.currentPhaseIndex.value).toBe(5)
 
     const text = wrapper.text()
-    expect(text).toContain('running since 08.06.2026, 13:00:00')
+    expect(text).toContain(t('DeploymentDetailView.runningSince', { time: '08.06.2026, 13:00:00' }))
     expect(text).toContain('task-run')
-    expect(text).toContain('idle')
+    expect(text).toContain(t('DeploymentDetailView.streamState.idle'))
     expect(text).toContain('Terraform Plan')
     expect(text).toMatch(/45\s*%/)
     expect(stepLabels(wrapper)).toEqual([
@@ -1149,7 +1171,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
       'Packer Validate', 'Packer Build', 'Terraform Init', 'Terraform Plan', 'Terraform Apply',
       'Outputs And Cleanup',
     ])
-    expect(text).toContain('Waiting for first log line…')
+    expect(text).toContain(t('DeploymentDetailView.waitingForLogs'))
     // History hides the active task.
     expect(text).toContain(t('DeploymentDetailView.taskHistory'))
     // Busy deployment → resend disabled.

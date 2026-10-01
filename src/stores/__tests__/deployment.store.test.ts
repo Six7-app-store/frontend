@@ -36,6 +36,13 @@ describe('DeploymentStore request actions', () => {
     expect(store.isLoading).toBe(false)
   })
 
+  it('records the fallback, not [object Object], for a structured detail', async () => {
+    const store = useDeploymentStore()
+    deploymentApi.list.mockRejectedValueOnce(httpError(412, { reason: 'openstack_credentials_missing' }))
+    await store.fetchDeployments()
+    expect(store.error).toBe('Failed to fetch deployments')
+  })
+
   it('fetchDeploymentById treats 404 as soft-deleted, other errors as error state', async () => {
     const store = useDeploymentStore()
     store.currentDeployment = { deploymentId: 'd-1' } as never
@@ -63,6 +70,89 @@ describe('DeploymentStore request actions', () => {
     await expect((store[action] as (arg: never) => Promise<unknown>)('x' as never)).rejects.toBe(err)
     expect(store.error).toBe(fallback)
     expect(store.isLoading).toBe(false)
+  })
+
+  describe('submitDraft payload', () => {
+    const submit = async (draft: Record<string, unknown>) => {
+      const store = useDeploymentStore()
+      Object.assign(store.draft, { appId: 'app-1', name: 'Lab', ...draft })
+      deploymentApi.create.mockResolvedValueOnce({ data: { deploymentId: 'd-new' } })
+      await store.submitDraft()
+      return deploymentApi.create.mock.calls[0]![0]
+    }
+
+    it('refuses a draft without app or name', async () => {
+      const store = useDeploymentStore()
+      await expect(store.submitDraft()).rejects.toThrow()
+      expect(deploymentApi.create).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      ['v1.2.0', 'v1.2.0'],
+      ['', 'latest'],
+      [{ version: 'v2', name: 'x' }, 'v2'],
+      [{ name: 'v3' }, 'v3'],
+    ])('sends release tag %j as %s', async (releaseTag, expected) => {
+      const payload = await submit({ releaseTag })
+      expect(payload.releaseTag).toBe(expected)
+    })
+
+    it('sends the named teams with their assignments', async () => {
+      const payload = await submit({
+        studentIds: ['u1', 'u2', 'u3'],
+        groupNames: ['Rot', 'Blau'],
+        assignments: [['u1', 'u3'], ['u2']],
+      })
+      expect(payload.teams).toEqual([
+        { name: 'Rot', userIds: ['u1', 'u3'] },
+        { name: 'Blau', userIds: ['u2'] },
+      ])
+    })
+
+    it('splits the students evenly into Team-n when no teams are named', async () => {
+      const payload = await submit({
+        studentIds: ['u1', 'u2', 'u3', 'u4', 'u5'],
+        groupNames: [],
+        groupCount: 2,
+      })
+      expect(payload.teams).toEqual([
+        { name: 'Team-1', userIds: ['u1', 'u2', 'u3'] },
+        { name: 'Team-2', userIds: ['u4', 'u5'] },
+      ])
+    })
+
+    it('sorts values into packer and terraform and skips empty ones', async () => {
+      const payload = await submit({
+        variableDefinitions: [
+          { name: 'region', source: 'packer' },
+          { name: 'flavor', source: 'terraform' },
+          { name: 'empty', source: 'terraform' },
+          { name: 'upload', source: 'terraform', osType: 'file' },
+        ],
+        variables: { region: 'eu', flavor: 'm1', empty: '  ', upload: {} },
+      })
+      expect(payload.userInputVar).toEqual({ packer: { region: 'eu' }, terraform: { flavor: 'm1' } })
+      expect(payload).not.toHaveProperty('files')
+    })
+
+    it('nests packer values per template in the multi-image layout', async () => {
+      const payload = await submit({
+        variableDefinitions: [
+          { name: 'size', source: 'packer', template_key: 'web' },
+          { name: 'size', source: 'packer', template_key: 'db' },
+        ],
+        variables: { packer: { web: { size: 's' }, db: { size: 'l' } } },
+      })
+      expect(payload.userInputVar.packer).toEqual({ web: { size: 's' }, db: { size: 'l' } })
+    })
+
+    it('sends only filled file slots', async () => {
+      const file = { name: 'a.txt', size: 1, content_b64: 'YQ==' }
+      const payload = await submit({
+        fileUploads: { keys: { all: file }, unused: { all: null } },
+      })
+      expect(payload.files).toEqual({ keys: { all: file } })
+    })
   })
 
   it('deleteDeployment returns the raw response and drops the row', async () => {

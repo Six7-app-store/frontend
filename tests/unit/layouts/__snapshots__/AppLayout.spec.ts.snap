@@ -1,8 +1,11 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`AppLayout routing-derived UI > matches the recorded title, background and navigation (admin) 1`] = `
+exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navigation (admin) 1`] = `
 {
   "/": {
+    "breadcrumb": [
+      "Dashboard",
+    ],
     "links": [
       {
         "active": true,
@@ -35,10 +38,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": true,
-    "title": "Dashboard",
   },
   "/admin/apps": {
+    "breadcrumb": [
+      "Verwaltung",
+      "/Freigaben",
+    ],
     "links": [
       {
         "active": false,
@@ -71,10 +76,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Freigaben",
   },
   "/apps": {
+    "breadcrumb": [
+      "Apps",
+    ],
     "links": [
       {
         "active": false,
@@ -107,10 +113,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/apps/app-1": {
+    "breadcrumb": [
+      "Apps",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -143,10 +151,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/apps/app-1/unknown": {
+    "breadcrumb": [
+      "Seite nicht gefunden",
+    ],
     "links": [
       {
         "active": false,
@@ -179,10 +188,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/apps/create": {
+    "breadcrumb": [
+      "Apps",
+      "/App hinzufügen",
+    ],
     "links": [
       {
         "active": false,
@@ -215,10 +226,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/courses": {
+    "breadcrumb": [
+      "Kurse",
+    ],
     "links": [
       {
         "active": false,
@@ -251,10 +263,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Kurse",
   },
   "/courses/c-1": {
+    "breadcrumb": [
+      "Kurse",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -287,10 +301,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Kurse",
   },
   "/dashboard": {
+    "breadcrumb": [
+      "Dashboard",
+    ],
     "links": [
       {
         "active": true,
@@ -323,10 +338,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": true,
-    "title": "Dashboard",
   },
   "/deployment/new/config": {
+    "breadcrumb": [
+      "Deployments",
+      "/Neues Deployment",
+    ],
     "links": [
       {
         "active": false,
@@ -359,10 +376,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/deployments": {
+    "breadcrumb": [
+      "Deployments",
+    ],
     "links": [
       {
         "active": false,
@@ -395,10 +413,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Deployments",
   },
   "/deployments/dep-1": {
+    "breadcrumb": [
+      "Deployments",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -431,10 +451,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Deployments",
   },
   "/does-not-exist": {
+    "breadcrumb": [
+      "Seite nicht gefunden",
+    ],
     "links": [
       {
         "active": false,
@@ -467,10 +488,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/forbidden": {
+    "breadcrumb": [
+      "Zugriff verweigert",
+    ],
     "links": [
       {
         "active": false,
@@ -503,10 +525,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/help": {
+    "breadcrumb": [
+      "Hilfe",
+    ],
     "links": [
       {
         "active": false,
@@ -539,10 +562,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Hilfe",
   },
   "/user": {
+    "breadcrumb": [
+      "Profil",
+    ],
     "links": [
       {
         "active": false,
@@ -575,15 +599,16 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
 }
 `;
 
-exports[`AppLayout routing-derived UI > matches the recorded title, background and navigation (student) 1`] = `
+exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navigation (student) 1`] = `
 {
   "/": {
+    "breadcrumb": [
+      "Dashboard",
+    ],
     "links": [
       {
         "active": true,
@@ -606,10 +631,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": true,
-    "title": "Dashboard",
   },
   "/admin/apps": {
+    "breadcrumb": [
+      "Verwaltung",
+      "/Freigaben",
+    ],
     "links": [
       {
         "active": false,
@@ -632,10 +659,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Freigaben",
   },
   "/apps": {
+    "breadcrumb": [
+      "Apps",
+    ],
     "links": [
       {
         "active": false,
@@ -658,10 +686,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/apps/app-1": {
+    "breadcrumb": [
+      "Apps",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -684,10 +714,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/apps/app-1/unknown": {
+    "breadcrumb": [
+      "Seite nicht gefunden",
+    ],
     "links": [
       {
         "active": false,
@@ -710,10 +741,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/apps/create": {
+    "breadcrumb": [
+      "Apps",
+      "/App hinzufügen",
+    ],
     "links": [
       {
         "active": false,
@@ -736,10 +769,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/courses": {
+    "breadcrumb": [
+      "Kurse",
+    ],
     "links": [
       {
         "active": false,
@@ -762,10 +796,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Kurse",
   },
   "/courses/c-1": {
+    "breadcrumb": [
+      "Kurse",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -788,10 +824,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Kurse",
   },
   "/dashboard": {
+    "breadcrumb": [
+      "Dashboard",
+    ],
     "links": [
       {
         "active": true,
@@ -814,10 +851,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": true,
-    "title": "Dashboard",
   },
   "/deployment/new/config": {
+    "breadcrumb": [
+      "Umgebungen",
+      "/Neues Deployment",
+    ],
     "links": [
       {
         "active": false,
@@ -840,10 +879,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/deployments": {
+    "breadcrumb": [
+      "Umgebungen",
+    ],
     "links": [
       {
         "active": false,
@@ -866,10 +906,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Umgebungen",
   },
   "/deployments/dep-1": {
+    "breadcrumb": [
+      "Umgebungen",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -892,10 +934,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Umgebungen",
   },
   "/does-not-exist": {
+    "breadcrumb": [
+      "Seite nicht gefunden",
+    ],
     "links": [
       {
         "active": false,
@@ -918,10 +961,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/forbidden": {
+    "breadcrumb": [
+      "Zugriff verweigert",
+    ],
     "links": [
       {
         "active": false,
@@ -944,10 +988,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/help": {
+    "breadcrumb": [
+      "Hilfe",
+    ],
     "links": [
       {
         "active": false,
@@ -970,10 +1015,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Hilfe",
   },
   "/user": {
+    "breadcrumb": [
+      "Profil",
+    ],
     "links": [
       {
         "active": false,
@@ -996,15 +1042,16 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
 }
 `;
 
-exports[`AppLayout routing-derived UI > matches the recorded title, background and navigation (teacher) 1`] = `
+exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navigation (teacher) 1`] = `
 {
   "/": {
+    "breadcrumb": [
+      "Dashboard",
+    ],
     "links": [
       {
         "active": true,
@@ -1032,10 +1079,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": true,
-    "title": "Dashboard",
   },
   "/admin/apps": {
+    "breadcrumb": [
+      "Verwaltung",
+      "/Freigaben",
+    ],
     "links": [
       {
         "active": false,
@@ -1063,10 +1112,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Freigaben",
   },
   "/apps": {
+    "breadcrumb": [
+      "Apps",
+    ],
     "links": [
       {
         "active": false,
@@ -1094,10 +1144,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/apps/app-1": {
+    "breadcrumb": [
+      "Apps",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -1125,10 +1177,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/apps/app-1/unknown": {
+    "breadcrumb": [
+      "Seite nicht gefunden",
+    ],
     "links": [
       {
         "active": false,
@@ -1156,10 +1209,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/apps/create": {
+    "breadcrumb": [
+      "Apps",
+      "/App hinzufügen",
+    ],
     "links": [
       {
         "active": false,
@@ -1187,10 +1242,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Apps",
   },
   "/courses": {
+    "breadcrumb": [
+      "Kurse",
+    ],
     "links": [
       {
         "active": false,
@@ -1218,10 +1274,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Kurse",
   },
   "/courses/c-1": {
+    "breadcrumb": [
+      "Kurse",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -1249,10 +1307,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Kurse",
   },
   "/dashboard": {
+    "breadcrumb": [
+      "Dashboard",
+    ],
     "links": [
       {
         "active": true,
@@ -1280,10 +1339,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": true,
-    "title": "Dashboard",
   },
   "/deployment/new/config": {
+    "breadcrumb": [
+      "Deployments",
+      "/Neues Deployment",
+    ],
     "links": [
       {
         "active": false,
@@ -1311,10 +1372,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/deployments": {
+    "breadcrumb": [
+      "Deployments",
+    ],
     "links": [
       {
         "active": false,
@@ -1342,10 +1404,12 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Deployments",
   },
   "/deployments/dep-1": {
+    "breadcrumb": [
+      "Deployments",
+      "/…",
+    ],
     "links": [
       {
         "active": false,
@@ -1373,10 +1437,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Deployments",
   },
   "/does-not-exist": {
+    "breadcrumb": [
+      "Seite nicht gefunden",
+    ],
     "links": [
       {
         "active": false,
@@ -1404,10 +1469,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/forbidden": {
+    "breadcrumb": [
+      "Zugriff verweigert",
+    ],
     "links": [
       {
         "active": false,
@@ -1435,10 +1501,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
   "/help": {
+    "breadcrumb": [
+      "Hilfe",
+    ],
     "links": [
       {
         "active": false,
@@ -1466,10 +1533,11 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "Hilfe",
   },
   "/user": {
+    "breadcrumb": [
+      "Profil",
+    ],
     "links": [
       {
         "active": false,
@@ -1497,8 +1565,6 @@ exports[`AppLayout routing-derived UI > matches the recorded title, background a
         "text": "Hilfe",
       },
     ],
-    "mesh": false,
-    "title": "",
   },
 }
 `;
