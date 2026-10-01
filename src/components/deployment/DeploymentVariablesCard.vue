@@ -3,8 +3,8 @@
  * Configuration variables the deployment was created with, shown with
  * trailing comments and quotes stripped (``cleanVariableValue``).
  */
+import { Settings } from 'lucide-vue-next'
 import { cleanVariableValue } from '@/services/deployment-input.service'
-import Card from '@/components/ui/Card.vue'
 
 defineProps<{
   variables: Record<string, any>
@@ -12,17 +12,21 @@ defineProps<{
 </script>
 
 <template>
-  <Card v-if="Object.keys(variables).length > 0" :title="$t('DeploymentDetailView.deploymentConfig')">
+  <div class="bg-panel rounded-xl border border-subtle p-6 shadow-sm"
+    v-if="Object.keys(variables).length > 0">
+    <h2 class="text-lg font-semibold text-fg mb-4 flex items-center gap-2">
+      <Settings :size="20" class="text-icon" />
+      {{ $t('DeploymentDetailView.deploymentConfig') }}
+    </h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div v-for="(value, key) in variables" :key="key"
-        data-testid="variable-card"
-        class="rounded-panel border border-subtle p-4">
-        <div class="text-xs text-fg-muted mb-1 font-mono">{{ key }}</div>
+        class="bg-line/[.04] rounded-lg p-4 border border-subtle">
+        <div class="text-xs text-fg-muted uppercase tracking-wide mb-1 font-mono">{{ key }}</div>
         <div class="font-medium text-fg break-all text-sm">
           {{ cleanVariableValue(value) }}
         </div>
       </div>
     </div>
-  </Card>
+  </div>
 </template>

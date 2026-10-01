@@ -2,13 +2,18 @@
 import { ROUTE_NAMES } from '@/router/route-names'
 import { onMounted, computed } from 'vue'
 
-import { ChevronRight, Inbox, Plus } from 'lucide-vue-next'
-import { useI18n } from 'vue-i18n'
+import {
+  BarChart3,
+  Plus,
+  Inbox,
+  GitBranch,
+  Box,
+  Clock,
+  ArrowRight,
+} from 'lucide-vue-next'
 
-import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
-import DataTable, { type DataTableColumn } from '@/components/ui/DataTable.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
-import type { StatusTone } from '@/types/tone'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import Card from '@/components/ui/Card.vue'
 import PageHeader from '@/components/ui/PageHeader.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
 import { useDeploymentStore } from '@/stores/deployment.store'
@@ -24,41 +29,19 @@ const appStore = useAppStore()
 // into and cannot create anything (the backend rejects the create with
 // ``role_required``). Everything role-dependent below reads from here.
 const { isStaff, isStudent } = useRole()
-const { t } = useI18n()
-
-type Deployment = (typeof deploymentStore.deployments)[number]
-
-// Students see the same grid, without the columns only the person who built it cares about.
-const columns = computed<DataTableColumn[]>(() => [
-  { id: 'name', label: t('DeploymentsView.columns.name') },
-  { id: 'app', label: t('DeploymentsView.columns.app') },
-  ...(isStudent.value
-    ? [
-        { id: 'status', label: t('DeploymentsView.columns.status'), class: 'w-[160px]' },
-        { id: 'hint', label: t('DeploymentsView.columns.open'), class: 'w-[280px]', hideLabel: true },
-      ]
-    : [
-        { id: 'version', label: t('DeploymentsView.columns.version'), class: 'w-[120px]' },
-        { id: 'status', label: t('DeploymentsView.columns.status'), class: 'w-[140px]' },
-        { id: 'created', label: t('DeploymentsView.columns.created'), class: 'w-[180px]' },
-      ]),
-  { id: 'open', label: t('DeploymentsView.columns.open'), class: 'w-12', hideLabel: true },
-])
 
 onMounted(async () => {
   deploymentStore.fetchDeployments()
   appStore.fetchApps()
 })
 
-const isEmpty = computed(() => !deploymentStore.isLoading && deploymentStore.deployments.length === 0)
-
-const getAppName =(appId: string) => {
+const getAppName = (appId: string) => {
   const app = appStore.apps.find(a => a.appId === appId)
   return app ? app.name : '-'
 }
 
-// Creation time in the list: date + time, without seconds.
-const formatCreatedAt = (dateString: string) =>
+// Format a timestamp as date + time (no seconds).
+const formatDate = (dateString: string) =>
   formatDateTime(dateString, {
     year: 'numeric',
     month: '2-digit',
@@ -113,18 +96,37 @@ const studentStateLabel = (status: string | null | undefined) =>
 
 // Deliberately no red. A student did not break anything, so an alarm
 // colour would only make them think they did.
-const studentStateTone = (status: string | null | undefined): StatusTone =>
+const studentStateColor = (status: string | null | undefined) =>
   ({
-    ready: 'success',
-    preparing: 'warning',
-    unavailable: 'neutral',
-  } as const)[studentState(status)]
+    ready: 'status-success',
+    preparing: 'status-warning',
+    unavailable: 'status-neutral',
+  })[studentState(status)]
 
+// Status pills. Same four tones as ``getStatusStyles``: green = running,
+// yellow = in flight / needs attention, red = failed, grey = idle.
+const getStatusColor = (status: string) => {
+  const colors = {
+    'success': 'status-success',
+    'failed': 'status-danger',
+    'running': 'status-success',
+    'pending': 'status-neutral',
+    'cancelled': 'status-neutral',
+    'destroyed': 'status-neutral',
+    'destroying': 'status-warning',
+    'pausing': 'status-warning',
+    'paused': 'status-neutral',
+    'resuming': 'status-warning',
+    'pause_failed': 'status-warning',
+    'resume_failed': 'status-warning',
+  }
+  return colors[status as keyof typeof colors] || 'status-neutral'
+}
 </script>
 
 
 <template>
-  <div class="max-w-page">
+  <div class="p-6">
     <!-- "Meine Umgebungen" for students: they were assigned one, they did
          not deploy it, and "Deployment" is not a word they need. -->
     <PageHeader
@@ -133,27 +135,30 @@ const studentStateTone = (status: string | null | undefined): StatusTone =>
     >
       <template #actions>
         <!-- Staff only. A student clicking this would walk into the wizard
-             and hit a 403 on the final POST. Hidden on an empty list, where
-             the empty state already carries the same button. -->
-        <RouterLink v-if="isStaff && !isEmpty" :to="{ name: ROUTE_NAMES.apps }" class="btn btn-primary">
-          <Plus :size="16" :stroke-width="2.2" aria-hidden="true" />
-          {{ $t('DeploymentsView.newDeployment') }}
+             and hit a 403 on the final POST. -->
+        <RouterLink v-if="isStaff" :to="{ name: ROUTE_NAMES.apps }">
+          <BaseButton class="flex items-center gap-2">
+            <Plus :size="16" />
+            {{ $t('DeploymentsView.newDeployment') }}
+          </BaseButton>
         </RouterLink>
       </template>
     </PageHeader>
 
     <EntityListState
       :is-loading="deploymentStore.isLoading && deploymentStore.deployments.length === 0"
-      :is-empty="isEmpty"
+      :is-empty="!deploymentStore.isLoading && deploymentStore.deployments.length === 0"
       :icon="Inbox"
       :empty-message="isStudent
         ? $t('DeploymentsView.emptyStudent')
         : $t('DeploymentsView.deploymentsMissingMessage')"
     >
       <template #empty-action>
-        <RouterLink v-if="isStaff" :to="{ name: ROUTE_NAMES.apps }" class="btn btn-primary">
-          <Plus :size="16" :stroke-width="2.2" aria-hidden="true" />
-          {{ $t('DeploymentsView.newDeployment') }}
+        <RouterLink v-if="isStaff" :to="{ name: ROUTE_NAMES.apps }">
+          <BaseButton class="flex items-center gap-2">
+            <Plus :size="16" />
+            {{ $t('DeploymentsView.newDeployment') }}
+          </BaseButton>
         </RouterLink>
         <!-- No button for students — there is nothing for them to do
              here. Name who acts next instead of leaving a dead end. -->
@@ -162,48 +167,88 @@ const studentStateTone = (status: string | null | undefined): StatusTone =>
         </p>
       </template>
 
-      <!-- One row per deployment, newest first; the whole row opens the detail. -->
-      <div class="surface-panel overflow-hidden">
-        <DataTable
-          :columns="columns"
-          :rows="sortedDeployments"
-          :row-key="(d: Deployment) => d.deploymentId"
-          :row-to="(d: Deployment) => ({ name: ROUTE_NAMES.deploymentsDetail, params: { id: d.deploymentId } })"
-          :caption="isStudent ? $t('DeploymentsView.titleStudent') : $t('DeploymentsView.title')"
+      <!-- Card grid, one card per deployment (name, app name, status pill,
+           release tag, creation date). Click opens the detail; newest first. -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <RouterLink
+          v-for="deployment in sortedDeployments"
+          :key="deployment.deploymentId"
+          :to="{ name: ROUTE_NAMES.deploymentsDetail, params: { id: deployment.deploymentId } }"
+          class="block"
         >
-          <template #cell-name="{ row }">
-            <span class="font-semibold text-heading" data-testid="deployment-name">{{ row.name }}</span>
-          </template>
-          <template #cell-app="{ row }">
-            <span class="text-fg-muted">{{ getAppName(row.appId) }}</span>
-          </template>
-          <template #cell-version="{ row }">
-            <span class="font-mono text-sm">{{ row.releaseTag }}</span>
-          </template>
-          <template #cell-status="{ row }">
-            <!-- Students get three states, staff get the raw lifecycle. -->
-            <StatusBadge
+          <Card class="flex flex-col h-full cursor-pointer hover:border-strong transition">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-control bg-line/[.07] border border-subtle flex items-center justify-center flex-shrink-0">
+                  <BarChart3 :size="20" class="text-icon" />
+                </div>
+                <div class="min-w-0">
+                  <h3 class="font-semibold text-fg truncate" :title="deployment.name">
+                    {{ deployment.name }}
+                  </h3>
+                  <p class="text-xs text-fg-muted truncate mt-0.5">
+                    <Box :size="11" class="inline-block mr-1 align-text-bottom" />
+                    {{ getAppName(deployment.appId) }}
+                  </p>
+                </div>
+              </div>
+              <!-- Students get three states, staff get the raw lifecycle. -->
+              <span
+                v-if="isStudent"
+                class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border whitespace-nowrap"
+                :class="studentStateColor(deployment.status)"
+                :title="studentState(deployment.status) === 'unavailable'
+                  ? $t('DeploymentsView.studentUnavailableHint')
+                  : undefined"
+              >
+                {{ $t(studentStateLabel(deployment.status)) }}
+              </span>
+              <span
+                v-else
+                class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold border capitalize whitespace-nowrap"
+                :class="getStatusColor(deployment.status)"
+              >
+                {{ deployment.status }}
+              </span>
+            </div>
+
+            <!-- Student footer: the one question they have is "how do I
+                 get in". Release tag and creation date answer a question
+                 only the person who built it asks. -->
+            <div
               v-if="isStudent"
-              :tone="studentStateTone(row.status)"
-              :title="studentState(row.status) === 'unavailable' ? $t('DeploymentsView.studentUnavailableHint') : undefined"
+              class="mt-auto pt-3 border-t border-subtle flex items-center justify-between text-xs"
             >
-              {{ $t(studentStateLabel(row.status)) }}
-            </StatusBadge>
-            <DeploymentStatusBadge v-else :status="row.status" />
-          </template>
-          <template #cell-created="{ row }">
-            <span class="tabular-nums text-fg-muted">{{ formatCreatedAt(row.created_at) }}</span>
-          </template>
-          <template #cell-hint="{ row }">
-            <span v-if="studentState(row.status) === 'unavailable'" class="text-sm text-fg-muted">
-              {{ $t('DeploymentsView.studentUnavailableHint') }}
-            </span>
-            <span v-else class="text-sm text-nav">{{ $t('DeploymentsView.studentOpenAccess') }}</span>
-          </template>
-          <template #cell-open>
-            <ChevronRight :size="16" class="text-disabled" aria-hidden="true" />
-          </template>
-        </DataTable>
+              <span
+                v-if="studentState(deployment.status) === 'unavailable'"
+                class="text-fg-muted"
+              >
+                {{ $t('DeploymentsView.studentUnavailableHint') }}
+              </span>
+              <span
+                v-else
+                class="inline-flex items-center gap-1 font-medium text-fg"
+              >
+                {{ $t('DeploymentsView.studentOpenAccess') }}
+                <ArrowRight :size="12" />
+              </span>
+            </div>
+
+            <div
+              v-else
+              class="mt-auto pt-3 border-t border-subtle flex items-center justify-between text-xs text-fg-muted"
+            >
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-line/[.04] text-fg border border-subtle font-mono">
+                <GitBranch :size="11" />
+                {{ deployment.releaseTag }}
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <Clock :size="11" />
+                {{ formatDate(deployment.created_at) }}
+              </span>
+            </div>
+          </Card>
+        </RouterLink>
       </div>
     </EntityListState>
   </div>

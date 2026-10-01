@@ -15,25 +15,19 @@ describe('getStatusStyles', () => {
     expect(de.DeploymentsView).toHaveProperty(key)
   })
 
-  it('maps icons and tones', () => {
-    expect(getStatusStyles('success')).toMatchObject({ icon: CheckCircle, tone: 'success' })
+  it('maps icons and badge classes', () => {
+    expect(getStatusStyles('success')).toMatchObject({ icon: CheckCircle, badgeClass: 'status-success' })
     expect(getStatusStyles('running').icon).toBe(Loader2)
     expect(getStatusStyles('paused').icon).toBe(PauseCircle)
     expect(getStatusStyles('pause_failed').icon).toBe(AlertCircle)
   })
 
-  it('colours the icon green, red, muted or amber', () => {
-    expect(getStatusStyles('success').iconClass).toBe('text-success')
-    expect(getStatusStyles('failed').iconClass).toBe('text-danger')
-    expect(getStatusStyles('running').iconClass).toBe('text-fg-muted')
-    expect(getStatusStyles('paused').iconClass).toBe('text-warning')
-  })
-
   it('falls back to a neutral style for unknown statuses', () => {
     expect(getStatusStyles(undefined)).toEqual({
       label: 'DeploymentsView.noStatus',
-      iconClass: 'text-warning',
-      tone: 'neutral',
+      dotClass: 'bg-neutral-dot/50',
+      textClass: 'text-fg-muted',
+      badgeClass: 'status-neutral',
       icon: AlertCircle,
     })
   })

@@ -4,7 +4,6 @@ import { onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { LogIn } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth.store'
-import BaseButton from '@/components/ui/BaseButton.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -32,17 +31,29 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
-    <h1 class="text-5xl font-semibold tracking-[-0.01em] text-heading">
+  <div>
+    <h2 class="text-2xl font-bold text-center mb-6 text-fg">
       {{ $t('auth.login.title') }}
-    </h1>
-    <p class="text-md text-fg-muted">{{ $t('auth.login.keycloakInfo') }}</p>
+    </h2>
+
+    <!-- Info Text -->
+    <div class="mb-6 text-center text-fg-muted">
+      <p>{{ $t('auth.login.keycloakInfo') }}</p>
+    </div>
+
+    <!-- Keycloak Login Button -->
+    <button
+      @click="loginWithKeycloak"
+      type="button"
+      class="btn-primary w-full py-3 rounded-control font-semibold flex items-center justify-center gap-2 transition"
+    >
+      <LogIn :size="20" />
+      {{ $t('auth.login.keycloakButton') }}
+    </button>
+
+    <!-- Info about registration -->
+    <div class="mt-6 text-center text-sm text-fg-muted">
+      <p>{{ $t('auth.login.noAccount') }}</p>
+    </div>
   </div>
-
-  <BaseButton size="lg" type="button" class="w-full" @click="loginWithKeycloak">
-    <LogIn :size="16" aria-hidden="true" />
-    {{ $t('auth.login.keycloakButton') }}
-  </BaseButton>
-
-  <p class="text-sm text-fg-muted">{{ $t('auth.login.noAccount') }}</p>
 </template>

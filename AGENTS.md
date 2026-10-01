@@ -28,13 +28,8 @@ das alte Modul zusätzlich fest: Ctrl+Shift+R.
 
 ## Konventionen
 
-- Datenfluss ist `View → (Store | Composable) → api/*.ts → Backend`.
-  Views und Komponenten rufen nie direkt die API auf. Ein Store hält
-  Zustand, den mehrere Seiten teilen; seitenlokaler Zustand samt seinen
-  Aufrufen gehört in ein Composable (`useAppDetail`, `useUserSearch` …).
-- Regeln ohne Vue und ohne I/O (Payload bauen, Werte aufbereiten,
-  Validierung) sind reine Funktionen in `services/*.service.ts`, mit
-  Unit-Test daneben. Views halten nur Verdrahtung und Toasts.
+- Datenfluss ist `View → Store → api/*.ts → Backend`. Views rufen nie
+  direkt die API auf.
 - Zu jeder Ressource gehört ein `*.api.ts` (nur die Aufrufe) und meist ein
   `*.store.ts` (Daten + Aktionen). Das Paar nicht auseinanderziehen.
 - Den Auth-Token nie selbst an einen Aufruf hängen — das macht
@@ -54,14 +49,6 @@ ein direkter Keycloak-Login funktioniert aber **nur** unter
 über http nur im secure context her, als der nur `localhost` zählt.
 Deshalb zeigt `LTI_LINK_REDIRECT_URL` bewusst auf `localhost`. Unter HTTPS
 in Produktion fällt die Unterscheidung weg.
-
-## Wo Tests liegen
-
-- Views und Komponenten: `tests/unit/views/`, `tests/unit/components/` usw.
-- Services, Composables, Stores und Utils: neben dem Code in
-  `__tests__/` (z. B. `src/services/__tests__/`).
-
-Neue Tests folgen dieser Aufteilung; bestehende werden nicht verschoben.
 
 ## Definition of Done
 

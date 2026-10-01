@@ -5,18 +5,19 @@
  *
  * Renders as part of the parent's flow, like another card in the section.
  *
- * Layout: a panel card (``surface-panel``) matching the surrounding
+ * Layout: a rounded panel card (``bg-panel border shadow-sm``) matching the surrounding
  * sections, with tinted (``bg-line/[.04]``) sub-cards per data group (Identity, Lifecycle,
  * Hardware, Addresses, Ports, SGs, Volumes, Metadata).
  *
- * Purely presentational: the parent loads the detail (see
- * ``useDeploymentResources``), passes it in with its load state and listens
- * for ``reload`` and ``close``.
+ * The component owns its own fetch/loading/error state; the parent mounts it
+ * with a target address and listens for ``close`` to collapse the panel.
  */
-import { computed } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DeploymentResource } from '@/types'
-import { formatUptime, lifecyclePillClass } from '@/composables/useVmPresentation'
+import { deploymentApi } from '@/api/deployment.api'
+import { getErrorStatus } from '@/utils/http-error'
+import { formatUptime, pillToneClass } from '@/composables/useVmPresentation'
 import {
   X,
   RefreshCw,
@@ -33,21 +34,65 @@ import {
 const { t } = useI18n()
 
 const props = defineProps<{
-  /** Terraform state address of the VM, shown until its detail has a name. */
+  deploymentId: string
   address: string
-  detail: DeploymentResource | null
-  isLoading: boolean
-  errorMessage: string | null
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'reload'): void
 }>()
 
-const pillClass = computed(() => lifecyclePillClass(props.detail?.lifecycle?.status))
+const isLoading = ref(false)
+const detail = ref<DeploymentResource | null>(null)
+const errorMessage = ref<string | null>(null)
 
-const uptime = computed(() => formatUptime(props.detail?.hardware?.launched_at))
+const load = async () => {
+  isLoading.value = true
+  errorMessage.value = null
+  try {
+    const response = await deploymentApi.getResourceDetail(
+      props.deploymentId,
+      props.address,
+    )
+    detail.value = response.data
+  } catch (err: any) {
+    // 404 — resource removed since the list was rendered. 412 — user
+    // lost their OpenStack credentials between mount and click. Both
+    // are surfaced inline; the page-level toast is reserved for
+    // harder errors.
+    const status = getErrorStatus(err)
+    if (status === 404) {
+      errorMessage.value = t('vm.drawer.errors.notFound')
+    } else if (status === 412) {
+      errorMessage.value = t('vm.drawer.errors.missingCredentials')
+    } else if (status === 502) {
+      errorMessage.value = t('vm.drawer.errors.unreachable')
+    } else {
+      errorMessage.value = err?.message || t('vm.drawer.errors.generic')
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(load)
+// Re-fetch when the parent swaps which VM we look at without
+// unmounting the panel.
+watch(() => props.address, load)
+
+// --- Lifecycle pill colour (matches InfrastructureVmCard) ---
+const lifecycleTone = computed<'green' | 'red' | 'amber' | 'gray'>(() => {
+  const s = detail.value?.lifecycle?.status
+  if (!s) return 'gray'
+  if (s === 'ACTIVE') return 'green'
+  if (s === 'ERROR') return 'red'
+  if (s === 'BUILD' || s === 'REBUILD') return 'amber'
+  return 'gray'
+})
+
+const lifecyclePillClass = computed(() => pillToneClass(lifecycleTone.value))
+
+const uptime = computed(() => formatUptime(detail.value?.hardware?.launched_at))
 
 // --- Map network IDs / fixed IPs to the human-friendly network name.
 // The Stage-2 ``ports`` block only carries the ``network_id`` (UUID).
@@ -56,7 +101,7 @@ const uptime = computed(() => formatUptime(props.detail?.hardware?.launched_at))
 // fixed_ip for that network. So we walk addresses to build two cheap
 // lookups: by-fixed-ip first, then by-mac as fallback.
 const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }): string | null => {
-  const addrs = props.detail?.addresses
+  const addrs = detail.value?.addresses
   if (!addrs || addrs.length === 0) return null
   if (port.fixed_ip) {
     const m = addrs.find((a) => a.fixed_ip === port.fixed_ip)
@@ -73,7 +118,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
 <template>
   <!--
     The outer container blends into the parent's Infrastruktur
-    section: same ``surface-panel`` shell as
+    section: same ``bg-panel rounded-xl border shadow-sm`` shell as
     the deployment-page cards. ``flex flex-col`` lets the body
     consume remaining height when the parent constrains us via
     ``flex-1 min-h-0`` (sidebar context); inline-card contexts just
@@ -81,7 +126,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
     ``overflow-hidden`` on this wrapper keeps the rounded corners
     intact even when the inner body has its own ``overflow-y-auto``.
   -->
-  <div class="surface-panel overflow-hidden flex flex-col">
+  <div class="bg-panel rounded-xl border border-subtle shadow-sm overflow-hidden flex flex-col">
     <!-- Header — icon tile + title + close button. ``shrink-0`` so
          the body, not the header, absorbs any height squeeze. The
          gradient gives a soft visual top-edge without needing a
@@ -92,7 +137,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
           <Server :size="18" class="text-icon" />
         </div>
         <div class="min-w-0">
-          <p class="text-xs text-fg-muted font-semibold">
+          <p class="text-[10px] uppercase tracking-wider text-fg-muted font-bold">
             {{ t('vm.drawer.title') }}
           </p>
           <h3 class="text-base font-semibold text-fg truncate" :title="detail?.display_name || address">
@@ -102,7 +147,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
       </div>
       <div class="flex items-center gap-1 shrink-0">
         <button
-          @click="emit('reload')"
+          @click="load"
           :disabled="isLoading"
           class="p-2 text-fg-muted hover:text-fg hover:bg-line/[.07] rounded-lg disabled:opacity-50 transition-colors"
           :title="t('vm.actions.refresh')"
@@ -146,13 +191,13 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.identity') }}</h4>
             <span
               v-if="detail.team"
-              class="ml-auto text-xs font-semibold bg-line/[.07] text-fg px-2 py-0.5 rounded border border-subtle"
+              class="ml-auto text-[10px] font-bold uppercase tracking-wider bg-line/[.07] text-fg px-2 py-0.5 rounded border border-subtle"
             >
               {{ detail.team }}
             </span>
             <span
               v-else
-              class="ml-auto text-xs font-semibold bg-line/[.07] text-fg-muted px-2 py-0.5 rounded border border-subtle"
+              class="ml-auto text-[10px] font-bold uppercase tracking-wider bg-line/[.07] text-fg-muted px-2 py-0.5 rounded border border-subtle"
             >
               {{ t('vm.sharedTeam') }}
             </span>
@@ -179,8 +224,8 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.lifecycle') }}</h4>
             <span
               v-if="detail.lifecycle.status"
-              class="ml-auto text-xs font-semibold px-2 py-0.5 rounded border"
-              :class="pillClass"
+              class="ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border"
+              :class="lifecyclePillClass"
             >
               {{ detail.lifecycle.status }}
             </span>
@@ -268,7 +313,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <NetworkIcon :size="14" class="text-icon" />
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.addresses') }}</h4>
             <span
-              class="ml-auto text-xs font-semibold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
+              class="ml-auto text-[10px] font-bold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
             >
               {{ detail.addresses.length }}
             </span>
@@ -308,7 +353,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.ports') }}</h4>
             <span
               v-if="detail.ports.length > 0"
-              class="ml-auto text-xs font-semibold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
+              class="ml-auto text-[10px] font-bold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
             >
               {{ detail.ports.length }}
             </span>
@@ -329,14 +374,14 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
                   </code>
                   <span
                     v-if="portNetworkName(port)"
-                    class="text-xs font-semibold bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded"
+                    class="text-[10px] font-semibold bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded"
                     :title="port.network_id || ''"
                   >
                     {{ portNetworkName(port) }}
                   </span>
                 </div>
                 <span
-                  class="text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap"
+                  class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border whitespace-nowrap"
                   :class="port.status === 'ACTIVE'
                     ? 'bg-line/[.07] text-fg border-strong'
                     : 'bg-line/[.07] text-fg-muted border-subtle'"
@@ -371,7 +416,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.securityGroups') }}</h4>
             <span
               v-if="detail.security_groups.length > 0"
-              class="ml-auto text-xs font-semibold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
+              class="ml-auto text-[10px] font-bold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
             >
               {{ detail.security_groups.length }}
             </span>
@@ -388,10 +433,10 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
               <p class="font-semibold text-fg">{{ sg.name }}</p>
               <p v-if="sg.description" class="text-fg-muted">{{ sg.description }}</p>
               <div class="flex items-center gap-2 pt-1">
-                <span class="text-xs font-semibold bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded">
+                <span class="text-[10px] font-semibold uppercase tracking-wider bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded">
                   {{ sg.ingress_rules }} {{ t('vm.drawer.network.ingress') }}
                 </span>
-                <span class="text-xs font-semibold bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded">
+                <span class="text-[10px] font-semibold uppercase tracking-wider bg-line/[.04] text-fg border border-subtle px-2 py-0.5 rounded">
                   {{ sg.egress_rules }} {{ t('vm.drawer.network.egress') }}
                 </span>
               </div>
@@ -409,7 +454,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
             <h4 class="text-sm font-semibold text-fg">{{ t('vm.drawer.sections.volumes') }}</h4>
             <span
               v-if="detail.volumes.length > 0"
-              class="ml-auto text-xs font-semibold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
+              class="ml-auto text-[10px] font-bold bg-line/[.12] text-fg-muted px-2 py-0.5 rounded"
             >
               {{ detail.volumes.length }}
             </span>
@@ -429,7 +474,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
                 </p>
                 <span
                   v-if="vol.status"
-                  class="text-xs font-semibold px-2 py-0.5 rounded border whitespace-nowrap"
+                  class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border whitespace-nowrap"
                   :class="vol.status === 'in-use'
                     ? 'bg-line/[.07] text-fg border-strong'
                     : 'bg-line/[.07] text-fg-muted border-subtle'"
@@ -447,7 +492,7 @@ const portNetworkName = (port: { fixed_ip: string | null; mac: string | null }):
                   <code class="ml-1 font-mono">{{ vol.device }}</code>
                 </div>
               </div>
-              <p v-if="vol.bootable" class="text-xs font-semibold text-fg">
+              <p v-if="vol.bootable" class="text-[10px] font-semibold uppercase tracking-wider text-fg">
                 {{ t('vm.drawer.volumes.bootable') }}
               </p>
             </div>

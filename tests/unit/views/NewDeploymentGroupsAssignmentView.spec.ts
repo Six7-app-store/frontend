@@ -76,7 +76,6 @@ describe('NewDeploymentTeamsView.vue', () => {
     return mount(DeploymentTeams, {
       global: {
         plugins: [pinia],
-        mocks: { $t: (key: string) => key },
         stubs: {
           DeploymentProgressBar: true,
           Plus: true,
@@ -247,7 +246,7 @@ describe('NewDeploymentTeamsView.vue', () => {
     const store = useDeploymentStore()
 
     // Finde den Remove-Button (das erste 'X' in der Drop-Zone)
-    const removeBtn = wrapper.find('button[title="common.remove"]')
+    const removeBtn = wrapper.find('button[title="CourseDetailView.removeModal.remove"]')
     expect(removeBtn.exists()).toBe(true)
     
     await removeBtn.trigger('click')
@@ -286,108 +285,10 @@ describe('NewDeploymentTeamsView.vue', () => {
     const wrapper = createWrapper()
     await flushPromises()
 
-    const backBtn = wrapper.find('[data-testid="btn-back"]')
+    const backBtn = wrapper.find('button.btn-secondary')
     await backBtn.trigger('click')
 
     expect(routerPushMock).toHaveBeenCalledWith({ name: 'deployment.config' })
-  })
-
-  describe('Verteilen und Verschieben', () => {
-    const buttonWith = (wrapper: any, text: string) =>
-      wrapper.findAll('button').find((b: any) => b.text().includes(text))
-
-    it('mischt mit Fisher-Yates und verteilt gleichmaessig', async () => {
-      const random = vi.spyOn(Math, 'random').mockReturnValue(0)
-      const wrapper = createWrapper({ studentIds: ['u1', 'u2', 'u3'], assignments: [[], []] })
-      await flushPromises()
-      const store = useDeploymentStore()
-
-      await buttonWith(wrapper, 'deployment.assignment.shuffle').trigger('click')
-      random.mockRestore()
-
-      expect(store.draft.assignments).toEqual([['u2', 'u3'], ['u1']])
-    })
-
-    it('leert beim Zuruecksetzen alle Teams', async () => {
-      const wrapper = createWrapper({ assignments: [['u1'], ['u2']] })
-      await flushPromises()
-      const store = useDeploymentStore()
-
-      await buttonWith(wrapper, 'deployment.assignment.reset').trigger('click')
-      // Clearing asks first; nothing happens before the confirmation.
-      expect(store.draft.assignments).toEqual([['u1'], ['u2']])
-      expect(wrapper.text()).toContain('deployment.assignment.resetConfirmTitle')
-
-      const confirm = wrapper.findAll('.scrim button').find((b: any) => b.text().includes('deployment.assignment.reset'))!
-      await confirm.trigger('click')
-
-      expect(store.draft.assignments).toEqual([[], []])
-    })
-
-    it('verschiebt eine Person per Drag aus einem Team in ein anderes', async () => {
-      const wrapper = createWrapper({ assignments: [['u1', 'u2'], []] })
-      await flushPromises()
-      const store = useDeploymentStore()
-
-      const card = wrapper.find('[data-testid="group-dropzone-0"] [draggable="true"]')
-      await card.trigger('dragstart')
-      await wrapper.find('[data-testid="group-dropzone-1"]').trigger('drop')
-
-      expect(store.draft.assignments).toEqual([['u2'], ['u1']])
-    })
-
-    it('legt eine Person per Drag zurueck in den Pool', async () => {
-      const wrapper = createWrapper({ assignments: [['u1'], ['u2']] })
-      await flushPromises()
-      const store = useDeploymentStore()
-
-      const card = wrapper.find('[data-testid="group-dropzone-1"] [draggable="true"]')
-      await card.trigger('dragstart')
-      await wrapper.find('[data-testid="unassigned-dropzone"]').trigger('drop')
-
-      expect(store.draft.assignments).toEqual([['u1'], []])
-      expect(wrapper.find('[data-testid="unassigned-dropzone"]').text()).toContain('Jane Smith')
-    })
-
-    it('macht aus einem Team beim Wechsel auf "custom" zwei und behaelt eigene Namen', async () => {
-      const wrapper = createWrapper({
-        groupMode: 'one', groupCount: 1, groupNames: ['Meins'], assignments: [['u1', 'u2']],
-      })
-      await flushPromises()
-      const store = useDeploymentStore()
-
-      await buttonWith(wrapper, 'deployment.groups.custom').trigger('click')
-      await flushPromises()
-
-      expect(store.draft.groupMode).toBe('custom')
-      expect(store.draft.groupCount).toBe(2)
-      expect(store.draft.groupNames).toEqual(['Meins', 'Team 2'])
-    })
-
-    it('behaelt beim Wechsel auf "one" einen eigenen Teamnamen', async () => {
-      const wrapper = createWrapper({ groupNames: ['Meins', 'Team 2'], assignments: [['u1'], ['u2']] })
-      await flushPromises()
-      const store = useDeploymentStore()
-
-      await buttonWith(wrapper, 'deployment.groups.one').trigger('click')
-      await flushPromises()
-
-      expect(store.draft.groupCount).toBe(1)
-      expect(store.draft.assignments[0]).toEqual(['u1', 'u2'])
-      expect(store.draft.groupNames).toEqual(['Meins'])
-    })
-
-    it('gibt bei "eachUser" jeder Person ein eigenes Team mit Standardnamen', async () => {
-      const wrapper = createWrapper({ groupNames: ['Meins', 'Team 2'] })
-      await flushPromises()
-      const store = useDeploymentStore()
-
-      await buttonWith(wrapper, 'deployment.groups.eachUser').trigger('click')
-      await flushPromises()
-
-      expect(store.draft.assignments).toEqual([['u1'], ['u2']])
-      expect(store.draft.groupNames).toEqual(['Team 1', 'Team 2'])
-    })
   })
 
   // `dragenter`/`dragleave` bubble, so the student cards inside a drop zone
@@ -402,14 +303,14 @@ describe('NewDeploymentTeamsView.vue', () => {
 
       const zone = wrapper.find('[data-testid="group-dropzone-0"]')
       await zone.trigger('dragenter')
-      expect(zone.classes()).toContain('bg-line/[.07]')
+      expect(zone.classes()).toContain('bg-emerald-50')
 
       // Ein Studentenkaertchen innerhalb der Zone.
       const child = zone.element.querySelector('div')
       expect(child).not.toBeNull()
 
       await zone.trigger('dragleave', { relatedTarget: child })
-      expect(zone.classes()).toContain('bg-line/[.07]')
+      expect(zone.classes()).toContain('bg-emerald-50')
     })
 
     it('gibt die Hervorhebung frei, wenn der Zeiger die Zone wirklich verlaesst', async () => {
@@ -418,10 +319,10 @@ describe('NewDeploymentTeamsView.vue', () => {
 
       const zone = wrapper.find('[data-testid="group-dropzone-0"]')
       await zone.trigger('dragenter')
-      expect(zone.classes()).toContain('bg-line/[.07]')
+      expect(zone.classes()).toContain('bg-emerald-50')
 
       await zone.trigger('dragleave', { relatedTarget: document.body })
-      expect(zone.classes()).toContain('bg-line/[.04]')
+      expect(zone.classes()).toContain('bg-gray-50')
     })
 
     it('haelt auch die Unassigned-Spalte ueber ihren Kindern hervorgehoben', async () => {
@@ -430,16 +331,16 @@ describe('NewDeploymentTeamsView.vue', () => {
 
       const zone = wrapper.find('[data-testid="unassigned-dropzone"]')
       await zone.trigger('dragenter')
-      expect(zone.classes()).toContain('bg-line/[.12]')
+      expect(zone.classes()).toContain('bg-gray-200')
 
       const child = zone.element.querySelector('div')
       expect(child).not.toBeNull()
 
       await zone.trigger('dragleave', { relatedTarget: child })
-      expect(zone.classes()).toContain('bg-line/[.12]')
+      expect(zone.classes()).toContain('bg-gray-200')
 
       await zone.trigger('dragleave', { relatedTarget: document.body })
-      expect(zone.classes()).not.toContain('bg-line/[.12]')
+      expect(zone.classes()).not.toContain('bg-gray-200')
     })
 
     // Die Karte darf sich beim Ueberfahren nicht vergroessern -- genau das

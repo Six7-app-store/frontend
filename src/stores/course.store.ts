@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { courseApi } from '@/api/course.api'
 import type { Course, CourseWithUsers, CourseCreate, CourseUpdate, User } from '@/types'
-import { requestContext, runRequest } from './_request'
-import { getErrorDetailMessage } from '@/utils/http-error'
+import { runRequest } from './_request'
+import { getErrorDetail } from '@/utils/http-error'
 
 export const useCourseStore = defineStore('course', {
   state: () => ({
@@ -18,14 +18,22 @@ export const useCourseStore = defineStore('course', {
 
   actions: {
     async fetchCourses() {
-      await runRequest(requestContext(this), async () => {
+      const ctx = {
+        setLoading: (v: boolean) => { this.isLoading = v },
+        setError: (e: string | null) => { this.error = e },
+      }
+      await runRequest(ctx, async () => {
         const { data } = await courseApi.list()
         this.courses = data
       }, 'Failed to fetch courses', { rethrow: false })
     },
 
     async fetchCourseById(courseId: string) {
-      await runRequest(requestContext(this), async () => {
+      const ctx = {
+        setLoading: (v: boolean) => { this.isLoading = v },
+        setError: (e: string | null) => { this.error = e },
+      }
+      await runRequest(ctx, async () => {
         const { data } = await courseApi.getById(courseId)
         this.currentCourse = data
         this.currentMembers = data.users ?? []
@@ -33,7 +41,11 @@ export const useCourseStore = defineStore('course', {
     },
 
     async createCourse(data: CourseCreate) {
-      return runRequest(requestContext(this), async () => {
+      const ctx = {
+        setLoading: (v: boolean) => { this.isLoading = v },
+        setError: (e: string | null) => { this.error = e },
+      }
+      return runRequest(ctx, async () => {
         const { data: course } = await courseApi.create(data)
         this.courses.push(course)
         return course
@@ -41,7 +53,11 @@ export const useCourseStore = defineStore('course', {
     },
 
     async updateCourse(courseId: string, data: CourseUpdate) {
-      return runRequest(requestContext(this), async () => {
+      const ctx = {
+        setLoading: (v: boolean) => { this.isLoading = v },
+        setError: (e: string | null) => { this.error = e },
+      }
+      return runRequest(ctx, async () => {
         const { data: course } = await courseApi.update(courseId, data)
         const index = this.courses.findIndex((c) => c.courseId === courseId)
         if (index !== -1) {
@@ -55,7 +71,11 @@ export const useCourseStore = defineStore('course', {
     },
 
     async deleteCourse(courseId: string) {
-      await runRequest(requestContext(this), async () => {
+      const ctx = {
+        setLoading: (v: boolean) => { this.isLoading = v },
+        setError: (e: string | null) => { this.error = e },
+      }
+      await runRequest(ctx, async () => {
         await courseApi.delete(courseId)
         this.courses = this.courses.filter((c) => c.courseId !== courseId)
       }, 'Failed to delete course')
@@ -74,7 +94,7 @@ export const useCourseStore = defineStore('course', {
         this.currentMembers = data
         return data
       } catch (err) {
-        this.error = getErrorDetailMessage(err) || 'Failed to fetch members'
+        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to fetch members'
         throw err
       }
     },
@@ -85,7 +105,7 @@ export const useCourseStore = defineStore('course', {
         this.currentMembers = data
         return data
       } catch (err) {
-        this.error = getErrorDetailMessage(err) || 'Failed to add members'
+        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to add members'
         throw err
       }
     },
@@ -95,7 +115,7 @@ export const useCourseStore = defineStore('course', {
         await courseApi.removeMember(courseId, userId)
         this.currentMembers = this.currentMembers.filter((u) => u.userId !== userId)
       } catch (err) {
-        this.error = getErrorDetailMessage(err) || 'Failed to remove member'
+        this.error = (getErrorDetail(err) as string | undefined) || 'Failed to remove member'
         throw err
       }
     },

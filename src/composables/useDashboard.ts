@@ -1,15 +1,10 @@
 import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { dashboardApi } from '@/api/dashboard.api'
-import { useToast } from '@/composables/useToast'
 
 // ----------------------------------------------------------------
 // USE DASHBOARD COMPOSABLE
 // ----------------------------------------------------------------
 export const useDashboard = () => {
-  const { t } = useI18n()
-  const toast = useToast()
-
   const stats = ref({
     deployments: 0,
     apps: 0,
@@ -25,10 +20,9 @@ export const useDashboard = () => {
       stats.value.deployments = data.deployments
       stats.value.apps = data.apps
       stats.value.courses = data.courses
-    } catch {
-      // Handled here rather than rethrown: the dashboard fires this without
-      // awaiting it, so a rethrow ended as an unhandled rejection.
-      toast.error(t('DashboardView.statsLoadError'))
+    } catch (err) {
+      console.error("Dashboard stats error:", err)
+      throw err
     } finally {
       stats.value.loading = false
     }

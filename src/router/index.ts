@@ -35,10 +35,6 @@ import NewDeploymentGroupsAssignmentView from '@/views/NewDeploymentGroupsAssign
  */
 type WizardField = 'appId' | 'name' | 'studentIds'
 
-// Who may open staff pages (courses, the deployment wizard, LTI mapping).
-const STAFF_ROLES: UserRole[] = ['teacher', 'admin']
-const ADMIN_ROLES: UserRole[] = ['admin']
-
 function requireWizardStep(required: WizardField[]) {
   return () => {
     const draft = useDeploymentStore().draft
@@ -62,19 +58,10 @@ function requireWizardStep(required: WizardField[]) {
   }
 }
 
-// Steps 2–4 of the deployment wizard need step 1 (app + name + at least one
-// student); deep-links into a later step redirect to the matching earlier one.
-const requireWizardBasics = requireWizardStep(['appId', 'name', 'studentIds'])
-
-// Creating a deployment is staff work — the backend rejects a student on
-// POST /deployments with ``role_required``. The role gate only keeps a
-// deep-linked student out of a wizard that could never finish; it is not
-// the protection itself.
-const wizardMeta = () => ({ requiresAuth: true, layout: 'app', requiresRole: STAFF_ROLES })
-
 
 // Route table — the single place that defines paths, names, layouts, role
-// requirements and the nav section of a route (``meta.titleKey``). Exported so layouts and tests can rely
+// requirements, header titles (``meta.titleKey``) and the dashboard mesh
+// background (``meta.useMeshBg``). Exported so layouts and tests can rely
 // on the same definitions.
 export const routes: RouteRecordRaw[] = [
   // AUTH LAYOUT
@@ -130,7 +117,7 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       layout: "auth",
       requiresAuth: true,
-      requiresRole: STAFF_ROLES,
+      requiresRole: ['teacher', 'admin'] as UserRole[],
     },
   },
   {
@@ -144,20 +131,20 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       layout: "auth",
       requiresAuth: true,
-      requiresRole: STAFF_ROLES,
+      requiresRole: ['teacher', 'admin'] as UserRole[],
     },
   },
   {
     path: "/",
     name: ROUTE_NAMES.home,
     component: DashboardView,
-    meta: { layout: "app", requiresAuth: true, titleKey: "nav.dashboard" },
+    meta: { layout: "app", requiresAuth: true, titleKey: "nav.dashboard", useMeshBg: true },
   },
   {
     path: "/dashboard",
     name: ROUTE_NAMES.dashboard,
     component: DashboardView,
-    meta: { layout: "app", requiresAuth: true, titleKey: "nav.dashboard" },
+    meta: { layout: "app", requiresAuth: true, titleKey: "nav.dashboard", useMeshBg: true },
   },
   {
     path: "/courses",
@@ -167,7 +154,7 @@ export const routes: RouteRecordRaw[] = [
       layout: "app",
       requiresAuth: true,
       titleKey: "nav.courses",
-      requiresRole: STAFF_ROLES,
+      requiresRole: ['teacher', 'admin']
     },
   },
   {
@@ -178,7 +165,7 @@ export const routes: RouteRecordRaw[] = [
       layout: "app",
       requiresAuth: true,
       titleKey: "nav.courses",
-      requiresRole: STAFF_ROLES,
+      requiresRole: ['teacher', 'admin']
     },
   },
   {
@@ -229,46 +216,55 @@ export const routes: RouteRecordRaw[] = [
     path: "/user",
     name: ROUTE_NAMES.user,
     component: UserView,
-    meta: { layout: "app", requiresAuth: true },
+    meta: { layout: "user", requiresAuth: true },
   },
   {
     path: '/deployment/new/config',
     name: ROUTE_NAMES.deploymentConfig,
     component: NewDeploymentConfigView,
-    meta: wizardMeta(),
+    // Creating a deployment is staff work — the backend rejects a
+    // student on POST /deployments with ``role_required``. This guard
+    // only keeps a deep-linked student out of a wizard that could
+    // never finish; it is not the protection itself.
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['teacher', 'admin'] as UserRole[] },
   },
   {
     path: '/deployment/new/teams',
     name: ROUTE_NAMES.deploymentTeams,
     component: NewDeploymentGroupsAssignmentView,
-    meta: wizardMeta(),
-    beforeEnter: requireWizardBasics,
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['teacher', 'admin'] as UserRole[] },
+    // Step 2 requires step 1 (app + name + at least one student). Deep-links
+    // otherwise redirect to step 1.
+    beforeEnter: requireWizardStep(['appId', 'name', 'studentIds']),
   },
   {
     path: '/deployment/new/variables',
     name: ROUTE_NAMES.deploymentVariables,
     component: NewDeploymentVariableView,
-    meta: wizardMeta(),
-    beforeEnter: requireWizardBasics,
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['teacher', 'admin'] as UserRole[] },
+    // The variables step needs the team setup filled in; otherwise redirect
+    // to the matching earlier step.
+    beforeEnter: requireWizardStep(['appId', 'name', 'studentIds']),
   },
   {
     path: '/deployment/new/summary',
     name: ROUTE_NAMES.deploymentSummary,
     component: NewDeploymentSummaryView,
-    meta: wizardMeta(),
-    beforeEnter: requireWizardBasics,
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['teacher', 'admin'] as UserRole[] },
+    // Summary is only reachable once all previous steps have data.
+    beforeEnter: requireWizardStep(['appId', 'name', 'studentIds']),
   },
   {
     path: '/admin/apps',
     name: ROUTE_NAMES.adminApps,
     component: () => import('@/views/AdminAppsView.vue'),
-    meta: { requiresAuth: true, layout: 'app', requiresRole: ADMIN_ROLES, titleKey: 'nav.approvals' },
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ['admin'] as UserRole[], titleKey: 'nav.approvals' },
   },
   {
     path: '/user/openstack',
     name: ROUTE_NAMES.userOpenStack,
     component: () => import('@/views/SettingsOpenStackView.vue'),
-    meta: { requiresAuth: true, layout: 'app' },
+    meta: { requiresAuth: true, layout: 'user' },
   },
   {
     path: '/forbidden',
@@ -296,7 +292,7 @@ router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore()
 
   if (authStore.isLoading) {
-    await authStore.whenSettled()
+    await new Promise(resolve => setTimeout(resolve, 100))
   }
 
   // The two callback routes finish their own sign-in and must not be
@@ -304,9 +300,9 @@ router.beforeEach(async (to, _from, next) => {
   // Keycloak session to find, and initializing would redirect the user
   // away from the token they just arrived with.
   const isCallbackRoute =
-    to.name === ROUTE_NAMES.callback || to.name === ROUTE_NAMES.ltiCallback || to.name === ROUTE_NAMES.ltiExpired
+    to.path === '/callback' || to.path === '/lti/callback' || to.path === '/lti/expired'
 
-  if (!authStore.user && !isCallbackRoute && to.name !== ROUTE_NAMES.login) {
+  if (!authStore.user && !isCallbackRoute && to.path !== '/login') {
     await authStore.initialize()
   }
 
@@ -315,11 +311,12 @@ router.beforeEach(async (to, _from, next) => {
   const requiresRole = to.meta.requiresRole as UserRole[] | undefined
 
   if (requiresGuest && authStore.isAuthenticated) {
-    return next({ name: ROUTE_NAMES.dashboard })
+    return next('/dashboard')
   }
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    return next({ name: ROUTE_NAMES.login, query: { returnUrl: to.fullPath } })
+    const returnUrl = to.fullPath
+    return next(`/login?returnUrl=${encodeURIComponent(returnUrl)}`)
   }
 
   if (requiresRole && requiresRole.length > 0) {
@@ -334,7 +331,7 @@ router.beforeEach(async (to, _from, next) => {
         // Toast/i18n not available (e.g. very early boot) — hard fallback so
         // the redirect still happens.
       }
-      return next({ name: ROUTE_NAMES.forbidden })
+      return next({ path: '/forbidden' })
     }
   }
 

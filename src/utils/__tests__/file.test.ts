@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 
-import { MAX_IMAGE_BYTES, MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
+import { MAX_IMAGE_MB, readFileAsDataUrl, validateImageFile } from '@/utils/file'
+import { MAX_IMAGE_BYTES } from '@/utils/format'
 
 const fileOf = (type: string, size: number) =>
   new File([new Uint8Array(size)], 'upload', { type })

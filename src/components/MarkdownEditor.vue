@@ -176,7 +176,7 @@ const onList = () =>
 </script>
 
 <template>
- <div class="surface-panel w-full overflow-hidden">
+ <div class="w-full rounded-lg border border-subtle bg-panel shadow-sm overflow-hidden">
  <!-- Tab bar -->
  <div class="flex items-center gap-0.5 border-b border-subtle bg-line/[.04] px-2">
  <button
@@ -254,7 +254,7 @@ const onList = () =>
  @input="autoResize"
  @keydown="onKeydown"
  :style="{ minHeight: `${minHeightPx}px`, maxHeight: `${maxHeightPx}px` }"
- class="block w-full resize-none bg-transparent border-0 px-2 py-1.5 text-sm text-fg font-mono overflow-y-auto placeholder:text-fg-subtle"
+ class="block w-full resize-none bg-transparent border-0 px-2 py-1.5 text-sm text-fg font-mono overflow-y-auto"
  />
  <div
  v-show="mode === 'preview'"

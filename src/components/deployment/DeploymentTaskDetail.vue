@@ -5,13 +5,14 @@
  * terraform state, each with a copy button.
  *
  * ``showTaskLogsTrace`` is owned by the parent so the toggle survives
- * switching between tasks.
+ * switching between tasks; copy buttons share the page-wide "just
+ * copied" state (``injectCopyToClipboard``).
  */
 import { computed } from 'vue'
-import { AlertCircle, Loader2, Settings, Terminal } from 'lucide-vue-next'
-import CopyButton from '@/components/ui/CopyButton.vue'
-import { formatDateTime } from '@/utils/format'
-import DeploymentStatusBadge from '@/components/deployment/DeploymentStatusBadge.vue'
+import { AlertCircle, Check, Copy, Loader2, Settings, Terminal } from 'lucide-vue-next'
+import { injectCopyToClipboard } from '@/composables/useCopyToClipboard'
+import { formatDateTime as formatDate } from '@/utils/format'
+import { getStatusStyles } from '@/utils/deployment-status-styles'
 import { prettyJson, highlightJson } from '@/utils/json-display'
 import { countLogEntries, splitTaskLogs, countTfResources } from '@/utils/task-logs'
 import type { Task } from '@/types'
@@ -27,6 +28,8 @@ const props = defineProps<{
 defineEmits<{
   (e: 'toggle-trace'): void
 }>()
+
+const { copiedKey, copyToClipboard } = injectCopyToClipboard()
 
 // Counts the resources in the selected task's state for the header
 // sub-headline (``countTfResources`` in ``utils/task-logs``).
@@ -58,38 +61,42 @@ const taskLogsSplit = computed(() => {
       <div class="bg-line/[.04] rounded-lg p-4 border border-subtle mb-4">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
-            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskType') }}</div>
+            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskType') }}</div>
             <div class="text-sm font-medium text-fg capitalize">{{ selectedTask.type }}</div>
           </div>
           <div>
-            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskStatus') }}</div>
-            <DeploymentStatusBadge :status="selectedTask.status" />
+            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStatus') }}</div>
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold border capitalize"
+              :class="getStatusStyles(selectedTask.status).badgeClass">
+              {{ selectedTask.status }}
+            </span>
           </div>
           <div>
-            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskStarted') }}</div>
-            <div class="text-sm text-fg">{{ formatDateTime(selectedTask.started_at) }}</div>
+            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskStarted') }}</div>
+            <div class="text-sm text-fg">{{ formatDate(selectedTask.started_at) }}</div>
           </div>
           <div>
-            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskFinished') }}</div>
-            <div class="text-sm text-fg">{{ formatDateTime(selectedTask.finished_at) }}</div>
+            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskFinished') }}</div>
+            <div class="text-sm text-fg">{{ formatDate(selectedTask.finished_at) }}</div>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-3">
           <div>
-            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskId') }}</div>
+            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskId') }}</div>
             <div class="text-xs font-mono text-fg bg-panel px-2 py-1 rounded">{{
               selectedTask.taskId
             }}</div>
           </div>
           <div>
-            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.celeryTaskId') }}</div>
+            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.celeryTaskId') }}</div>
             <div class="text-xs font-mono text-fg bg-panel px-2 py-1 rounded">{{
               selectedTask.celeryTaskId }}</div>
           </div>
           <div>
-            <div class="text-xs text-fg-muted mb-1">{{ $t('DeploymentDetailView.taskCreatedAt') }}</div>
-            <div class="text-sm text-fg">{{ formatDateTime(selectedTask.created_at) }}</div>
+            <div class="text-xs text-fg-muted uppercase tracking-wide mb-1">{{ $t('DeploymentDetailView.taskCreatedAt') }}</div>
+            <div class="text-sm text-fg">{{ formatDate(selectedTask.created_at) }}</div>
           </div>
         </div>
       </div>
@@ -102,7 +109,7 @@ const taskLogsSplit = computed(() => {
                          is uniform and lets the browser handle search
                          (Cmd+F) consistently across all three blocks. -->
       <div v-if="selectedTask.logs" class="mb-4">
-        <div class="surface-panel overflow-hidden">
+        <div class="bg-panel rounded-lg border border-subtle overflow-hidden">
           <div
             class="bg-line/[.04] px-4 py-3 border-b border-subtle flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -111,15 +118,22 @@ const taskLogsSplit = computed(() => {
               </div>
               <span class="font-semibold text-fg">{{ $t('DeploymentDetailView.logs') }}</span>
               <span v-if="logEntryCount !== null"
-                class="px-2 py-0.5 bg-line/[.07] text-fg text-xs font-semibold rounded border border-strong">
+                class="px-2 py-0.5 bg-line/[.07] text-fg text-xs font-bold rounded border border-strong">
                 {{ logEntryCount }} {{ $t('DeploymentDetailView.logEntries') }}
               </span>
             </div>
-            <CopyButton variant="labeled" :text="prettyJson(selectedTask.logs)" copy-key="logs"
-              :title="$t('DeploymentDetailView.copyToClipboard')" />
+            <button @click="copyToClipboard(prettyJson(selectedTask.logs), 'logs')"
+              :title="copiedKey === 'logs' ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyToClipboard')"
+              class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors"
+              :class="copiedKey === 'logs'
+                ? 'status-success'
+                : 'bg-panel text-fg border-strong hover:bg-line/[.04]'">
+              <component :is="copiedKey === 'logs' ? Check : Copy" :size="13" />
+              {{ copiedKey === 'logs' ? $t('DeploymentDetailView.copiedShort') : $t('DeploymentDetailView.copyShort') }}
+            </button>
           </div>
           <div class="bg-line/[.04] p-4 overflow-y-auto max-h-[500px]">
-            <div class="surface-panel p-4">
+            <div class="bg-panel rounded-lg border border-subtle p-4">
               <!-- Failure case: for a backend-formatted
                                          ``Task failed: ...`` string, split the
                                          friendly headline (shown in red) from the
@@ -148,7 +162,7 @@ const taskLogsSplit = computed(() => {
         </div>
       </div>
       <div v-else class="mb-4">
-        <div class="surface-panel overflow-hidden">
+        <div class="bg-panel rounded-lg border border-subtle overflow-hidden">
           <div class="bg-line/[.04] px-4 py-3 border-b border-subtle">
             <div class="flex items-center gap-2">
               <Terminal :size="16" class="text-icon" />
@@ -163,7 +177,7 @@ const taskLogsSplit = computed(() => {
       </div>
 
       <div v-if="activeDataTask?.tf_state" class="mb-4">
-        <div class="surface-panel overflow-hidden">
+        <div class="bg-panel rounded-lg border border-subtle overflow-hidden shadow-sm">
 
           <div
             class="bg-line/[.04] px-4 py-3 border-b border-subtle flex items-center justify-between select-none">
@@ -182,8 +196,15 @@ const taskLogsSplit = computed(() => {
               </div>
             </div>
 
-            <CopyButton variant="labeled" :text="prettyJson(activeDataTask?.tf_state)" copy-key="tf_state"
-              :title="$t('DeploymentDetailView.copyToClipboard')" class="flex-shrink-0" />
+            <button @click="copyToClipboard(prettyJson(activeDataTask?.tf_state), 'tf_state')"
+              :title="copiedKey === 'tf_state' ? $t('DeploymentDetailView.copied') : $t('DeploymentDetailView.copyToClipboard')"
+              class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors flex-shrink-0"
+              :class="copiedKey === 'tf_state'
+                ? 'status-success'
+                : 'bg-panel text-fg border-strong hover:bg-line/[.04]'">
+              <component :is="copiedKey === 'tf_state' ? Check : Copy" :size="13" />
+              {{ copiedKey === 'tf_state' ? $t('DeploymentDetailView.copiedShort') : $t('DeploymentDetailView.copyShort') }}
+            </button>
           </div>
 
           <div class="bg-panel p-4 overflow-y-auto max-h-[500px]">

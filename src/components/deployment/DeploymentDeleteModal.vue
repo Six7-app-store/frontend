@@ -4,12 +4,12 @@
  * whether the delete dispatches a destroy task or soft-deletes directly;
  * this dialog only asks for confirmation.
  */
-import ConfirmModal from '@/components/ui/ConfirmModal.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import Modal from '@/components/ui/Modal.vue'
 
 defineProps<{
   show: boolean
   deploymentName: string
-  busy?: boolean
 }>()
 
 defineEmits<{
@@ -19,16 +19,24 @@ defineEmits<{
 </script>
 
 <template>
-  <ConfirmModal
-    :show="show"
-    :busy="busy"
-    :title="$t('DeploymentDetailView.confirmDeleteTitle')"
-    :confirm-label="$t('DeploymentDetailView.confirmButton')"
-    @close="$emit('close')"
-    @confirm="$emit('confirm')"
-  >
-    <i18n-t keypath="DeploymentDetailView.confirmDeleteMessage" tag="p" class="text-fg">
-      <template #name><strong>{{ deploymentName }}</strong></template>
-    </i18n-t>
-  </ConfirmModal>
+  <Modal :show="show" @close="$emit('close')">
+    <template #title>
+      {{ $t('DeploymentDetailView.confirmDeleteTitle') }}
+    </template>
+    <template #body>
+      <i18n-t keypath="DeploymentDetailView.confirmDeleteMessage" tag="p" class="text-fg">
+        <template #name><strong>{{ deploymentName }}</strong></template>
+      </i18n-t>
+    </template>
+    <template #footer>
+      <div class="flex justify-end gap-3">
+        <BaseButton variant="ghost" @click="$emit('close')">
+          {{ $t('DeploymentDetailView.cancelButton') }}
+        </BaseButton>
+        <BaseButton variant="red" @click="$emit('confirm')">
+          {{ $t('DeploymentDetailView.confirmButton') }}
+        </BaseButton>
+      </div>
+    </template>
+  </Modal>
 </template>

@@ -5,13 +5,13 @@
  * The backend returns error detail in two shapes: a plain string, or a
  * structured object (e.g. ``{ reason, message }`` for a 412
  * PRECONDITION_FAILED). Plain interpolation would print
- * ``[object Object]`` for the dict case, so a message for the user comes
- * from :func:`getErrorDetailMessage` only, and callers add their own
- * translated text around it.
+ * ``[object Object]`` for the dict case, so :func:`extractErrorMessage`
+ * drills into ``.reason`` / ``.message`` when present and falls back to
+ * ``err.message`` so a toast is always readable.
  *
  * The accessors (:func:`hasErrorResponse`, :func:`getErrorStatus`,
- * :func:`getErrorStatusText`, :func:`getErrorDetail`, :func:`getErrorReason`,
- * :func:`getErrorCode`) return the raw values unchanged. Callers use
+ * :func:`getErrorStatusText`, :func:`getErrorDetail`, :func:`getErrorReason`)
+ * return the raw values unchanged. Callers use
  * them instead of reaching into ``err.response`` directly, so every
  * error-handling site reads errors the same way (see the "Fehlerbehandlung"
  * section in the frontend README).
@@ -77,34 +77,13 @@ export function getErrorReason(err: unknown): string | undefined {
   return (detail as { reason?: string }).reason
 }
 
-/**
- * ``detail.code`` of a structured backend error; ``undefined`` otherwise.
- * The LTI endpoints name their failures with ``code`` where the rest of
- * the API uses ``reason``.
- */
-export function getErrorCode(err: unknown): string | undefined {
-  const detail = getErrorDetail(err)
-  if (detail === null || typeof detail !== 'object') return undefined
-  const code = (detail as { code?: unknown }).code
-  return typeof code === 'string' ? code : undefined
-}
-
-export type OpenStackFailure = 'credentials_missing' | 'unavailable' | 'not_found' | 'other'
-
-/**
- * What went wrong with a request that reaches into OpenStack: the user has
- * no credentials stored (412), OpenStack did not answer (502 or an
- * ``openstack_unavailable`` / ``openstack_list_failed`` reason), the
- * resource is gone (404), or something else. Each caller words these
- * cases for its own place on the page.
- */
-export function openStackFailure(err: unknown): OpenStackFailure {
-  const status = getErrorStatus(err)
-  const reason = getErrorReason(err)
-  if (status === 412 || reason === 'openstack_credentials_missing') return 'credentials_missing'
-  if (status === 502 || reason === 'openstack_unavailable' || reason === 'openstack_list_failed') {
-    return 'unavailable'
+/** Turn an axios-style error into a human-readable string. */
+export function extractErrorMessage(err: any): string {
+  const detail = err?.response?.data?.detail
+  if (typeof detail === 'string') return detail
+  if (detail && typeof detail === 'object') {
+    if (typeof detail.reason === 'string') return detail.reason
+    if (typeof detail.message === 'string') return detail.message
   }
-  if (status === 404) return 'not_found'
-  return 'other'
+  return err?.message || 'Unknown error'
 }

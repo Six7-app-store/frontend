@@ -5,48 +5,26 @@
  */
 
 @layer components {
-  /* ---------------------------------------------------------------
-   * Glass chrome
-   * ------------------------------------------------------------- */
+  /* Glass chrome */
   .surface-topbar {
     background: var(--surface-topbar-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--line-subtle);
     box-shadow: var(--surface-topbar-shadow);
   }
 
   .surface-sidebar {
     background: var(--surface-sidebar-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-right: 1px solid var(--line-subtle);
     box-shadow: var(--surface-sidebar-shadow);
   }
 
-  /* Login split: brand hero left, glass panel right */
-  .login-hero {
-    background: var(--login-hero-bg);
-  }
-  .login-hero-sheen {
-    position: absolute;
-    left: -120px;
-    top: 180px;
-    width: 1200px;
-    height: 340px;
-    transform: rotate(-14deg);
-    background: var(--login-hero-sheen);
-    /* The gradient only fades top and bottom; without this the short ends
-       of the rotated band show up as a hard diagonal edge. The mask is an
-       alpha ramp, not a colour. */
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
-    mask-image: linear-gradient(90deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
-    pointer-events: none;
-  }
-  .login-panel {
-    background: var(--login-panel-bg);
-    border-left: 1px solid var(--line-subtle);
-    box-shadow: var(--login-panel-shadow);
+  .logo-plate {
+    background: var(--logo-plate-bg);
+    box-shadow: var(--logo-plate-shadow);
   }
 
   .avatar {
@@ -55,32 +33,20 @@
     color: rgb(var(--color-fg));
   }
 
-  /* ---------------------------------------------------------------
-   * Content surfaces
-   * ------------------------------------------------------------- */
+  /* Rows in dropdown menus */
+  .menu-item {
+    transition: background 150ms;
+  }
+  .menu-item:hover {
+    background: var(--nav-hover-bg);
+  }
+
+  /* Content surfaces */
   .surface-panel {
     background: var(--surface-panel-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: var(--radius-panel);
+    border-radius: 8px;
     box-shadow: var(--surface-panel-shadow);
-  }
-
-  /* A panel that is a link or button as a whole: only the border reacts */
-  .panel-interactive {
-    transition: border-color 150ms;
-  }
-  .panel-interactive:hover {
-    border-color: var(--line-hover);
-  }
-
-  /* Panel header row: title left, actions right */
-  .panel-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.875rem var(--panel-pad);
-    border-bottom: 1px solid var(--line-subtle);
   }
 
   /* Panel fill only, for elements that bring their own border and radius */
@@ -91,14 +57,21 @@
   .surface-sunken {
     background: var(--surface-sunken-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: var(--radius-panel);
+    border-radius: 8px;
     box-shadow: var(--surface-sunken-shadow);
+  }
+
+  .surface-banner {
+    background: var(--surface-banner-bg);
+    border: 1px solid var(--line-subtle);
+    border-radius: 8px;
+    box-shadow: var(--surface-banner-shadow);
   }
 
   .surface-overlay {
     background: var(--surface-overlay-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: var(--radius-panel);
+    border-radius: 8px;
     box-shadow: var(--surface-overlay-shadow);
   }
 
@@ -106,164 +79,48 @@
     background: var(--scrim);
   }
 
-  /* ---------------------------------------------------------------
-   * Navigation and menus
-   * ------------------------------------------------------------- */
-  /* Sidebar link: the active one gets the lit glass plate and the red marker */
-  .nav-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    height: var(--control-h);
-    padding: 0 0.75rem;
-    border: 1px solid transparent;
-    border-radius: var(--radius-control);
-    color: rgb(var(--color-nav));
-    font-size: var(--text-base);
-    transition: background 150ms, color 150ms;
-  }
-  .nav-item:hover {
-    background: var(--nav-hover-bg);
-    color: rgb(var(--color-heading));
-  }
-  .nav-item-collapsed {
-    justify-content: center;
-    padding: 0;
-  }
-  .nav-item-icon {
-    color: rgb(var(--color-icon));
-  }
-  .nav-item-active,
-  .nav-item-active:hover {
-    background: var(--nav-active-bg);
-    border-color: var(--line-subtle);
-    box-shadow: var(--nav-active-shadow);
-    color: rgb(var(--color-heading));
-    font-weight: 600;
-  }
-  .nav-item-active .nav-item-icon {
-    color: rgb(var(--color-heading));
-  }
-  .nav-item-active::before {
-    content: '';
-    position: absolute;
-    left: -1px;
-    top: 9px;
-    width: 3px;
-    height: 16px;
-    border-radius: 0 2px 2px 0;
-    background: rgb(var(--color-accent));
-  }
-
-  /* Popup menu (ActionMenu) and its entries */
-  .menu-entry {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-    height: var(--control-h-icon);
-    padding: 0 0.75rem;
-    border-radius: var(--radius-tag);
-    color: rgb(var(--color-fg));
-    font-size: var(--text-base);
-    text-align: left;
-    white-space: nowrap;
-    transition: background 150ms, color 150ms;
-  }
-  .menu-entry:hover:not(:disabled),
-  .menu-entry:focus-visible {
-    background: var(--nav-hover-bg);
-  }
-  .menu-entry:disabled {
-    color: rgb(var(--color-disabled-fg));
-    cursor: not-allowed;
-  }
-  .menu-entry-danger {
+  /* Glass control: icon buttons, segmented controls, language/theme switch */
+  .glass-control {
+    background: var(--control-bg);
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    box-shadow: var(--control-shadow);
     color: rgb(var(--color-fg-muted));
+    transition: background 150ms, color 150ms;
   }
-  .menu-entry-danger:hover:not(:disabled),
-  .menu-entry-danger:focus-visible {
-    color: rgb(var(--color-danger));
-    background: var(--danger-hover-bg);
+  .glass-control:hover {
+    background: var(--control-hover-bg);
+    color: rgb(var(--color-fg));
   }
 
-  /* ---------------------------------------------------------------
-   * Controls
-   * ------------------------------------------------------------- */
-  /* Segmented control */
   .segment {
     display: inline-flex;
     padding: 2px;
     gap: 2px;
     background: var(--segment-bg);
     border: 1px solid var(--line-subtle);
-    border-radius: var(--radius-control);
+    border-radius: 6px;
     box-shadow: var(--segment-shadow);
   }
   .segment-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.375rem;
-    height: 26px;
-    min-width: 36px;
-    padding: 0 0.5rem;
-    border-radius: var(--radius-tag);
+    border-radius: 4px;
     color: rgb(var(--color-fg-muted));
-    font-size: var(--text-xs);
-    font-weight: 600;
     transition: background 150ms, color 150ms;
-  }
-  .segment-md .segment-btn {
-    height: 30px;
-    padding: 0 0.75rem;
-    font-size: var(--text-sm);
   }
   .segment-btn:hover {
     color: rgb(var(--color-fg));
   }
   .segment-btn[aria-pressed="true"] {
-    background: var(--segment-active-bg);
-    box-shadow: var(--segment-active-shadow);
-    color: rgb(var(--color-heading));
+    background: var(--nav-active-bg);
+    box-shadow: var(--nav-active-shadow);
+    color: rgb(var(--color-fg));
   }
 
-  /* Buttons: .btn is the shape, .btn-* the variant, .btn-sm/.btn-lg the size */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    height: var(--control-h);
-    padding: 0 1rem;
-    border: 1px solid transparent;
-    border-radius: var(--radius-control);
-    font-size: var(--text-base);
-    font-weight: 600;
-    white-space: nowrap;
-    transition: background 150ms, border-color 150ms, color 150ms, filter 150ms;
-  }
-  .btn-sm {
-    height: var(--control-h-sm);
-    padding: 0 0.625rem;
-    font-size: var(--text-sm);
-  }
-  .btn-lg {
-    height: var(--control-h-lg);
-    padding: 0 1.5rem;
-    font-size: var(--text-md);
-  }
-  .btn-icon {
-    width: var(--control-h-icon);
-    height: var(--control-h-icon);
-    padding: 0;
-  }
-
+  /* Buttons */
   .btn-primary {
     color: rgb(var(--color-on-accent));
     background: var(--btn-primary-bg);
-    border-color: rgb(var(--color-accent-strong));
+    border: 1px solid rgb(var(--color-accent-strong));
     box-shadow: var(--btn-primary-shadow);
   }
   .btn-primary:hover:not(:disabled) {
@@ -276,122 +133,57 @@
   .btn-secondary,
   .btn-danger {
     background: var(--control-bg);
-    border-color: var(--line-strong);
+    border: 1px solid var(--line-strong);
     box-shadow: var(--control-shadow);
+  }
+  .btn-secondary {
     color: rgb(var(--color-fg));
+  }
+  .btn-danger {
+    color: rgb(var(--color-danger));
   }
   .btn-secondary:hover:not(:disabled),
   .btn-danger:hover:not(:disabled) {
     background: var(--control-hover-bg);
   }
-  .btn-secondary:active:not(:disabled) {
+  .btn-secondary:active:not(:disabled),
+  .btn-danger:active:not(:disabled) {
     background: var(--control-active-bg);
     border-color: rgb(var(--color-accent-strong));
-  }
-  /* Destructive: neutral until hovered, red only then */
-  .btn-danger:hover:not(:disabled),
-  .btn-danger:active:not(:disabled) {
-    color: rgb(var(--color-danger));
-    background: var(--danger-hover-bg);
-    border-color: var(--danger-hover-border);
-  }
-  .btn-icon.btn-danger {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-    color: rgb(var(--color-fg-muted));
   }
 
   .btn-ghost {
     color: rgb(var(--color-fg-muted));
     background: transparent;
+    border: 1px solid transparent;
   }
   .btn-ghost:hover:not(:disabled) {
     color: rgb(var(--color-fg));
-    background: var(--icon-btn-hover-bg);
-    border-color: var(--icon-btn-hover-border);
-  }
-
-  /* Disabled looks disabled: grey and flat in every variant */
-  .btn:disabled {
-    cursor: not-allowed;
-    color: rgb(var(--color-disabled-fg));
-    background: var(--btn-disabled-bg);
-    border-color: var(--btn-disabled-border);
-    box-shadow: none;
-    filter: none;
-  }
-  .btn-ghost:disabled {
-    background: transparent;
-    border-color: transparent;
+    background: var(--nav-hover-bg);
   }
 
   /* Form fields */
   .field {
-    min-height: var(--control-h);
     color: rgb(var(--color-fg));
     background: var(--field-bg);
     border: 1px solid var(--line-strong);
-    border-radius: var(--radius-control);
+    border-radius: 6px;
     box-shadow: var(--field-shadow);
-    font-size: var(--text-base);
   }
   .field::placeholder {
     color: rgb(var(--color-fg-muted));
   }
   .field:focus {
-    border-color: rgb(var(--color-focus) / 0.6);
-  }
-  .field:disabled {
-    cursor: not-allowed;
-    color: rgb(var(--color-disabled-fg));
-    background: var(--btn-disabled-bg);
-  }
-  .field[aria-invalid="true"] {
-    border-color: rgb(var(--color-danger-dot) / 0.6);
+    border-color: rgb(var(--color-accent) / 0.6);
   }
 
-  /* Switches: red track when on, recessed grey when off */
-  .toggle-on {
-    background: var(--toggle-on-bg);
-    border-color: rgb(var(--color-accent-strong));
-    box-shadow: var(--toggle-on-shadow);
-  }
-  .toggle-off {
-    background: var(--toggle-off-bg);
-    border-color: var(--toggle-off-border);
-    box-shadow: var(--toggle-off-shadow);
-  }
-  .toggle-knob {
-    background: var(--toggle-knob-bg);
-    box-shadow: var(--toggle-knob-shadow);
-  }
-
-  /* Meters: green below 50 %, yellow from 50 % */
-  .meter-track {
-    height: 6px;
-    background: var(--meter-track-bg);
-    border-radius: var(--radius-tag);
-    box-shadow: var(--meter-track-shadow);
-    overflow: hidden;
-  }
-  .meter-fill-low {
-    background: var(--meter-low-bg);
-  }
-  .meter-fill-mid {
-    background: var(--meter-mid-bg);
-  }
-
-  /* ---------------------------------------------------------------
-   * Status
-   * ------------------------------------------------------------- */
-  /* Label chips (roles, scopes) and tinted status pills */
+  /* Status badges */
   .status-badge {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     border: 1px solid;
-    border-radius: var(--radius-tag);
+    border-radius: 4px;
   }
   .status-success {
     color: rgb(var(--color-success));
@@ -426,198 +218,36 @@
     box-shadow: var(--control-shadow);
   }
 
-  /* Status as a dot with text (StatusBadge) */
-  .status-dot {
-    flex: none;
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
+  /* Switches: red track when on, recessed grey when off */
+  .toggle-on {
+    background: var(--toggle-on-bg);
+    border-color: rgb(var(--color-accent-strong));
+    box-shadow: var(--toggle-shadow);
   }
-  .status-dot-success {
-    background: rgb(var(--color-success-dot));
+  .toggle-off {
+    background: var(--toggle-off-bg);
+    border-color: var(--toggle-off-border);
+    box-shadow: var(--toggle-shadow);
   }
-  .status-dot-warning {
-    background: rgb(var(--color-warning-dot));
-  }
-  .status-dot-danger {
-    background: rgb(var(--color-danger-dot));
-  }
-  .status-dot-neutral {
-    background: rgb(var(--color-neutral-dot));
+  .toggle-knob {
+    background: var(--toggle-knob-bg);
+    box-shadow: var(--toggle-knob-shadow);
   }
 
-  /* Notice boxes: warning uses the notice tokens, the other tones tint the status colour */
-  .alert {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem var(--panel-pad);
-    border: 1px solid;
-    border-radius: var(--radius-panel);
+  /* Meters */
+  .meter-track {
+    background: var(--meter-track-bg);
+    border-radius: 4px;
+    box-shadow: var(--meter-track-shadow);
+    overflow: hidden;
   }
-  .alert-warning {
-    background: var(--notice-bg);
-    border-color: var(--notice-border);
-    box-shadow: var(--notice-shadow);
+  .meter-fill-low {
+    background: var(--meter-low-bg);
   }
-  .alert-warning .alert-icon {
-    color: rgb(var(--color-warning-dot));
+  .meter-fill-mid {
+    background: var(--meter-mid-bg);
   }
-  .alert-warning .alert-title {
-    color: rgb(var(--color-warning));
-  }
-  .alert-info {
-    background: rgb(var(--color-neutral-dot) / 0.08);
-    border-color: var(--line-strong);
-  }
-  .alert-info .alert-icon {
-    color: rgb(var(--color-icon));
-  }
-  .alert-danger {
-    background: rgb(var(--color-danger-dot) / 0.08);
-    border-color: var(--danger-hover-border);
-  }
-  .alert-danger .alert-icon,
-  .alert-danger .alert-title {
-    color: rgb(var(--color-danger));
-  }
-  .alert-success {
-    background: rgb(var(--color-success-dot) / 0.10);
-    border-color: rgb(var(--color-success-dot) / 0.40);
-  }
-  .alert-success .alert-icon,
-  .alert-success .alert-title {
-    color: rgb(var(--color-success));
-  }
-
-  /* ---------------------------------------------------------------
-   * Data display
-   * ------------------------------------------------------------- */
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    font-size: var(--text-base);
-    font-variant-numeric: tabular-nums;
-  }
-  .data-table th {
-    padding: 14px 1rem 10px;
-    color: rgb(var(--color-fg-muted));
-    font-size: var(--text-xs);
-    font-weight: 400;
-    text-align: left;
-  }
-  .data-table td {
-    padding: 0 1rem;
-    height: 3.5rem;
-    border-top: 1px solid var(--line-faint);
-    color: rgb(var(--color-fg));
-    line-height: var(--leading-normal);
-    overflow-wrap: anywhere;
-  }
-  .data-table-dense td {
-    height: 3rem;
-  }
-  .data-table th:first-child,
-  .data-table td:first-child {
-    padding-left: var(--panel-pad);
-  }
-  .data-table th:last-child,
-  .data-table td:last-child {
-    padding-right: var(--panel-pad);
-  }
-  .data-table .align-right {
-    text-align: right;
-  }
-  .data-row {
-    position: relative;
-    transition: background 150ms;
-  }
-  .data-row:hover,
-  .hover-tint:hover {
-    background: var(--row-hover-bg);
-  }
-  .hover-tint {
-    transition: background 150ms;
-  }
-  /* First cell's link covers the whole row, so the row is one real link */
-  .row-link::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-  }
-  .row-link:focus-visible {
-    outline-offset: -2px;
-  }
-
-  /* Toasts slide in from the right and fade out */
-  .toast-enter-active,
-  .toast-leave-active {
-    transition: opacity 200ms ease, transform 200ms ease;
-  }
-  .toast-enter-from,
-  .toast-leave-to {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-
-  /* Drop zones (files, images, students): dashed while waiting, darker while something is dragged over */
-  .drop-zone {
-    border: 1px dashed var(--line-strong);
-    border-radius: var(--radius-panel);
-    background: var(--surface-panel-bg);
-    transition: background 150ms, border-color 150ms;
-  }
-  .drop-zone-active {
-    border-color: rgb(var(--color-icon));
-    background: var(--nav-hover-bg);
-  }
-
-  /* Long-form help text: the article scale of the design */
-  .help-article {
-    color: rgb(var(--color-fg-body));
-    font-size: var(--text-md);
-    line-height: var(--leading-relaxed);
-  }
-  .help-article h2 {
-    padding-top: 16px;
-    border-top: 1px solid var(--line-subtle);
-    color: rgb(var(--color-heading));
-    font-size: var(--text-xl);
-    font-weight: 600;
-    line-height: var(--leading-tight);
-    scroll-margin-top: 24px;
-  }
-  .help-article h3 {
-    color: rgb(var(--color-heading));
-    font-size: var(--text-md);
-    font-weight: 600;
-  }
-
-  /* Text link: underlined, not coloured; the underline darkens on hover */
-  .md-compact a,
-  .link {
-    color: rgb(var(--color-fg));
-    text-decoration: underline;
-    text-decoration-color: rgb(var(--color-line) / 0.3);
-    text-underline-offset: 3px;
-    transition: text-decoration-color 150ms;
-  }
-  .md-compact a:hover,
-  .link:hover {
-    text-decoration-color: currentColor;
-  }
-
-  /* Inline code and identifiers: versions, commits, URLs, variable names.
-     Rendered Markdown in cards (MarkdownRenderer compact) uses the same chip. */
-  .md-compact code,
-  .code-chip {
-    padding: 1px 6px;
-    border: 1px solid var(--code-border);
-    border-radius: var(--radius-tag);
-    background: var(--code-bg);
-    color: rgb(var(--color-fg));
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
+  .meter-fill-high {
+    background: var(--meter-high-bg);
   }
 }

@@ -3,13 +3,11 @@
  * from one deployment's detail page to another must mount the detail page
  * again, because it reads the deployment id once on setup.
  */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, onMounted } from 'vue'
 import { createMemoryHistory, createRouter, RouterView, useRoute } from 'vue-router'
 import DeploymentsView from '@/views/DeploymentsView.vue'
-
-vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 
 const mountedIds: string[] = []
 

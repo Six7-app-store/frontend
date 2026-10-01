@@ -14,35 +14,6 @@ export function effectiveVariableScope(variable: AppVariable): 'all' | 'team' | 
   return (variable.varScope || variable.osScope || 'all') as 'all' | 'team' | 'user'
 }
 
-/** i18n key of the scope badge on a variable card; ``null`` for ``all``, which needs no marker. */
-export function variableScopeLabelKey(scope: 'all' | 'team' | 'user' | undefined): string | null {
-  if (scope === 'team') return 'deployment.variables.scopeBadgeTeam'
-  if (scope === 'user') return 'deployment.variables.scopeBadgeUser'
-  return null
-}
-
-/** Packer template a variable belongs to; single-image apps use ``default``. */
-export function templateKeyOf(variable: AppVariable): string {
-  return variable.template_key ?? 'default'
-}
-
-/**
- * The value stored for a Packer variable: nested under its template key in
- * the multi-image layout (see below), flat under its name otherwise — and as
- * a fallback when the nested slot is missing. ``undefined`` when unset.
- */
-export function storedPackerValue(
-  variables: Record<string, any> | null | undefined,
-  variable: AppVariable,
-  multiImage: boolean,
-): unknown {
-  if (multiImage) {
-    const nested = variables?.packer?.[templateKeyOf(variable)]?.[variable.name]
-    if (nested !== undefined) return nested
-  }
-  return variables?.[variable.name]
-}
-
 /**
  * Multi-image Packer layout: such apps store Packer values nested under
  * ``variables.packer[<template_key>][<name>]`` instead of flat under

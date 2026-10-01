@@ -1,15 +1,45 @@
 import { describe, it, expect } from 'vitest'
 
 import {
-  getErrorCode,
+  extractErrorMessage,
   getErrorDetail,
   getErrorDetailMessage,
   getErrorReason,
   getErrorStatus,
   getErrorStatusText,
-  openStackFailure,
   hasErrorResponse,
 } from '@/utils/http-error'
+
+describe('extractErrorMessage', () => {
+  it('returns a string detail verbatim', () => {
+    const err = { response: { data: { detail: 'Boom' } } }
+    expect(extractErrorMessage(err)).toBe('Boom')
+  })
+
+  it('drills into detail.reason for structured detail', () => {
+    const err = { response: { data: { detail: { reason: 'openstack_credentials_missing' } } } }
+    expect(extractErrorMessage(err)).toBe('openstack_credentials_missing')
+  })
+
+  it('falls back to detail.message when reason is absent', () => {
+    const err = { response: { data: { detail: { message: 'Something broke' } } } }
+    expect(extractErrorMessage(err)).toBe('Something broke')
+  })
+
+  it('prefers reason over message when both present', () => {
+    const err = { response: { data: { detail: { reason: 'r', message: 'm' } } } }
+    expect(extractErrorMessage(err)).toBe('r')
+  })
+
+  it('falls back to err.message when there is no response detail', () => {
+    expect(extractErrorMessage({ message: 'Network Error' })).toBe('Network Error')
+  })
+
+  it('returns a generic string when nothing is available', () => {
+    expect(extractErrorMessage({})).toBe('Unknown error')
+    expect(extractErrorMessage(null)).toBe('Unknown error')
+  })
+})
 
 describe('error accessors', () => {
   const axiosLike = (status: number, detail: unknown) => ({ message: 'Request failed', response: { status, data: { detail } } })
@@ -75,36 +105,5 @@ describe('getErrorDetailMessage', () => {
   it('tolerates non-axios values', () => {
     expect(getErrorDetailMessage(new Error('boom'))).toBeUndefined()
     expect(getErrorDetailMessage(undefined)).toBeUndefined()
-  })
-})
-
-describe('getErrorCode', () => {
-  it('reads detail.code of a structured detail', () => {
-    const err = { response: { data: { detail: { code: 'lti_nrps_unavailable' } } } }
-    expect(getErrorCode(err)).toBe('lti_nrps_unavailable')
-  })
-
-  it('is undefined for string, missing or non-string codes', () => {
-    expect(getErrorCode({ response: { data: { detail: 'Boom' } } })).toBeUndefined()
-    expect(getErrorCode({ response: { data: {} } })).toBeUndefined()
-    expect(getErrorCode({ response: { data: { detail: { code: 42 } } } })).toBeUndefined()
-    expect(getErrorCode(new Error('offline'))).toBeUndefined()
-  })
-})
-
-describe('openStackFailure', () => {
-  const err = (status: number, detail?: unknown) => ({ response: { status, data: { detail } } })
-
-  it.each([
-    [err(412, { reason: 'openstack_credentials_missing' }), 'credentials_missing'],
-    [err(412), 'credentials_missing'],
-    [err(502), 'unavailable'],
-    [err(500, { reason: 'openstack_unavailable' }), 'unavailable'],
-    [err(500, { reason: 'openstack_list_failed' }), 'unavailable'],
-    [err(404), 'not_found'],
-    [err(500, 'Boom'), 'other'],
-    [new Error('offline'), 'other'],
-  ])('classifies %j as %s', (e, expected) => {
-    expect(openStackFailure(e)).toBe(expected)
   })
 })

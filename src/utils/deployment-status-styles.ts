@@ -2,12 +2,11 @@
  * Status presentation for deployments and tasks on the detail page.
  *
  * :func:`getStatusStyles` maps a deployment/task status to its i18n label
- * key, icon colour class, tone and lucide icon.
+ * key, Tailwind classes (status dot, text, badge) and lucide icon.
  *
  * The palette has four status tones: green (running/success), yellow
  * (in flight or needs attention), red (failed) and grey (neutral/idle).
  */
-import type { StatusTone } from '@/types/tone'
 import { AlertCircle, CheckCircle, Clock, Flame, Loader2, PauseCircle, StopCircle, XCircle } from 'lucide-vue-next'
 
 export function getStatusStyles(status?: string) {
@@ -15,50 +14,57 @@ export function getStatusStyles(status?: string) {
     case 'success':
       return {
         label: 'DeploymentsView.deploymentSuccessful',
-        iconClass: 'text-success',
-        tone: 'success' as StatusTone,
+        dotClass: 'bg-success-dot',
+        textClass: 'text-fg',
+        badgeClass: 'status-success',
         icon: CheckCircle
       }
     case 'running':
       return {
         label: 'DeploymentsView.deploymentRunning',
-        iconClass: 'text-fg-muted',
-        tone: 'success' as StatusTone,
+        dotClass: 'bg-success-dot animate-pulse',
+        textClass: 'text-fg',
+        badgeClass: 'status-success',
         icon: Loader2
       }
     case 'pending':
       return {
         label: 'DeploymentsView.deploymentPending',
-        iconClass: 'text-warning',
-        tone: 'neutral' as StatusTone,
+        dotClass: 'bg-neutral-dot',
+        textClass: 'text-fg',
+        badgeClass: 'status-neutral',
         icon: Clock
       }
     case 'failed':
       return {
         label: 'DeploymentsView.deploymentFailed',
-        iconClass: 'text-danger',
-        tone: 'danger' as StatusTone,
+        dotClass: 'bg-danger-dot',
+        textClass: 'text-fg',
+        badgeClass: 'status-danger',
         icon: XCircle
       }
     case 'destroying':
       return {
         label: 'DeploymentsView.deploymentDestroying',
-        iconClass: 'text-warning',
-        tone: 'warning' as StatusTone,
+        dotClass: 'bg-warning-dot animate-pulse',
+        textClass: 'text-fg',
+        badgeClass: 'status-warning',
         icon: Loader2
       }
     case 'cancelled':
       return {
         label: 'DeploymentsView.deploymentCancelled',
-        iconClass: 'text-warning',
-        tone: 'neutral' as StatusTone,
+        dotClass: 'bg-neutral-dot',
+        textClass: 'text-fg',
+        badgeClass: 'status-neutral',
         icon: StopCircle
       }
     case 'destroyed':
       return {
         label: 'DeploymentsView.deploymentDestroyed',
-        iconClass: 'text-warning',
-        tone: 'neutral' as StatusTone,
+        dotClass: 'bg-neutral-dot',
+        textClass: 'text-fg',
+        badgeClass: 'status-neutral',
         icon: Flame
       }
     case 'pausing':
@@ -67,22 +73,25 @@ export function getStatusStyles(status?: string) {
         // destroying — the user reads "something active is happening" at a
         // glance, distinct from the calm green of success.
         label: 'DeploymentsView.deploymentPausing',
-        iconClass: 'text-warning',
-        tone: 'warning' as StatusTone,
+        dotClass: 'bg-warning-dot animate-pulse',
+        textClass: 'text-fg',
+        badgeClass: 'status-warning',
         icon: Loader2
       }
     case 'paused':
       return {
         label: 'DeploymentsView.deploymentPaused',
-        iconClass: 'text-warning',
-        tone: 'neutral' as StatusTone,
+        dotClass: 'bg-neutral-dot',
+        textClass: 'text-fg',
+        badgeClass: 'status-neutral',
         icon: PauseCircle
       }
     case 'resuming':
       return {
         label: 'DeploymentsView.deploymentResuming',
-        iconClass: 'text-warning',
-        tone: 'warning' as StatusTone,
+        dotClass: 'bg-warning-dot animate-pulse',
+        textClass: 'text-fg',
+        badgeClass: 'status-warning',
         icon: Loader2
       }
     case 'pause_failed':
@@ -92,22 +101,25 @@ export function getStatusStyles(status?: string) {
       // red of a deploy-failed.
       return {
         label: 'DeploymentsView.deploymentPauseFailed',
-        iconClass: 'text-warning',
-        tone: 'warning' as StatusTone,
+        dotClass: 'bg-warning-dot',
+        textClass: 'text-fg',
+        badgeClass: 'status-warning',
         icon: AlertCircle
       }
     case 'resume_failed':
       return {
         label: 'DeploymentsView.deploymentResumeFailed',
-        iconClass: 'text-warning',
-        tone: 'warning' as StatusTone,
+        dotClass: 'bg-warning-dot',
+        textClass: 'text-fg',
+        badgeClass: 'status-warning',
         icon: AlertCircle
       }
     default:
       return {
         label: 'DeploymentsView.noStatus',
-        iconClass: 'text-warning',
-        tone: 'neutral' as StatusTone,
+        dotClass: 'bg-neutral-dot/50',
+        textClass: 'text-fg-muted',
+        badgeClass: 'status-neutral',
         icon: AlertCircle
       }
   }

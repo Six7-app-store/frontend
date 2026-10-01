@@ -3,7 +3,6 @@ import { mount, flushPromises, RouterLinkStub } from '@vue/test-utils'
 import { h } from 'vue'
 
 import DashboardView from '@/views/DashboardView.vue'
-import MeterBar from '@/components/ui/MeterBar.vue'
 
 // ---------------------------------------------------------
 // 1. Mocks & Setup
@@ -50,7 +49,7 @@ vi.mock('@/stores/openstack-credentials.store', () => ({
 
 vi.mock('@/composables/useDashboard', () => ({
   useDashboard: () => ({
-    stats: { value: { deployments: 3, apps: 5, courses: 2 } },
+    stats: { deployments: 3, apps: 5, courses: 2 },
     fetchStats: mockFetchStats
   })
 }))
@@ -62,6 +61,9 @@ vi.mock('@/composables/useQuotas', () => ({
     get needsCredentials() { return mockNeedsCredentials },
     get hasCachedQuotas() { return mockHasCachedQuotas },
     fetchQuotas: mockFetchQuotas,
+    getColorClass: (percentage: number) => percentage >= 90 ? 'meter-fill-high' : 'meter-fill-low',
+    getTextColorClass: (percentage: number) => percentage >= 90 ? 'text-danger' : percentage >= 75 ? 'text-warning' : 'text-fg-muted',
+    isQuotaCritical: (percentage: number) => percentage >= 90
   })
 }))
 
@@ -148,36 +150,16 @@ describe('DashboardView.vue', () => {
 
   // --- 2. Begrüßung & Name ---
 
-  it('begrüßt mit dem Usernamen mit großem Anfangsbuchstaben', () => {
+  it('zeigt den Usernamen mit großem Anfangsbuchstaben', () => {
     mockUser = { username: 'maximilian' }
 
-    expect(mountComponent().find('h1').text()).toBe('DashboardView.timeGreetings.afternoon, Maximilian')
+    expect(mountComponent().find('h1').text()).toBe('Maximilian')
   })
 
-  it('begrüßt ohne Namen, wenn kein User geladen ist', () => {
+  it('zeigt einen leeren Namen, wenn kein User geladen ist', () => {
     mockUser = null
 
-    expect(mountComponent().find('h1').text()).toBe('DashboardView.timeGreetings.afternoon')
-  })
-
-  // --- Hauptaktion ---
-
-  it('verlinkt "Neues Deployment" auf die Apps, wenn Credentials hinterlegt sind', () => {
-    const wrapper = mountComponent()
-
-    const link = wrapper.findAllComponents(RouterLinkStub).find((l) => l.text().includes('DashboardView.deploymentNew'))
-    expect((link?.props('to') as any)?.name).toBe('apps')
-    expect(wrapper.find('button[disabled]').exists()).toBe(false)
-  })
-
-  it('sperrt "Neues Deployment" ohne Credentials und nennt den Grund', () => {
-    mockHasCredential = false
-
-    const button = mountComponent().find('button[disabled]')
-
-    expect(button.exists()).toBe(true)
-    expect(button.text()).toContain('DashboardView.deploymentNew')
-    expect(button.attributes('title')).toBe('DashboardView.deploymentNeedsCredentials')
+    expect(mountComponent().find('h1').text()).toBe('')
   })
 
   it.each([
@@ -249,23 +231,21 @@ describe('DashboardView.vue', () => {
     const text = mountComponent().text()
 
     expect(text).toContain('RAM')
-    expect(text).toContain('6 / 8 GB')
-    expect(text).toContain('75 %')
+    expect(text).toContain('6/8GB')
+    expect(text).toContain('DashboardView.quotaUsed {"percentage":75}')
   })
 
   it.each([
-    [30, 'meter-fill-low'],
-    [50, 'meter-fill-mid'],
-    [95, 'meter-fill-mid'],
-  ])('zeigt %s%% Auslastung als Balken, grün unter und gelb ab 50 %%, nie rot', (percentage, fillClass) => {
+    [70, 'text-fg-muted', false],
+    [85, 'text-warning', false],
+    [95, 'text-danger', true],
+  ])('nutzt bei %s%% die Schwellen aus useQuotas', (percentage, expectedClass, expectWarning) => {
     mockQuotas = [quota({ percentage })]
 
     const wrapper = mountComponent()
 
-    const meter = wrapper.findComponent(MeterBar)
-    expect(meter.props('value')).toBe(percentage)
-    expect(meter.find(`.${fillClass}`).exists()).toBe(true)
-    expect(wrapper.find('.text-danger').exists()).toBe(false)
+    expect(wrapper.find('.tabular-nums').classes()).toContain(expectedClass)
+    expect(wrapper.find('svg.text-danger').exists()).toBe(expectWarning)
   })
 
   it('zeigt das Skeleton beim ersten Laden', () => {
@@ -281,8 +261,8 @@ describe('DashboardView.vue', () => {
 
     const text = mountComponent().text()
 
-    expect(text).toContain('DashboardView.resourcesNeedCredentials')
-    expect(mountComponent().findComponent(MeterBar).exists()).toBe(false)
+    expect(text).toContain('DashboardView.noCredentialsTitle')
+    expect(text).toContain('DashboardView.setUpNow')
   })
 
   it('zeigt den Fehlertext, wenn keine Quotas geladen werden konnten', () => {
