@@ -59,6 +59,9 @@
   --detail-max: none;      /* detail pages: fill the content area */
   --narrow-max: none;      /* narrow detail pages: fill the content area */
   --reading-max: 720px;    /* help and long texts */
+  --lead-max: 640px;       /* short intro beside an aside, e.g. an app's overview */
+  --toc-w: 220px;          /* "on this page" column beside a reading column */
+  --content-max: 860px;    /* single-column tables and settings in a detail tab */
 
   --page-pad-x: 40px;
   --page-pad-y: 32px;

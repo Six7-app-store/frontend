@@ -194,7 +194,9 @@ export const routes: RouteRecordRaw[] = [
     meta: { layout: "app", requiresAuth: true, titleKey: "nav.apps" },
   },
   {
-    path: "/apps/:id",
+    // One URL per tab; the overview is the bare path. The list of tabs keeps
+    // any other segment on the 404 route.
+    path: "/apps/:id/:tab(docs|config|versions|settings)?",
     name: ROUTE_NAMES.appsDetail,
     component: AppsDetailView,
     meta: { layout: "app", requiresAuth: true, titleKey: "nav.apps" },

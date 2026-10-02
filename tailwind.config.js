@@ -103,6 +103,8 @@ export default {
         detail: 'var(--detail-max)',
         narrow: 'var(--narrow-max)',
         reading: 'var(--reading-max)',
+        lead: 'var(--lead-max)',
+        content: 'var(--content-max)',
       },
       width: {
         sidebar: 'var(--sidebar-w)',
