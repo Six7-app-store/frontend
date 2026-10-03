@@ -59,6 +59,9 @@
   --detail-max: none;      /* detail pages: fill the content area */
   --narrow-max: none;      /* narrow detail pages: fill the content area */
   --reading-max: 720px;    /* help and long texts */
+  --lead-max: 640px;       /* short intro beside an aside, e.g. an app's overview */
+  --toc-w: 220px;          /* "on this page" column beside a reading column */
+  --content-max: 860px;    /* single-column tables and settings in a detail tab */
 
   --page-pad-x: 40px;
   --page-pad-y: 32px;
@@ -68,10 +71,18 @@
 
   /* ---------------------------------------------------------------
    * Colour: accent — DHBW red, only for the main action, the active
-   * nav item and active switches/tabs
+   * nav item and active switches/tabs.
+   *
+   * An admin can replace it at runtime (Verwaltung → Darstellung):
+   * useBranding injects new values for the --color-accent* triplets and
+   * --color-on-accent / --color-focus. Everything tinted by the accent
+   * below must therefore refer to these triplets, never repeat the red.
    * ------------------------------------------------------------- */
   --color-accent: 226 0 26;            /* #E2001A */
   --color-accent-strong: 133 20 31;    /* #85141F — hover, pressed, button border */
+  --color-accent-shade: 179 0 21;      /* #B30015 — lower end of button and switch gradients */
+  --color-accent-bright: 240 33 58;    /* #F0213A — upper end of the switch gradient */
+  --color-accent-deep: 43 0 6;         /* #2B0006 — accent glow on the dark canvas */
   --color-accent-fg: 194 0 22;         /* red text/links, 4.5:1 on light surfaces */
   --color-on-accent: 255 255 255;
   --color-focus: 226 0 26;
@@ -111,7 +122,7 @@
    * Surfaces
    * ------------------------------------------------------------- */
   --canvas-bg:
-    radial-gradient(900px 520px at 12% -8%, rgba(226, 0, 26, 0.06) 0%, rgba(226, 0, 26, 0) 70%),
+    radial-gradient(900px 520px at 12% -8%, rgb(var(--color-accent) / 0.06) 0%, rgb(var(--color-accent) / 0) 70%),
     radial-gradient(1100px 640px at 100% 110%, rgba(160, 185, 215, 0.14) 0%, rgba(160, 185, 215, 0) 70%),
     linear-gradient(180deg, #F7F9FB 0%, #EFF2F6 55%, #E8EDF2 100%);
 
@@ -142,13 +153,18 @@
   --notice-border: rgba(214, 161, 43, 0.35);
   --notice-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 
+  /* Logo previews on the appearance page: each logo on the background it is
+     made for, whatever theme the page is in — so the same in both themes. */
+  --logo-preview-light-bg: #FFFFFF;
+  --logo-preview-dark-bg: #141113;
+
   /* Inline code chip */
   --code-bg: rgba(15, 25, 40, 0.06);
   --code-border: rgba(15, 25, 40, 0.08);
 
   /* Login */
   --login-hero-bg:
-    radial-gradient(700px 460px at 18% 12%, rgba(226, 0, 26, 0.10) 0%, rgba(226, 0, 26, 0) 70%),
+    radial-gradient(700px 460px at 18% 12%, rgb(var(--color-accent) / 0.10) 0%, rgb(var(--color-accent) / 0) 70%),
     radial-gradient(900px 600px at 80% 110%, rgba(160, 185, 215, 0.28) 0%, rgba(160, 185, 215, 0) 70%),
     linear-gradient(160deg, #FFFFFF 0%, #F1F4F8 55%, #E4EAF0 100%);
   --login-panel-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 244, 248, 0.96) 100%);
@@ -170,7 +186,7 @@
    * ------------------------------------------------------------- */
   --control-bg: linear-gradient(180deg, #FFFFFF 0%, #EBEFF4 100%);
   --control-hover-bg: linear-gradient(180deg, #FFFFFF 0%, #E2E8EF 100%);
-  --control-active-bg: rgba(226, 0, 26, 0.10);
+  --control-active-bg: rgb(var(--color-accent) / 0.10);
   --control-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(15, 25, 40, 0.06);
   --icon-btn-hover-bg: rgba(15, 25, 40, 0.05);
   --icon-btn-hover-border: rgba(15, 25, 40, 0.08);
@@ -187,11 +203,11 @@
   --btn-disabled-bg: rgba(15, 25, 40, 0.04);
   --btn-disabled-border: rgba(15, 25, 40, 0.08);
 
-  /* Primary button: same red in both themes, only the drop shadow differs */
+  /* Primary button: same accent in both themes, only the drop shadow differs */
   --btn-primary-bg:
     linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 50%),
-    linear-gradient(180deg, #E2001A 0%, #B30015 100%);
-  --btn-primary-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 1px 3px rgba(133, 20, 31, 0.35);
+    linear-gradient(180deg, rgb(var(--color-accent)) 0%, rgb(var(--color-accent-shade)) 100%);
+  --btn-primary-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 1px 3px rgb(var(--color-accent-strong) / 0.35);
 
   /* Form fields */
   --field-bg: #FFFFFF;
@@ -204,7 +220,7 @@
   --meter-mid-bg: linear-gradient(180deg, #EBC150 0%, #D6A12B 100%);
 
   /* Switches */
-  --toggle-on-bg: linear-gradient(180deg, #F0213A 0%, #B30015 100%);
+  --toggle-on-bg: linear-gradient(180deg, rgb(var(--color-accent-bright)) 0%, rgb(var(--color-accent-shade)) 100%);
   --toggle-on-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
   --toggle-off-bg: linear-gradient(180deg, #D9DEE4 0%, #C6CDD6 100%);
   --toggle-off-border: rgba(15, 25, 40, 0.14);
@@ -245,7 +261,7 @@
   --line-hover: rgba(255, 255, 255, 0.16);
 
   --canvas-bg:
-    radial-gradient(900px 520px at 12% -8%, rgba(43, 0, 6, 0.85) 0%, rgba(43, 0, 6, 0) 70%),
+    radial-gradient(900px 520px at 12% -8%, rgb(var(--color-accent-deep) / 0.85) 0%, rgb(var(--color-accent-deep) / 0) 70%),
     linear-gradient(180deg, #181416 0%, #0E0B0C 55%, #0A0809 100%);
 
   --surface-topbar-bg: linear-gradient(180deg, rgba(44, 38, 41, 0.55) 0%, rgba(22, 19, 21, 0.65) 100%);
@@ -271,8 +287,8 @@
   --code-border: rgba(255, 255, 255, 0.08);
 
   --login-hero-bg:
-    radial-gradient(700px 460px at 18% 12%, rgba(226, 0, 26, 0.22) 0%, rgba(226, 0, 26, 0) 70%),
-    radial-gradient(900px 600px at 80% 110%, rgba(133, 20, 31, 0.30) 0%, rgba(133, 20, 31, 0) 70%),
+    radial-gradient(700px 460px at 18% 12%, rgb(var(--color-accent) / 0.22) 0%, rgb(var(--color-accent) / 0) 70%),
+    radial-gradient(900px 600px at 80% 110%, rgb(var(--color-accent-strong) / 0.30) 0%, rgb(var(--color-accent-strong) / 0) 70%),
     linear-gradient(160deg, #1D1719 0%, #0F0C0D 55%, #070506 100%);
   --login-panel-bg: linear-gradient(180deg, rgba(40, 34, 37, 0.92) 0%, rgba(20, 17, 19, 0.96) 100%);
   --login-panel-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.05), -24px 0 48px rgba(0, 0, 0, 0.35);
@@ -284,7 +300,7 @@
 
   --control-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.035) 100%);
   --control-hover-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.06) 100%);
-  --control-active-bg: rgba(133, 20, 31, 0.35);
+  --control-active-bg: rgb(var(--color-accent-strong) / 0.35);
   --control-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   --icon-btn-hover-bg: rgba(255, 255, 255, 0.06);
   --icon-btn-hover-border: rgba(255, 255, 255, 0.10);

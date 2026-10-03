@@ -194,7 +194,9 @@ export const routes: RouteRecordRaw[] = [
     meta: { layout: "app", requiresAuth: true, titleKey: "nav.apps" },
   },
   {
-    path: "/apps/:id",
+    // One URL per tab; the overview is the bare path. The list of tabs keeps
+    // any other segment on the 404 route.
+    path: "/apps/:id/:tab(docs|config|versions|settings)?",
     name: ROUTE_NAMES.appsDetail,
     component: AppsDetailView,
     meta: { layout: "app", requiresAuth: true, titleKey: "nav.apps" },
@@ -263,6 +265,12 @@ export const routes: RouteRecordRaw[] = [
     name: ROUTE_NAMES.adminApps,
     component: () => import('@/views/AdminAppsView.vue'),
     meta: { requiresAuth: true, layout: 'app', requiresRole: ADMIN_ROLES, titleKey: 'nav.approvals' },
+  },
+  {
+    path: '/admin/appearance',
+    name: ROUTE_NAMES.adminAppearance,
+    component: () => import('@/views/AdminAppearanceView.vue'),
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ADMIN_ROLES, titleKey: 'nav.appearance' },
   },
   {
     path: '/user/openstack',

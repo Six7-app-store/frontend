@@ -32,13 +32,9 @@
  * panel with the content on the right. Language and theme can be switched
  * here too, before anyone is signed in.
  */
-import { computed } from 'vue'
-import { useTheme } from '@/composables/useTheme'
+import { useBranding } from '@/composables/useBranding'
 import LocaleSwitch from '@/components/layout/LocaleSwitch.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
-import logoDark from '@/assets/based-logo-dark.png'
-import logoLight from '@/assets/based-logo-light.png'
 
-const { isDark } = useTheme()
-const logo = computed(() => (isDark.value ? logoDark : logoLight))
+const { logo } = useBranding()
 </script>

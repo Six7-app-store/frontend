@@ -1,16 +1,21 @@
 import { ref, type Ref } from 'vue'
 import { appApi } from '@/api/app.api'
-import type { AppUpdate, AppVersionApproval } from '@/types'
+import { dedupeDefinitions } from '@/services/variable-form.service'
+import type { AppUpdate, AppVariable, AppVersionApproval } from '@/types'
+
+export type VariablesState = 'idle' | 'loading' | 'loaded' | 'error'
 
 /**
- * One app with its version approvals, and what its owner or an admin can
- * do with it. Every action throws on failure and leaves the local state as
- * it was; the caller decides what to tell the user.
+ * One app with its version approvals and configurable variables, and what
+ * its owner or an admin can do with it. Every action throws on failure and
+ * leaves the local state as it was; the caller decides what to tell the user.
  */
 export function useAppDetail(appId: Ref<string>) {
   const app = ref<any>(null)
   const approvals = ref<AppVersionApproval[]>([])
   const isLoading = ref(false)
+  const variables = ref<AppVariable[]>([])
+  const variablesState = ref<VariablesState>('idle')
 
   async function load() {
     if (!appId.value) return
@@ -29,6 +34,23 @@ export function useAppDetail(appId: Ref<string>) {
       approvals.value = (await appApi.listVersionApprovals(appId.value)).data
     } catch {
       approvals.value = []
+    }
+  }
+
+  /**
+   * The variables of one version, as the deployment wizard reads them. The
+   * backend clones the repository for this, so it takes seconds; the state
+   * tells the page whether the list is still coming or failed (then empty).
+   */
+  async function loadVariables(version: string) {
+    if (!appId.value || !version) return
+    variablesState.value = 'loading'
+    try {
+      variables.value = dedupeDefinitions((await appApi.getVariables(appId.value, version)).data ?? [])
+      variablesState.value = 'loaded'
+    } catch {
+      variables.value = []
+      variablesState.value = 'error'
     }
   }
 
@@ -61,8 +83,11 @@ export function useAppDetail(appId: Ref<string>) {
     app,
     approvals,
     isLoading,
+    variables,
+    variablesState,
     load,
     loadApprovals,
+    loadVariables,
     submitVersion,
     withdrawVersion,
     setPrivate,

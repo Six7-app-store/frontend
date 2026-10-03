@@ -34,6 +34,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
+      },
+      {
+        "active": false,
         "href": "/help",
         "text": "Hilfe",
       },
@@ -72,6 +77,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
+      },
+      {
+        "active": false,
         "href": "/help",
         "text": "Hilfe",
       },
@@ -106,6 +116,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/admin/apps",
         "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
       },
       {
         "active": false,
@@ -147,6 +162,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
+      },
+      {
+        "active": false,
         "href": "/help",
         "text": "Hilfe",
       },
@@ -181,6 +201,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/admin/apps",
         "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
       },
       {
         "active": false,
@@ -222,6 +247,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
+      },
+      {
+        "active": false,
         "href": "/help",
         "text": "Hilfe",
       },
@@ -256,6 +286,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/admin/apps",
         "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
       },
       {
         "active": false,
@@ -297,6 +332,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
+      },
+      {
+        "active": false,
         "href": "/help",
         "text": "Hilfe",
       },
@@ -331,6 +371,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/admin/apps",
         "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
       },
       {
         "active": false,
@@ -372,6 +417,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
+      },
+      {
+        "active": false,
         "href": "/help",
         "text": "Hilfe",
       },
@@ -406,6 +456,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/admin/apps",
         "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
       },
       {
         "active": false,
@@ -447,6 +502,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
+      },
+      {
+        "active": false,
         "href": "/help",
         "text": "Hilfe",
       },
@@ -481,6 +541,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/admin/apps",
         "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
       },
       {
         "active": false,
@@ -521,6 +586,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
+      },
+      {
+        "active": false,
         "href": "/help",
         "text": "Hilfe",
       },
@@ -555,6 +625,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/admin/apps",
         "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
       },
       {
         "active": true,
@@ -592,6 +667,11 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/admin/apps",
         "text": "Freigaben",
+      },
+      {
+        "active": false,
+        "href": "/admin/appearance",
+        "text": "Darstellung",
       },
       {
         "active": false,

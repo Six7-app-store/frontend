@@ -158,12 +158,12 @@ describe('AppLayout shell', () => {
     wrapper.unmount()
   })
 
-  it('setzt Freigaben für Admins in die Gruppe „Verwaltung“, Hilfe ans Ende', async () => {
+  it('setzt Freigaben und Darstellung für Admins in die Gruppe „Verwaltung“, Hilfe ans Ende', async () => {
     const wrapper = await mountShell('/', 'admin')
     const group = wrapper.get('aside nav ul[aria-labelledby]')
 
     expect(wrapper.get('aside nav p').text()).toBe('Verwaltung')
-    expect(group.findAll('a').map((a) => a.text())).toEqual(['Freigaben'])
+    expect(group.findAll('a').map((a) => a.text())).toEqual(['Freigaben', 'Darstellung'])
     const all = wrapper.findAll('aside nav a').map((a) => a.text())
     expect(all[all.length - 1]).toBe('Hilfe')
     wrapper.unmount()

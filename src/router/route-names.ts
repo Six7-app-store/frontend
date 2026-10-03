@@ -30,6 +30,7 @@ export const ROUTE_NAMES = {
   deploymentVariables: 'deployment.variables',
   deploymentSummary: 'deployment.summary',
   adminApps: 'admin.apps',
+  adminAppearance: 'admin.appearance',
   forbidden: 'forbidden',
   notFound: 'not-found',
 } as const
