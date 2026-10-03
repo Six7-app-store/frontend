@@ -572,6 +572,14 @@
     background: var(--nav-hover-bg);
   }
 
+  /* Logo previews: fixed backgrounds, independent of the page's theme */
+  .logo-preview-light {
+    background: var(--logo-preview-light-bg);
+  }
+  .logo-preview-dark {
+    background: var(--logo-preview-dark-bg);
+  }
+
   /* Long-form help text: the article scale of the design */
   .help-article {
     color: rgb(var(--color-fg-body));

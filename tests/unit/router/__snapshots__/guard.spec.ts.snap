@@ -284,6 +284,20 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
     "meta": {
       "layout": "app",
       "requiresAuth": true,
+      "requiresRole": [
+        "admin",
+      ],
+      "titleKey": "nav.appearance",
+    },
+    "name": "admin.appearance",
+    "path": "/admin/appearance",
+  },
+  {
+    "children": undefined,
+    "guarded": false,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
     },
     "name": "user.openstack",
     "path": "/user/openstack",

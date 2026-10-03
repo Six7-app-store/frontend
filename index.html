@@ -16,6 +16,22 @@
         } catch (e) {}
       })()
     </script>
+    <!-- Applies the accent colour an admin chose, cached from the last visit,
+         so the built-in red does not flash first. Key and id shared with
+         useBranding.ts and storage-keys.ts. -->
+    <script>
+      (function () {
+        try {
+          var css = localStorage.getItem('ui-accent-css')
+          if (css) {
+            var style = document.createElement('style')
+            style.id = 'ui-accent'
+            style.textContent = css
+            document.head.appendChild(style)
+          }
+        } catch (e) {}
+      })()
+    </script>
     <script src="/env-config.js"></script>
   </head>
   <body>

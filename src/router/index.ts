@@ -267,6 +267,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, layout: 'app', requiresRole: ADMIN_ROLES, titleKey: 'nav.approvals' },
   },
   {
+    path: '/admin/appearance',
+    name: ROUTE_NAMES.adminAppearance,
+    component: () => import('@/views/AdminAppearanceView.vue'),
+    meta: { requiresAuth: true, layout: 'app', requiresRole: ADMIN_ROLES, titleKey: 'nav.appearance' },
+  },
+  {
     path: '/user/openstack',
     name: ROUTE_NAMES.userOpenStack,
     component: () => import('@/views/SettingsOpenStackView.vue'),

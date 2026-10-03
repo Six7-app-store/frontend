@@ -55,6 +55,8 @@ export function buildBreadcrumbs({ routeName, entityLabel, isStudent, t }: Bread
 
     case ROUTE_NAMES.adminApps:
       return [{ label: t('nav.admin') }, { label: t('nav.approvals') }]
+    case ROUTE_NAMES.adminAppearance:
+      return [{ label: t('nav.admin') }, { label: t('nav.appearance') }]
     case ROUTE_NAMES.help:
       return [{ label: t('nav.help') }]
 
