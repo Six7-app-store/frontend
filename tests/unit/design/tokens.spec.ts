@@ -73,7 +73,7 @@ describe('design tokens', () => {
   })
 
   it('keeps sizes, radii and layout measures theme-independent', () => {
-    const layout = /^--(?:(?:text|leading|radius|font|sidebar|topbar|aside|page|detail|narrow|reading|section|card)-|panel-pad$|control-h(?:-sm|-lg|-icon)?$)/
+    const layout = /^--(?:(?:text|leading|radius|font|sidebar|topbar|aside|page|detail|narrow|reading|lead|toc|content|section|card)-|panel-pad$|control-h(?:-sm|-lg|-icon)?$)/
     expect(Object.keys(darkOverrides).filter((name) => layout.test(name))).toEqual([])
   })
 
