@@ -9,12 +9,14 @@ import de from '@/i18n/locales/de'
 import en from '@/i18n/locales/en'
 
 // useTheme keeps a module-level singleton; load a fresh copy per test.
+// Pinia comes from the same fresh registry, so the logos' store binds to it.
 async function mountLayout() {
   vi.resetModules()
   const { default: AuthLayout } = await import('@/layouts/AuthLayout.vue')
+  const { createPinia } = await import('pinia')
   const i18n = createI18n({ legacy: false, locale: 'de', messages: { de, en } })
   const wrapper = mount(AuthLayout, {
-    global: { plugins: [i18n] },
+    global: { plugins: [createPinia(), i18n] },
     slots: { default: '<h1 class="page-title">Anmelden</h1>' },
   })
   return { wrapper, i18n }
@@ -54,5 +56,22 @@ describe('AuthLayout', () => {
 
     expect(src()).not.toBe(light)
     expect(src()).toContain('dark')
+  })
+
+  // The settings of the last visit are cached, so a custom logo shows from
+  // the first paint, before the request for the current ones returns.
+  it('zeigt ein hochgeladenes Logo statt des Standardlogos', async () => {
+    localStorage.setItem(
+      'ui-settings',
+      JSON.stringify({ accentColor: null, logos: { light: true, dark: false, icon: false }, updatedAt: '2026-10-03T12:00:00' }),
+    )
+    const { wrapper } = await mountLayout()
+    const src = () => wrapper.get('.login-hero img').attributes('src')
+
+    expect(src()).toContain('/ui-settings/logos/light?v=2026-10-03T12%3A00%3A00')
+
+    await wrapper.get(`button[aria-label="${de.theme.toDark}"]`).trigger('click')
+    // No dark logo uploaded: the built-in one applies.
+    expect(src()).toContain('based-logo-dark')
   })
 })

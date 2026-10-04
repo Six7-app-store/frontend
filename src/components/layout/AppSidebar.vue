@@ -9,17 +9,13 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { BarChart3, GraduationCap, HelpCircle, Layers, LayoutDashboard, ShieldCheck } from 'lucide-vue-next'
+import { BarChart3, GraduationCap, HelpCircle, Layers, LayoutDashboard, Palette, ShieldCheck } from 'lucide-vue-next'
 import { useRole } from '@/composables/useRole'
 import { useRouteAccess } from '@/composables/useRouteAccess'
-import { useTheme } from '@/composables/useTheme'
+import { useBranding } from '@/composables/useBranding'
 import { ROUTE_NAMES } from '@/router/route-names'
 import SidebarGroup from './SidebarGroup.vue'
 import SidebarNavItem from './SidebarNavItem.vue'
-
-import logoDark from '@/assets/based-logo-dark.png'
-import logoLight from '@/assets/based-logo-light.png'
-import logoIcon from '@/assets/based-icon.png'
 
 defineProps<{
   collapsed: boolean
@@ -27,11 +23,9 @@ defineProps<{
 
 const { t } = useI18n()
 const route = useRoute()
-const { isDark } = useTheme()
+const { logo, logoIcon } = useBranding()
 const { canAccess } = useRouteAccess()
 const { isStudent } = useRole()
-
-const logo = computed(() => (isDark.value ? logoDark : logoLight))
 
 const isActive = (labelKey: string) => route.meta.titleKey === labelKey
 
@@ -50,7 +44,10 @@ const mainItems = computed(() =>
   ]),
 )
 const adminItems = computed(() =>
-  visible([{ to: { name: ROUTE_NAMES.adminApps }, labelKey: 'nav.approvals', icon: ShieldCheck }]),
+  visible([
+    { to: { name: ROUTE_NAMES.adminApps }, labelKey: 'nav.approvals', icon: ShieldCheck },
+    { to: { name: ROUTE_NAMES.adminAppearance }, labelKey: 'nav.appearance', icon: Palette },
+  ]),
 )
 const helpItem = { to: { name: ROUTE_NAMES.help }, labelKey: 'nav.help', icon: HelpCircle }
 </script>
