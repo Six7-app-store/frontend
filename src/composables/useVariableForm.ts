@@ -4,16 +4,13 @@ import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
 import { useToast } from '@/composables/useToast'
 import { useWizardTeams } from '@/composables/useWizardTeams'
-import { templateKeyOf } from '@/services/deployment-variables.service'
 import { releaseVersion } from '@/services/deployment-draft.service'
 import { parseUserInputVar } from '@/services/deployment-input.service'
 import {
   dedupeDefinitions,
   dropStaleSlots,
-  formKeyFor,
   hydrateFromDraft,
   hydrateFromInput,
-  isMultiImage as detectMultiImage,
   missingRequired as findMissingRequired,
   serializeValues,
   slotKeysFor as slotsOf,
@@ -38,23 +35,10 @@ export function useVariableForm() {
   const variables = ref<AppVariable[]>([])
   const values = ref<FormValues>({})
 
-  const multiImage = computed(() => detectMultiImage(variables.value))
-  const formKey = (v: AppVariable) => formKeyFor(v, multiImage.value)
   const slotKeysFor = (v: AppVariable) => slotsOf(v, teams.value)
 
-  const packerByTemplate = computed<Record<string, AppVariable[]>>(() => {
-    const out: Record<string, AppVariable[]> = {}
-    for (const v of variables.value) {
-      if (v.source === 'packer') (out[templateKeyOf(v)] ??= []).push(v)
-    }
-    return out
-  })
-  const templateKeys = computed(() => Object.keys(packerByTemplate.value).sort())
-  const packerVariables = computed(() => Object.values(packerByTemplate.value).flat())
-  const terraformVariables = computed(() => variables.value.filter((v) => v.source === 'terraform'))
-
   const missingRequired = computed(() =>
-    findMissingRequired(variables.value, values.value, teams.value, multiImage.value))
+    findMissingRequired(variables.value, values.value, teams.value))
   const canSubmit = computed(() => missingRequired.value.length === 0)
 
   const reportMarkerErrors = () => {
@@ -77,7 +61,7 @@ export function useVariableForm() {
     if (draft.variableDefinitions && draft.variableDefinitions.length > 0) {
       variables.value = draft.variableDefinitions
       values.value = hydrateFromDraft(variables.value, (draft.variables || {}) as Record<string, any>,
-        teams.value, multiImage.value)
+        teams.value)
       return
     }
 
@@ -101,7 +85,7 @@ export function useVariableForm() {
       } catch {
         toast.error(t('deployment.summary.invalidJson'))
       }
-      values.value = hydrateFromInput(variables.value, saved, teams.value, multiImage.value)
+      values.value = hydrateFromInput(variables.value, saved, teams.value)
     } catch (error) {
       console.error(error)
       toast.error(t('deployment.summary.fetchVarsError'))
@@ -114,7 +98,7 @@ export function useVariableForm() {
   /** Writes the values to the draft; false when that failed (a toast says so). */
   const save = (): boolean => {
     try {
-      const { changed, all } = serializeValues(variables.value, values.value, multiImage.value)
+      const { changed, all } = serializeValues(variables.value, values.value)
       deploymentStore.draft.userInputVar = JSON.stringify(changed) as any
       deploymentStore.draft.variables = all
       return true
@@ -157,7 +141,7 @@ export function useVariableForm() {
   // A renamed or removed team must not keep values under its old slots.
   watch(teams, () => {
     if (!variables.value.length) return
-    const dropped = dropStaleSlots(variables.value, values.value, teams.value, multiImage.value)
+    const dropped = dropStaleSlots(variables.value, values.value, teams.value)
     if (dropped.length > 0) {
       toast.info(t('deployment.variables.teamRenameToast', { count: dropped.length, lines: dropped.join('\n') }))
     }
@@ -168,12 +152,7 @@ export function useVariableForm() {
     isLoading,
     variables,
     values,
-    formKey,
     slotKeysFor,
-    templateKeys,
-    packerByTemplate,
-    packerVariables,
-    terraformVariables,
     missingRequired,
     canSubmit,
     load,

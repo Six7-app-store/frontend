@@ -52,17 +52,17 @@ describe('buildDeploymentPayload', () => {
     variableDefinitions: [], fileUploads: {}, ...over,
   }) as DeploymentDraft
 
-  it('sends all values as terraform when the definitions are missing', () => {
+  it('sends all values as tofu when the definitions are missing', () => {
     const payload = buildDeploymentPayload(draft({ variableDefinitions: undefined as never, variables: { a: 1 } }))
-    expect(payload.userInputVar).toEqual({ packer: {}, terraform: { a: 1 } })
+    expect(payload.userInputVar).toEqual({ tofu: { a: 1 } })
   })
 
   it('leaves out a scoped variable without a filled slot', () => {
     const payload = buildDeploymentPayload(draft({
-      variableDefinitions: [{ name: 'login', source: 'terraform', type: 'string', varScope: 'user' } as never],
+      variableDefinitions: [{ name: 'login', type: 'string', varScope: 'user' } as never],
       variables: { login: {} },
     }))
-    expect(payload.userInputVar).toEqual({ packer: {}, terraform: {} })
+    expect(payload.userInputVar).toEqual({ tofu: {} })
   })
 
   it('omits files when no slot holds content', () => {

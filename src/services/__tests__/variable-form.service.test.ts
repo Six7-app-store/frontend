@@ -3,10 +3,8 @@ import type { AppVariable } from '@/types'
 import {
   dedupeDefinitions,
   dropStaleSlots,
-  formKeyFor,
   hydrateFromDraft,
   hydrateFromInput,
-  isMultiImage,
   missingRequired,
   seedScopedDefault,
   serializeValues,
@@ -15,7 +13,7 @@ import {
 } from '@/services/variable-form.service'
 
 const v = (over: Partial<AppVariable>): AppVariable =>
-  ({ name: 'x', source: 'terraform', type: 'string', ...over }) as AppVariable
+  ({ name: 'x', type: 'string', ...over }) as AppVariable
 
 const teams: WizardTeam[] = [
   { name: 'Rot', members: [{ userId: 'u1', username: 'anna' }] },
@@ -29,21 +27,11 @@ describe('slots and keys', () => {
     expect(slotKeysFor(v({}), teams)).toEqual([])
   })
 
-  it('prefixes packer keys with the template only for multi-image apps', () => {
-    const size = v({ name: 'size', source: 'packer', template_key: 'web' })
-    expect(isMultiImage([size])).toBe(true)
-    expect(isMultiImage([v({ source: 'packer' })])).toBe(false)
-    expect(formKeyFor(size, true)).toBe('web.size')
-    expect(formKeyFor(size, false)).toBe('size')
-    expect(formKeyFor(v({ name: 'tf' }), true)).toBe('tf')
-  })
-
   it('keeps the first of repeated definitions', () => {
     const defs = dedupeDefinitions([
-      v({ name: 'a', default: 1 }), v({ name: 'a', default: 2 }),
-      v({ name: 's', source: 'packer', template_key: 'web' }), v({ name: 's', source: 'packer', template_key: 'db' }),
+      v({ name: 'a', default: 1 }), v({ name: 'a', default: 2 }), v({ name: 'b', default: 3 }),
     ])
-    expect(defs.map((d) => `${d.name}:${d.default ?? d.template_key}`)).toEqual(['a:1', 's:web', 's:db'])
+    expect(defs.map((d) => `${d.name}:${d.default}`)).toEqual(['a:1', 'b:3'])
   })
 })
 
@@ -63,19 +51,19 @@ describe('seedScopedDefault', () => {
 describe('hydrate', () => {
   it('restores from the draft, falling back to the default and skipping files', () => {
     const defs = [v({ name: 'a', default: 'd' }), v({ name: 'tags', type: 'list(string)' }), v({ name: 'f', osType: 'file' })]
-    expect(hydrateFromDraft(defs, { tags: ['x', 'y'] }, teams, false)).toEqual({ a: 'd', tags: 'x, y' })
+    expect(hydrateFromDraft(defs, { tags: ['x', 'y'] }, teams)).toEqual({ a: 'd', tags: 'x, y' })
   })
 
   it('prefers saved input over defaults and turns an empty bool into false', () => {
     const defs = [v({ name: 'a', default: 'd' }), v({ name: 'on', type: 'bool' })]
-    expect(hydrateFromInput(defs, { a: 'saved' }, teams, false)).toEqual({ a: 'saved', on: false })
+    expect(hydrateFromInput(defs, { a: 'saved' }, teams)).toEqual({ a: 'saved', on: false })
   })
 })
 
 describe('serializeValues', () => {
   it('stores converted values and records only changes against the default', () => {
     const defs = [v({ name: 'port', type: 'number', default: 22 }), v({ name: 'host', default: 'h' })]
-    expect(serializeValues(defs, { port: '8080', host: ' h ' }, false)).toEqual({
+    expect(serializeValues(defs, { port: '8080', host: ' h ' })).toEqual({
       changed: { port: 8080 },
       all: { port: 8080, host: ' h ' },
     })
@@ -83,12 +71,12 @@ describe('serializeValues', () => {
 
   it('treats a list as unchanged regardless of order', () => {
     const defs = [v({ name: 'tags', type: 'list(string)', default: ['a', 'b'] })]
-    expect(serializeValues(defs, { tags: 'b, a' }, false).changed).toEqual({})
+    expect(serializeValues(defs, { tags: 'b, a' }).changed).toEqual({})
   })
 
   it('keeps only filled slots of a scoped variable', () => {
     const defs = [v({ name: 'login', varScope: 'user' })]
-    expect(serializeValues(defs, { login: { 'Rot-anna': 'a1', 'Blau-ben': '  ' } }, false)).toEqual({
+    expect(serializeValues(defs, { login: { 'Rot-anna': 'a1', 'Blau-ben': '  ' } })).toEqual({
       changed: { login: { 'Rot-anna': 'a1' } },
       all: { login: { 'Rot-anna': 'a1' } },
     })
@@ -98,13 +86,13 @@ describe('serializeValues', () => {
 describe('missingRequired and dropStaleSlots', () => {
   it('names missing required values per slot', () => {
     const defs = [v({ name: 'pw', required: true }), v({ name: 'login', varScope: 'team', required: true })]
-    expect(missingRequired(defs, { pw: ' ', login: { Rot: 'x' } }, teams, false)).toEqual(['pw', 'login (Blau)'])
+    expect(missingRequired(defs, { pw: ' ', login: { Rot: 'x' } }, teams)).toEqual(['pw', 'login (Blau)'])
   })
 
   it('drops slots of teams that no longer exist', () => {
     const defs = [v({ name: 'login', varScope: 'team' })]
     const values = { login: { Rot: 'a', Alt: 'b' } }
-    expect(dropStaleSlots(defs, values, teams, false)).toEqual(['login → Alt'])
+    expect(dropStaleSlots(defs, values, teams)).toEqual(['login → Alt'])
     expect(values.login).toEqual({ Rot: 'a' })
   })
 })

@@ -346,7 +346,7 @@ export default {
     // Same page, different language: students never create an
     // environment, they are assigned one. All they need to know is
     // whether it runs and how to get in — release tags, task status and
-    // terraform vocabulary are staff concerns.
+    // OpenTofu vocabulary are staff concerns.
     titleStudent: "My environments",
     subtitleStudent: "Environments assigned to you",
     emptyStudent: "No environment has been assigned to you yet.",
@@ -368,7 +368,7 @@ export default {
     infra: {
       vms: "Virtual machines",
       loadingVms: "Loading VMs…",
-      noVms: "No VMs in the current Terraform state.",
+      noVms: "No VMs in the current OpenTofu state.",
       network: "Network",
       security: "Security",
     },
@@ -426,7 +426,7 @@ export default {
     hideTechnicalDetails: 'Hide technical details',
     showTechnicalDetails: 'Show technical details',
     noLogs: 'No logs available for this task',
-    terraformResourcesCount: '{count} managed resources',
+    tofuResourcesCount: '{count} managed resources',
     advancedDetails: 'Advanced details',
     taskHistory: 'Task History',
     backToTaskList: 'Back to list',
@@ -442,7 +442,7 @@ export default {
     deploymentPause: "Pause",
     deploymentResume: "Resume",
     confirmDeleteTitle: "Delete deployment",
-    confirmDeleteMessage: "Delete deployment {name}? If OpenStack resources still exist they will be torn down via Terraform first (live progress below).",
+    confirmDeleteMessage: "Delete deployment {name}? If OpenStack resources still exist they will be torn down via OpenTofu first (live progress below).",
     confirmPauseTitle: "Pause deployment",
     confirmPauseMessage: "Pause deployment {name}? All compute instances will be stopped (volumes and networks stay). RAM and CPU quota are freed; you can resume later.",
     confirmResumeTitle: "Resume deployment",
@@ -480,10 +480,10 @@ export default {
     port: "Port",
     password: "Password",
     noStructuredAccounts: "No structured user accounts found. See raw data below.",
-    showRawData: "Show Terraform Raw Data (JSON)",
+    showRawData: "Show OpenTofu Raw Data (JSON)",
     hideRawData: "Hide Raw Data",
     tasksAndLogs: "Tasks & Logs",
-    terraformState: "Infrastructure Details (Terraform State)",
+    tofuState: "Infrastructure Details (OpenTofu State)",
     tasksOwnerOnly: "Tasks and logs are only visible to the deployment owner and to teaching staff.",
     resendAccessButton: "Resend access",
     resendAccessSending: "Sending...",
@@ -783,7 +783,7 @@ export default {
     rejectModal: {
       title: "Reject version",
       reasonLabel: "Rejection reason *",
-      reasonPlaceholder: "e.g. Insecure Terraform configuration",
+      reasonPlaceholder: "e.g. Insecure OpenTofu configuration",
       submit: "Reject",
     },
     revokeModal: {
@@ -886,8 +886,7 @@ export default {
       unnamed: 'Unnamed',
       loading: 'Loading variables...',
       noVariables: 'This app requires no special variables.',
-      packerDesc: 'Image/Template Configuration',
-      terraformDesc: 'Infrastructure Configuration',
+      tofuDesc: 'Infrastructure Configuration',
       showInfo: 'Show info',
       markerErrorTitle: '⚠ @openstack marker faulty',
       markerErrorToast: '{count} faulty @openstack marker(s) — the affected variables will be rendered as free-text:\n{lines}',
@@ -926,10 +925,8 @@ export default {
       noUsersAssigned: 'No users assigned',
       variablesConfigTitle: 'Variables Configuration',
       editBtn: 'Edit',
-      packerVars: 'Packer Variables',
-      terraformVars: 'Terraform Variables',
-      noPackerVars: 'No Packer variables',
-      noTerraformVars: 'No Terraform variables',
+      tofuVars: 'OpenTofu Variables',
+      noTofuVars: 'No OpenTofu variables',
       uploadedFiles: 'Uploaded files',
       fileScope: 'Scope: {scope}',
       noFileUploaded: 'No file uploaded',
@@ -1113,9 +1110,9 @@ export default {
   vm: {
     drift: {
       missingTitle: 'VM no longer found in OpenStack',
-      missingHint: 'This resource is in the Terraform state but missing from the OpenStack project. Click "Redeploy" to re-create it.',
+      missingHint: 'This resource is in the OpenTofu state but missing from the OpenStack project. Click "Redeploy" to re-create it.',
       staleTitle: 'Live status could not be fetched',
-      staleHint: 'The values shown here are from the last cached Terraform state. "Refresh" at the top right repeats the live fetch.',
+      staleHint: 'The values shown here are from the last cached OpenTofu state. "Refresh" at the top right repeats the live fetch.',
     },
     resourcesErrors: {
       missingCredentials: 'OpenStack credentials missing — please configure to see live status.',
@@ -1143,7 +1140,7 @@ export default {
       address: 'Address',
       osUuid: 'OS UUID',
       errors: {
-        notFound: 'Resource no longer found in the Terraform state.',
+        notFound: 'Resource no longer found in the OpenTofu state.',
         missingCredentials: 'OpenStack credentials missing — please configure.',
         unreachable: 'OpenStack is currently unreachable.',
         generic: 'Error loading details.',

@@ -29,7 +29,7 @@ interface ConfigRow {
 
 const rows = computed<ConfigRow[]>(() =>
   props.variables.map((variable) => ({
-    key: `${variable.source ?? ''}.${variable.template_key ?? ''}.${variable.name}`,
+    key: variable.name,
     name: variable.name,
     description: variableDisplayDescription(variable.description),
     required: Boolean(variable.required),

@@ -8,7 +8,7 @@ import type { DeploymentWithRelations, Task } from '@/types'
  * Access credentials for the Teams card of the deployment detail page.
  *
  * Owners read ``user_accounts`` / ``team_vms`` from the newest task's
- * terraform outputs (not from a task opened in the history, which may have
+ * tofu outputs (not from a task opened in the history, which may have
  * none or outdated ones); members load their own entry via ``/my-access``
  * (:func:`loadMyAccess`). ``enrichedTeams`` combines both with the
  * deployment's teams (see ``services/deployment-account-matching.service``).

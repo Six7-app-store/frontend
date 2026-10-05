@@ -115,10 +115,10 @@ describe('NewDeploymentVariableView.vue', () => {
     expect(routerReplaceMock).toHaveBeenCalledWith({ name: 'apps' })
   })
 
-  it('fetches variables and groups them into packer and terraform sections', async () => {
+  it('fetches variables and lists them in one section', async () => {
     const mockVars = [
-      { name: 'packer_var', source: 'packer', type: 'string', required: false, default: 'val1' },
-      { name: 'tf_var', source: 'terraform', type: 'string', required: false, default: 'val2' }
+      { name: 'first_var', type: 'string', required: false, default: 'val1' },
+      { name: 'tf_var', type: 'string', required: false, default: 'val2' }
     ]
     
     const wrapper = createWrapper({}, mockVars)
@@ -127,15 +127,15 @@ describe('NewDeploymentVariableView.vue', () => {
     const appStore = useAppStore()
     expect(appStore.fetchAppVariables).toHaveBeenCalledWith('app-1', '1.0.0')
 
-    // Beiden Sektionen sollten gerendert werden (Namen der Variablen sind sichtbar)
-    expect(wrapper.text()).toContain('packer_var')
+    // Beide Variablen werden gerendert (Namen sind sichtbar)
+    expect(wrapper.text()).toContain('first_var')
     expect(wrapper.text()).toContain('tf_var')
   })
 
   it('blocks navigation if a required variable is missing (Required-Gating)', async () => {
     const mockVars = [
       // Required Variable ohne Default-Wert
-      { name: 'db_password', source: 'terraform', type: 'string', required: true }
+      { name: 'db_password', type: 'string', required: true }
     ]
     
     const wrapper = createWrapper({}, mockVars)
@@ -152,7 +152,7 @@ describe('NewDeploymentVariableView.vue', () => {
 
   it('allows navigation and saves variables when required fields are filled', async () => {
     const mockVars = [
-      { name: 'db_password', source: 'terraform', type: 'string', required: true }
+      { name: 'db_password', type: 'string', required: true }
     ]
     
     const wrapper = createWrapper({}, mockVars)
@@ -182,8 +182,8 @@ describe('NewDeploymentVariableView.vue', () => {
 
   it('treats an untouched number variable without default as unchanged', async () => {
     const mockVars = [
-      { name: 'port', source: 'terraform', type: 'number', required: false },
-      { name: 'host', source: 'terraform', type: 'string', required: false, default: 'localhost' }
+      { name: 'port', type: 'number', required: false },
+      { name: 'host', type: 'string', required: false, default: 'localhost' }
     ]
 
     const wrapper = createWrapper({}, mockVars)
@@ -281,12 +281,12 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
     await wrapper.findAll('button').find((b) => b.text().includes('deployment.actions.next'))!.trigger('click')
   }
 
-  it('stellt Werte aus dem Draft wieder her (single image), Listen als Kommatext', async () => {
+  it('stellt Werte aus dem Draft wieder her, Listen als Kommatext', async () => {
     const wrapper = mountView({
       variableDefinitions: [
-        { name: 'region', source: 'packer', type: 'string', default: 'us' },
-        { name: 'tags', source: 'terraform', type: 'list(string)' },
-        { name: 'debug', source: 'terraform', type: 'bool', default: false },
+        { name: 'region', type: 'string', default: 'us' },
+        { name: 'tags', type: 'list(string)' },
+        { name: 'debug', type: 'bool', default: false },
       ],
       variables: { region: 'eu', tags: ['a', 'b'] },
     })
@@ -295,27 +295,10 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
     expect(inputs(wrapper)).toEqual({ region: 'eu', tags: 'a, b', debug: false })
   })
 
-  it('stellt Packer-Werte pro Template wieder her und speichert sie verschachtelt (multi image)', async () => {
-    const wrapper = mountView({
-      variableDefinitions: [
-        { name: 'size', source: 'packer', type: 'string', template_key: 'web', default: 'm' },
-        { name: 'size', source: 'packer', type: 'string', template_key: 'db', default: 'l' },
-      ],
-      variables: { packer: { web: { size: 's' } } },
-    })
-    await flushPromises()
-    expect(inputs(wrapper)).toEqual({ 'web.size': 's', 'db.size': 'l' })
-
-    await next(wrapper)
-    const store = useDeploymentStore()
-    expect(store.draft.variables).toEqual({ packer: { web: { size: 's' }, db: { size: 'l' } } })
-    expect(JSON.parse(store.draft.userInputVar as string)).toEqual({ packer: { web: { size: 's' } } })
-  })
-
   it('verteilt den Default einer Team-Variable auf alle Teams und speichert die Slot-Map', async () => {
     const wrapper = mountView(
       { groupNames: ['Rot', 'Blau'], assignments: { 0: ['u1'], 1: ['u2'] } },
-      [{ name: 'quota', source: 'terraform', type: 'number', varScope: 'team', default: 5 }],
+      [{ name: 'quota', type: 'number', varScope: 'team', default: 5 }],
     )
     await flushPromises()
     expect(inputs(wrapper)).toEqual({ quota__Rot: 5, quota__Blau: 5 })
@@ -328,9 +311,9 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
 
   it('wandelt Listen und Zahlen beim Speichern um und merkt nur Abweichungen vom Default', async () => {
     const wrapper = mountView({}, [
-      { name: 'tags', source: 'terraform', type: 'list(string)' },
-      { name: 'port', source: 'terraform', type: 'number', default: 22 },
-      { name: 'host', source: 'terraform', type: 'string', default: 'localhost' },
+      { name: 'tags', type: 'list(string)' },
+      { name: 'port', type: 'number', default: 22 },
+      { name: 'host', type: 'string', default: 'localhost' },
     ])
     await flushPromises()
 
@@ -347,7 +330,7 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
   it('verlangt eine Pflicht-Variable pro Person und nennt die fehlenden Slots', async () => {
     const wrapper = mountView(
       { groupNames: ['Rot'], assignments: { 0: ['u1'] } },
-      [{ name: 'login', source: 'terraform', type: 'string', varScope: 'user', required: true }],
+      [{ name: 'login', type: 'string', varScope: 'user', required: true }],
       new Map([['u1', { userId: 'u1', username: 'anna' }]]),
     )
     await flushPromises()
@@ -361,7 +344,7 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
   it('verwirft Slot-Werte umbenannter Teams und meldet das', async () => {
     const wrapper = mountView(
       { groupNames: ['Rot'], assignments: { 0: ['u1'] } },
-      [{ name: 'login', source: 'terraform', type: 'string', varScope: 'user' }],
+      [{ name: 'login', type: 'string', varScope: 'user' }],
       new Map([['u1', { userId: 'u1', username: 'anna' }]]),
     )
     await flushPromises()
@@ -376,9 +359,9 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
   })
 
   it.each([
-    ['Team-Variable', { name: 'quota', source: 'terraform', type: 'number', varScope: 'team' }],
-    ['Personen-Variable', { name: 'login', source: 'terraform', type: 'string', varScope: 'user' }],
-    ['Team-Datei', { name: 'cert', source: 'terraform', type: 'map(string)', osType: 'file', osScope: 'team' }],
+    ['Team-Variable', { name: 'quota', type: 'number', varScope: 'team' }],
+    ['Personen-Variable', { name: 'login', type: 'string', varScope: 'user' }],
+    ['Team-Datei', { name: 'cert', type: 'map(string)', osType: 'file', osScope: 'team' }],
   ])('weist bei einer %s ohne Teams genau einmal darauf hin', async (_label, variable) => {
     const wrapper = mountView({ groupNames: [], assignments: {} }, [variable])
     await flushPromises()
@@ -388,8 +371,8 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
 
   it('lässt Datei-Variablen aus den Werten heraus', async () => {
     const wrapper = mountView({}, [
-      { name: 'cert', source: 'terraform', type: 'map(string)', osType: 'file', default: {} },
-      { name: 'host', source: 'terraform', type: 'string', default: 'x' },
+      { name: 'cert', type: 'map(string)', osType: 'file', default: {} },
+      { name: 'host', type: 'string', default: 'x' },
     ])
     await flushPromises()
     await next(wrapper)

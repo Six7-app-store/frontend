@@ -12,9 +12,9 @@
  * * ``progress`` — 0..100, ``null`` while no progress event has
  *   arrived (the snapshot frame seeds it from the DB).
  * * ``currentPhase`` — name of the active phase (e.g.
- *   ``TERRAFORM_APPLY``), or null pre-snapshot.
- * * ``totalPhases`` — last seen total (8 or 11 depending on whether
- *   the deployment includes a Packer build).
+ *   ``TOFU_APPLY``), or null pre-snapshot.
+ * * ``totalPhases`` — last seen total (8 for a deploy, 7 for the
+ *   other task types).
  * * ``liveLogs`` — bounded array of the most recent log entries
  *   (default 100). Auto-scroll consumers should render the tail.
  * * ``connectionState`` — high-level state machine surface for the
@@ -48,13 +48,9 @@ export interface ProgressEvent {
   total_phases: number
   progress_pct: number
   message?: string
-  // Full ordered phase-name sequence for the active task. Multi-image
-  // deploys produce a dynamic sequence (N×3 Packer phases for N
-  // templates) whose template keys cannot be guessed from
-  // observation order — the worker ships the authoritative list with
-  // every event. Single-image / non-deploy tasks omit this and the
-  // UI falls back to the static phase tables it bundles for the
-  // legacy shape.
+  // Full ordered phase-name sequence for the active task; the worker
+  // ships it with every progress event. Until the first one lands the
+  // UI falls back to the static phase tables it bundles.
   phase_names?: string[]
 }
 
@@ -106,7 +102,7 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
     currentPhase.value = null
     currentPhaseIndex.value = null
     // Reset the dot count back to the default so a previous run's
-    // total (e.g. 11 for deploy) doesn't briefly bleed into the next
+    // total (e.g. 8 for deploy) doesn't briefly bleed into the next
     // run's stepper (e.g. 7 for destroy) before its first progress
     // event arrives.
     totalPhases.value = DEFAULT_PHASE_COUNT
@@ -141,7 +137,7 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
       // carries ``progress_pct=100`` and ``current_phase="OUTPUTS_…"``
       // for the *finished* deploy task; if a destroy then starts, the
       // backend's ``latest_task`` query briefly returns the old success
-      // task. Painting those into the UI would flash the stale 11-step
+      // task. Painting those into the UI would flash the stale 8-step
       // deploy stepper at 100% before the destroy's first progress
       // event arrives. Skip adoption for terminal-status snapshots.
       if (isActive) {
@@ -149,7 +145,7 @@ export function useDeploymentStream(deploymentId: Ref<string | null>) {
         if (snap.current_phase !== null) currentPhase.value = snap.current_phase
       }
       // Snapshot doesn't carry total_phases; the first progress event
-      // will fill it in. We keep the conservative default (11).
+      // will fill it in. We keep the default (8, the deploy shape).
       if (isTerminalTaskStatus(status)) {
         connectionState.value = 'ended'
       }

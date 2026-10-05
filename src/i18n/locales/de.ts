@@ -346,7 +346,7 @@ export default {
     // Dieselbe Seite, andere Sprache: Studierende legen nichts an, sie
     // bekommen eine Umgebung zugewiesen. Sie interessiert nur, ob sie
     // läuft und wie sie hineinkommen — Release-Tag, Task-Status und
-    // Terraform-Vokabular sind Dozentensache.
+    // OpenTofu-Vokabular sind Dozentensache.
     titleStudent: "Meine Umgebungen",
     subtitleStudent: "Umgebungen, die dir zugewiesen wurden",
     emptyStudent: "Dir wurde noch keine Umgebung zugewiesen.",
@@ -368,7 +368,7 @@ export default {
     infra: {
       vms: "Virtuelle Maschinen",
       loadingVms: "Lade VMs…",
-      noVms: "Keine VMs im aktuellen Terraform-State.",
+      noVms: "Keine VMs im aktuellen OpenTofu-State.",
       network: "Netzwerk",
       security: "Sicherheit",
     },
@@ -426,7 +426,7 @@ export default {
     hideTechnicalDetails: 'Technische Details ausblenden',
     showTechnicalDetails: 'Technische Details anzeigen',
     noLogs: 'Keine Logs für diesen Task vorhanden',
-    terraformResourcesCount: '{count} verwaltete Ressourcen',
+    tofuResourcesCount: '{count} verwaltete Ressourcen',
     advancedDetails: 'Erweiterte Details',
     taskHistory: 'Task-Historie',
     backToTaskList: 'Zurück zur Liste',
@@ -442,7 +442,7 @@ export default {
     deploymentPause: "Pausieren",
     deploymentResume: "Fortsetzen",
     confirmDeleteTitle: "Deployment löschen",
-    confirmDeleteMessage: "Das Deployment {name} löschen? Falls noch OpenStack-Ressourcen existieren, werden sie zuerst automatisch via Terraform abgebaut (Live-Fortschritt im Anschluss).",
+    confirmDeleteMessage: "Das Deployment {name} löschen? Falls noch OpenStack-Ressourcen existieren, werden sie zuerst automatisch via OpenTofu abgebaut (Live-Fortschritt im Anschluss).",
     confirmPauseTitle: "Deployment pausieren",
     confirmPauseMessage: "Das Deployment {name} pausieren? Alle Compute-Instanzen werden gestoppt (Volumes und Netzwerke bleiben erhalten). RAM und CPU-Quota werden freigegeben; du kannst es später wieder fortsetzen.",
     confirmResumeTitle: "Deployment fortsetzen",
@@ -481,10 +481,10 @@ export default {
     port: "Port",
     password: "Passwort",
     noStructuredAccounts: "Keine strukturierten Benutzerkonten gefunden. Siehe Rohdaten unten.",
-    showRawData: "Terraform-Rohdaten (JSON) anzeigen",
+    showRawData: "OpenTofu-Rohdaten (JSON) anzeigen",
     hideRawData: "Rohdaten ausblenden",
     tasksAndLogs: "Tasks & Logs",
-    terraformState: "Infrastruktur-Details (Terraform State)",
+    tofuState: "Infrastruktur-Details (OpenTofu State)",
     tasksOwnerOnly: "Tasks und Logs sind nur für den Besitzer dieses Deployments und für Lehrkräfte sichtbar.",
     resendAccessButton: "Zugang erneut senden",
     resendAccessSending: "Sende...",
@@ -787,7 +787,7 @@ export default {
     rejectModal: {
       title: "Version ablehnen",
       reasonLabel: "Ablehnungsgrund *",
-      reasonPlaceholder: "z.B. Unsichere Terraform-Konfiguration",
+      reasonPlaceholder: "z.B. Unsichere OpenTofu-Konfiguration",
       submit: "Ablehnen",
     },
     revokeModal: {
@@ -890,8 +890,7 @@ export default {
       unnamed: 'Unbenannt',
       loading: 'Lade Variablen...',
       noVariables: 'Diese App benötigt keine speziellen Variablen.',
-      packerDesc: 'Image/Template Konfiguration',
-      terraformDesc: 'Infrastruktur Konfiguration',
+      tofuDesc: 'Infrastruktur-Konfiguration',
       showInfo: 'Info anzeigen',
       markerErrorTitle: '⚠ @openstack-Marker fehlerhaft',
       markerErrorToast: '{count} fehlerhafte(r) @openstack-Marker — die betroffenen Variablen werden als Free-Text gerendert:\n{lines}',
@@ -930,10 +929,8 @@ export default {
       noUsersAssigned: 'Keine User zugewiesen',
       variablesConfigTitle: 'Variablen-Konfiguration',
       editBtn: 'Bearbeiten',
-      packerVars: 'Packer Variablen',
-      terraformVars: 'Terraform Variablen',
-      noPackerVars: 'Keine Packer Variablen',
-      noTerraformVars: 'Keine Terraform Variablen',
+      tofuVars: 'OpenTofu-Variablen',
+      noTofuVars: 'Keine OpenTofu-Variablen',
       uploadedFiles: 'Hochgeladene Dateien',
       fileScope: 'Scope: {scope}',
       noFileUploaded: 'Keine Datei hochgeladen',
@@ -1117,9 +1114,9 @@ export default {
   vm: {
     drift: {
       missingTitle: 'VM in OpenStack nicht (mehr) gefunden',
-      missingHint: 'Diese Resource ist im Terraform-State eingetragen, fehlt aber im OpenStack-Projekt. Klick auf „Redeploy", um sie neu zu erstellen.',
+      missingHint: 'Diese Resource ist im OpenTofu-State eingetragen, fehlt aber im OpenStack-Projekt. Klick auf „Redeploy", um sie neu zu erstellen.',
       staleTitle: 'Live-Status konnte nicht abgefragt werden',
-      staleHint: 'Die hier gezeigten Werte stammen aus dem zuletzt gecachten Terraform-State. „Aktualisieren" oben rechts wiederholt den Live-Abruf.',
+      staleHint: 'Die hier gezeigten Werte stammen aus dem zuletzt gecachten OpenTofu-State. „Aktualisieren" oben rechts wiederholt den Live-Abruf.',
     },
     resourcesErrors: {
       missingCredentials: 'OpenStack-Credentials fehlen — bitte konfigurieren, um den Live-Status zu sehen.',
@@ -1147,7 +1144,7 @@ export default {
       address: 'Adresse',
       osUuid: 'OS-UUID',
       errors: {
-        notFound: 'Resource nicht mehr im Terraform-State gefunden.',
+        notFound: 'Resource nicht mehr im OpenTofu-State gefunden.',
         missingCredentials: 'OpenStack-Credentials fehlen — bitte konfigurieren.',
         unreachable: 'OpenStack ist gerade nicht erreichbar.',
         generic: 'Fehler beim Laden der Details.',

@@ -11,7 +11,7 @@ export type PauseResumeAction = 'pause' | 'resume'
 
 // Lifecycle action gating — the action bar exposes Delete plus a
 // dynamic Pause/Resume button. The backend picks the right Delete
-// behaviour (terraform destroy + soft-delete vs. straight soft-delete)
+// behaviour (tofu destroy + soft-delete vs. straight soft-delete)
 // based on status, so the frontend just surfaces availability.
 // Mirrors backend/app/services/lifecycle.py:
 //   * success                 → Delete (dispatches Destroy), Pause

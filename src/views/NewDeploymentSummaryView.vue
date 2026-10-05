@@ -7,12 +7,12 @@ import { useDeploymentStore } from '@/stores/deployment.store'
 import { useAppStore } from '@/stores/app.store'
 import { useToast } from '@/composables/useToast'
 import { getErrorStatus } from '@/utils/http-error'
-import { fileSummaries, packerRows, terraformRows, type SummaryContext } from '@/services/deployment-summary.service'
+import { fileSummaries, variableRows, type SummaryContext } from '@/services/deployment-summary.service'
 import { formatSubmitError } from '@/services/deployment-submit-error.service'
 import WizardStepLayout from '@/components/deployment-wizard/WizardStepLayout.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import SummaryVariableCard from '@/components/deployment-wizard/SummaryVariableCard.vue'
-import { Box, FileText, Layers, Pencil } from 'lucide-vue-next'
+import { FileText, Layers, Pencil } from 'lucide-vue-next'
 import Badge from '@/components/ui/Badge.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import Card from '@/components/ui/Card.vue'
@@ -81,11 +81,9 @@ const summaryContext: SummaryContext = {
   osName: (osType, mode, value) => getOsDisplayName(osType as OsResourceType, mode, value)?.name ?? null,
 }
 
-const packerVars = computed(() =>
-  packerRows(appVariables.value || [], deploymentStore.draft.variables, summaryContext))
 
-const terraformVars = computed(() =>
-  terraformRows(appVariables.value || [], deploymentStore.draft.variables, summaryContext))
+const tofuVars = computed(() =>
+  variableRows(appVariables.value || [], deploymentStore.draft.variables, summaryContext))
 
 const fileVarSummaries = computed(() =>
   fileSummaries(appVariables.value || [], deploymentStore.draft.fileUploads))
@@ -122,7 +120,7 @@ const fetchAndSyncVariables = async () => {
   // ``selectedApp`` could not be resolved for any reason (apps not yet in
   // the store, direct call to the summary route, filtered app list), the
   // function returned early and ``appVariables.value`` stayed ``[]`` —
-  // the summary showed "No Packer/Terraform variables" even though the
+  // the summary showed "No OpenTofu variables" even though the
   // draft held the definitions.
   const cached = deploymentStore.draft.variableDefinitions
   if (cached && cached.length > 0) {
@@ -324,11 +322,8 @@ const handleBack = () => {
         </template>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <SummaryVariableCard :title="t('deployment.summary.packerVars')" :icon="Box" :rows="packerVars"
-            :empty-label="t('deployment.summary.noPackerVars')" />
-
-          <SummaryVariableCard :title="t('deployment.summary.terraformVars')" :icon="Layers" :rows="terraformVars"
-            :empty-label="t('deployment.summary.noTerraformVars')" />
+          <SummaryVariableCard :title="t('deployment.summary.tofuVars')" :icon="Layers" :rows="tofuVars"
+            :empty-label="t('deployment.summary.noTofuVars')" />
 
           <!-- One entry per file variable; chips list the uploaded slots
                (filename + size). Hidden when the app declares no file variables. -->

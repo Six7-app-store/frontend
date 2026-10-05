@@ -15,13 +15,12 @@ const labels = (count: number, source: PhaseStepLabelSource) =>
 
 describe('phaseLabel', () => {
   it('title-cases UPPER_SNAKE_CASE phase names', () => {
-    expect(phaseLabel('TERRAFORM_APPLY')).toBe('Terraform Apply')
     expect(phaseLabel('OUTPUTS_AND_CLEANUP')).toBe('Outputs And Cleanup')
   })
 
-  it('renders a multi-image template key as a bracket suffix', () => {
-    expect(phaseLabel('PACKER_BUILD:database')).toBe('Packer Build [database]')
-    expect(phaseLabel('PACKER_BUILD: ')).toBe('Packer Build')
+  it('names the tool OpenTofu', () => {
+    expect(phaseLabel('TOFU_APPLY')).toBe('OpenTofu Apply')
+    expect(phaseLabel('TOFU_INIT')).toBe('OpenTofu Init')
   })
 
   it('returns an empty label for non-strings and empty strings', () => {
@@ -35,37 +34,37 @@ describe('resolvePhaseStepCount', () => {
   it('uses the live total when positive, otherwise the default', () => {
     expect(resolvePhaseStepCount(7)).toBe(7)
     expect(resolvePhaseStepCount(0)).toBe(DEFAULT_PHASE_COUNT)
-    expect(DEFAULT_PHASE_COUNT).toBe(11)
+    expect(DEFAULT_PHASE_COUNT).toBe(8)
   })
 })
 
 describe('resolvePhaseStepLabel', () => {
   it('prefers the worker phase names from the stream', () => {
-    const source = { phaseNames: ['STARTING', 'PACKER_BUILD:web'], activeTaskType: 'destroy' as const, totalPhases: 7 }
-    expect(resolvePhaseStepLabel(1, source)).toBe('Packer Build [web]')
+    const source = { phaseNames: ['STARTING', 'GIT_CLONE'], activeTaskType: 'destroy' as const, totalPhases: 7 }
+    expect(resolvePhaseStepLabel(1, source)).toBe('Git Clone')
     // Beyond the stream list the static table for the task type applies.
-    expect(resolvePhaseStepLabel(5, source)).toBe('Terraform Destroy')
+    expect(resolvePhaseStepLabel(5, source)).toBe('OpenTofu Destroy')
   })
 
   it.each([
     ['pause', 'Server Stop'],
     ['resume', 'Server Start'],
-    ['destroy', 'Terraform Destroy'],
-    ['redeploy', 'Terraform Apply'],
+    ['destroy', 'OpenTofu Destroy'],
+    ['redeploy', 'OpenTofu Apply'],
   ] as const)('picks the static table by task type (%s)', (type, fifth) => {
     expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: type, totalPhases: 7 })).toBe(fifth)
   })
 
   it('picks the deploy table matching the live total', () => {
-    expect(labels(8, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 8 })[4]).toBe('Terraform Init')
-    expect(labels(11, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 11 })[4]).toBe('Packer Init')
+    expect(labels(8, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 8 })[4]).toBe('OpenTofu Init')
+    expect(labels(8, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 8 })[6]).toBe('OpenTofu Apply')
   })
 
   it('falls back to length matching without a known type', () => {
-    expect(resolvePhaseStepLabel(6, { phaseNames: [], activeTaskType: undefined, totalPhases: 11 })).toBe('Packer Build')
-    expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: undefined, totalPhases: 7 })).toBe('Terraform Destroy')
+    expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: undefined, totalPhases: 8 })).toBe('OpenTofu Plan')
+    expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: undefined, totalPhases: 7 })).toBe('OpenTofu Destroy')
     // Deploy with an unknown total: length matching still applies (7 → destroy table).
-    expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 7 })).toBe('Terraform Destroy')
+    expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 7 })).toBe('OpenTofu Destroy')
   })
 
   it('uses 1-based numbers when no table fits', () => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * One column of variables in the deployment summary (Packer or Terraform):
+ * The variables card of the deployment summary:
  * title with a count, then one row per variable. When the display differs
  * from what is submitted (an OpenStack name for an id), the submitted value
  * is the row's tooltip.

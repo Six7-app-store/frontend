@@ -4,12 +4,12 @@
  * the draft or from saved input, how they are written back to the draft,
  * and which required values are missing. No Vue, no I/O.
  *
- * Form values are keyed by ``formKeyFor``; a scoped variable (team/user)
+ * Form values are keyed by variable name; a scoped variable (team/user)
  * holds a map slot → value instead of a single value. List values are
  * edited as comma text and stored as arrays.
  */
 import type { AppVariable } from '@/types'
-import { effectiveVariableScope, templateKeyOf } from '@/services/deployment-variables.service'
+import { effectiveVariableScope } from '@/services/deployment-variables.service'
 import { isBool, isList, isNumber, splitCsv } from '@/services/variable-types'
 
 export interface WizardTeamMember {
@@ -42,29 +42,11 @@ export function slotKeysFor(v: AppVariable, teams: WizardTeam[]): string[] {
   return []
 }
 
-/**
- * Whether the app builds several Packer images: its Packer variables name
- * more than one template, or one that is not ``default``.
- */
-export function isMultiImage(definitions: AppVariable[]): boolean {
-  const keys = new Set(definitions.filter((v) => v.source === 'packer').map(templateKeyOf))
-  return keys.size > 1 || (keys.size === 1 && !keys.has('default'))
-}
-
-/** Form key of a variable; Packer variables of a multi-image app are prefixed with their template. */
-export function formKeyFor(v: AppVariable, multiImage: boolean): string {
-  if (v.source !== 'packer') return v.name
-  const tkey = templateKeyOf(v)
-  if (!multiImage || tkey === 'default') return v.name
-  return `${tkey}.${v.name}`
-}
-
-/** Drops repeated definitions (same name, and for Packer the same template); the first wins. */
+/** Drops repeated definitions of the same name; the first wins. */
 export function dedupeDefinitions(raw: AppVariable[]): AppVariable[] {
   const unique = new Map<string, AppVariable>()
   for (const v of raw) {
-    const key = v.source === 'packer' ? `${templateKeyOf(v)}.${v.name}` : v.name
-    if (!unique.has(key)) unique.set(key, v)
+    if (!unique.has(v.name)) unique.set(v.name, v)
   }
   return Array.from(unique.values())
 }
@@ -96,24 +78,19 @@ export function seedScopedDefault(
 
 /**
  * Form values restored from ``draft.variables`` when the user comes back to
- * this step. Packer values sit nested per template in the multi-image
- * layout, flat otherwise; missing values fall back to the default.
+ * this step; missing values fall back to the default.
  */
 export function hydrateFromDraft(
   definitions: AppVariable[],
   stored: Record<string, any>,
   teams: WizardTeam[],
-  multiImage: boolean,
 ): FormValues {
   const values: FormValues = {}
   for (const v of definitions) {
     // File variables travel through draft.fileUploads, not the form values.
     if (isFileVariable(v)) continue
-    const key = formKeyFor(v, multiImage)
-    let storedValue: any
-    if (v.source === 'packer' && multiImage) storedValue = stored.packer?.[templateKeyOf(v)]?.[v.name]
-    else if (v.source === 'packer') storedValue = stored.packer?.[v.name] ?? stored[v.name]
-    else storedValue = stored[v.name]
+    const key = v.name
+    const storedValue = stored[v.name]
 
     if (isScoped(v)) {
       values[key] = seedScopedDefault(v, teams, isPlainObject(storedValue) ? storedValue : undefined)
@@ -130,20 +107,18 @@ export function hydrateFromDraft(
 
 /**
  * Form values for freshly loaded definitions: previously saved input
- * (``userInputVar``, by form key or plain name) wins over the default.
+ * (``userInputVar``) wins over the default.
  */
 export function hydrateFromInput(
   definitions: AppVariable[],
   saved: Record<string, any>,
   teams: WizardTeam[],
-  multiImage: boolean,
 ): FormValues {
   const values: FormValues = {}
   for (const v of definitions) {
-    const key = formKeyFor(v, multiImage)
+    const key = v.name
     let value: any = ''
     if (saved[key] !== undefined) value = saved[key]
-    else if (saved[v.name] !== undefined) value = saved[v.name]
     else if (v.default !== undefined && v.default !== null) value = v.default
 
     if (isScoped(v) && !isFileVariable(v)) {
@@ -188,24 +163,18 @@ function storable(val: any, type: string): any {
 /**
  * The form values written back for the draft: ``all`` becomes
  * ``draft.variables``, ``changed`` (only what differs from the defaults, and
- * filled scoped slots) becomes ``userInputVar``. Packer values of a
- * multi-image app are nested per template in both.
+ * filled scoped slots) becomes ``userInputVar``.
  */
 export function serializeValues(
   definitions: AppVariable[],
   values: FormValues,
-  multiImage: boolean,
 ): { changed: Record<string, any>; all: Record<string, any> } {
   const changed: Record<string, any> = {}
   const all: Record<string, any> = {}
-  const packerChanged: Record<string, Record<string, any>> = {}
-  const packerAll: Record<string, Record<string, any>> = {}
 
   for (const v of definitions) {
     if (isFileVariable(v)) continue
-    const key = formKeyFor(v, multiImage)
-    const tkey = templateKeyOf(v)
-    const nested = v.source === 'packer' && multiImage
+    const key = v.name
 
     let value: any
     let isChange: boolean
@@ -226,17 +195,10 @@ export function serializeValues(
       isChange = comparable(values[key], v.type) !== comparable(v.default, v.type)
     }
 
-    if (nested) {
-      if (isChange) (packerChanged[tkey] ??= {})[v.name] = value
-      ;(packerAll[tkey] ??= {})[v.name] = value
-    } else {
-      if (isChange) changed[v.name] = value
-      all[v.name] = value
-    }
+    if (isChange) changed[v.name] = value
+    all[v.name] = value
   }
 
-  if (multiImage && Object.keys(packerChanged).length > 0) changed.packer = packerChanged
-  if (multiImage && Object.keys(packerAll).length > 0) all.packer = packerAll
   return { changed, all }
 }
 
@@ -250,12 +212,11 @@ export function missingRequired(
   definitions: AppVariable[],
   values: FormValues,
   teams: WizardTeam[],
-  multiImage: boolean,
 ): string[] {
   const missing: string[] = []
   for (const v of definitions) {
     if (!v.required || isFileVariable(v)) continue
-    const key = formKeyFor(v, multiImage)
+    const key = v.name
     if (!isScoped(v)) {
       if (isEmptyValue(values[key])) missing.push(v.name)
       continue
@@ -282,12 +243,11 @@ export function dropStaleSlots(
   definitions: AppVariable[],
   values: FormValues,
   teams: WizardTeam[],
-  multiImage: boolean,
 ): string[] {
   const dropped: string[] = []
   for (const v of definitions) {
     if (!isScoped(v) || isFileVariable(v)) continue
-    const map = values[formKeyFor(v, multiImage)]
+    const map = values[v.name]
     if (!isPlainObject(map)) continue
     const valid = new Set(slotKeysFor(v, teams))
     for (const slot of Object.keys(map)) {

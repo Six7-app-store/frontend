@@ -87,7 +87,7 @@ describe('useDeploymentStream snapshot', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   it('adopts progress and phase from a live snapshot (upper-case status)', async () => {
-    const snapshot = { task_id: 't1', status: 'RUNNING', current_phase: 'TERRAFORM_APPLY', progress_pct: 40, type: 'deploy' }
+    const snapshot = { task_id: 't1', status: 'RUNNING', current_phase: 'TOFU_APPLY', progress_pct: 40, type: 'deploy' }
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true, status: 200, body: sseBody(`event: snapshot\ndata: ${JSON.stringify(snapshot)}`),
     }))
@@ -97,8 +97,8 @@ describe('useDeploymentStream snapshot', () => {
     await flushPromises()
 
     expect(stream.progress.value).toBe(40)
-    expect(stream.currentPhase.value).toBe('TERRAFORM_APPLY')
-    expect(stream.totalPhases.value).toBe(11)
+    expect(stream.currentPhase.value).toBe('TOFU_APPLY')
+    expect(stream.totalPhases.value).toBe(8)
   })
 
   it('ignores a finished task in the snapshot and ends the stream', async () => {

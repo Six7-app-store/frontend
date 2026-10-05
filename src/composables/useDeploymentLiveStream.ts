@@ -101,7 +101,7 @@ export function useDeploymentLiveStream(options: DeploymentLiveStreamOptions) {
   // event. Important when the user opens the detail view *mid-deploy*:
   // without a seed they'd see the loader card until the next worker
   // progress event, which can be 30s+ during long phases like
-  // ``terraform apply``.
+  // ``tofu apply``.
   //
   // Only seed from a *live* task. The persisted progress columns of a
   // finished deploy would otherwise paint the stepper at 100% / phase

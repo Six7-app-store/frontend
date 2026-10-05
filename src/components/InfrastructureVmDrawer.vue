@@ -33,7 +33,7 @@ import {
 const { t } = useI18n()
 
 const props = defineProps<{
-  /** Terraform state address of the VM, shown until its detail has a name. */
+  /** OpenTofu state address of the VM, shown until its detail has a name. */
   address: string
   detail: DeploymentResource | null
   isLoading: boolean

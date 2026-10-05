@@ -46,7 +46,7 @@ export const deploymentApi = {
    * The backend picks the right behaviour based on status:
    *   * ``success``/``failed``/``paused`` → returns 202 ``{task_id, status}`` and
    *     dispatches a Destroy worker task; the SSE stream surfaces the
-   *     terraform-destroy progress and the row is auto-soft-deleted on
+   *     tofu destroy progress and the row is auto-soft-deleted on
    *     success.
    *   * ``cancelled`` → 204, immediate soft-delete (no resources to
    *     clean up).
@@ -91,7 +91,7 @@ export const deploymentApi = {
   /**
    * Re-send the per-user access mail for one team member of a
    * deployment. Reuses the credentials from the latest successful
-   * DEPLOY task's terraform outputs, so this only works after a
+   * DEPLOY task's tofu outputs, so this only works after a
    * deploy has completed. 409 if there's nothing to resend yet,
    * 502 if SMTP rejected the mail.
    */
@@ -122,13 +122,13 @@ export const deploymentApi = {
   /**
    * List the deployment's infrastructure resources (Stage-1 view).
    *
-   * Parses the most-recent task's cached Terraform state and (by
+   * Parses the most-recent task's cached OpenTofu state and (by
    * default) overlays a live OpenStack fetch per compute instance so
    * the UI sees the ECHTEN power state, fault message, IPs, etc.
    *
    * Pass ``refresh=false`` to skip the live fetch — useful during
    * tight polling loops (the cached state still reflects what
-   * terraform last wrote, just not the post-apply lifecycle).
+   * tofu last wrote, just not the post-apply lifecycle).
    *
    * Owner-only. 412 when the user has no OpenStack credentials,
    * 502 when OpenStack itself is unreachable.
@@ -141,8 +141,8 @@ export const deploymentApi = {
   },
 
   /**
-   * Stage-2 detail for a single compute instance, by Terraform state
-   * address. The address is the same string ``terraform state list``
+   * Stage-2 detail for a single compute instance, by OpenTofu state
+   * address. The address is the same string ``tofu state list``
    * prints — for the typical ``for_each = toset(teams)`` shape that
    * means ``openstack_compute_instance_v2.team_ide["Team-A"]``.
    *
@@ -159,7 +159,7 @@ export const deploymentApi = {
 
   /**
    * Replace a single compute instance via
-   * ``terraform apply -replace=<addr> -target=<addr>``. Spawns a
+   * ``tofu apply -replace=<addr> -target=<addr>``. Spawns a
    * dedicated ``REDEPLOY`` Celery task — the SSE stream picks it
    * up just like deploy/destroy/pause/resume.
    *

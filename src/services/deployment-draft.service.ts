@@ -3,12 +3,7 @@
  * must agree on, and the create request built from it. Pure functions —
  * no Vue, no I/O.
  */
-import type { AppVariable, DeploymentCreate, DeploymentDraft, DeploymentFile } from '@/types'
-import {
-  isMultiImagePackerLayout,
-  storedPackerValue,
-  templateKeyOf,
-} from '@/services/deployment-variables.service'
+import type { DeploymentCreate, DeploymentDraft, DeploymentFile } from '@/types'
 
 /**
  * The version a draft deploys. ``releaseTag`` is a plain tag string; older
@@ -69,42 +64,29 @@ function draftTeams(draft: DeploymentDraft): Array<{ name: string; userIds: stri
 }
 
 /**
- * The variable values the worker receives, split by tool:
- * ``{ packer: {...}, terraform: {...} }``. Unset and empty values — also a
- * scoped variable with no filled slot — are left out so the HCL default
- * applies instead of null. Packer values of a multi-image app are nested
- * per template, as the worker reads them
- * (``user_vars["packer"][template_key][name]``). File variables travel
- * separately.
+ * The variable values the worker hands to OpenTofu: ``{ tofu: {...} }``.
+ * Unset and empty values — also a scoped variable with no filled slot — are
+ * left out so the HCL default applies instead of null. File variables
+ * travel separately.
  */
-function draftUserInputVar(draft: DeploymentDraft): { packer: Record<string, any>; terraform: Record<string, any> } {
-  const out: { packer: Record<string, any>; terraform: Record<string, any> } = { packer: {}, terraform: {} }
+function draftUserInputVar(draft: DeploymentDraft): { tofu: Record<string, any> } {
+  const out: { tofu: Record<string, any> } = { tofu: {} }
   if (!draft.variables || typeof draft.variables !== 'object') return out
   const variables = draft.variables as Record<string, any>
   if (!Array.isArray(draft.variableDefinitions)) {
-    // Without definitions nothing tells Packer from Terraform values.
-    out.terraform = { ...variables }
+    out.tofu = { ...variables }
     return out
   }
-  const multiImage = isMultiImagePackerLayout(variables)
-  const valueOf = (def: AppVariable) =>
-    def.source === 'packer' ? storedPackerValue(variables, def, multiImage) : variables[def.name]
 
   for (const def of draft.variableDefinitions) {
     if (def.osType === 'file') continue
-    const val = valueOf(def)
+    const val = variables[def.name]
     if (val === undefined || val === null) continue
     if (typeof val === 'string' && val.trim() === '') continue
     if (typeof val === 'object' && !Array.isArray(val)
       && (def.varScope === 'team' || def.varScope === 'user')
       && Object.keys(val).length === 0) continue
-
-    if (def.source === 'packer') {
-      if (multiImage) (out.packer[templateKeyOf(def)] ??= {})[def.name] = val
-      else out.packer[def.name] = val
-    } else if (def.source === 'terraform') {
-      out.terraform[def.name] = val
-    }
+    out.tofu[def.name] = val
   }
   return out
 }
