@@ -78,6 +78,6 @@ Neue Tests folgen dieser Aufteilung; bestehende werden nicht verschoben.
 - `.claude/` — erzeugt aus `deployment/harness/`. Was hier geändert wird, ist
   beim nächsten `make harness-sync` weg. Änderungen gehören in die Quelle.
 
-Geheimnisse, Produktions-Deploys, `terraform apply` und Pushes auf `main` sind
+Geheimnisse, Produktions-Deploys, `tofu apply` und Pushes auf `main` sind
 zusätzlich als deny-Regel in `.claude/settings.json` gesperrt. So ein Kommando
 scheitert ohne Nachfrage — das ist Absicht und kein Werkzeugfehler.
