@@ -8,7 +8,7 @@ import { useVariableForm } from '@/composables/useVariableForm'
 import WizardStepLayout from '@/components/deployment-wizard/WizardStepLayout.vue'
 import Spinner from '@/components/ui/Spinner.vue'
 import VariableFieldCard from '@/components/deployment-wizard/VariableFieldCard.vue'
-import { Box, Layers } from 'lucide-vue-next'
+import { Layers } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -16,8 +16,7 @@ const deploymentStore = useDeploymentStore()
 
 const form = useVariableForm()
 const {
-  isLoading, variables, templateKeys, packerByTemplate, packerVariables, terraformVariables,
-  missingRequired, canSubmit, load, save,
+  isLoading, variables, missingRequired, canSubmit, load, save,
 } = form
 
 // Only one variable's info tooltip is open at a time.
@@ -63,67 +62,25 @@ const handleBack = () => {
         {{ t('deployment.variables.noVariables') }}
       </div>
 
-      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <div class="surface-sunken overflow-hidden">
-          <div class="bg-line/[.07] border-b border-subtle text-fg px-6 py-4 flex items-center gap-3">
-            <Box :size="24" />
-            <div>
-              <h2 class="text-xl font-semibold">{{ t('deployment.summary.packerVars') }}</h2>
-              <p class="text-xs text-fg-muted mt-0.5">{{ t('deployment.variables.packerDesc') }}</p>
-            </div>
-          </div>
-          
-          <div class="p-6 space-y-6 max-h-[600px] overflow-y-auto">
-            <div v-if="packerVariables.length === 0" class="text-center py-8 text-fg-muted italic">
-              {{ t('deployment.summary.noPackerVars') }}
-            </div>
-
-            <template v-for="tkey in templateKeys" :key="tkey">
-              <div
-                v-if="templateKeys.length > 1"
-                class="-mx-6 px-6 py-2 bg-line/[.04] border-y border-subtle text-sm font-semibold text-fg"
-              >
-                Image: <code class="font-mono">{{ tkey }}</code>
-              </div>
-
-              <VariableFieldCard
-                v-for="variable in packerByTemplate[tkey]"
-                :key="`${tkey}.${variable.name}`"
-                :variable="variable"
-                :form="form"
-                :tooltip-open="activeTooltip === form.formKey(variable)"
-                @toggle-tooltip="toggleTooltip(form.formKey(variable))"
-              />
-            </template>
+      <div v-else class="surface-sunken overflow-hidden">
+        <div class="bg-line/[.07] border-b border-subtle text-fg px-6 py-4 flex items-center gap-3">
+          <Layers :size="24" />
+          <div>
+            <h2 class="text-xl font-semibold">{{ t('deployment.summary.tofuVars') }}</h2>
+            <p class="text-xs text-fg-muted mt-0.5">{{ t('deployment.variables.tofuDesc') }}</p>
           </div>
         </div>
 
-        <div class="surface-sunken overflow-hidden">
-          <div class="bg-line/[.07] border-b border-subtle text-fg px-6 py-4 flex items-center gap-3">
-            <Layers :size="24" />
-            <div>
-              <h2 class="text-xl font-semibold">{{ t('deployment.summary.terraformVars') }}</h2>
-              <p class="text-xs text-fg-muted mt-0.5">{{ t('deployment.variables.terraformDesc') }}</p>
-            </div>
-          </div>
-          
-          <div class="p-6 space-y-6 max-h-[600px] overflow-y-auto">
-            <div v-if="terraformVariables.length === 0" class="text-center py-8 text-fg-muted italic">
-              {{ t('deployment.summary.noTerraformVars') }}
-            </div>
-            
-            <VariableFieldCard
-              v-for="variable in terraformVariables"
-              :key="variable.name"
-              :variable="variable"
-              :form="form"
-              :tooltip-open="activeTooltip === form.formKey(variable)"
-              @toggle-tooltip="toggleTooltip(form.formKey(variable))"
-            />
-          </div>
+        <div class="p-6 space-y-6 max-h-[600px] overflow-y-auto">
+          <VariableFieldCard
+            v-for="variable in variables"
+            :key="variable.name"
+            :variable="variable"
+            :form="form"
+            :tooltip-open="activeTooltip === variable.name"
+            @toggle-tooltip="toggleTooltip(variable.name)"
+          />
         </div>
-
       </div>
     </div>
 

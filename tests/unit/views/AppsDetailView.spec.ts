@@ -285,8 +285,8 @@ describe('AppsDetailView.vue', () => {
 
     describe('Konfiguration', () => {
         const variables = [
-            { name: 'network_uuid', type: 'string', description: 'Hauptnetzwerk @openstack:network:id', required: false, default: 'abc', source: 'terraform' },
-            { name: 'assignment_files', type: 'string', description: 'Aufgaben', required: true, source: 'terraform' },
+            { name: 'network_uuid', type: 'string', description: 'Hauptnetzwerk @openstack:network:id', required: false, default: 'abc' },
+            { name: 'assignment_files', type: 'string', description: 'Aufgaben', required: true },
         ]
 
         it('lädt die Variablen der aktuellen Version im Hintergrund', async () => {

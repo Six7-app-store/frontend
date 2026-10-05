@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Confirmation dialog for redeploying a single VM. Shows the Terraform
+ * Confirmation dialog for redeploying a single VM. Shows the OpenTofu
  * state address so the user can sanity-check which instance is about to
  * be recreated.
  */
@@ -8,7 +8,7 @@ import ConfirmModal from '@/components/ui/ConfirmModal.vue'
 
 defineProps<{
   show: boolean
-  /** Terraform state address of the VM to redeploy. */
+  /** OpenTofu state address of the VM to redeploy. */
   address: string | null
 }>()
 

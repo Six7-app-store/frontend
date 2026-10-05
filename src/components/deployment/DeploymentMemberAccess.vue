@@ -6,7 +6,7 @@
  * copy button.
  *
  * Which pills appear follows ``connectionFor`` — the app declares
- * ``protocol`` in its terraform output, so a Windows VM gets an RDP
+ * ``protocol`` in its tofu output, so a Windows VM gets an RDP
  * address instead of an ssh command it could not answer.
  *
  * Password visibility is owned by the Teams card and toggled via

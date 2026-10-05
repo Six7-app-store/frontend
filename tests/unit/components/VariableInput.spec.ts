@@ -5,7 +5,7 @@ import VariableInput from '@/components/VariableInput.vue'
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
 
-const boolVariable = { name: 'enable_gpu', type: 'bool', source: 'terraform' } as never
+const boolVariable = { name: 'enable_gpu', type: 'bool' } as never
 
 const mountInput = (props: Record<string, unknown>) =>
   mount(VariableInput, {

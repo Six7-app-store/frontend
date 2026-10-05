@@ -143,8 +143,8 @@ export function userUrlFor(data: { ip?: string; port?: number }, teamVmUrl?: str
   return `http://${data.ip}:${data.port}${path}`
 }
 
-// Mirror the terraform key sanitisation: lowercase the local-part
-// and replace dots with dashes. Only dots — terraform's
+// Mirror the tofu key sanitisation: lowercase the local-part
+// and replace dots with dashes. Only dots — tofu's
 // ``replace(local_part, ".", "-")`` does not touch other characters.
 export function deriveExpectedAccountKey(teamName: string, email: string | undefined): string | null {
   if (!email) return null
@@ -191,7 +191,7 @@ export function matchTeamAccounts(
   }
 
   return teams.map(team => {
-    // Team-level VM metadata from terraform's ``team_vms`` output. Apps
+    // Team-level VM metadata from tofu's ``team_vms`` output. Apps
     // that serve a Web-UI publish ``url`` here; SSH-only apps don't.
     // We surface that as ``team.vm`` so the template can decide between
     // a URL pill and an SSH-command pill per team.
@@ -204,7 +204,7 @@ export function matchTeamAccounts(
         const memberEmail = member?.email?.trim().toLowerCase()
         const memberName = member?.username?.trim().toLowerCase()
 
-        // Strategy 0 (canonical): derive the terraform key from
+        // Strategy 0 (canonical): derive the tofu key from
         // member.email + team.name and look it up directly.
         let hit: AccountMatch | undefined
         const expectedKey = deriveExpectedAccountKey(team.name, memberEmail)

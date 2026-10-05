@@ -1,7 +1,7 @@
 /**
  * A variable whose template restricts it with ``contains([...], var.x)``
  * arrives with ``allowedValues`` and must render as a dropdown, not as
- * free text — a typo would otherwise only surface when Terraform runs.
+ * free text — a typo would otherwise only surface when OpenTofu runs.
  */
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'

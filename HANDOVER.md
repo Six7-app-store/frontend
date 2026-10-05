@@ -69,7 +69,7 @@ Auf Wunsch des Nutzers **wenige, große Commits**: a–d in einem Commit, e (Auf
   - `--toc-w` (220), auch in `HelpView`
   - `--content-max` (860), `max-w-content`, gilt für Konfiguration, Versionen und Einstellungen. Die Vorlage hat bei den
     Versionen 960px, wir nehmen dort einheitlich 860px.
-- **Variablenbeschreibungen** ohne `@openstack:`- und `@platform:`-Marker, über `variableDisplayDescription()`.
+- **Variablenbeschreibungen** ohne `@openstack:`-Marker, über `variableDisplayDescription()`.
 - „Default vorhanden“ steht nur, wenn `default` gesetzt ist. Laut Backend gilt `required = kein Default`.
 - **Leere Felder** werden ausgeblendet:
   - keine „–“ beim Datum

@@ -49,7 +49,7 @@ Examples:
 Not a normal desktop app.
 
 An **App = Deployment Blueprint**
-- Infrastructure as Code (Terraform, possibly Packer)
+- Infrastructure as Code (OpenTofu)
 - configuration logic
 - parameters provided by teacher
 - versionable + reproducible deployment package
@@ -63,7 +63,7 @@ Backend (FastAPI)
 ↓  
 RabbitMQ (Message Broker)  
 ↓  
-Worker (Celery / Terraform / Packer / Git)  
+Worker (Celery / OpenTofu / Git)  
 ↓  
 OpenStack
 
@@ -107,7 +107,7 @@ Important:
 
 ### Infrastructure
 - Docker Compose (development)
-- Terraform + Packer (deployments via Worker)
+- OpenTofu (deployments via Worker)
 - OpenStack (target infrastructure)
 
 No new frameworks should be added without team discussion.
@@ -238,7 +238,7 @@ One domain = one store.
 
 ### App (Blueprint / Template)
 represents a deployable package
-- Git repository with Terraform/Packer
+- Git repository with a tofu/ directory
 - versioned (Git tags)
 - has configurable variables
 - owned by user
@@ -247,7 +247,7 @@ represents a deployable package
 concrete instance of an App
 - has lifecycle (pending, running, completed, failed)
 - has logs (from Celery task)
-- has output (URLs, credentials hints, Terraform outputs)
+- has output (URLs, credentials hints, OpenTofu outputs)
 - linked to specific App version
 - tracks user who deployed
 

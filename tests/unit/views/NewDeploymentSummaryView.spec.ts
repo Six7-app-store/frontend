@@ -97,10 +97,10 @@ describe('NewDeploymentSummaryView.vue', () => {
 
     const appStore = useAppStore()
     appStore.fetchAppVariables = vi.fn().mockResolvedValue([
-      { name: 'region', source: 'packer', default: 'us-east' },
-      { name: 'instance_type', source: 'terraform', default: 't2.small' },
-      { name: 'ssh_key', source: 'terraform', osType: 'file', osScope: 'user' },
-      { name: 'net', source: 'terraform', osType: 'network', osScope: 'team' }
+      { name: 'region', default: 'us-east' },
+      { name: 'instance_type', default: 't2.small' },
+      { name: 'ssh_key', osType: 'file', osScope: 'user' },
+      { name: 'net', osType: 'network', osScope: 'team' }
     ])
 
     const deploymentStore = useDeploymentStore()
@@ -142,13 +142,13 @@ describe('NewDeploymentSummaryView.vue', () => {
     expect(wrapper.text()).toContain('Team Alpha')
   })
 
-  it('separates variables correctly into packer, terraform and files', async () => {
+  it('lists variable values and files', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
     // Die Werte, die aus den gemockten Variablen-Definitionen resultieren
-    expect(wrapper.text()).toContain('eu-central-1') // Packer-Wert (aus Draft gemerged)
-    expect(wrapper.text()).toContain('t2.micro') // Terraform-Wert
+    expect(wrapper.text()).toContain('eu-central-1') // Wert aus dem Draft
+    expect(wrapper.text()).toContain('t2.micro') // Wert aus dem Draft
     expect(wrapper.text()).toContain('id_rsa.pub') // Datei-Upload
     expect(wrapper.text()).toContain('1 KB') // Formatierte Dateigröße
   })
@@ -277,10 +277,10 @@ describe('NewDeploymentSummaryView.vue — Charakterisierung', () => {
 
   it('formatiert Werte: Ja/Nein, Listen, Anführungszeichen, leer als Strich', async () => {
     const wrapper = mountWith([
-      { name: 'on', source: 'terraform', type: 'bool' },
-      { name: 'tags', source: 'terraform', type: 'list(string)' },
-      { name: 'quoted', source: 'terraform', type: 'string' },
-      { name: 'empty', source: 'terraform', type: 'string' },
+      { name: 'on', type: 'bool' },
+      { name: 'tags', type: 'list(string)' },
+      { name: 'quoted', type: 'string' },
+      { name: 'empty', type: 'string' },
     ], { on: true, tags: ['"a"', 'b'], quoted: '"x"', empty: '' })
     await flushPromises()
 
@@ -292,20 +292,10 @@ describe('NewDeploymentSummaryView.vue — Charakterisierung', () => {
     })
   })
 
-  it('stellt Packer-Werte eines Multi-Image-Deployments mit Template-Präfix dar', async () => {
-    const wrapper = mountWith([
-      { name: 'size', source: 'packer', type: 'string', template_key: 'web', default: 'm' },
-      { name: 'size', source: 'packer', type: 'string', template_key: 'db', default: 'l' },
-    ], { packer: { web: { size: 's' }, db: {} } })
-    await flushPromises()
-
-    expect(rows(wrapper)).toEqual({ '[web] size': 's', '[db] size': 'l' })
-  })
-
   it('zeigt OpenStack-Werte mit Namen und den übermittelten Wert als Tooltip', async () => {
     const wrapper = mountWith([
-      { name: 'flavor', source: 'terraform', type: 'string', osType: 'flavor', osMode: 'id' },
-      { name: 'nets', source: 'terraform', type: 'list(string)', osType: 'network', osMulti: true },
+      { name: 'flavor', type: 'string', osType: 'flavor', osMode: 'id' },
+      { name: 'nets', type: 'list(string)', osType: 'network', osMulti: true },
     ], { flavor: 'f-1', nets: 'n-1, n-2' })
     await flushPromises()
 

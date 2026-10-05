@@ -1,10 +1,10 @@
 /**
- * Terraform-output parsing for the deployment detail page.
+ * OpenTofu-output parsing for the deployment detail page.
  *
  * A task's ``outputs`` hold the per-user credentials (``user_accounts``) and
  * the team-level VM metadata (``team_vms``). They may arrive as a raw JSON
  * string from the DB or as an already-parsed object, and the actual map sits
- * under ``.value`` because Terraform stamps the output shape on the wrapper.
+ * under ``.value`` because OpenTofu stamps the output shape on the wrapper.
  *
  * Members have no task outputs; both extractors therefore take the
  * ``/my-access`` data as a fallback.
@@ -22,7 +22,7 @@ export interface UserAccount {
   authtype?: 'ssh' | 'url' | string
   /**
    * How the user reaches the machine, declared by the app in its
-   * terraform output. Independent of ``type``, which only says what the
+   * tofu output. Independent of ``type``, which only says what the
    * ``auth`` value is — a Windows VM ships ``type: 'password'`` like a
    * Linux one but ``protocol: 'rdp'``. Optional; ``resolveProtocol``
    * infers it for apps that predate the field.
@@ -31,7 +31,7 @@ export interface UserAccount {
   url?: string
 }
 
-/** One entry of terraform's ``team_vms`` output. */
+/** One entry of tofu's ``team_vms`` output. */
 export interface TeamVm {
   url?: string
   floating_ip?: string
@@ -88,7 +88,7 @@ export function extractUserAccounts(
   if (outputsObj && typeof outputsObj === 'object' && 'user_accounts' in outputsObj) {
     const userAccountsContainer = outputsObj.user_accounts
 
-    // Reach through to the Terraform ``.value`` object.
+    // Reach through to the OpenTofu ``.value`` object.
     if (userAccountsContainer && userAccountsContainer.value) {
       return userAccountsContainer.value as Record<string, UserAccount>
     }
@@ -101,7 +101,7 @@ export function extractUserAccounts(
  * Pull the ``team_vms`` object out of the active task's outputs. Same
  * unwrap chain as :func:`extractUserAccounts` — the outputs may arrive as a
  * raw JSON string from the DB or as an already-parsed object, and the
- * actual map sits under ``.value`` because Terraform stamps the output
+ * actual map sits under ``.value`` because OpenTofu stamps the output
  * shape on the wrapper. Returns the fallback (``null`` for owners) if
  * anything along the way isn't there.
  */

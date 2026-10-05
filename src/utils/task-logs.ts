@@ -4,7 +4,7 @@
  *
  * - :func:`countLogEntries` — entry count for the Logs card badge.
  * - :func:`splitTaskLogs` — friendly failure headline + technical details.
- * - :func:`countTfResources` — managed-resource count of a terraform state.
+ * - :func:`countTfResources` — managed-resource count of a tofu state.
  */
 import type { Task } from '@/types'
 

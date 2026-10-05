@@ -190,7 +190,7 @@ export interface DeploymentWithRelations extends Deployment {
   logs?: string | null;
 }
 
-// One member's access credentials, mirroring the raw terraform
+// One member's access credentials, mirroring the raw tofu
 // ``user_accounts`` entry shape. Returned (filtered to the caller's
 // own entry) by the ``/deployments/{id}/my-access`` endpoint so a
 // team member can see their own credentials without the owner view.
@@ -229,14 +229,14 @@ export interface DeploymentCreate {
   //   * scope = team → one entry per team name
   //   * scope = user → one entry per ``Team-User`` composite key
   // The wizard owns the keys; the backend persists the map verbatim
-  // into ``userInputVar.terraform`` so the worker can pass it through
-  // to terraform as a typed map.
+  // into ``userInputVar.tofu`` so the worker can pass it through
+  // to tofu as a typed map.
   files?: Record<string, Record<string, DeploymentFile>>
 }
 
 /**
  * One uploaded file as it travels from wizard → POST /deployments
- * → backend persistence → terraform variable. ``content_b64`` is the
+ * → backend persistence → OpenTofu variable. ``content_b64`` is the
  * raw base64 payload (no ``data:...,`` wrapper); the rest is the
  * metadata the user-data template needs to land the file on disk.
  */
@@ -339,7 +339,7 @@ export interface VolumeAttachment {
 }
 
 export interface DeploymentResource {
-  /** Terraform state address — round-trippable to the redeploy endpoint. */
+  /** OpenTofu state address — round-trippable to the redeploy endpoint. */
   address: string
   /** Raw HCL resource type, e.g. ``openstack_compute_instance_v2``. */
   type: string
@@ -383,7 +383,7 @@ export interface TaskLogsObject {
   logs?: TaskLogEntry[]
   tf_state?: any
   commit_info?: any
-  terraform_outputs?: any
+  tofu_outputs?: any
 }
 
 export interface Task {
@@ -519,7 +519,6 @@ export interface AppVariable {
   // default also makes the variable required. Strings stay unquoted strings.
   default?: string | number | boolean | unknown[] | Record<string, unknown> | null
   required?: boolean
-  source?: 'terraform' | 'packer' | 'unknown'
   // Value-help metadata, set by the backend when the variable carries an
   // ``@openstack:<type>[:<mode>][:<multi>]`` marker. Undefined for free-text inputs.
   osType?: AppVariableOsType
@@ -542,16 +541,12 @@ export interface AppVariable {
   // Marker error set by the backend when a variable's ``@openstack`` marker is
   // malformed. The frontend shows it as an inline banner and falls back to free text.
   markerError?: AppVariableMarkerError
-  // Multi-image apps: key of the Packer template this variable belongs to
-  // (for ``source === 'packer'``). Single-template apps use the sentinel
-  // ``"default"``; Terraform variables leave this null/undefined.
-  template_key?: string | null
 }
 
 export interface AppVariableMarkerError {
   variable: string
   message: string
-  // ``terraform/variables.tf:42``-style hint pointing app authors to the marker location.
+  // ``tofu/variables.tofu:42``-style hint pointing app authors to the marker location.
   location?: string
   // Stable error codes (e.g. ``MARKER_WHITESPACE``, ``MARKER_UNKNOWN_OS_TYPE``)
   // set alongside the ``message`` so the frontend can i18n without string matching.

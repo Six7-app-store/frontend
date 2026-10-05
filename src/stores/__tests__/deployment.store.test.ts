@@ -121,29 +121,18 @@ describe('DeploymentStore request actions', () => {
       ])
     })
 
-    it('sorts values into packer and terraform and skips empty ones', async () => {
+    it('puts the values into the tofu block and skips empty ones', async () => {
       const payload = await submit({
         variableDefinitions: [
-          { name: 'region', source: 'packer' },
-          { name: 'flavor', source: 'terraform' },
-          { name: 'empty', source: 'terraform' },
-          { name: 'upload', source: 'terraform', osType: 'file' },
+          { name: 'region' },
+          { name: 'flavor' },
+          { name: 'empty' },
+          { name: 'upload', osType: 'file' },
         ],
         variables: { region: 'eu', flavor: 'm1', empty: '  ', upload: {} },
       })
-      expect(payload.userInputVar).toEqual({ packer: { region: 'eu' }, terraform: { flavor: 'm1' } })
+      expect(payload.userInputVar).toEqual({ tofu: { region: 'eu', flavor: 'm1' } })
       expect(payload).not.toHaveProperty('files')
-    })
-
-    it('nests packer values per template in the multi-image layout', async () => {
-      const payload = await submit({
-        variableDefinitions: [
-          { name: 'size', source: 'packer', template_key: 'web' },
-          { name: 'size', source: 'packer', template_key: 'db' },
-        ],
-        variables: { packer: { web: { size: 's' }, db: { size: 'l' } } },
-      })
-      expect(payload.userInputVar.packer).toEqual({ web: { size: 's' }, db: { size: 'l' } })
     })
 
     it('sends only filled file slots', async () => {

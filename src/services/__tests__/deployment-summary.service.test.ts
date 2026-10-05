@@ -3,17 +3,16 @@ import type { AppVariable } from '@/types'
 import {
   fileSummaries,
   formatSummaryValue,
-  packerRows,
   renderOsValue,
-  terraformRows,
   toSummaryEntry,
+  variableRows,
   type SummaryContext,
 } from '@/services/deployment-summary.service'
 import { formatSubmitError } from '@/services/deployment-submit-error.service'
 
 const t = (key: string, params?: Record<string, unknown>) => (params ? `${key} ${JSON.stringify(params)}` : key)
 const ctx: SummaryContext = { t, osName: (_type, _mode, value) => (value.startsWith('id-') ? `Name ${value}` : null) }
-const v = (over: Partial<AppVariable>): AppVariable => ({ name: 'x', source: 'terraform', type: 'string', ...over }) as AppVariable
+const v = (over: Partial<AppVariable>): AppVariable => ({ name: 'x', type: 'string', ...over }) as AppVariable
 
 describe('formatSummaryValue', () => {
   it.each([
@@ -51,20 +50,17 @@ describe('toSummaryEntry', () => {
 })
 
 describe('rows', () => {
-  it('reads multi-image packer values per template and labels them', () => {
-    const defs = [
-      v({ name: 'size', source: 'packer', template_key: 'web', default: 'm' }),
-      v({ name: 'size', source: 'packer', template_key: 'db', default: 'l' }),
-    ]
-    expect(packerRows(defs, { packer: { web: { size: 's' }, db: {} } }, ctx)).toEqual([
-      { label: '[web] size', value: 's' },
-      { label: '[db] size', value: 'l' },
+  it('prefers the stored value over the default', () => {
+    const defs = [v({ name: 'size', default: 'm' }), v({ name: 'zone', default: 'a' })]
+    expect(variableRows(defs, { size: 's' }, ctx)).toEqual([
+      { label: 'size', value: 's' },
+      { label: 'zone', value: 'a' },
     ])
   })
 
-  it('skips file variables in the terraform rows and summarises their uploads', () => {
+  it('skips file variables in the variable rows and summarises their uploads', () => {
     const defs = [v({ name: 'host', default: 'h' }), v({ name: 'cert', osType: 'file', osScope: 'team' })]
-    expect(terraformRows(defs, {}, ctx)).toEqual([{ label: 'host', value: 'h' }])
+    expect(variableRows(defs, {}, ctx)).toEqual([{ label: 'host', value: 'h' }])
     expect(fileSummaries(defs, { cert: { Rot: { name: 'a.pem', size: 2048 } as never, Blau: null } })).toEqual([
       { name: 'cert', scope: 'team', chips: [{ slot: 'Rot', filename: 'a.pem', size: '2 KB' }] },
     ])

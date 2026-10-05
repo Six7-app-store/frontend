@@ -9,7 +9,7 @@ import type { DeploymentWithRelations } from '@/types'
  * truth (it answers 403 or filters data); these computeds only hide the
  * affordances so the user doesn't see buttons that would fail.
  *
- * - ``isOwnerView``: tasks/logs, terraform state/outputs, the SSE live
+ * - ``isOwnerView``: tasks/logs, tofu state/outputs, the SSE live
  *   stream and the resend buttons of *other* members. Staff or owner.
  *   (The backend narrows a teacher to the owner's course teachers; the
  *   list endpoint already only returns deployments they may open.)

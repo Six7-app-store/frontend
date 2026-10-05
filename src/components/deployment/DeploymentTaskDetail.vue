@@ -2,7 +2,7 @@
 /**
  * Detail of one task from the task history: metadata, logs (with the
  * friendly failure headline and collapsible technical details) and the
- * terraform state, each with a copy button.
+ * tofu state, each with a copy button.
  *
  * ``showTaskLogsTrace`` is owned by the parent so the toggle survives
  * switching between tasks.
@@ -95,7 +95,7 @@ const taskLogsSplit = computed(() => {
       </div>
 
       <!-- Logs — same simple ``<pre>`` rendering as the
-                         Terraform State and Outputs blocks below. The
+                         OpenTofu State and Outputs blocks below. The
                          previous formatted/raw toggle plus numbered
                          entry cards added a lot of UI surface for
                          little extra information; pretty-printed JSON
@@ -173,10 +173,10 @@ const taskLogsSplit = computed(() => {
               </div>
               <div class="flex flex-col text-left">
                 <span class="font-semibold text-fg">{{
-                  $t('DeploymentDetailView.terraformState')
+                  $t('DeploymentDetailView.tofuState')
                   }}</span>
                 <span class="text-xs text-fg-muted">
-                  {{ tfResourcesCount > 0 ? $t('DeploymentDetailView.terraformResourcesCount', { count: tfResourcesCount }) :
+                  {{ tfResourcesCount > 0 ? $t('DeploymentDetailView.tofuResourcesCount', { count: tfResourcesCount }) :
                     $t('DeploymentDetailView.advancedDetails') }}
                 </span>
               </div>

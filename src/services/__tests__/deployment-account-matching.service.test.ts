@@ -52,7 +52,7 @@ describe('userUrlFor', () => {
 })
 
 describe('deriveExpectedAccountKey', () => {
-  it('mirrors the terraform key: team + local-part with dots → dashes', () => {
+  it('mirrors the tofu key: team + local-part with dots → dashes', () => {
     expect(deriveExpectedAccountKey(' Team A ', 'Anna.Maria.S@x.org')).toBe('team a-anna-maria-s')
     expect(deriveExpectedAccountKey('T', 'a_b+c@x.org')).toBe('t-a_b+c')
   })

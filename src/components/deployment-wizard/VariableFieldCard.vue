@@ -31,7 +31,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const {
-  teams, values, formKey, slotKeysFor, getScopedValue, setScopedValue,
+  teams, values, slotKeysFor, getScopedValue, setScopedValue,
   getFileSlot, setFileSlot, networkForSubnet,
 } = props.form
 
@@ -70,8 +70,8 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
   <div class="rounded-panel border border-subtle bg-panel p-4">
     <div class="flex items-start justify-between gap-2 mb-3">
       <label
-        :for="formKey(variable)"
-        @click.prevent="focusInput(formKey(variable))"
+        :for="variable.name"
+        @click.prevent="focusInput(variable.name)"
         class="text-base font-semibold text-fg cursor-pointer hover:text-fg transition-colors flex-1"
       >
         {{ variable.name }}
@@ -186,10 +186,10 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
       <VariableInput
         v-if="!isScoped(variable)"
         :variable="variable"
-        :model-value="values[formKey(variable)]"
-        @update:modelValue="(v) => (values[formKey(variable)] = v)"
+        :model-value="values[variable.name]"
+        @update:modelValue="(v) => (values[variable.name] = v)"
         :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
-        :input-id="formKey(variable)"
+        :input-id="variable.name"
       />
       <div v-else class="space-y-3">
         <template v-if="effectiveScope(variable) === 'user'">
@@ -207,17 +207,17 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
               class="flex flex-col gap-1"
             >
               <label
-                :for="`${formKey(variable)}__${userSlotKey(team.name, member.username)}`"
+                :for="`${variable.name}__${userSlotKey(team.name, member.username)}`"
                 class="text-xs font-semibold text-fg-muted"
               >
                 {{ member.username }}
               </label>
               <VariableInput
                 :variable="variable"
-                :model-value="getScopedValue(formKey(variable), userSlotKey(team.name, member.username))"
-                @update:modelValue="(v) => setScopedValue(formKey(variable), userSlotKey(team.name, member.username), v)"
+                :model-value="getScopedValue(variable.name, userSlotKey(team.name, member.username))"
+                @update:modelValue="(v) => setScopedValue(variable.name, userSlotKey(team.name, member.username), v)"
                 :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
-                :input-id="`${formKey(variable)}__${userSlotKey(team.name, member.username)}`"
+                :input-id="`${variable.name}__${userSlotKey(team.name, member.username)}`"
               />
             </div>
             <div v-if="team.members.length === 0" class="text-xs text-fg-muted italic">
@@ -232,17 +232,17 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
             class="flex flex-col gap-1"
           >
             <label
-              :for="`${formKey(variable)}__${slotKey}`"
+              :for="`${variable.name}__${slotKey}`"
               class="text-xs font-semibold text-fg-muted"
             >
               {{ formatSlotLabel(variable, slotKey) }}
             </label>
             <VariableInput
               :variable="variable"
-              :model-value="getScopedValue(formKey(variable), slotKey)"
-              @update:modelValue="(v) => setScopedValue(formKey(variable), slotKey, v)"
+              :model-value="getScopedValue(variable.name, slotKey)"
+              @update:modelValue="(v) => setScopedValue(variable.name, slotKey, v)"
               :filter-network-id="variable.osType === 'subnet' ? networkForSubnet : null"
-              :input-id="`${formKey(variable)}__${slotKey}`"
+              :input-id="`${variable.name}__${slotKey}`"
             />
           </div>
         </template>

@@ -4,12 +4,7 @@
  * translate function and the lookup of OpenStack display names.
  */
 import type { AppVariable, DeploymentFile } from '@/types'
-import {
-  effectiveVariableScope,
-  isMultiImagePackerLayout,
-  storedPackerValue,
-  templateKeyOf,
-} from '@/services/deployment-variables.service'
+import { effectiveVariableScope } from '@/services/deployment-variables.service'
 import { splitCsv } from '@/services/variable-types'
 import { formatBytes } from '@/utils/format'
 import type { Translate } from '@/services/deployment-submit-error.service'
@@ -84,33 +79,15 @@ export function toSummaryEntry(def: AppVariable, val: any, ctx: SummaryContext):
   return { label: def.name, value: formatSummaryValue(val, ctx.t) }
 }
 
-/**
- * Rows of the Packer variables. In the multi-image layout the value is
- * read per template and the label carries the template, so three
- * "region" rows can be told apart.
- */
-export function packerRows(
-  definitions: AppVariable[],
-  variables: Record<string, any> | null | undefined,
-  ctx: SummaryContext,
-): SummaryRow[] {
-  const multiImage = isMultiImagePackerLayout(variables)
-  return definitions.filter((def) => def.source === 'packer').map((def) => {
-    const stored = storedPackerValue(variables, def, multiImage)
-    const entry = toSummaryEntry(def, stored !== undefined ? stored : def.default, ctx)
-    return multiImage ? { ...entry, label: `[${templateKeyOf(def)}] ${entry.label}` } : entry
-  })
-}
-
-/** Rows of the Terraform variables; file variables have their own card. */
-export function terraformRows(
+/** Rows of the variables; file variables have their own card. */
+export function variableRows(
   definitions: AppVariable[],
   variables: Record<string, any> | null | undefined,
   ctx: SummaryContext,
 ): SummaryRow[] {
   const current = variables || {}
   return definitions
-    .filter((def) => def.source === 'terraform' && def.osType !== 'file')
+    .filter((def) => def.osType !== 'file')
     .map((def) => toSummaryEntry(def, current[def.name] !== undefined ? current[def.name] : def.default, ctx))
 }
 

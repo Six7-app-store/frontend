@@ -164,7 +164,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
                      enough to decide whether to render the stepper. -->
             <!-- Progress headline -->
             <div>
-              <div class="flex items-baseline justify-between mb-2"><span class="text-base font-semibold text-fg">Terraform Plan</span><span class="text-2xl font-semibold text-fg tabular-nums">45<span class="text-sm text-fg-muted font-medium">%</span></span></div>
+              <div class="flex items-baseline justify-between mb-2"><span class="text-base font-semibold text-fg">OpenTofu Plan</span><span class="text-2xl font-semibold text-fg tabular-nums">45<span class="text-sm text-fg-muted font-medium">%</span></span></div>
               <div class="w-full bg-line/[.07] rounded-full h-2 overflow-hidden">
                 <div class="meter-fill-low h-2 rounded-tag transition-all duration-500 ease-out" style="width: 45%;"></div>
               </div>
@@ -189,31 +189,19 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               </div>
               <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.18]"></div>
               <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
-                <div class="w-2.5 h-2.5 rounded-full transition-all bg-icon"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg">Creds Materialise</span>
-              </div>
-              <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.18]"></div>
-              <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
-                <div class="w-2.5 h-2.5 rounded-full transition-all bg-icon ring-4 ring-icon/25 scale-125"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg">Packer Init</span>
+                <div class="w-2.5 h-2.5 rounded-full transition-all bg-icon ring-4 ring-icon/25 scale-125"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg">Creds Materialise</span>
               </div>
               <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.12]"></div>
               <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
-                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">Packer Validate</span>
+                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">OpenTofu Init</span>
               </div>
               <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.12]"></div>
               <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
-                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">Packer Build</span>
+                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">OpenTofu Plan</span>
               </div>
               <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.12]"></div>
               <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
-                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">Terraform Init</span>
-              </div>
-              <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.12]"></div>
-              <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
-                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">Terraform Plan</span>
-              </div>
-              <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.12]"></div>
-              <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
-                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">Terraform Apply</span>
+                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">OpenTofu Apply</span>
               </div>
               <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.12]"></div>
               <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
@@ -1479,7 +1467,7 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
 </div>"
 `;
 
-exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Logs und Terraform-State und kehrt zur Liste zurück > task-detail 1`] = `
+exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Logs und OpenTofu-State und kehrt zur Liste zurück > task-detail 1`] = `
 "<div class="max-w-detail">
   <!--
             Two-column layout: the deployment detail content stays on the left,
@@ -2021,7 +2009,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                   </div>
                 </div>
                 <!-- Logs — same simple \`\`<pre>\`\` rendering as the
-                         Terraform State and Outputs blocks below. The
+                         OpenTofu State and Outputs blocks below. The
                          previous formatted/raw toggle plus numbered
                          entry cards added a lot of UI surface for
                          little extra information; pretty-printed JSON
@@ -2071,7 +2059,7 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                             <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path>
                             <circle cx="12" cy="12" r="3"></circle>
                           </svg></div>
-                        <div class="flex flex-col text-left"><span class="font-semibold text-fg">Infrastruktur-Details (Terraform State)</span><span class="text-xs text-fg-muted">2 verwaltete Ressourcen</span></div>
+                        <div class="flex flex-col text-left"><span class="font-semibold text-fg">Infrastruktur-Details (OpenTofu State)</span><span class="text-xs text-fg-muted">2 verwaltete Ressourcen</span></div>
                       </div><button type="button" title="In die Zwischenablage kopieren" class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border transition-colors bg-panel text-fg border-strong hover:bg-line/[.04] flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy-icon lucide-copy">
                           <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
                           <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>

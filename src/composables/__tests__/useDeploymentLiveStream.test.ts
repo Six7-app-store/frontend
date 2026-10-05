@@ -17,7 +17,7 @@ vi.mock('@/composables/useDeploymentStream', async () => {
         progress: vueRef<number | null>(null),
         currentPhase: vueRef<string | null>(null),
         currentPhaseIndex: vueRef<number | null>(null),
-        totalPhases: vueRef(11),
+        totalPhases: vueRef(8),
         phaseNames: vueRef<string[]>([]),
         liveLogs: vueRef([]),
         totalLogCount: vueRef(0),
@@ -63,16 +63,16 @@ describe('useDeploymentLiveStream', () => {
   })
 
   it('starts immediately for a live active task and seeds progress from the DB', () => {
-    const { api } = setup({ task: task({ progress_pct: 45, current_phase: 'TERRAFORM_PLAN' }) })
+    const { api } = setup({ task: task({ progress_pct: 45, current_phase: 'TOFU_PLAN' }) })
 
     expect(api.isStreamRelevant.value).toBe(true)
     expect(stream.start).toHaveBeenCalledTimes(1)
     expect(api.progress.value).toBe(45)
-    expect(api.currentPhase.value).toBe('TERRAFORM_PLAN')
-    expect(api.currentPhaseIndex.value).toBe(5)
-    expect(api.activeStepIndex.value).toBe(4)
-    expect(api.phaseStepCount.value).toBe(11)
-    expect(api.phaseStepLabel(8)).toBe('Terraform Plan')
+    expect(api.currentPhase.value).toBe('TOFU_PLAN')
+    expect(api.currentPhaseIndex.value).toBe(4)
+    expect(api.activeStepIndex.value).toBe(3)
+    expect(api.phaseStepCount.value).toBe(8)
+    expect(api.phaseStepLabel(5)).toBe('OpenTofu Plan')
   })
 
   it('does not seed from terminal tasks', () => {

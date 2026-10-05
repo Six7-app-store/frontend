@@ -5,17 +5,17 @@ import InfoList from '@/components/ui/InfoList.vue'
 
 describe('InfoList', () => {
   it('zeigt Bezeichnung und Wert je Eintrag', () => {
-    const wrapper = mount(InfoList, { props: { items: [{ label: 'Typ', value: 'Packer' }, { label: 'Version', value: 'v1.2.0', mono: true }] } })
+    const wrapper = mount(InfoList, { props: { items: [{ label: 'Typ', value: 'OpenTofu' }, { label: 'Version', value: 'v1.2.0', mono: true }] } })
 
     expect(wrapper.findAll('dt').map((dt) => dt.text())).toEqual(['Typ', 'Version'])
-    expect(wrapper.findAll('dd').map((dd) => dd.text())).toEqual(['Packer', 'v1.2.0'])
+    expect(wrapper.findAll('dd').map((dd) => dd.text())).toEqual(['OpenTofu', 'v1.2.0'])
     expect(wrapper.findAll('dd')[1]!.classes()).toContain('font-mono')
     expect(wrapper.findAll('dd')[0]!.classes()).not.toContain('font-mono')
   })
 
   it('blendet Einträge ohne Wert ganz aus', () => {
     const wrapper = mount(InfoList, {
-      props: { items: [{ label: 'Typ', value: 'Packer' }, { label: 'Commit', value: null }, { label: 'Autor' }, { label: 'Leer', value: '  ' }] },
+      props: { items: [{ label: 'Typ', value: 'OpenTofu' }, { label: 'Commit', value: null }, { label: 'Autor' }, { label: 'Leer', value: '  ' }] },
     })
 
     expect(wrapper.findAll('dt').map((dt) => dt.text())).toEqual(['Typ'])

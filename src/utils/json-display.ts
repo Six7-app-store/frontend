@@ -1,5 +1,5 @@
 /**
- * JSON display helpers for the raw data blocks (terraform state, outputs,
+ * JSON display helpers for the raw data blocks (tofu state, outputs,
  * task logs) on the deployment detail page.
  *
  * - :func:`prettyJson` — normalises JSON-ish values into an indented dump.
@@ -7,11 +7,11 @@
  *   Tailwind colour classes for ``v-html`` rendering.
  */
 
-// Pretty-print arbitrary JSON-ish values for the terraform state /
+// Pretty-print arbitrary JSON-ish values for the tofu state /
 // outputs / raw-logs blocks. The backend persists these as TEXT
 // columns, so they arrive as either:
 //
-//  * a JSON string (terraform state pulled from the pg backend, or the
+//  * a JSON string (tofu state pulled from the pg backend, or the
 //    JSON-stringified outputs map),
 //  * a real object/array (when the API layer has already parsed it),
 //  * a plain non-JSON string (a stack trace, a single error line),

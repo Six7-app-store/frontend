@@ -81,7 +81,7 @@ const stream = {
   progress: ref<number | null>(null),
   currentPhase: ref<string | null>(null),
   currentPhaseIndex: ref<number | null>(null),
-  totalPhases: ref<number>(11),
+  totalPhases: ref<number>(8),
   phaseNames: ref<string[]>([]),
   liveLogs: ref<Array<Record<string, unknown>>>([]),
   totalLogCount: ref<number>(0),
@@ -115,7 +115,7 @@ const makeUser = (overrides: Partial<User> = {}): User =>
 const ADDRESS_VM = 'openstack_compute_instance_v2.team_ide["Team Alpha"]'
 
 const userAccounts = {
-  // Strategy 0: derived terraform key "<team>-<email local-part, dots → dashes>"
+  // Strategy 0: derived tofu key "<team>-<email local-part, dots → dashes>"
   'Team Alpha-anna-schmidt': {
     username: 'anna', team: 'Team Alpha', ip: '10.0.0.5', port: 22,
     auth: 'pw-anna', type: 'password', authtype: 'ssh',
@@ -234,7 +234,7 @@ const olderFailedTask = makeTask({
   taskId: 'task-old',
   celeryTaskId: 'celery-old',
   status: 'failed',
-  logs: 'Task failed: terraform exploded\nTraceback (most recent call last):\n  boom',
+  logs: 'Task failed: tofu exploded\nTraceback (most recent call last):\n  boom',
   tf_state: null,
   outputs: null,
   created_at: '2026-06-01T08:00:00Z',
@@ -331,7 +331,7 @@ beforeEach(() => {
   stream.progress.value = null
   stream.currentPhase.value = null
   stream.currentPhaseIndex.value = null
-  stream.totalPhases.value = 11
+  stream.totalPhases.value = 8
   stream.phaseNames.value = []
   stream.liveLogs.value = []
   stream.totalLogCount.value = 0
@@ -612,7 +612,7 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
 
     h.deploymentApi.listResources.mockResolvedValue({ data: { resources: [], live: true } })
     wrapper = await mountLoaded()
-    expect(wrapper.text()).toContain('Keine VMs im aktuellen Terraform-State.')
+    expect(wrapper.text()).toContain('Keine VMs im aktuellen OpenTofu-State.')
     expect(wrapper.text()).not.toContain('Netzwerk')
   })
 
@@ -633,7 +633,7 @@ describe('DeploymentDetailView — Owner-Ansicht', () => {
     const wrapper = await mountLoaded()
 
     expect(wrapper.find('[data-testid="resources-error"]').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Keine VMs im aktuellen Terraform-State.')
+    expect(wrapper.text()).toContain('Keine VMs im aktuellen OpenTofu-State.')
   })
 
   it('öffnet und schließt die VM-Detail-Sidebar über die Karte', async () => {
@@ -669,7 +669,7 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     ])
   })
 
-  it('öffnet ein Task-Detail mit Logs und Terraform-State und kehrt zur Liste zurück', async () => {
+  it('öffnet ein Task-Detail mit Logs und OpenTofu-State und kehrt zur Liste zurück', async () => {
     const wrapper = await mountLoaded()
 
     await taskRows(wrapper)[0]!.trigger('click')
@@ -680,8 +680,8 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     expect(text).toContain('celery-deploy')
     expect(text).toContain(`2 ${t('DeploymentDetailView.logEntries')}`)
     expect(text).toContain('hello from the worker')
-    expect(text).toContain(t('DeploymentDetailView.terraformState'))
-    expect(text).toContain(t('DeploymentDetailView.terraformResourcesCount', { count: 2 }))
+    expect(text).toContain(t('DeploymentDetailView.tofuState'))
+    expect(text).toContain(t('DeploymentDetailView.tofuResourcesCount', { count: 2 }))
     expect(wrapper.html()).toMatchSnapshot('task-detail')
 
     await buttonWithText(wrapper, t('DeploymentDetailView.backToTaskList'))!.trigger('click')
@@ -699,7 +699,7 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
     expect(buttonWithText(wrapper, t('common.copied'))).toBeTruthy()
 
     // Both copy buttons share the title; the logs one now reads "copied", so
-    // the remaining match is the terraform-state button.
+    // the remaining match is the tofu-state button.
     await wrapper.findAll(`button[title="${t('DeploymentDetailView.copyToClipboard')}"]`)[0]!.trigger('click')
     await settle()
     expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(JSON.stringify(makeTask().tf_state, null, 2))
@@ -710,12 +710,12 @@ describe('DeploymentDetailView — Tasks & Logs', () => {
 
     await taskRows(wrapper)[1]!.trigger('click')
     await settle()
-    expect(wrapper.find('.text-danger .font-medium').text()).toBe('Task failed: terraform exploded')
+    expect(wrapper.find('.text-danger .font-medium').text()).toBe('Task failed: tofu exploded')
     expect(wrapper.text()).not.toContain('Traceback')
     // The selected task drives the task detail: it has no tf_state, so the
     // state block disappears. The Teams card keeps the credentials of the
     // latest task.
-    expect(wrapper.text()).not.toContain(t('DeploymentDetailView.terraformState'))
+    expect(wrapper.text()).not.toContain(t('DeploymentDetailView.tofuState'))
     expect(memberRow(wrapper, 'anna').text()).toContain('SSH:ssh anna@10.0.0.5')
     expect(memberRow(wrapper, 'anna').text()).toContain('PW:••••••••')
 
@@ -1137,7 +1137,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
       logs: null,
       tf_state: null,
       outputs: null,
-      current_phase: 'TERRAFORM_PLAN',
+      current_phase: 'TOFU_PLAN',
       progress_pct: 45,
       created_at: '2026-06-08T12:59:00Z',
       ...overrides,
@@ -1157,19 +1157,18 @@ describe('DeploymentDetailView — Live-Stream', () => {
 
     expect(h.startStream).toHaveBeenCalledTimes(1)
     expect(stream.progress.value).toBe(45)
-    expect(stream.currentPhase.value).toBe('TERRAFORM_PLAN')
-    expect(stream.currentPhaseIndex.value).toBe(5)
+    expect(stream.currentPhase.value).toBe('TOFU_PLAN')
+    expect(stream.currentPhaseIndex.value).toBe(4)
 
     const text = wrapper.text()
     expect(text).toContain(t('DeploymentDetailView.runningSince', { time: '08.06.2026, 13:00:00' }))
     expect(text).toContain('task-run')
     expect(text).toContain(t('DeploymentDetailView.streamState.idle'))
-    expect(text).toContain('Terraform Plan')
+    expect(text).toContain('OpenTofu Plan')
     expect(text).toMatch(/45\s*%/)
     expect(stepLabels(wrapper)).toEqual([
-      'Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'Packer Init',
-      'Packer Validate', 'Packer Build', 'Terraform Init', 'Terraform Plan', 'Terraform Apply',
-      'Outputs And Cleanup',
+      'Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise',
+      'OpenTofu Init', 'OpenTofu Plan', 'OpenTofu Apply', 'Outputs And Cleanup',
     ])
     expect(text).toContain(t('DeploymentDetailView.waitingForLogs'))
     // History hides the active task.
@@ -1192,35 +1191,35 @@ describe('DeploymentDetailView — Live-Stream', () => {
     withRunning(runningTask())
     const wrapper = await mountLoaded()
 
-    stream.phaseNames.value = ['STARTING', 'PACKER_BUILD:database', 'TERRAFORM_APPLY']
+    stream.phaseNames.value = ['STARTING', 'GIT_CLONE', 'TOFU_APPLY']
     stream.totalPhases.value = 3
     stream.currentPhaseIndex.value = 2
-    stream.currentPhase.value = 'PACKER_BUILD:database'
+    stream.currentPhase.value = 'GIT_CLONE'
     stream.progress.value = 66
     stream.connectionState.value = 'live'
     stream.liveLogs.value = [
-      { timestamp: '2026-06-08T13:01:02.123Z', level: 'INFO', message: 'building image', tool: 'packer' },
+      { timestamp: '2026-06-08T13:01:02.123Z', level: 'INFO', message: 'cloning repository', tool: 'git' },
       { timestamp: '2026-06-08T13:01:03Z', level: 'ERROR', message: 'retrying' },
     ]
     stream.totalLogCount.value = 250
     await nextTick()
 
     const text = wrapper.text()
-    expect(stepLabels(wrapper)).toEqual(['Starting', 'Packer Build [database]', 'Terraform Apply'])
+    expect(stepLabels(wrapper)).toEqual(['Starting', 'Git Clone', 'OpenTofu Apply'])
     expect(text).toContain(t('DeploymentDetailView.streamLive'))
     expect(text).toMatch(/66\s*%/)
     expect(text).toContain(`250 ${t('DeploymentDetailView.logLines')}`)
     expect(text).toContain(`· ${t('DeploymentDetailView.lastShown', { count: 2 })}`)
-    expect(text).toContain('13:01:02[packer]building image')
+    expect(text).toContain('13:01:02[git]cloning repository')
     expect(wrapper.find('.font-mono .text-danger').text()).toContain('retrying')
   })
 
   it.each([
-    ['destroy', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'Terraform Init', 'Terraform Destroy', 'Cleanup']],
-    ['pause', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'Terraform Init', 'Server Stop', 'Cleanup']],
-    ['resume', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'Terraform Init', 'Server Start', 'Cleanup']],
-    ['redeploy', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'Terraform Init', 'Terraform Apply', 'Cleanup']],
-    ['deploy', 8, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'Terraform Init', 'Terraform Plan', 'Terraform Apply', 'Outputs And Cleanup']],
+    ['destroy', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'OpenTofu Destroy', 'Cleanup']],
+    ['pause', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'Server Stop', 'Cleanup']],
+    ['resume', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'Server Start', 'Cleanup']],
+    ['redeploy', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'OpenTofu Apply', 'Cleanup']],
+    ['deploy', 8, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'OpenTofu Plan', 'OpenTofu Apply', 'Outputs And Cleanup']],
     ['deploy', 4, ['1', '2', '3', '4']],
   ] as const)('wählt statische Phasen-Labels für %s mit %i Phasen', async (type, total, labels) => {
     stream.totalPhases.value = total
