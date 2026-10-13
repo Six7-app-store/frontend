@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   adaptResource,
   filterResources,
+  restrictToAllowed,
   selectedKeysOf,
   type ResourceItem,
 } from '@/services/openstack-resource-presentation.service'
@@ -64,5 +65,29 @@ describe('filterResources', () => {
   it('puts selected items first and keeps the order otherwise', () => {
     const selected = new Set(['3', '2'])
     expect(filterResources(items, '', (i) => selected.has(i.id)).map((i) => i.id)).toEqual(['2', '3', '1'])
+  })
+})
+
+describe('restrictToAllowed', () => {
+  const item = (name: string, id = `id-${name}`): ResourceItem => ({ id, name, raw: {} })
+  const byName = (it: ResourceItem) => it.name
+  const all = [item('gp1.large'), item('gp1.xlarge'), item('gp1.small'), item('gp1.medium')]
+
+  it('offers only the allowed ones, in the order the app lists them', () => {
+    expect(restrictToAllowed(all, ['gp1.small', 'gp1.medium', 'gp1.large'], byName).map(byName))
+      .toEqual(['gp1.small', 'gp1.medium', 'gp1.large'])
+  })
+
+  it('matches on what the picker stores, e.g. the id', () => {
+    expect(restrictToAllowed(all, ['id-gp1.small'], (it) => it.id).map(byName)).toEqual(['gp1.small'])
+  })
+
+  it('skips allowed values the project does not have', () => {
+    expect(restrictToAllowed(all, ['gp1.small', 'k8s.node'], byName).map(byName)).toEqual(['gp1.small'])
+  })
+
+  it('offers everything without a restriction', () => {
+    expect(restrictToAllowed(all, undefined, byName)).toEqual(all)
+    expect(restrictToAllowed(all, [], byName)).toEqual(all)
   })
 })

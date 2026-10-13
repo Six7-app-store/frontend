@@ -58,15 +58,35 @@ describe('VariableInput mit allowedValues', () => {
     expect((wrapper.find('select').element as HTMLSelectElement).value).toBe('')
   })
 
-  it('lässt den Ressourcen-Picker gewinnen', () => {
+  it('lässt den Ressourcen-Picker gewinnen und gibt ihm die erlaubten Werte', () => {
     const wrapper = mountInput({ ...ipMode, osType: 'network' }, '')
 
     expect(wrapper.find('select').exists()).toBe(false)
+    const picker = wrapper.findComponent({ name: 'OpenStackResourcePicker' })
+    expect(picker.props('allowedValues')).toEqual(['ipv4', 'ipv6', 'dual'])
   })
 
   it('bleibt ohne allowedValues ein Textfeld', () => {
     const wrapper = mountInput({ name: 'title', type: 'string' }, '')
 
     expect(wrapper.find('input[type="text"]').exists()).toBe(true)
+  })
+})
+
+describe('VariableInput mit Zahlenbereich', () => {
+  it('setzt min und max am Zahlenfeld', () => {
+    const wrapper = mountInput({ name: 'disk_gb', type: 'number', minValue: 0, maxValue: 200 }, 0)
+
+    const input = wrapper.find('input[type="number"]')
+    expect(input.attributes('min')).toBe('0')
+    expect(input.attributes('max')).toBe('200')
+  })
+
+  it('lässt min und max ohne Bereich weg', () => {
+    const wrapper = mountInput({ name: 'count', type: 'number' }, 1)
+
+    const input = wrapper.find('input[type="number"]')
+    expect(input.attributes('min')).toBeUndefined()
+    expect(input.attributes('max')).toBeUndefined()
   })
 })

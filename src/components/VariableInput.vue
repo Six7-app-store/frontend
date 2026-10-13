@@ -43,7 +43,8 @@ const emit = defineEmits<{
 }>()
 
 // The picker takes precedence over type-based inputs, including list(...)
-// variables, since it handles multi itself. File variables are rendered by the
+// variables, since it handles multi itself, and over ``allowedValues``,
+// which it applies to its own list. File variables are rendered by the
 // parent and so are excluded here.
 const hasOsPicker = (v: AppVariable): boolean =>
   Boolean(v.osType) && v.osType !== 'file'
@@ -78,6 +79,7 @@ const update = (value: any) => emit('update:modelValue', value)
     :multi="variable.osMulti || false"
     :filter-network-id="variable.osType === 'subnet' ? (filterNetworkId ?? null) : null"
     :allow-free-text="true"
+    :allowed-values="variable.allowedValues"
     :model-value="modelValue"
     @update:modelValue="update"
   />
@@ -111,6 +113,8 @@ const update = (value: any) => emit('update:modelValue', value)
     :value="modelValue"
     @input="update(($event.target as HTMLInputElement).valueAsNumber)"
     type="number"
+    :min="variable.minValue"
+    :max="variable.maxValue"
     :id="inputId || variable.name"
     :disabled="disabled"
     class="field w-full px-3"

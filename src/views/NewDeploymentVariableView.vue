@@ -16,7 +16,7 @@ const deploymentStore = useDeploymentStore()
 
 const form = useVariableForm()
 const {
-  isLoading, variables, missingRequired, canSubmit, load, save,
+  isLoading, variables, missingRequired, outOfRange, canSubmit, load, save,
 } = form
 
 // Only one variable's info tooltip is open at a time.
@@ -85,11 +85,19 @@ const handleBack = () => {
     </div>
 
     <template #status>
-      <div v-if="!canSubmit && !isLoading && variables.length > 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded px-3 py-2">
-        <p class="font-semibold mb-0.5">{{ t('deployment.variables.missingRequiredTitle') }}</p>
-        <ul class="list-disc pl-5">
-          <li v-for="m in missingRequired" :key="m">{{ m }}</li>
-        </ul>
+      <div v-if="!canSubmit && !isLoading && variables.length > 0" class="text-xs text-warning bg-warning-dot/10 border border-warning-dot/30 rounded px-3 py-2 space-y-1.5">
+        <div v-if="missingRequired.length > 0">
+          <p class="font-semibold mb-0.5">{{ t('deployment.variables.missingRequiredTitle') }}</p>
+          <ul class="list-disc pl-5">
+            <li v-for="m in missingRequired" :key="m">{{ m }}</li>
+          </ul>
+        </div>
+        <div v-if="outOfRange.length > 0">
+          <p class="font-semibold mb-0.5">{{ t('deployment.variables.outOfRangeTitle') }}</p>
+          <ul class="list-disc pl-5">
+            <li v-for="m in outOfRange" :key="m">{{ m }}</li>
+          </ul>
+        </div>
       </div>
     </template>
   </WizardStepLayout>

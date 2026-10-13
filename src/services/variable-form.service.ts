@@ -234,6 +234,41 @@ export function missingRequired(
   return missing
 }
 
+/** How the allowed range of a number reads in a notice: ``0–200``, ``≥ 10`` or ``≤ 200``. */
+const rangeLabel = (v: AppVariable): string => {
+  if (v.minValue !== undefined && v.maxValue !== undefined) return `${v.minValue}–${v.maxValue}`
+  return v.minValue !== undefined ? `≥ ${v.minValue}` : `≤ ${v.maxValue}`
+}
+
+/**
+ * Numbers outside the bounds the app sets (``minValue``/``maxValue``), as
+ * ``disk_gb: 0–200`` or ``disk_gb (Rot-anna): 0–200`` for scoped variables.
+ * Empty values are ``missingRequired``'s business and are skipped here.
+ */
+export function outOfRange(
+  definitions: AppVariable[],
+  values: FormValues,
+  teams: WizardTeam[],
+): string[] {
+  const bad: string[] = []
+  const violates = (v: AppVariable, val: unknown): boolean =>
+    typeof val === 'number' && Number.isFinite(val) &&
+    ((v.minValue !== undefined && val < v.minValue) || (v.maxValue !== undefined && val > v.maxValue))
+
+  for (const v of definitions) {
+    if (v.minValue === undefined && v.maxValue === undefined) continue
+    if (!isScoped(v)) {
+      if (violates(v, values[v.name])) bad.push(`${v.name}: ${rangeLabel(v)}`)
+      continue
+    }
+    const map = (values[v.name] ?? {}) as Record<string, unknown>
+    for (const slot of slotKeysFor(v, teams)) {
+      if (violates(v, map[slot])) bad.push(`${v.name} (${slot}): ${rangeLabel(v)}`)
+    }
+  }
+  return bad
+}
+
 /**
  * Removes slot values whose team or person no longer exists (e.g. a team
  * was renamed) and returns them as ``"<variable> → <slot>"`` for a notice.
