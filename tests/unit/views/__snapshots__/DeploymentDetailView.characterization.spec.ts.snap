@@ -207,6 +207,10 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
                 <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">Outputs And Cleanup</span>
               </div>
+              <div class="flex-1 h-px min-w-[8px] mt-[5px] bg-line/[.12]"></div>
+              <div class="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]">
+                <div class="w-2.5 h-2.5 rounded-full transition-all bg-line/[.12]"></div><span data-testid="phase-label" class="text-xs font-medium whitespace-nowrap text-center text-fg-muted">VM Setup</span>
+              </div>
               <!--v-if-->
             </div>
             <!-- Live log tail. \`\`live.totalLogCount\`\` keeps

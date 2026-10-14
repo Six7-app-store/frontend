@@ -21,6 +21,7 @@ describe('phaseLabel', () => {
   it('names the tool OpenTofu', () => {
     expect(phaseLabel('TOFU_APPLY')).toBe('OpenTofu Apply')
     expect(phaseLabel('TOFU_INIT')).toBe('OpenTofu Init')
+    expect(phaseLabel('VM_SETUP')).toBe('VM Setup')
   })
 
   it('returns an empty label for non-strings and empty strings', () => {
@@ -34,7 +35,7 @@ describe('resolvePhaseStepCount', () => {
   it('uses the live total when positive, otherwise the default', () => {
     expect(resolvePhaseStepCount(7)).toBe(7)
     expect(resolvePhaseStepCount(0)).toBe(DEFAULT_PHASE_COUNT)
-    expect(DEFAULT_PHASE_COUNT).toBe(8)
+    expect(DEFAULT_PHASE_COUNT).toBe(9)
   })
 })
 
@@ -56,12 +57,14 @@ describe('resolvePhaseStepLabel', () => {
   })
 
   it('picks the deploy table matching the live total', () => {
-    expect(labels(8, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 8 })[4]).toBe('OpenTofu Init')
-    expect(labels(8, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 8 })[6]).toBe('OpenTofu Apply')
+    expect(labels(9, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 9 })[4]).toBe('OpenTofu Init')
+    expect(labels(9, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 9 })[6]).toBe('OpenTofu Apply')
+    // The deploy ends with waiting for the VMs to set themselves up.
+    expect(labels(9, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 9 })[8]).toBe('VM Setup')
   })
 
   it('falls back to length matching without a known type', () => {
-    expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: undefined, totalPhases: 8 })).toBe('OpenTofu Plan')
+    expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: undefined, totalPhases: 9 })).toBe('OpenTofu Plan')
     expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: undefined, totalPhases: 7 })).toBe('OpenTofu Destroy')
     // Deploy with an unknown total: length matching still applies (7 → destroy table).
     expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 7 })).toBe('OpenTofu Destroy')
