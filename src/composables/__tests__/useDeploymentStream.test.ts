@@ -98,7 +98,7 @@ describe('useDeploymentStream snapshot', () => {
 
     expect(stream.progress.value).toBe(40)
     expect(stream.currentPhase.value).toBe('TOFU_APPLY')
-    expect(stream.totalPhases.value).toBe(8)
+    expect(stream.totalPhases.value).toBe(9)
   })
 
   it('ignores a finished task in the snapshot and ends the stream', async () => {

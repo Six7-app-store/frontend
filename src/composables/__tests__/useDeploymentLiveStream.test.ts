@@ -17,7 +17,7 @@ vi.mock('@/composables/useDeploymentStream', async () => {
         progress: vueRef<number | null>(null),
         currentPhase: vueRef<string | null>(null),
         currentPhaseIndex: vueRef<number | null>(null),
-        totalPhases: vueRef(8),
+        totalPhases: vueRef(9),
         phaseNames: vueRef<string[]>([]),
         liveLogs: vueRef([]),
         totalLogCount: vueRef(0),
@@ -71,7 +71,7 @@ describe('useDeploymentLiveStream', () => {
     expect(api.currentPhase.value).toBe('TOFU_PLAN')
     expect(api.currentPhaseIndex.value).toBe(4)
     expect(api.activeStepIndex.value).toBe(3)
-    expect(api.phaseStepCount.value).toBe(8)
+    expect(api.phaseStepCount.value).toBe(9)
     expect(api.phaseStepLabel(5)).toBe('OpenTofu Plan')
   })
 

@@ -81,7 +81,7 @@ const stream = {
   progress: ref<number | null>(null),
   currentPhase: ref<string | null>(null),
   currentPhaseIndex: ref<number | null>(null),
-  totalPhases: ref<number>(8),
+  totalPhases: ref<number>(9),
   phaseNames: ref<string[]>([]),
   liveLogs: ref<Array<Record<string, unknown>>>([]),
   totalLogCount: ref<number>(0),
@@ -331,7 +331,7 @@ beforeEach(() => {
   stream.progress.value = null
   stream.currentPhase.value = null
   stream.currentPhaseIndex.value = null
-  stream.totalPhases.value = 8
+  stream.totalPhases.value = 9
   stream.phaseNames.value = []
   stream.liveLogs.value = []
   stream.totalLogCount.value = 0
@@ -1168,7 +1168,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
     expect(text).toMatch(/45\s*%/)
     expect(stepLabels(wrapper)).toEqual([
       'Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise',
-      'OpenTofu Init', 'OpenTofu Plan', 'OpenTofu Apply', 'Outputs And Cleanup',
+      'OpenTofu Init', 'OpenTofu Plan', 'OpenTofu Apply', 'Outputs And Cleanup', 'VM Setup',
     ])
     expect(text).toContain(t('DeploymentDetailView.waitingForLogs'))
     // History hides the active task.
@@ -1219,7 +1219,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
     ['pause', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'Server Stop', 'Cleanup']],
     ['resume', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'Server Start', 'Cleanup']],
     ['redeploy', 7, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'OpenTofu Apply', 'Cleanup']],
-    ['deploy', 8, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'OpenTofu Plan', 'OpenTofu Apply', 'Outputs And Cleanup']],
+    ['deploy', 9, ['Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise', 'OpenTofu Init', 'OpenTofu Plan', 'OpenTofu Apply', 'Outputs And Cleanup', 'VM Setup']],
     ['deploy', 4, ['1', '2', '3', '4']],
   ] as const)('wählt statische Phasen-Labels für %s mit %i Phasen', async (type, total, labels) => {
     stream.totalPhases.value = total
