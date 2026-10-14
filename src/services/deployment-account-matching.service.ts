@@ -30,6 +30,14 @@ export function sshCommandFor(data: { username?: string; ip?: string; port?: num
   return `ssh ${portFlag}${data.username}@${data.ip}`
 }
 
+// Wrap a bare IPv6 address in brackets so ``host:port`` stays parseable:
+// ``2001:db8::1:3389`` is ambiguous, ``[2001:db8::1]:3389`` is not. IPv4
+// and already bracketed addresses pass through. Mirrors ``_host_for_port``
+// in the backend notifier.
+export function hostForPort(ip: string): string {
+  return ip.includes(':') && !ip.startsWith('[') ? `[${ip}]` : ip
+}
+
 /** The protocols an app may declare in ``user_accounts.<key>.protocol``. */
 export const PROTOCOLS = ['ssh', 'rdp', 'vnc', 'web', 'none'] as const
 export type Protocol = (typeof PROTOCOLS)[number]
@@ -108,7 +116,7 @@ export function connectionFor(data: ConnectionInput, teamVmUrl?: string): Connec
   if (protocol === 'rdp' || protocol === 'vnc') {
     if (!data.ip) return teamUrlConnection(teamVmUrl)
     const port = data.port ?? (protocol === 'rdp' ? 3389 : 5900)
-    return { protocol, label: protocol.toUpperCase(), value: `${data.ip}:${port}` }
+    return { protocol, label: protocol.toUpperCase(), value: `${hostForPort(data.ip)}:${port}` }
   }
   if (protocol === 'web') return webConnection(data, teamVmUrl)
   return null
@@ -140,7 +148,7 @@ export function userUrlFor(data: { ip?: string; port?: number }, teamVmUrl?: str
       path = new URL(teamVmUrl).pathname.replace(/\/$/, '')
     } catch { /* ignore malformed url */ }
   }
-  return `http://${data.ip}:${data.port}${path}`
+  return `http://${hostForPort(data.ip)}:${data.port}${path}`
 }
 
 // Mirror the tofu key sanitisation: lowercase the local-part
