@@ -536,8 +536,13 @@ export interface AppVariable {
   // ``accept`` attribute. The backend rejects other extensions with 422.
   fileExtensions?: string[]
   // Closed value set from ``validation { condition = contains([...], var.x) }``.
-  // Renders a dropdown instead of free text; the resource picker still wins.
+  // Renders a dropdown instead of free text; on an ``@openstack`` variable the
+  // resource picker offers only these values instead (e.g. allowed flavors).
   allowedValues?: (string | number | boolean)[]
+  // Inclusive bounds from ``validation { condition = var.x >= 0 && var.x <= 200 }``,
+  // set as ``min``/``max`` on the number input.
+  minValue?: number
+  maxValue?: number
   // Marker error set by the backend when a variable's ``@openstack`` marker is
   // malformed. The frontend shows it as an inline banner and falls back to free text.
   markerError?: AppVariableMarkerError

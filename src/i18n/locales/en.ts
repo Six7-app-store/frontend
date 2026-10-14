@@ -907,6 +907,7 @@ export default {
       noTeamsConfigured: 'No teams configured yet — please complete the previous step first.',
       noMembers: 'No members',
       missingRequiredTitle: 'Missing required inputs:',
+      outOfRangeTitle: 'Outside the allowed range:',
       teamRenameToast: 'Team/User change detected — {count} orphaned input(s) removed:\n{lines}'
     },
     summary: {

@@ -12,6 +12,7 @@ import {
   hydrateFromDraft,
   hydrateFromInput,
   missingRequired as findMissingRequired,
+  outOfRange as findOutOfRange,
   serializeValues,
   slotKeysFor as slotsOf,
   type FormValues,
@@ -39,7 +40,10 @@ export function useVariableForm() {
 
   const missingRequired = computed(() =>
     findMissingRequired(variables.value, values.value, teams.value))
-  const canSubmit = computed(() => missingRequired.value.length === 0)
+  const outOfRange = computed(() =>
+    findOutOfRange(variables.value, values.value, teams.value))
+  const canSubmit = computed(() =>
+    missingRequired.value.length === 0 && outOfRange.value.length === 0)
 
   const reportMarkerErrors = () => {
     const bad = variables.value.filter((v) => v.markerError)
@@ -154,6 +158,7 @@ export function useVariableForm() {
     values,
     slotKeysFor,
     missingRequired,
+    outOfRange,
     canSubmit,
     load,
     save,

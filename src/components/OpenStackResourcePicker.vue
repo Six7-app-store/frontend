@@ -41,6 +41,7 @@ import { getDisplayName, ensureLoaded } from '@/composables/useOpenStackResource
 import { splitCsv } from '@/services/variable-types'
 import {
   filterResources,
+  restrictToAllowed,
   selectedKeysOf,
   type ResourceItem,
 } from '@/services/openstack-resource-presentation.service'
@@ -57,6 +58,10 @@ const props = defineProps<{
   azService?: 'compute' | 'network' | 'volume'
   placeholder?: string
   allowFreeText?: boolean
+  /** The values the app allows (``validation { contains([...]) }``); the
+   *  list offers only these. Free text stays possible as a fallback,
+   *  OpenTofu's validation then has the last word. */
+  allowedValues?: (string | number | boolean)[]
 }>()
 
 const emit = defineEmits<{
@@ -114,7 +119,9 @@ const selectedDisplay = computed(() => {
   })
 })
 
-const filteredItems = computed(() => filterResources(items.value, searchQuery.value, isSelected))
+const offeredItems = computed(() => restrictToAllowed(items.value, props.allowedValues, valueOf))
+
+const filteredItems = computed(() => filterResources(offeredItems.value, searchQuery.value, isSelected))
 
 // Multi-select always emits an Array, however the parent initialised
 // ``modelValue`` — the backend's ``list(string)`` HCL type requires one.
