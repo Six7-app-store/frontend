@@ -81,6 +81,16 @@ describe('OpenStackResourcePicker', () => {
     expect(prime).toHaveBeenCalledWith('flavor', flavors)
   })
 
+  it('offers only the flavors the app allows', async () => {
+    const wrapper = mountPicker({ allowedValues: ['m1.large', 'gone.flavor'] })
+    await flushPromises()
+    await open(wrapper)
+
+    expect(rows(wrapper)).toHaveLength(1)
+    expect(rows(wrapper)[0]!.text()).toContain('m1.large')
+    expect(rows(wrapper)[0]!.text()).toContain('4 vCPU')
+  })
+
   it('shows each flavor with its spec line and marks private ones', async () => {
     const wrapper = mountPicker()
     await flushPromises()

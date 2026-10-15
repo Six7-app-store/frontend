@@ -16,9 +16,9 @@ import type { TaskType } from '@/types'
 // the deploy/destroy presets render meaningful labels under each dot when the
 // totals match a known shape; an unknown count falls back to numbered labels.
 //
-// Default to the deploy shape (8 dots) before the first event arrives so the
+// Default to the deploy shape (9 dots) before the first event arrives so the
 // layout doesn't jump when the worker reports its real phase count.
-export const DEFAULT_PHASE_COUNT = 8
+export const DEFAULT_PHASE_COUNT = 9
 
 // Mirrors ``worker/app/tasks.py:_PHASES_DEPLOY``.
 const PHASE_LABELS_DEPLOY = [
@@ -30,6 +30,9 @@ const PHASE_LABELS_DEPLOY = [
   'TOFU_PLAN',
   'TOFU_APPLY',
   'OUTPUTS_AND_CLEANUP',
+  // Waits until cloud-init inside the VMs finished (ADR 0011) — the
+  // longest phase for apps that set up a lot on first boot.
+  'VM_SETUP',
 ] as const
 
 const PHASE_LABELS_DESTROY = [
@@ -87,7 +90,8 @@ const PHASE_LABELS_REDEPLOY = [
 
 // Pretty phase label for the progress bar header. Keeps the enum
 // naming convention from the worker (UPPER_SNAKE_CASE) but renders
-// it human-friendly; ``TOFU`` reads as the tool's name, ``OpenTofu``.
+// it human-friendly; ``TOFU`` reads as the tool's name, ``OpenTofu``, and
+// ``VM`` stays an acronym.
 // Defensive: anything that isn't a non-empty string falls back to an
 // empty label so the template never sees a non-string slip through
 // (e.g. the brief moment an unwrapped ref produced the original
@@ -96,7 +100,7 @@ export function phaseLabel(phase: unknown): string {
   if (typeof phase !== 'string' || !phase) return ''
   return phase
     .split('_')
-    .map((w) => (w === 'TOFU' ? 'OpenTofu' : w.charAt(0) + w.slice(1).toLowerCase()))
+    .map((w) => (w === 'TOFU' ? 'OpenTofu' : w === 'VM' ? 'VM' : w.charAt(0) + w.slice(1).toLowerCase()))
     .join(' ')
 }
 

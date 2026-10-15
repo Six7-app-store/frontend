@@ -6,6 +6,7 @@ import {
   hydrateFromDraft,
   hydrateFromInput,
   missingRequired,
+  outOfRange,
   seedScopedDefault,
   serializeValues,
   slotKeysFor,
@@ -94,5 +95,38 @@ describe('missingRequired and dropStaleSlots', () => {
     const values = { login: { Rot: 'a', Alt: 'b' } }
     expect(dropStaleSlots(defs, values, teams)).toEqual(['login → Alt'])
     expect(values.login).toEqual({ Rot: 'a' })
+  })
+})
+
+describe('outOfRange', () => {
+  const disk = v({ name: 'disk_gb', type: 'number', minValue: 0, maxValue: 200 })
+
+  it('names a number outside the bounds together with the range', () => {
+    expect(outOfRange([disk], { disk_gb: 500 }, teams)).toEqual(['disk_gb: 0–200'])
+    expect(outOfRange([disk], { disk_gb: -1 }, teams)).toEqual(['disk_gb: 0–200'])
+  })
+
+  it('accepts the bounds themselves', () => {
+    expect(outOfRange([disk], { disk_gb: 0 }, teams)).toEqual([])
+    expect(outOfRange([disk], { disk_gb: 200 }, teams)).toEqual([])
+  })
+
+  it('reads a one-sided bound', () => {
+    expect(outOfRange([v({ name: 'n', type: 'number', minValue: 10 })], { n: 5 }, teams)).toEqual(['n: ≥ 10'])
+    expect(outOfRange([v({ name: 'n', type: 'number', maxValue: 3 })], { n: 5 }, teams)).toEqual(['n: ≤ 3'])
+  })
+
+  it('leaves empty values to missingRequired', () => {
+    expect(outOfRange([disk], {}, teams)).toEqual([])
+    expect(outOfRange([disk], { disk_gb: Number.NaN }, teams)).toEqual([])
+  })
+
+  it('checks every slot of a scoped variable', () => {
+    const perTeam = { ...disk, varScope: 'team' as const }
+    expect(outOfRange([perTeam], { disk_gb: { Rot: 10, Blau: 999 } }, teams)).toEqual(['disk_gb (Blau): 0–200'])
+  })
+
+  it('ignores variables without bounds', () => {
+    expect(outOfRange([v({ name: 'n', type: 'number' })], { n: 1e9 }, teams)).toEqual([])
   })
 })

@@ -911,6 +911,7 @@ export default {
       noTeamsConfigured: 'Noch keine Teams konfiguriert — bitte den vorigen Schritt zuerst durchlaufen.',
       noMembers: 'Keine Mitglieder',
       missingRequiredTitle: 'Es fehlen noch Pflichteingaben:',
+      outOfRangeTitle: 'Außerhalb des erlaubten Bereichs:',
       teamRenameToast: 'Team-/User-Änderung erkannt — {count} verwaiste Eingabe(n) entfernt:\n{lines}'
     },
     summary: {

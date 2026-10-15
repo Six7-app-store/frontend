@@ -124,6 +124,24 @@ export function selectedKeysOf(value: unknown, multi: boolean): Set<string> {
   return new Set(key ? [key] : [])
 }
 
+/**
+ * The ``items`` an app allows, in the order the app lists them — e.g. the
+ * flavors from ``contains(["gp1.small", "gp1.large"], var.flavor)``, small
+ * to large. ``keyOf`` is what the picker stores (name or id). Without
+ * ``allowed`` every item is offered unchanged.
+ */
+export function restrictToAllowed(
+  items: readonly ResourceItem[],
+  allowed: readonly (string | number | boolean)[] | undefined,
+  keyOf: (item: ResourceItem) => string,
+): ResourceItem[] {
+  if (!allowed?.length) return [...items]
+  const rank = new Map(allowed.map((value, i) => [String(value), i]))
+  return items
+    .filter((it) => rank.has(keyOf(it)))
+    .sort((a, b) => rank.get(keyOf(a))! - rank.get(keyOf(b))!)
+}
+
 /** ``items`` matching ``query`` in name, id or spec line, the selected ones first (stable). */
 export function filterResources(
   items: readonly ResourceItem[],
