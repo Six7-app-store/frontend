@@ -7,6 +7,7 @@ import {
   connectionFor,
   deriveExpectedAccountKey,
   matchTeamAccounts,
+  hostForPort,
 } from '@/services/deployment-account-matching.service'
 import type { UserAccount } from '@/services/deployment-outputs.service'
 import type { DeploymentTeam } from '@/types'
@@ -138,7 +139,21 @@ describe('resolveProtocol', () => {
   })
 })
 
+describe('hostForPort', () => {
+  it('brackets a bare IPv6 and leaves IPv4 and bracketed addresses alone', () => {
+    expect(hostForPort('2001:db8::42')).toBe('[2001:db8::42]')
+    expect(hostForPort('[2001:db8::42]')).toBe('[2001:db8::42]')
+    expect(hostForPort('1.2.3.4')).toBe('1.2.3.4')
+  })
+})
+
 describe('connectionFor', () => {
+  it('brackets IPv6 for rdp and web, but not for ssh', () => {
+    expect(connectionFor({ protocol: 'rdp', ip: '2001:db8::42' })?.value).toBe('[2001:db8::42]:3389')
+    expect(connectionFor({ ip: '2001:db8::42', port: 8080 })?.href).toBe('http://[2001:db8::42]:8080')
+    expect(connectionFor({ ip: '2001:db8::42', port: 22, username: 'anna' })?.value).toBe('ssh anna@2001:db8::42')
+  })
+
   it('builds an ssh command for ssh accounts', () => {
     expect(connectionFor({ ip: '1.2.3.4', port: 22, username: 'anna' })).toEqual({
       protocol: 'ssh',
