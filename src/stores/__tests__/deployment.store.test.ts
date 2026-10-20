@@ -106,6 +106,8 @@ describe('DeploymentStore request actions', () => {
     it('sends the named teams with their assignments', async () => {
       const payload = await submit({
         studentIds: ['u1', 'u2', 'u3'],
+        groupMode: 'custom',
+        groupCount: 2,
         groupNames: ['Rot', 'Blau'],
         assignments: [['u1', 'u3'], ['u2']],
       })
@@ -118,6 +120,7 @@ describe('DeploymentStore request actions', () => {
     it('splits the students evenly into Team-n when no teams are named', async () => {
       const payload = await submit({
         studentIds: ['u1', 'u2', 'u3', 'u4', 'u5'],
+        groupMode: 'custom',
         groupNames: [],
         groupCount: 2,
       })

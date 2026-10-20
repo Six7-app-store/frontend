@@ -14,16 +14,16 @@ beide von `main`. Nichts gepusht.
 Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
 - [x] a) Hülle, Stepper, Route, Draft in sessionStorage → `dde70d7`
 - [x] b) Schritt 1: Liste freigegebener Apps (Radio-Cards, Suche), Version vorbelegt, „Andere Version“, kein `'latest'`
-  → „Build the app step of the deployment wizard“ (`git log -1`)
-- [ ] c) Schritt 2: Kurs/Studierende, Namensvorschlag, 3 Aufteilungs-Optionen mit Ergebnis, TeamBuilder nur bei „Gruppen
-  selbst bilden“, Fix „Eine Gruppe ohne Zuordnung“
+  → `437a697`
+- [x] c) Schritt 2: Kurs/Studierende, Namensvorschlag, 3 Aufteilungs-Optionen mit Ergebnis, TeamBuilder nur bei „Gruppen
+  selbst bilden“, Fix „Eine Gruppe ohne Zuordnung“ → „Build the target step of the deployment wizard“ (`git log -1`)
 - [ ] d) Schritt 3: Pflichtfelder, „Erweitert“ eingeklappt, Mehrfach-Dateien mit Zuordnung, Zusammenfassung, Start-Sperre
 - [ ] e) Backend: Version freigegeben + `latestApprovedVersion`; Pflichtfelder/-dateien in `POST /deployments`;
   Frontend-Fehlertexte
 - [ ] f) Nach dem Start auf die Detailseite, Hinweis „kann geschlossen werden“, Live-Log eingeklappt
 - [ ] g) Alte Screens löschen, Einstiege für Studierende ausblenden, Tests
 
-**Nächster Schritt:** Etappe c, `StepTarget.vue` füllen (bisher Platzhalter mit Überschrift).
+**Nächster Schritt:** Etappe d, `StepStart.vue` füllen (bisher Platzhalter mit Überschrift).
 
 ## Stand nach a
 - Route `deploymentNew` = `/deployment/new/:step(app|target|start)?`, Guard in `router/wizard-guard.ts`:
@@ -49,6 +49,23 @@ Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
 - `releaseVersion` rät nicht mehr `'latest'`; `submitDraft` verweigert einen Draft ohne Version.
 - **Bis Etappe e liefert das Backend `latestApprovedVersion` nicht** — im Browser ist die Liste in Schritt 1 bis dahin leer.
   Tests mocken das Feld. Browserprüfung deshalb erst nach e.
+
+## Stand nach c
+- **Teams folgen dem Modus** (`wizardTeams` in `deployment-draft.service`): „Alle zusammen“ und „Jeder einzeln“ lesen
+  `assignments` gar nicht mehr, nur „Gruppen selbst bilden“. Damit ist die Sackgasse „Eine Gruppe, niemand zugeordnet“
+  weg. Payload, `useWizardTeams` (Slot-Keys) und Sperrgrund nutzen dieselbe Funktion. `teamLists` liest Arrays und
+  index-geschlüsselte Objekte (ältere Drafts).
+- `splitProblem` (team-assignment.service) liefert den Sperrgrund für „Gruppen selbst bilden“; `canProceed` ist gelöscht.
+- `RECOMMENDED_MODE = 'one'` mit Begründung im Kommentar (Datei-Scope impliziert keine Aufteilung).
+- `useTeamAssignment.setCustom` verteilt beim ersten Wechsel gleichmäßig auf 2 Gruppen; neu `selectMode`, `problem`,
+  Typ `TeamAssignment`.
+- `useWizardTarget`: Kurse mit Mitgliederzahl, Kurswahl übernimmt alle Mitglieder, Einzelwahl über die Suche.
+- Komponenten: `StepTarget`, `TargetPicker` (Kurs-Select bzw. Zähler + Umschalt-Link), `StudentPicker` (Suche +
+  Auswahl, nutzt `StudentSearchList`/`SelectedStudentsPanel`), `SplitModeOptions` (auf `RadioCardGroup`),
+  `TeamBuilder` (Drag & Drop aus der alten Gruppen-View, die bis g bleibt).
+- Name: `suggestedName`, Draft-Feld `nameEdited` stoppt den Vorschlag, sobald jemand tippt.
+- `FormField` zeigt Fehler jetzt mit Icon (gilt überall).
+- Browserprüfung von Schritt 1+2 folgt nach e (vorher keine Apps in Schritt 1).
 
 - Der **alte** 4-Schritt-Wizard (`/deployment/new/config` …) läuft unverändert weiter, bis g ihn löscht. Die Einstiege
   zeigen noch auf ihn bzw. auf `/apps`.
@@ -105,3 +122,4 @@ make test-backend-isolated                                 # nur Etappe e, im de
 | Start | 116 | 1183 | 92,16 / 88,08 / 77 / 92,16 |
 | nach a | 120 | 1207 | 92,3 / 88,21 / 77,95 / 92,3 |
 | nach b | 123 | 1223 | 92,43 / 88,31 / 78,48 / 92,43 |
+| nach c | 125 | 1243 | 92,53 / 88,58 / 78,3 / 92,53 |

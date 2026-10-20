@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { buildDeploymentPayload, distributeEvenly, fallbackTeamName, releaseVersion, withRelease } from '@/services/deployment-draft.service'
+import {
+  buildDeploymentPayload, distributeEvenly, fallbackTeamName, releaseVersion, suggestedName, teamLists, wizardTeams, withRelease,
+} from '@/services/deployment-draft.service'
 import type { DeploymentDraft } from '@/types'
 
 describe('releaseVersion', () => {
@@ -88,5 +90,54 @@ describe('buildDeploymentPayload', () => {
   it('omits files when no slot holds content', () => {
     const payload = buildDeploymentPayload(draft({ fileUploads: { cert: { all: { name: 'a', size: 1 } as never } } }))
     expect(payload).not.toHaveProperty('files')
+  })
+})
+
+describe('suggestedName', () => {
+  it('verbindet App, Ziel und Datum und lässt Unbekanntes weg', () => {
+    expect(suggestedName('Online-IDE', 'WI SE B 23', '20.10.2026')).toBe('Online-IDE – WI SE B 23 – 20.10.2026')
+    expect(suggestedName('Online-IDE', '', '20.10.2026')).toBe('Online-IDE – 20.10.2026')
+  })
+})
+
+describe('teamLists', () => {
+  it('liest Arrays und index-geschlüsselte Objekte und füllt fehlende Teams auf', () => {
+    expect(teamLists([['a'], ['b']], 3)).toEqual([['a'], ['b'], []])
+    expect(teamLists({ 0: ['a'], 2: ['c'] }, 3)).toEqual([['a'], [], ['c']])
+    expect(teamLists(null, 1)).toEqual([[]])
+  })
+})
+
+describe('wizardTeams', () => {
+  const base = {
+    studentIds: ['u1', 'u2', 'u3'], groupNames: [], assignments: [], groupCount: 1,
+  } as unknown as DeploymentDraft
+  const teams = (over: Partial<DeploymentDraft>) => wizardTeams({ ...base, ...over })
+
+  it('setzt bei „Alle zusammen“ alle in ein Team, auch ohne Zuordnung', () => {
+    expect(teams({ groupMode: 'one' })).toEqual([{ name: 'Team-1', userIds: ['u1', 'u2', 'u3'] }])
+    expect(teams({ groupMode: 'one', groupNames: ['Kurs'] })[0]!.name).toBe('Kurs')
+  })
+
+  it('gibt bei „Jeder einzeln“ jeder Person ein Team', () => {
+    expect(teams({ groupMode: 'eachUser' }).map((t) => t.userIds)).toEqual([['u1'], ['u2'], ['u3']])
+  })
+
+  it('nimmt bei „Gruppen selbst bilden“ die gebildeten Teams ohne Abgewählte', () => {
+    expect(teams({
+      groupMode: 'custom', groupCount: 2, groupNames: ['Rot', ' '],
+      assignments: [['u1', 'weg'], ['u2', 'u3']] as never,
+    })).toEqual([
+      { name: 'Rot', userIds: ['u1'] },
+      { name: 'Team-2', userIds: ['u2', 'u3'] },
+    ])
+  })
+
+  it('teilt bei „Gruppen selbst bilden“ ohne gebildete Teams gleichmäßig auf', () => {
+    expect(teams({ groupMode: 'custom', groupCount: 2 }).map((t) => t.userIds)).toEqual([['u1', 'u2'], ['u3']])
+  })
+
+  it('hat ohne Studierende keine Teams', () => {
+    expect(teams({ groupMode: 'one', studentIds: [] })).toEqual([])
   })
 })

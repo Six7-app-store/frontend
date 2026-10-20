@@ -41,6 +41,13 @@ vi.mock('@/composables/useOpenStackResourceCache', () => ({
   ensureLoaded: vi.fn().mockResolvedValue(undefined)
 }))
 
+/** The students and team count of a self-formed split with these teams. */
+const customSplit = (draft: { groupNames: string[]; assignments: Record<number, string[]> }) => ({
+  groupMode: 'custom',
+  groupCount: Math.max(draft.groupNames.length, 1),
+  studentIds: Object.values(draft.assignments).flat(),
+})
+
 describe('NewDeploymentVariableView.vue', () => {
   let routerPushMock: any
   let routerReplaceMock: any
@@ -81,7 +88,9 @@ describe('NewDeploymentVariableView.vue', () => {
             fileUploads: {},
             groupNames: ['Team 1'],
             assignments: { 0: ['u1'] },
-            ...draftOverrides
+            ...draftOverrides,
+            // Teams follow the split mode now: these drafts form their own.
+            ...customSplit({ groupNames: ['Team 1'], assignments: { 0: ['u1'] }, ...draftOverrides }),
           }
         }
       }
@@ -257,6 +266,7 @@ describe('NewDeploymentVariableView.vue — Charakterisierung', () => {
             appId: 'app-1', name: 'Lab', releaseTag: 'v1', variables: {}, userInputVar: '',
             variableDefinitions: [], fileUploads: {}, groupNames: ['Rot'], assignments: { 0: ['u1'] },
             ...draft,
+            ...customSplit({ groupNames: ['Rot'], assignments: { 0: ['u1'] }, ...draft } as never),
           },
         },
       },

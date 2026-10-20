@@ -493,6 +493,9 @@ export interface DeploymentDraft {
 
   // Step 2: base configuration
   name: string
+  // True once the user typed a name; until then the wizard keeps
+  // suggesting "<App> – <Kurs> – <Datum>".
+  nameEdited?: boolean
   courseIds: string[]    // multiple courses possible
   studentIds: string[]   // selected student IDs
 

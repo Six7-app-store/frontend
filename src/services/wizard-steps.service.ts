@@ -6,6 +6,7 @@
  * app and version and opens only the last two.
  */
 import type { DeploymentDraft, WizardEntry } from '@/types'
+import { splitProblem } from '@/services/team-assignment.service'
 
 export type WizardStep = 'app' | 'target' | 'start'
 
@@ -34,7 +35,7 @@ export function draftBlockReason(step: WizardStep, draft: DeploymentDraft): stri
 
   if (draft.studentIds.length === 0) return 'deployment.wizard.block.noStudents'
   if (!draft.name.trim()) return 'deployment.wizard.block.noName'
-  return null
+  return splitProblem(draft)
 }
 
 /**

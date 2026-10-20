@@ -54,6 +54,11 @@ describe('draftBlockReason', () => {
     expect(draftBlockReason('target', draft())).toBeNull()
   })
 
+  it('sperrt das Ziel, solange selbst gebildete Gruppen unvollständig sind', () => {
+    expect(draftBlockReason('target', draft({ groupMode: 'custom', groupCount: 1, assignments: [] })))
+      .toBe('deployment.wizard.block.unassigned')
+  })
+
   it('verlangt in späteren Schritten auch alles Frühere', () => {
     expect(draftBlockReason('start', draft({ appId: null }))).toBe('deployment.wizard.block.noApp')
     expect(draftBlockReason('start', draft({ studentIds: [] }))).toBe('deployment.wizard.block.noStudents')

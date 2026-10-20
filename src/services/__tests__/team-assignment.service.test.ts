@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
-  canProceed,
+  RECOMMENDED_MODE,
   moveStudent,
+  splitProblem,
   shuffled,
   unassignedIds,
   withoutStudent,
 } from '@/services/team-assignment.service'
+import type { DeploymentDraft } from '@/types'
 
 describe('withoutStudent', () => {
   it('removes the student from every team and leaves the input alone', () => {
@@ -55,18 +57,27 @@ describe('shuffled', () => {
   })
 })
 
-describe('canProceed', () => {
-  it('needs an empty pool', () => {
-    expect(canProceed([['a']], ['T'], 1, 1)).toBe(false)
+
+describe('RECOMMENDED_MODE', () => {
+  it('empfiehlt „Alle zusammen“, solange keine App etwas anderes vorgibt', () => {
+    expect(RECOMMENDED_MODE).toBe('one')
+  })
+})
+
+describe('splitProblem', () => {
+  const draft = (over: Partial<DeploymentDraft>) => ({
+    studentIds: ['a', 'b'], groupMode: 'custom', groupCount: 2, groupNames: ['Rot', 'Blau'], assignments: [['a'], ['b']], ...over,
+  }) as DeploymentDraft
+
+  it('hat bei „Alle zusammen“ und „Jeder einzeln“ nie ein Problem — auch ohne Zuordnung', () => {
+    expect(splitProblem(draft({ groupMode: 'one', assignments: [] }))).toBeNull()
+    expect(splitProblem(draft({ groupMode: 'eachUser', assignments: [] }))).toBeNull()
   })
 
-  it('needs every counted team filled and named', () => {
-    expect(canProceed([['a'], []], ['T1', 'T2'], 2, 0)).toBe(false)
-    expect(canProceed([['a'], ['b']], ['T1', ' '], 2, 0)).toBe(false)
-    expect(canProceed([['a'], ['b']], ['T1', 'T2'], 2, 0)).toBe(true)
-  })
-
-  it('ignores teams beyond the count', () => {
-    expect(canProceed([['a'], []], ['T1'], 1, 0)).toBe(true)
+  it('verlangt bei selbst gebildeten Gruppen alle zugeordnet, keine leere und keine namenlose Gruppe', () => {
+    expect(splitProblem(draft({}))).toBeNull()
+    expect(splitProblem(draft({ assignments: [['a'], []] as never, studentIds: ['a'] }))).toBe('deployment.wizard.block.emptyTeam')
+    expect(splitProblem(draft({ assignments: [['a']] as never }))).toBe('deployment.wizard.block.unassigned')
+    expect(splitProblem(draft({ groupNames: ['Rot', ' '] }))).toBe('deployment.wizard.block.unnamedTeam')
   })
 })
