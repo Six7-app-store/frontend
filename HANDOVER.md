@@ -21,12 +21,16 @@ Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
   → `6ce7890`
 - [x] e) Backend: Version freigegeben + `latestApprovedVersion`; Pflichtfelder/-dateien in `POST /deployments`;
   Frontend-Fehlertexte → backend `d931c11` „Validate version and required inputs on deployment create“,
-  frontend „Explain the new deployment create errors“ (`git log -1`)
-- [ ] f) Nach dem Start auf die Detailseite, Hinweis „kann geschlossen werden“, Live-Log eingeklappt
+  frontend `be9a945`
+- [x] f) Nach dem Start auf die Detailseite, Hinweis „kann geschlossen werden“, Live-Log eingeklappt
+  → „Let people close the page while a deployment runs“ (`git log -1`)
 - [ ] g) Alte Screens löschen, Einstiege für Studierende ausblenden, Tests
 
-**Nächster Schritt:** Etappe f, `DeploymentActiveTaskCard`/Detailseite: Hinweis „Seite kann geschlossen werden“, Live-Log
-eingeklappt. Die Navigation nach dem Start auf die Detailseite gibt es seit d.
+**Nächster Schritt:** Etappe g (Aufräumen): Einstiege (Dashboard, Deployment-Liste, App-Seitenleiste) auf den neuen Wizard
+umstellen und für Studierende ausblenden; alte Views `NewDeployment{Config,GroupsAssignment,Variable,Summary}View` samt
+Specs, Routen, Route-Namen, Breadcrumb-Fälle, `WizardStepLayout`, `DeploymentProgressBar`, `GroupModeSelector`,
+`SummaryVariableCard`, `CoursePickerList`, `deployment-summary.service` und unbenutzte i18n-Keys löschen (jeden Key per
+grep prüfen); Draft-Feld `version` entfernen; danach Browserprüfung des ganzen Flows.
 
 ## Stand nach a
 - Route `deploymentNew` = `/deployment/new/:step(app|target|start)?`, Guard in `router/wizard-guard.ts`:
@@ -106,6 +110,13 @@ eingeklappt. Die Navigation nach dem Start auf die Detailseite gibt es seit d.
 - Backend-Tests: `make test-backend-isolated` liegt im **backend**-Makefile (nicht in `deployment/`). 843 grün,
   3 übersprungen, Coverage 80,55 %.
 
+## Stand nach f
+- Nach dem Start landet man per `router.replace` auf `deploymentsDetail` (seit d).
+- `DeploymentActiveTaskCard`: Hinweis „Du kannst diese Seite schließen …“ (bei `deploy` zusätzlich der Satz zur
+  Zugangsdaten-Mail, die `deployment_notifier` tatsächlich verschickt); Live-Log hinter „Live-Log anzeigen“
+  (`aria-expanded`/`aria-controls`, `v-show`). Phasen/Fortschritt unverändert. Snapshot `running` nach Diff-Prüfung
+  aktualisiert (nur Hinweis, Button, eingeklappter Log).
+
 - Der **alte** 4-Schritt-Wizard (`/deployment/new/config` …) läuft unverändert weiter, bis g ihn löscht. Die Einstiege
   zeigen noch auf ihn bzw. auf `/apps`.
 
@@ -164,3 +175,4 @@ cd ../backend && make test-backend-isolated                # bei Backend-Änderu
 | nach c | 125 | 1243 | 92,53 / 88,58 / 78,3 / 92,53 |
 | nach d | 128 | 1269 | 92,79 / 88,58 / 78,77 / 92,79 |
 | nach e | 129 | 1271 | 92,8 / 88,55 / 78,79 / 92,8 |
+| nach f | 130 | 1273 | 92,84 / 88,62 / 78,91 / 92,84 |

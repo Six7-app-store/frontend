@@ -213,12 +213,19 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               </div>
               <!--v-if-->
             </div>
+            <p class="rounded-md border border-subtle bg-line/[.04] px-3.5 py-3 text-base text-fg-body" data-testid="close-note">Du kannst diese Seite schließen, die Einrichtung läuft weiter. Sie kann bis zu 90 Minuten dauern. Wenn alles fertig ist, bekommen du und alle Teilnehmenden eine E-Mail mit den Zugangsdaten.</p><button class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="v-5" data-testid="btn-live-log">Live-Log anzeigen <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon transition-transform lucide-chevron-down-icon lucide-chevron-down text-icon transition-transform" aria-hidden="true">
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+              <!--v-if-->
+            </button>
             <!-- Live log tail. \`\`live.totalLogCount\`\` keeps
                      growing past the visible buffer (capped at 100
                      lines via the ring buffer in the composable),
                      so the user sees that the worker is still
                      producing output even after the box is full. -->
-            <div class="bg-line/[.04] border border-subtle rounded-md p-4 text-center text-xs text-fg-muted">Warte auf die erste Logzeile …</div>
+            <div id="v-5" data-testid="live-log" style="display: none;">
+              <div class="bg-line/[.04] border border-subtle rounded-md p-4 text-center text-xs text-fg-muted">Warte auf die erste Logzeile …</div>
+            </div>
           </div>
         </div>
         <!-- Teams & Members section — appears above Infrastructure so
