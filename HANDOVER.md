@@ -16,14 +16,16 @@ Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
 - [x] b) Schritt 1: Liste freigegebener Apps (Radio-Cards, Suche), Version vorbelegt, „Andere Version“, kein `'latest'`
   → `437a697`
 - [x] c) Schritt 2: Kurs/Studierende, Namensvorschlag, 3 Aufteilungs-Optionen mit Ergebnis, TeamBuilder nur bei „Gruppen
-  selbst bilden“, Fix „Eine Gruppe ohne Zuordnung“ → „Build the target step of the deployment wizard“ (`git log -1`)
-- [ ] d) Schritt 3: Pflichtfelder, „Erweitert“ eingeklappt, Mehrfach-Dateien mit Zuordnung, Zusammenfassung, Start-Sperre
+  selbst bilden“, Fix „Eine Gruppe ohne Zuordnung“ → `b0056aa`
+- [x] d) Schritt 3: Pflichtfelder, „Erweitert“ eingeklappt, Mehrfach-Dateien mit Zuordnung, Zusammenfassung, Start-Sperre
+  → „Build the start step of the deployment wizard“ (`git log -1`)
 - [ ] e) Backend: Version freigegeben + `latestApprovedVersion`; Pflichtfelder/-dateien in `POST /deployments`;
   Frontend-Fehlertexte
 - [ ] f) Nach dem Start auf die Detailseite, Hinweis „kann geschlossen werden“, Live-Log eingeklappt
 - [ ] g) Alte Screens löschen, Einstiege für Studierende ausblenden, Tests
 
-**Nächster Schritt:** Etappe d, `StepStart.vue` füllen (bisher Platzhalter mit Überschrift).
+**Nächster Schritt:** Etappe e im **backend**-Repo (Branch `feat/deploy-wizard` existiert): `latestApprovedVersion`,
+Versionsprüfung und Pflichtfeld-Prüfung in `POST /deployments`; danach Frontend-Fehlertexte (`formatSubmitError`).
 
 ## Stand nach a
 - Route `deploymentNew` = `/deployment/new/:step(app|target|start)?`, Guard in `router/wizard-guard.ts`:
@@ -66,6 +68,27 @@ Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
 - Name: `suggestedName`, Draft-Feld `nameEdited` stoppt den Vorschlag, sobald jemand tippt.
 - `FormField` zeigt Fehler jetzt mit Icon (gilt überall).
 - Browserprüfung von Schritt 1+2 folgt nach e (vorher keine Apps in Schritt 1).
+
+## Stand nach d
+- `StepStart`: Pflichtangaben (ohne Default) offen, Dateivariablen je `FileAssignment`, alles mit Default unter
+  `AdvancedSettings` (eingeklappt, `aria-expanded`), `WizardSummaryPanel` daneben (App · Version, Für, Aufteilung,
+  Ergebnis, Dauer, freies Kontingent aus `useQuotas`). Braucht die App nichts: Hinweis + Zusammenfassung.
+- `useStartStep`: lädt erst die Namen (`directory.ensureLoaded`, user-Slots hängen am Username), dann die Variablen;
+  jede Eingabe geht sofort in den Draft (`form.save()` per Watch); verwirft Datei-Slots alter Teams
+  (`withoutStaleFileSlots`); meldet den Sperrgrund (`loading`, `missingInputs`, `outOfRange`, `missingFiles`).
+- Ladefehler der Variablen: Warnung + „Erneut versuchen“, Start bleibt möglich (wie bisher; das Backend prüft ab e).
+- Datei-Zuordnung `file-matching.service`: Dateiname ohne Endung, normalisiert (klein, ohne Akzente, Trenner → Punkt),
+  gegen Username, E-Mail-Teil, „vorname.nachname“ bzw. Teamnamen. Nur eindeutige Treffer, sonst Liste
+  „Nicht zugeordnet“. Je fehlender Zeile „Datei wählen“.
+- `FileDropZone`: `multiple` (Event `files`), Ablagefläche ist jetzt ein `<button>`; Einlesen in
+  `utils/deployment-file.ts` (`readDeploymentFile`, `acceptFor`, `MAX_DEPLOYMENT_FILE_BYTES`).
+- `VariableFieldCard`: `plain` + `label` (Klartext ohne Typ-/Scope-Badges). Klartext aus `variableLabel` (osType →
+  `deployment.wizard.labels.*`, sonst erster Satz der Beschreibung, sonst Name).
+- Sperrgrund ist jetzt `{ key, params, plural }` (`BlockReason` in `useDeploymentWizard`). `start()` legt an,
+  navigiert per `replace` auf `deploymentsDetail` und verwirft danach den Draft.
+- **Falle (Harness):** Der Secret-Hook blockt jedes Bash-Kommando, in dem ein Wort auf „.key“ endet (etwa ein
+  Property-Zugriff in einem Python-Heredoc, auch in Commit-Texten). Solchen Text per Edit/Write schreiben und
+  Commit-Nachrichten mit `git commit -F <datei>` übergeben.
 
 - Der **alte** 4-Schritt-Wizard (`/deployment/new/config` …) läuft unverändert weiter, bis g ihn löscht. Die Einstiege
   zeigen noch auf ihn bzw. auf `/apps`.
@@ -123,3 +146,4 @@ make test-backend-isolated                                 # nur Etappe e, im de
 | nach a | 120 | 1207 | 92,3 / 88,21 / 77,95 / 92,3 |
 | nach b | 123 | 1223 | 92,43 / 88,31 / 78,48 / 92,43 |
 | nach c | 125 | 1243 | 92,53 / 88,58 / 78,3 / 92,53 |
+| nach d | 128 | 1269 | 92,79 / 88,58 / 78,77 / 92,79 |

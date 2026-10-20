@@ -18,12 +18,16 @@ import StepStart from '@/components/deployment-wizard/StepStart.vue'
 const { t } = useI18n()
 const credStore = useOpenStackCredentialsStore()
 const wizard = useDeploymentWizard()
-const { steps, current, index, isLast, blockReason } = wizard
+const { steps, current, index, isLast, blockReason, starting } = wizard
 
 const labels = computed(() => steps.value.map((step) => t(`deployment.wizard.steps.${step}`)))
 const backLabel = computed(() => t(index.value === 0 ? 'deployment.wizard.cancel' : 'deployment.actions.back'))
 const nextLabel = computed(() => t(isLast.value ? 'deployment.wizard.start' : 'deployment.actions.next'))
-const reasonText = computed(() => (blockReason.value ? t(blockReason.value) : null))
+const reasonText = computed(() => {
+  const reason = blockReason.value
+  if (!reason) return null
+  return reason.plural === undefined ? t(reason.key, reason.params ?? {}) : t(reason.key, reason.params ?? {}, reason.plural)
+})
 
 // The entry points stay disabled without credentials; a deep link still
 // lands here, and then the banner explains it instead of a dead wizard.
@@ -42,6 +46,8 @@ onMounted(() => {
     :next-label="nextLabel"
     :block-reason="reasonText"
     :hide-footer="credentialsMissing"
+    :busy="starting"
+    :busy-label="t('deployment.wizard.starting')"
     @back="wizard.back()"
     @next="wizard.next()"
   >
@@ -56,6 +62,6 @@ onMounted(() => {
     />
     <StepApp v-else-if="current === 'app'" />
     <StepTarget v-else-if="current === 'target'" @change-app="wizard.changeApp()" />
-    <StepStart v-else />
+    <StepStart v-else @reason="(reason) => (wizard.stepReason.value = reason)" />
   </WizardShell>
 </template>

@@ -3,6 +3,7 @@ import {
   RECOMMENDED_MODE,
   moveStudent,
   splitProblem,
+  splitResult,
   shuffled,
   unassignedIds,
   withoutStudent,
@@ -79,5 +80,15 @@ describe('splitProblem', () => {
     expect(splitProblem(draft({ assignments: [['a'], []] as never, studentIds: ['a'] }))).toBe('deployment.wizard.block.emptyTeam')
     expect(splitProblem(draft({ assignments: [['a']] as never }))).toBe('deployment.wizard.block.unassigned')
     expect(splitProblem(draft({ groupNames: ['Rot', ' '] }))).toBe('deployment.wizard.block.unnamedTeam')
+  })
+})
+
+describe('splitResult', () => {
+  it('sagt, wozu eine Aufteilung führt', () => {
+    expect(splitResult('one', 9, null)).toEqual({ key: 'deployment.wizard.split.resultOne', n: 9 })
+    expect(splitResult('eachUser', 9, null)).toEqual({ key: 'deployment.wizard.split.resultMany', n: 9 })
+    expect(splitResult('custom', 9, null)).toEqual({ key: 'deployment.wizard.split.resultCustom', n: 0 })
+    expect(splitResult('custom', 9, 3)).toEqual({ key: 'deployment.wizard.split.resultMany', n: 3 })
+    expect(splitResult('one', 0, null)).toBeNull()
   })
 })

@@ -3,7 +3,7 @@
  * back/next, the deep-link guard and the draft surviving a reload. The steps
  * themselves are stubbed; each has its own spec.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
@@ -17,11 +17,16 @@ import { useDeploymentStore } from '@/stores/deployment.store'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { DRAFT_STORAGE_KEY } from '@/services/draft-storage.service'
 import de from '@/i18n/locales/de'
+import { deploymentApi } from '@/api/deployment.api'
+
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }))
+vi.mock('@/composables/useToast', () => ({ useToast: () => toast }))
+vi.mock('@/api/deployment.api', () => ({ deploymentApi: { create: vi.fn() } }))
 
 enableAutoUnmount(afterEach)
 
 const Empty = defineComponent({ render: () => h('div') })
-const stepStub = (name: string) => defineComponent({ name, emits: ['change-app'], render: () => h('div', { 'data-testid': name }) })
+const stepStub = (name: string) => defineComponent({ name, emits: ['change-app', 'reason'], render: () => h('div', { 'data-testid': name }) })
 
 function makeRouter(): Router {
   return createRouter({
@@ -30,6 +35,7 @@ function makeRouter(): Router {
       { path: '/deployment/new/:step(app|target|start)?', name: ROUTE_NAMES.deploymentNew, component: NewDeploymentView, beforeEnter: wizardGuard },
       { path: '/apps/:id', name: ROUTE_NAMES.appsDetail, component: Empty },
       { path: '/deployments', name: ROUTE_NAMES.deploymentsList, component: Empty },
+      { path: '/deployments/:id', name: ROUTE_NAMES.deploymentsDetail, component: Empty },
       { path: '/user/openstack', name: ROUTE_NAMES.userOpenStack, component: Empty },
     ],
   })
@@ -152,5 +158,49 @@ describe('NewDeploymentView', () => {
     expect(wrapper.text()).toContain(de.common.missingCreds.title)
     expect(wrapper.find('[data-testid="StepApp"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="btn-next"]').exists()).toBe(false)
+  })
+
+  describe('Start', () => {
+    const ready = () => {
+      fromAppPage()
+      Object.assign(useDeploymentStore().draft, { name: 'Lab', studentIds: ['u1'], groupMode: 'one' })
+    }
+
+    it('sperrt „Deployment starten“ mit dem Grund, den der Schritt meldet', async () => {
+      const { wrapper } = await open('/deployment/new/start', { before: ready })
+      const next = wrapper.get('[data-testid="btn-next"]')
+      expect(next.text()).toBe('Deployment starten')
+
+      wrapper.findComponent({ name: 'StepStart' }).vm.$emit('reason', { key: 'deployment.wizard.block.missingFiles', params: { n: 2 }, plural: 2 })
+      await flushPromises()
+      expect(next.attributes('disabled')).toBeDefined()
+      expect(wrapper.get('[data-testid="wizard-block-reason"]').text()).toBe('Es fehlen noch 2 Dateien.')
+    })
+
+    it('legt das Deployment an, öffnet seine Detailseite und verwirft den Draft', async () => {
+      vi.mocked(deploymentApi.create).mockResolvedValue({ data: { deploymentId: 'dep-9' } } as never)
+      const { wrapper, router } = await open('/deployment/new/start', { before: ready })
+
+      await wrapper.get('[data-testid="btn-next"]').trigger('click')
+      await flushPromises()
+
+      expect(deploymentApi.create).toHaveBeenCalledWith(expect.objectContaining({ appId: 'app-1', releaseTag: 'v1.2.0', name: 'Lab' }))
+      expect(router.currentRoute.value.fullPath).toBe('/deployments/dep-9')
+      expect(useDeploymentStore().draft.appId).toBeNull()
+      expect(sessionStorage.getItem(DRAFT_STORAGE_KEY)).toBeNull()
+      expect(toast.success).toHaveBeenCalled()
+    })
+
+    it('bleibt bei einem Fehler im Wizard, mit Draft und Fehlermeldung', async () => {
+      vi.mocked(deploymentApi.create).mockRejectedValue({ response: { status: 422, data: { detail: { reason: 'required_missing', missing: [] } } } })
+      const { wrapper, router } = await open('/deployment/new/start', { before: ready })
+
+      await wrapper.get('[data-testid="btn-next"]').trigger('click')
+      await flushPromises()
+
+      expect(router.currentRoute.value.params.step).toBe('start')
+      expect(useDeploymentStore().draft.appId).toBe('app-1')
+      expect(toast.error).toHaveBeenCalled()
+    })
   })
 })

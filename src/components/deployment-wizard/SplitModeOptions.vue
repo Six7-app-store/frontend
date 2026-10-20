@@ -8,7 +8,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import RadioCardGroup from '@/components/ui/RadioCardGroup.vue'
 import type { RadioCardOption } from '@/components/ui/radio-card'
-import { RECOMMENDED_MODE } from '@/services/team-assignment.service'
+import { RECOMMENDED_MODE, splitResult } from '@/services/team-assignment.service'
 import type { GroupMode } from '@/types'
 
 const props = defineProps<{
@@ -26,13 +26,8 @@ const { t } = useI18n()
 const MODES: GroupMode[] = ['one', 'eachUser', 'custom']
 
 function result(mode: GroupMode): string | undefined {
-  const n = props.people
-  if (n === 0) return undefined
-  if (mode === 'one') return t('deployment.wizard.split.resultOne', { n }, n)
-  if (mode === 'eachUser') return t('deployment.wizard.split.resultMany', { n }, n)
-  return props.mode === 'custom'
-    ? t('deployment.wizard.split.resultMany', { n: props.customCount }, props.customCount)
-    : t('deployment.wizard.split.resultCustom')
+  const outcome = splitResult(mode, props.people, props.mode === 'custom' ? props.customCount : null)
+  return outcome ? t(outcome.key, { n: outcome.n }, outcome.n) : undefined
 }
 
 const options = computed<RadioCardOption<GroupMode>[]>(() => MODES.map((mode) => ({

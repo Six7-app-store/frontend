@@ -48,6 +48,7 @@ const targetLabel = computed(() => {
 })
 
 watch([targetLabel, () => store.draft.appName], () => {
+  store.draft.targetLabel = targetLabel.value
   if (store.draft.nameEdited) return
   store.draft.name = suggestedName(store.draft.appName, targetLabel.value, formatDate(new Date()))
 }, { immediate: true })

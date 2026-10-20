@@ -71,3 +71,21 @@ export function splitProblem(draft: DeploymentDraft): string | null {
   }
   return null
 }
+
+/**
+ * What a split leads to, as an i18n key with its count: ``one`` is one
+ * environment for everybody, ``eachUser`` one per person, ``custom`` one per
+ * group once groups are being formed. ``null`` without people.
+ */
+export function splitResult(
+  mode: GroupMode,
+  people: number,
+  customCount: number | null,
+): { key: string; n: number } | null {
+  if (people === 0) return null
+  if (mode === 'one') return { key: 'deployment.wizard.split.resultOne', n: people }
+  if (mode === 'eachUser') return { key: 'deployment.wizard.split.resultMany', n: people }
+  return customCount === null
+    ? { key: 'deployment.wizard.split.resultCustom', n: 0 }
+    : { key: 'deployment.wizard.split.resultMany', n: customCount }
+}

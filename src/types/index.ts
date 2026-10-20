@@ -496,6 +496,8 @@ export interface DeploymentDraft {
   // True once the user typed a name; until then the wizard keeps
   // suggesting "<App> – <Kurs> – <Datum>".
   nameEdited?: boolean
+  // Who it is for, as the summary shows it: the course name or "3 Personen".
+  targetLabel?: string
   courseIds: string[]    // multiple courses possible
   studentIds: string[]   // selected student IDs
 
