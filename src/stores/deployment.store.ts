@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
 import { requestContext, runRequest } from './_request'
 import { getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
-import { buildDeploymentPayload } from '@/services/deployment-draft.service'
+import { buildDeploymentPayload, releaseVersion, withRelease, type ChosenRelease } from '@/services/deployment-draft.service'
 import { clearDraft, loadDraft, saveDraft, sessionStore } from '@/services/draft-storage.service'
 
 import type {
@@ -17,6 +17,7 @@ import type {
 const defaultDraft: DeploymentDraft = {
   entry: 'catalog',
   appId: null,
+  appName: '',
   name: '',
   releaseTag: '',
   courseIds: [],
@@ -144,13 +145,17 @@ export const useDeploymentStore = defineStore('deployment', {
      * Starts a new wizard run. From an app page ``app`` carries the chosen
      * app and version, and the wizard skips its app step.
      */
-    startDraft(app: { appId: string; releaseTag: string } | null = null) {
+    startDraft(app: ChosenRelease | null = null) {
       this.resetDraft()
       if (app) {
         this.draft.entry = 'app'
-        this.draft.appId = app.appId
-        this.draft.releaseTag = app.releaseTag
+        Object.assign(this.draft, withRelease(this.draft, app))
       }
+    },
+
+    /** Picks app and version; a different one drops what belonged to the old one. */
+    chooseRelease(release: ChosenRelease) {
+      Object.assign(this.draft, withRelease(this.draft, release))
     },
 
     /** Writes the draft to sessionStorage (see ``saveDraft``). */
@@ -163,8 +168,8 @@ export const useDeploymentStore = defineStore('deployment', {
      * the created deployment.
      */
     async submitDraft() {
-      if (!this.draft.appId || !this.draft.name) {
-        throw new Error("App und Name sind Pflichtfelder")
+      if (!this.draft.appId || !this.draft.name || !releaseVersion(this.draft.releaseTag)) {
+        throw new Error("App, Version und Name sind Pflichtfelder")
       }
       return this.createDeployment(buildDeploymentPayload(this.draft))
     }

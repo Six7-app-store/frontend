@@ -11,6 +11,7 @@ import type { DeploymentDraft } from '@/types'
 const draft = (over: Partial<DeploymentDraft> = {}): DeploymentDraft => ({
   entry: 'catalog',
   appId: 'app-1',
+  appName: 'Online-IDE',
   releaseTag: 'v1.0.0',
   name: 'Online-IDE – WI 23 – 20.10.2026',
   courseIds: [],

@@ -10,6 +10,7 @@ import type { DeploymentDraft } from '@/types'
 const fresh = (): DeploymentDraft => ({
   entry: 'catalog',
   appId: null,
+  appName: '',
   releaseTag: '',
   name: '',
   courseIds: [],

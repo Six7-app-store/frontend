@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildDeploymentPayload, distributeEvenly, fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
+import { buildDeploymentPayload, distributeEvenly, fallbackTeamName, releaseVersion, withRelease } from '@/services/deployment-draft.service'
 import type { DeploymentDraft } from '@/types'
 
 describe('releaseVersion', () => {
@@ -7,17 +7,37 @@ describe('releaseVersion', () => {
     expect(releaseVersion('v1.2.0')).toBe('v1.2.0')
   })
 
-  it('means latest when nothing is set', () => {
-    expect(releaseVersion('')).toBe('latest')
-    expect(releaseVersion('  ')).toBe('latest')
-    expect(releaseVersion(null)).toBe('latest')
-    expect(releaseVersion(undefined)).toBe('latest')
+  it('guesses no version when nothing is set', () => {
+    expect(releaseVersion('')).toBe('')
+    expect(releaseVersion('  ')).toBe('')
+    expect(releaseVersion(null)).toBe('')
+    expect(releaseVersion(undefined)).toBe('')
   })
 
   it('reads version, then name, from a release object', () => {
     expect(releaseVersion({ version: 'v2', name: 'Second' })).toBe('v2')
     expect(releaseVersion({ name: 'v3' })).toBe('v3')
-    expect(releaseVersion({})).toBe('latest')
+    expect(releaseVersion({})).toBe('')
+  })
+})
+
+describe('withRelease', () => {
+  const draft = {
+    appId: 'app-1', appName: 'IDE', releaseTag: 'v1',
+    variableDefinitions: [{ name: 'x', type: 'string' }], variables: { x: 'a' },
+    userInputVar: '{"x":"a"}', fileUploads: { task: {} }, filesLost: true,
+  } as unknown as DeploymentDraft
+
+  it('keeps what was entered for the same release', () => {
+    expect(withRelease(draft, { appId: 'app-1', appName: 'IDE', releaseTag: 'v1' }))
+      .toEqual({ appId: 'app-1', appName: 'IDE', releaseTag: 'v1' })
+  })
+
+  it('drops variables and files of another app or version', () => {
+    expect(withRelease(draft, { appId: 'app-1', appName: 'IDE', releaseTag: 'v2' })).toEqual({
+      appId: 'app-1', appName: 'IDE', releaseTag: 'v2',
+      variableDefinitions: [], variables: {}, userInputVar: {}, fileUploads: {}, filesLost: false,
+    })
   })
 })
 

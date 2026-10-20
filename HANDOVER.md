@@ -12,8 +12,9 @@ beide von `main`. Nichts gepusht.
 
 ## Etappen
 Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
-- [x] a) Hülle, Stepper, Route, Draft in sessionStorage → „Add the deployment wizard shell with draft persistence“ (`git log -1`)
-- [ ] b) Schritt 1: Liste freigegebener Apps (Radio-Cards, Suche), Version vorbelegt, „Andere Version“, kein `'latest'`
+- [x] a) Hülle, Stepper, Route, Draft in sessionStorage → `dde70d7`
+- [x] b) Schritt 1: Liste freigegebener Apps (Radio-Cards, Suche), Version vorbelegt, „Andere Version“, kein `'latest'`
+  → „Build the app step of the deployment wizard“ (`git log -1`)
 - [ ] c) Schritt 2: Kurs/Studierende, Namensvorschlag, 3 Aufteilungs-Optionen mit Ergebnis, TeamBuilder nur bei „Gruppen
   selbst bilden“, Fix „Eine Gruppe ohne Zuordnung“
 - [ ] d) Schritt 3: Pflichtfelder, „Erweitert“ eingeklappt, Mehrfach-Dateien mit Zuordnung, Zusammenfassung, Start-Sperre
@@ -22,7 +23,7 @@ Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
 - [ ] f) Nach dem Start auf die Detailseite, Hinweis „kann geschlossen werden“, Live-Log eingeklappt
 - [ ] g) Alte Screens löschen, Einstiege für Studierende ausblenden, Tests
 
-**Nächster Schritt:** Etappe b, `StepApp.vue` füllen (bisher Platzhalter mit Überschrift).
+**Nächster Schritt:** Etappe c, `StepTarget.vue` füllen (bisher Platzhalter mit Überschrift).
 
 ## Stand nach a
 - Route `deploymentNew` = `/deployment/new/:step(app|target|start)?`, Guard in `router/wizard-guard.ts`:
@@ -35,6 +36,20 @@ Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
 - `composables/useDeploymentWizard.ts`: Navigation, Sperrgrund, `stepReason` für Gründe, die nur ein Schritt kennt,
   speichert den Draft bei jeder Änderung
 - `WizardShell.vue` (Titel, `WizardStepper`, Footer mit Grund neben dem Button), `NewDeploymentView.vue` verdrahtet
+- Der Draft trägt `entry` und `appName`. Die App-Seite startet ihren Lauf selbst mit
+  `store.startDraft({ appId, appName, releaseTag })` und öffnet `{ name: deploymentNew, params: { step: 'target' } }`.
+  `/deployment/new` ohne Schritt startet immer einen Katalog-Lauf (keine Query-Parameter).
+
+## Stand nach b
+- `ui/RadioCardGroup.vue` (+ `radio-card.ts`): Radiogruppe als Karten, Pfeiltasten/Pos1/Ende, Roving Tabindex, Badge,
+  Beschreibung, Ergebnis, `stacked`. CSS `.choice-card`/`.choice-dot` in `components.css`, Zustand über `aria-checked`.
+- `services/wizard-app.service.ts`: `deployableApps` (nur mit `latestApprovedVersion`, Suche, sortiert), `appTagline`.
+- `composables/useWizardApp.ts`: Apps über `useAppCatalog`, Versionen erst auf „Andere Version“ über `GET /apps/{id}`.
+- `store.chooseRelease` / `withRelease`: eine andere App oder Version verwirft Variablen, Werte und Dateien.
+- `releaseVersion` rät nicht mehr `'latest'`; `submitDraft` verweigert einen Draft ohne Version.
+- **Bis Etappe e liefert das Backend `latestApprovedVersion` nicht** — im Browser ist die Liste in Schritt 1 bis dahin leer.
+  Tests mocken das Feld. Browserprüfung deshalb erst nach e.
+
 - Der **alte** 4-Schritt-Wizard (`/deployment/new/config` …) läuft unverändert weiter, bis g ihn löscht. Die Einstiege
   zeigen noch auf ihn bzw. auf `/apps`.
 
@@ -89,3 +104,4 @@ make test-backend-isolated                                 # nur Etappe e, im de
 |---|---|---|---|
 | Start | 116 | 1183 | 92,16 / 88,08 / 77 / 92,16 |
 | nach a | 120 | 1207 | 92,3 / 88,21 / 77,95 / 92,3 |
+| nach b | 123 | 1223 | 92,43 / 88,31 / 78,48 / 92,43 |

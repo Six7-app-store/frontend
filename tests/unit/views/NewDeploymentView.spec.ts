@@ -35,9 +35,13 @@ function makeRouter(): Router {
   })
 }
 
-async function open(path: string, { credentials = true } = {}) {
+const fromAppPage = () =>
+  useDeploymentStore().startDraft({ appId: 'app-1', appName: 'Online-IDE', releaseTag: 'v1.2.0' })
+
+async function open(path: string, { credentials = true, before = () => {} } = {}) {
   const router = makeRouter()
   useOpenStackCredentialsStore().status = { has_credential: credentials } as never
+  before()
   await router.push(path)
   await router.isReady()
   const wrapper = mount(NewDeploymentView, {
@@ -70,10 +74,9 @@ describe('NewDeploymentView', () => {
   })
 
   it('startet von der App-Seite mit App und Version beim Schritt „Für wen?“, zwei Schritte', async () => {
-    const { wrapper, router } = await open('/deployment/new?app=app-1&version=v1.2.0')
+    const { wrapper, router } = await open('/deployment/new/target', { before: fromAppPage })
 
     expect(router.currentRoute.value.params.step).toBe('target')
-    expect(router.currentRoute.value.query).toEqual({})
     expect(stepLabels(wrapper)).toEqual(['Für wen?', 'Aufgabe & Start'])
     expect(wrapper.find('[data-testid="wizard-step-count"]').text()).toBe('Schritt 1 von 2')
     const draft = useDeploymentStore().draft
@@ -105,7 +108,7 @@ describe('NewDeploymentView', () => {
   })
 
   it('behält den Draft nach einem Reload mitten im Wizard', async () => {
-    const first = await open('/deployment/new?app=app-1&version=v1.2.0')
+    const first = await open('/deployment/new/target', { before: fromAppPage })
     useDeploymentStore().draft.name = 'Mein Deployment'
     await flushPromises()
     first.wrapper.unmount()
@@ -126,14 +129,14 @@ describe('NewDeploymentView', () => {
     await flushPromises()
     expect(fromCatalog.router.currentRoute.value.name).toBe(ROUTE_NAMES.deploymentsList)
 
-    const fromApp = await open('/deployment/new?app=app-1&version=v1')
+    const fromApp = await open('/deployment/new/target', { before: fromAppPage })
     await fromApp.wrapper.get('[data-testid="btn-back"]').trigger('click')
     await flushPromises()
     expect(fromApp.router.currentRoute.value.fullPath).toBe('/apps/app-1')
   })
 
   it('wechselt mit „Ändern“ auf den App-Schritt und hat dann drei Schritte', async () => {
-    const { wrapper, router } = await open('/deployment/new?app=app-1&version=v1')
+    const { wrapper, router } = await open('/deployment/new/target', { before: fromAppPage })
 
     wrapper.findComponent({ name: 'StepTarget' }).vm.$emit('change-app')
     await flushPromises()

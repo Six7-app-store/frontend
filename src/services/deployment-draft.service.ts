@@ -8,15 +8,42 @@ import type { DeploymentCreate, DeploymentDraft, DeploymentFile } from '@/types'
 /**
  * The version a draft deploys. ``releaseTag`` is a plain tag string; older
  * callers passed a release object, whose ``version`` (or ``name``) is used.
- * Nothing set means ``latest``.
+ * Nothing set is ``''`` — there is no guessed fallback: the wizard does not
+ * start without a version.
  */
 export function releaseVersion(releaseTag: unknown): string {
   if (releaseTag && typeof releaseTag === 'object') {
     const tag = releaseTag as { version?: string; name?: string }
-    return tag.version || tag.name || 'latest'
+    return tag.version || tag.name || ''
   }
   if (typeof releaseTag === 'string' && releaseTag.trim() !== '') return releaseTag
-  return 'latest'
+  return ''
+}
+
+/** App and version the wizard deploys. */
+export interface ChosenRelease {
+  appId: string
+  appName: string
+  releaseTag: string
+}
+
+/**
+ * The draft fields for choosing ``release``. Another app or version has
+ * other variables and files, so everything loaded or entered for the old
+ * one is dropped; the same release changes nothing else.
+ */
+export function withRelease(draft: DeploymentDraft, release: ChosenRelease): Partial<DeploymentDraft> {
+  const same = draft.appId === release.appId && draft.releaseTag === release.releaseTag
+  const chosen = { appId: release.appId, appName: release.appName, releaseTag: release.releaseTag }
+  if (same) return chosen
+  return {
+    ...chosen,
+    variableDefinitions: [],
+    variables: {},
+    userInputVar: {},
+    fileUploads: {},
+    filesLost: false,
+  }
 }
 
 /**

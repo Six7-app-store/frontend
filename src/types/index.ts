@@ -92,10 +92,15 @@ export interface App {
   // Data-URL ("data:image/png;base64,...") or null when the app
   // has no logo. Goes straight into ``<img :src=...>``.
   image?: string | null
+  // Newest approved version tag, null while none is approved. Lets the
+  // wizard preselect a version without asking Git.
+  latestApprovedVersion?: string | null
 }
 
 export interface AppWithUser extends App {
   user: User
+  // Git tags, newest first; non-owners only get the approved ones.
+  versions?: Array<string | Record<string, any>>
 }
 
 export interface AppCreate {
@@ -483,6 +488,8 @@ export interface DeploymentDraft {
 
   // Step 1: app selection
   appId: string | null
+  // The app's name, kept so the later steps and a reload need no lookup.
+  appName: string
 
   // Step 2: base configuration
   name: string
