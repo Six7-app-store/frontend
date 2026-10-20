@@ -1,7 +1,7 @@
 # HANDOVER – Deployment-Wizard in 3 Schritten
 
-Stand wird nach jedem Commit überschrieben (kein Tagebuch). Branch `feat/deploy-wizard` in `frontend/` und `backend/`,
-beide von `main`. Nichts gepusht.
+Stand wird nach jedem Commit überschrieben (kein Tagebuch). Branches von `main`: `frontend/` auf `feat/deploy-wizard`,
+`backend/` auf `feat/deployment_wizard` (Wunsch der Nutzerin). Nichts gepusht.
 
 ## Ziel
 „Neues Deployment“ als **ein** Wizard mit höchstens 3 Schritten, ohne Einweisung lösbar (User Story).
@@ -18,14 +18,15 @@ Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
 - [x] c) Schritt 2: Kurs/Studierende, Namensvorschlag, 3 Aufteilungs-Optionen mit Ergebnis, TeamBuilder nur bei „Gruppen
   selbst bilden“, Fix „Eine Gruppe ohne Zuordnung“ → `b0056aa`
 - [x] d) Schritt 3: Pflichtfelder, „Erweitert“ eingeklappt, Mehrfach-Dateien mit Zuordnung, Zusammenfassung, Start-Sperre
-  → „Build the start step of the deployment wizard“ (`git log -1`)
-- [ ] e) Backend: Version freigegeben + `latestApprovedVersion`; Pflichtfelder/-dateien in `POST /deployments`;
-  Frontend-Fehlertexte
+  → `6ce7890`
+- [x] e) Backend: Version freigegeben + `latestApprovedVersion`; Pflichtfelder/-dateien in `POST /deployments`;
+  Frontend-Fehlertexte → backend `d931c11` „Validate version and required inputs on deployment create“,
+  frontend „Explain the new deployment create errors“ (`git log -1`)
 - [ ] f) Nach dem Start auf die Detailseite, Hinweis „kann geschlossen werden“, Live-Log eingeklappt
 - [ ] g) Alte Screens löschen, Einstiege für Studierende ausblenden, Tests
 
-**Nächster Schritt:** Etappe e im **backend**-Repo (Branch `feat/deploy-wizard` existiert): `latestApprovedVersion`,
-Versionsprüfung und Pflichtfeld-Prüfung in `POST /deployments`; danach Frontend-Fehlertexte (`formatSubmitError`).
+**Nächster Schritt:** Etappe f, `DeploymentActiveTaskCard`/Detailseite: Hinweis „Seite kann geschlossen werden“, Live-Log
+eingeklappt. Die Navigation nach dem Start auf die Detailseite gibt es seit d.
 
 ## Stand nach a
 - Route `deploymentNew` = `/deployment/new/:step(app|target|start)?`, Guard in `router/wizard-guard.ts`:
@@ -90,6 +91,21 @@ Versionsprüfung und Pflichtfeld-Prüfung in `POST /deployments`; danach Fronten
   Property-Zugriff in einem Python-Heredoc, auch in Commit-Texten). Solchen Text per Edit/Write schreiben und
   Commit-Nachrichten mit `git commit -F <datei>` übergeben.
 
+## Stand nach e
+- Backend `POST /deployments`:
+  - ohne `releaseTag` → 422 `{reason: version_required}` (der `"main"`-Fallback ist weg)
+  - Nicht-Owner/Nicht-Admin mit nicht freigegebener Version → 403 `{code: version_not_approved}`
+    (`ensure_deploy_version` in `utils/capabilities.py`)
+  - Variablen-Definitionen werden bei jedem Deploy mit `git_link` geladen; `_validate_required_inputs` → 422
+    `{reason: required_missing, missing: [{variable, slot?}]}`. User-Slots wie im Wizard: username, sonst E-Mail-Teil,
+    sonst Vorname (`_slot_username`). Git nicht erreichbar → Prüfung entfällt wie bisher.
+- `latestApprovedVersion` in `AppResponse` (Liste und Detail), `crud.latest_approved_versions` (eine Abfrage, ohne Git,
+  Reihenfolge wie die Git-Tags).
+- Frontend `formatSubmitError`: `version_required`, `version_not_approved`, `required_missing`, `required_slot_empty`.
+  Tests dafür jetzt in `deployment-submit-error.service.test.ts` (vorher in der Summary-Testdatei, die g löscht).
+- Backend-Tests: `make test-backend-isolated` liegt im **backend**-Makefile (nicht in `deployment/`). 843 grün,
+  3 übersprungen, Coverage 80,55 %.
+
 - Der **alte** 4-Schritt-Wizard (`/deployment/new/config` …) läuft unverändert weiter, bis g ihn löscht. Die Einstiege
   zeigen noch auf ihn bzw. auf `/apps`.
 
@@ -132,8 +148,8 @@ docker exec frontend-dev sh -lc 'cd /app && npx vue-tsc -b'
 docker exec frontend-dev sh -lc 'cd /app && npx vitest --run --coverage'   # Schwellen 89/84/71/89 nicht senken
 docker exec frontend-dev sh -lc 'cd /app && npx eslint .'
 rg -n '#[0-9a-fA-F]{3,8}\b' src --glob '!src/styles/tokens.css' --glob '!**/__tests__/**'   # muss leer sein
-docker exec backend-dev poetry run ruff check .            # nur Etappe e
-make test-backend-isolated                                 # nur Etappe e, im deployment-Repo
+docker exec backend-dev poetry run ruff check .            # bei Backend-Änderungen
+cd ../backend && make test-backend-isolated                # bei Backend-Änderungen (Target im backend-Makefile)
 ```
 - Neue Dateien oder eine geänderte Tailwind-Konfiguration: `docker restart frontend-dev`.
 - Commit-Stil: englischer Imperativ mit Co-Authored-By-Trailer. HANDOVER mit jedem Commit aktualisieren.
@@ -147,3 +163,4 @@ make test-backend-isolated                                 # nur Etappe e, im de
 | nach b | 123 | 1223 | 92,43 / 88,31 / 78,48 / 92,43 |
 | nach c | 125 | 1243 | 92,53 / 88,58 / 78,3 / 92,53 |
 | nach d | 128 | 1269 | 92,79 / 88,58 / 78,77 / 92,79 |
+| nach e | 129 | 1271 | 92,8 / 88,55 / 78,79 / 92,8 |

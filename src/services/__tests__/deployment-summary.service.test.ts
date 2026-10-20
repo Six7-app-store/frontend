@@ -8,7 +8,6 @@ import {
   variableRows,
   type SummaryContext,
 } from '@/services/deployment-summary.service'
-import { formatSubmitError } from '@/services/deployment-submit-error.service'
 
 const t = (key: string, params?: Record<string, unknown>) => (params ? `${key} ${JSON.stringify(params)}` : key)
 const ctx: SummaryContext = { t, osName: (_type, _mode, value) => (value.startsWith('id-') ? `Name ${value}` : null) }
@@ -64,20 +63,5 @@ describe('rows', () => {
     expect(fileSummaries(defs, { cert: { Rot: { name: 'a.pem', size: 2048 } as never, Blau: null } })).toEqual([
       { name: 'cert', scope: 'team', chips: [{ slot: 'Rot', filename: 'a.pem', size: '2 KB' }] },
     ])
-  })
-})
-
-describe('formatSubmitError', () => {
-  const err = (detail: unknown, message?: string) => ({ message, response: { data: { detail } } })
-
-  it('fills in file name and sizes in MB', () => {
-    expect(formatSubmitError(err({ reason: 'file_too_large', variable: 'cert', slot: 'Rot', actual_bytes: 3 * 1024 * 1024, limit_bytes: 2 * 1024 * 1024 }), t))
-      .toBe('deployment.summary.errors.fileTooLarge {"filename":"cert/Rot","actualMb":"3.0","limitMb":"2.0"}')
-  })
-
-  it('falls back to the detail string, the message, then the generic text', () => {
-    expect(formatSubmitError(err('Kontingent'), t)).toBe('Kontingent')
-    expect(formatSubmitError(err({ reason: 'neu' }, 'Request failed'), t)).toBe('Request failed')
-    expect(formatSubmitError(err(undefined), t)).toBe('deployment.summary.submitError')
   })
 })
