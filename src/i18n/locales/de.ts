@@ -802,6 +802,20 @@ export default {
   },
 
   deployment: {
+    wizard: {
+      steps: { app: 'App', target: 'Für wen?', start: 'Aufgabe & Start' },
+      stepOf: 'Schritt {current} von {total}',
+      stepDone: 'erledigt',
+      progress: 'Fortschritt',
+      cancel: 'Abbrechen',
+      start: 'Deployment starten',
+      block: {
+        noApp: 'Wähle eine App.',
+        noVersion: 'Wähle eine Version.',
+        noStudents: 'Wähle einen Kurs oder Studierende.',
+        noName: 'Gib dem Deployment einen Namen.',
+      },
+    },
     title: 'Neues Deployment',
     subtitle: 'Wählen Sie eine App',
 

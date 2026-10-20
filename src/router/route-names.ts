@@ -25,6 +25,7 @@ export const ROUTE_NAMES = {
   deploymentsDetail: 'deployments.detail',
   user: 'user',
   userOpenStack: 'user.openstack',
+  deploymentNew: 'deployment.new',
   deploymentConfig: 'deployment.config',
   deploymentTeams: 'deployment.teams',
   deploymentVariables: 'deployment.variables',

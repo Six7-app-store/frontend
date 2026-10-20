@@ -210,6 +210,20 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
   },
   {
     "children": undefined,
+    "guarded": true,
+    "meta": {
+      "layout": "app",
+      "requiresAuth": true,
+      "requiresRole": [
+        "teacher",
+        "admin",
+      ],
+    },
+    "name": "deployment.new",
+    "path": "/deployment/new/:step(app|target|start)?",
+  },
+  {
+    "children": undefined,
     "guarded": false,
     "meta": {
       "layout": "app",

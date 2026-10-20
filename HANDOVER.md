@@ -1,98 +1,61 @@
-# HANDOVER – App-Detailseite mit Reitern
+# HANDOVER – Deployment-Wizard in 3 Schritten
 
-Stand wird nach jedem Commit überschrieben (kein Tagebuch). Branch: `feat/app-detail-tabs`, von `develop` (enthält Design v2
-über PR #17). Nichts gepusht.
+Stand wird nach jedem Commit überschrieben (kein Tagebuch). Branch `feat/deploy-wizard` in `frontend/` und `backend/`,
+beide von `main`. Nichts gepusht.
 
 ## Ziel
-Die App-Detailseite für **alle** Apps auf fünf Reiter umbauen: Übersicht, Dokumentation, Konfiguration, Versionen,
-Einstellungen. Alles kommt aus den App-Daten, nichts ist für eine App hart codiert. Design, Komponenten und Regeln von v2
-bleiben die Basis.
-- Vorlage (nur lesen): `app-store/app-detail-vorlage/{light/V3LApp*,dark/V3App*}.dc.html`, je Reiter eine Datei; bei Katrin
-  `…\eichberg\app-detail-vorlage`. Verbindlich sind Layout und Stil, nicht die Beispieltexte der Online-IDE.
-- Weiter gültig: `app-store/design-vorlage-v2/` und die Regeln unten.
-- Plan (freigegeben): `C:\Users\luish\.claude\plans\c-users-luish-onedrive-desktop-uni-app-s-sparkling-lightning.md`.
+„Neues Deployment“ als **ein** Wizard mit höchstens 3 Schritten, ohne Einweisung lösbar (User Story).
+- Von „Neues Deployment“ (Dashboard, Deployment-Liste): App → Für wen? → Aufgabe & Start.
+- Von „Jetzt deployen“ auf einer App-Seite: derselbe Wizard mit App und Version, nur Für wen? → Aufgabe & Start.
+- Vorlage (nur lesen, nicht ins Repo): `…\eichberg\wizard-vorlage\{light,dark}\Wiz1App, Wiz2Wer, Wiz3Start, WizStatus`.
+  Verbindlich sind Layout und Stil, nicht die Beispieldaten. Basis bleibt `design-vorlage-v2`.
 
-## Etappen (alle erledigt)
-Auf Wunsch des Nutzers **wenige, große Commits**: a–d in einem Commit, e (Aufräumen) im zweiten.
-- [x] a) Reiterleiste und Routing
-- [x] b) Übersicht und Dokumentation
-- [x] c) Konfiguration und Versionen
-- [x] d) Einstellungen mit Rechten und Lösch-Dialog
-  → `6537f7b` „Split the app detail page into routed tabs“
-- [x] e) Aufräumen → „Remove the old store tab and what only it used“ (`git log -1`)
-  - `AppStoreTab.vue` gelöscht. Die alte einspaltige Übersicht samt Inhaltsverzeichnis und Versionsdetails ist mit Commit 1
-    ersetzt.
-  - 15 ungenutzte i18n-Keys in DE und EN gelöscht, jeder per `grep` auf den vollen Schlüssel geprüft:
-    - `tabOverview`, `tabStore`, `moreActions`, `deleteApp`, `descriptionTitle`, `unknownUser`, `versionLabel`
-    - `versionName`, `versionAuthor`, `versionPublishedAt`, `versionPreRelease`, `versionLink`, `versionDescTitle`
-    - `noVersionInfo`, `versionTableTitle`
-  - `versionInfo()` liefert nur noch `{ type, commit }`, mit angepasstem Test.
-  - `ActionMenu` und `--aside-w` bleiben, sie werden anderswo genutzt.
+## Etappen
+Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
+- [x] a) Hülle, Stepper, Route, Draft in sessionStorage → „Add the deployment wizard shell with draft persistence“ (`git log -1`)
+- [ ] b) Schritt 1: Liste freigegebener Apps (Radio-Cards, Suche), Version vorbelegt, „Andere Version“, kein `'latest'`
+- [ ] c) Schritt 2: Kurs/Studierende, Namensvorschlag, 3 Aufteilungs-Optionen mit Ergebnis, TeamBuilder nur bei „Gruppen
+  selbst bilden“, Fix „Eine Gruppe ohne Zuordnung“
+- [ ] d) Schritt 3: Pflichtfelder, „Erweitert“ eingeklappt, Mehrfach-Dateien mit Zuordnung, Zusammenfassung, Start-Sperre
+- [ ] e) Backend: Version freigegeben + `latestApprovedVersion`; Pflichtfelder/-dateien in `POST /deployments`;
+  Frontend-Fehlertexte
+- [ ] f) Nach dem Start auf die Detailseite, Hinweis „kann geschlossen werden“, Live-Log eingeklappt
+- [ ] g) Alte Screens löschen, Einstiege für Studierende ausblenden, Tests
 
-**Offen:** nichts aus dem Auftrag. Pushen, PR und eine Prüfung mit echtem `GIT_ACCESS_TOKEN` entscheidet der Nutzer.
+**Nächster Schritt:** Etappe b, `StepApp.vue` füllen (bisher Platzhalter mit Überschrift).
+
+## Stand nach a
+- Route `deploymentNew` = `/deployment/new/:step(app|target|start)?`, Guard in `router/wizard-guard.ts`:
+  - ohne Schritt: neuer Lauf (`store.startDraft`), mit `?app=&version=` Einstieg `app`, sonst `catalog`
+  - mit Schritt: Draft bleibt, ein noch nicht erreichbarer Schritt fällt auf den ersten offenen zurück
+  - `onBeforeRouteUpdate` im Composable prüft dasselbe für Vor/Zurück im Browser
+- `services/wizard-steps.service.ts`: Schritte je Einstieg, `draftBlockReason` (i18n-Key), `canShowStep`
+- `services/draft-storage.service.ts`: `deployment.draft.v1`; passt der Draft samt Dateien nicht, ohne Dateien und
+  `filesLost: true`
+- `composables/useDeploymentWizard.ts`: Navigation, Sperrgrund, `stepReason` für Gründe, die nur ein Schritt kennt,
+  speichert den Draft bei jeder Änderung
+- `WizardShell.vue` (Titel, `WizardStepper`, Footer mit Grund neben dem Button), `NewDeploymentView.vue` verdrahtet
+- Der **alte** 4-Schritt-Wizard (`/deployment/new/config` …) läuft unverändert weiter, bis g ihn löscht. Die Einstiege
+  zeigen noch auf ihn bzw. auf `/apps`.
 
 ## Entscheidungen
-- **Datenquellen (Analyse):**
-  - Beschreibung: `app.description` (Markdown).
-  - Kurzbeschreibung: Es gibt kein eigenes Feld, deshalb der erste Absatz über `descriptionPreview()`, dazu die erste
-    Überschrift als h2. Ohne beides gilt der Leerzustand `noDescription`.
-  - **Variablen liegen strukturiert vor:** `GET /apps/{id}/variables?version=` (wie im Wizard). Das Backend klont dafür das
-    Repo, das dauert Sekunden. Geladen wird deshalb im Hintergrund nach dem App-Load für `versions[0]`, über
-    `useAppDetail.loadVariables`, mit `dedupeDefinitions`.
-  - **Kennwerte („Auf einen Blick“) gibt es nirgends strukturiert.** Der Kasten wird nicht gebaut, es gibt keinen i18n-Key
-    und keine Komponente. Kommt später ein Backend-Feld, wird er nachgerüstet.
-  - Markdown-Tabellen werden nie geparst. Die Variablentabelle der Seed-Beschreibungen bleibt in der Dokumentation.
-- **Reiter ohne Inhalt fehlen:**
-  - Dokumentation ohne Beschreibung, Konfiguration ohne Variablen, Versionen ohne Versionen, Einstellungen ohne Rechte.
-  - Regeln in `appDetailTabs()` (`app-presentation.service.ts`).
-- **Routing:**
-  - `/apps/:id/:tab(docs|config|versions|settings)?`. Die Übersicht hat kein Segment, `/apps/x/unbekannt` bleibt 404.
-  - Ein Reiterwechsel ruft `router.replace` auf (`appDetailLocation()`).
-  - Ein nicht verfügbarer Reiter in der URL wird per `replace` auf die Übersicht umgeleitet. Nur bei einem Ladefehler der
-    Variablen gibt es einen Toast.
-  - Ein Direktlink auf `/config` wartet, solange die Variablen laden (Spinner).
-- **Rechte:**
-  - `canEditApp = isAdmin || isOwner`, wie im Backend `can_edit_app`.
-  - Steuert die Einstellungen, die Prüfspalten in Versionen und das Laden der Freigaben.
-  - **Geändert:** Einreichen und Zurückziehen sind jetzt auch für Admins da. Bisher galt dafür nur `isOwner`, das Backend
-    erlaubt beides aber auch Admins.
-- **Kopf:**
-  - Ohne Aktionen, Bearbeiten und Löschen liegen jetzt in den Einstellungen.
-  - Der Status ist der erste Eintrag der Meta-Zeile, berechnet in `appStatus()`. Ohne Bearbeitungsrecht sieht man nur
-    veröffentlichte Apps, deshalb gilt dann „Veröffentlicht“.
-- **TabBar** (wiederverwendbar, keine App-Kopie):
-  - Abstand 28px (`gap-7`).
-  - Roving tabindex und Pfeiltasten, Pos1 und Ende.
-  - Optional `idPrefix` für `id` und `aria-controls`. Die Ids kommen aus `tabId()` und `panelId()` in `ui/tab.ts`.
-- **Neue Tokens:**
-  - `--lead-max` (640), `max-w-lead`
-  - `--toc-w` (220), auch in `HelpView`
-  - `--content-max` (860), `max-w-content`, gilt für Konfiguration, Versionen und Einstellungen. Die Vorlage hat bei den
-    Versionen 960px, wir nehmen dort einheitlich 860px.
-- **Variablenbeschreibungen** ohne `@openstack:`-Marker, über `variableDisplayDescription()`.
-- „Default vorhanden“ steht nur, wenn `default` gesetzt ist. Laut Backend gilt `required = kein Default`.
-- **Leere Felder** werden ausgeblendet:
-  - keine „–“ beim Datum
-  - kein „Unbekannt“ bei „von“
-  - keine Grund-Zeile bei einer Ablehnung ohne Grund
-- „Zurückziehen“ ist jetzt ein neutraler kleiner Button (vorher `danger`). Die Bestätigung bleibt.
-- **Inhaltsverzeichnis** („Auf dieser Seite“): nur H2. H3 ohne Einrückung wäre im `PageToc` irreführend.
+- Vom App-Einstieg nummeriert der Stepper „1 von 2“ (Vorlage zeigt „3 von 3“ mit zwei Einträgen; AC verlangt 2 Schritte).
+- Schritt 1 zeigt nur Apps mit freigegebener Version. Owner/Admin deployen Unfreigegebenes weiter über die App-Seite.
+- Kurs in Schritt 2 als Select mit Mitgliederzahl, Link „einzelne Studierende auswählen“ öffnet die bestehende Suche.
+- Dauerhinweis als fester Text „kann bis zu 90 Min. dauern“.
+- Empfohlene Aufteilung vorerst immer „Alle zusammen“; eine Vorgabe je App gibt es noch nicht (Folgepunkt).
+- Neue Tokens: `--wizard-max` (960), `max-w-wizard`.
+- Ohne Zugangsdaten zeigt die Hülle bei einem Direktlink das bestehende Banner und keinen Footer.
 
-## Prüfung im Browser (Commit 1)
-Headless Chrome per `puppeteer-core` im Scratchpad.
-- Login über das Keycloak-Formular mit `tobias.admin` (Admin und Besitzer) und `luca.baeck` (Student), Passwort `1234`.
-- **Dev hat keinen Git-Token** (Backend-Log „Git access token not configured“). Alle Apps kommen deshalb ohne Versionen und
-  ohne Variablen. Für die Prüfung wurden die echten API-Antworten angereichert:
-  - Online-IDE: 2 Versionen plus Variablen
-  - Web-LaTeX: 2 Versionen, keine Variablen
-  - „Windows App“: komplett gefälscht, leere Beschreibung, keine Variablen
-- **Geprüft:**
-  - Online-IDE: alle fünf Reiter, Light und Dark
-  - Web-LaTeX: kein Reiter Konfiguration
-  - Windows App: kein Reiter Dokumentation, kein Reiter Konfiguration, `/docs` und `/config` landen auf der Übersicht
-  - Klick plus Reload behält den Reiter
-  - Student: kein Reiter Einstellungen, `/settings` landet auf der Übersicht, Versionen ohne Prüfspalten
-  - Echte Seed-Daten ohne Versionen: Übersicht, Dokumentation und Einstellungen
+## Offene Fragen
+- keine
+
+## Folgepunkte (nicht bauen)
+- Anzeigenamen und „Erweitert“-Marker in `variables.tofu`
+- Kontingent-Schätzung je Deployment, echte Dauer-Schätzung
+- E-Mail bei Fehlschlag
+- Zugangsdaten je Kurs
+- App-spezifische Empfehlung der Aufteilung
 
 ## Regeln (weiter gültig aus v2)
 - Alles im Container. Nie `.env`, `.pem` oder Schlüsseldateien. Kein Push. `.claude/` nicht anfassen.
@@ -100,34 +63,29 @@ Headless Chrome per `puppeteer-core` im Scratchpad.
   Template-String bauen.
 - Komponenten-Specs prüfen Zustand (aria, `data-testid`), keine Tailwind-Klassen. Snapshots nur nach Diff-Prüfung
   aktualisieren.
-- Anrede in neuen Texten: „Sie“.
+- **Anrede in neuen Texten: „du“** (galt bisher „Sie“; im Wizard durchgehend „du“, ältere Texte werden nicht umgestellt).
 - Komponenten-API: siehe `git show develop:HANDOVER.md`, Abschnitt „Entscheidungen“.
-- **View-Specs mit reaktiver Mock-Route brauchen `enableAutoUnmount(afterEach)`.** Sonst leiten noch gemountete Ansichten
-  aus früheren Tests die Route um.
+- View-Specs mit reaktiver Mock-Route brauchen `enableAutoUnmount(afterEach)`.
 
-## Bekannte Probleme / offene Fragen
-- Harness: Am Start meldete `sync.py --check` Abweichungen in `backend/` und `worker/`. Auf Wunsch des Nutzers lief
-  `python deployment/harness/sync.py`. Die erzeugten Kopien in `backend/`, `worker/` und im Arbeitsordner sind **nicht
-  committet**, die Repos liegen auf `ci/auto-trigger-staging-deploy`.
+## Bekannte Probleme
 - Dev ohne `GIT_ACCESS_TOKEN`: keine Versionen und keine Variablen. Echte Variablen lassen sich nur mit Token prüfen.
 
 ## Checks nach jeder Etappe (nur bei grün committen)
 ```
-python deployment/harness/sync.py --check          # = make harness-check
+cd ../deployment && make harness-check && make harness-test
 docker exec frontend-dev sh -lc 'cd /app && npx vue-tsc -b'
 docker exec frontend-dev sh -lc 'cd /app && npx vitest --run --coverage'   # Schwellen 89/84/71/89 nicht senken
 docker exec frontend-dev sh -lc 'cd /app && npx eslint .'
-rg -n '#[0-9a-fA-F]{3,8}\b' src --glob '!src/styles/tokens.css'            # muss leer sein
-rg -in 'online-ide|gp1\.small|assignment_files|team_flavor' src            # nur alte Kommentare/Fixtures
+rg -n '#[0-9a-fA-F]{3,8}\b' src --glob '!src/styles/tokens.css' --glob '!**/__tests__/**'   # muss leer sein
+docker exec backend-dev poetry run ruff check .            # nur Etappe e
+make test-backend-isolated                                 # nur Etappe e, im deployment-Repo
 ```
 - Neue Dateien oder eine geänderte Tailwind-Konfiguration: `docker restart frontend-dev`.
-- Stack starten: `docker compose -f docker-compose.dev.yml up -d` in `deployment/` (`make dev-up`).
 - Commit-Stil: englischer Imperativ mit Co-Authored-By-Trailer. HANDOVER mit jedem Commit aktualisieren.
 - Budget nach jedem Commit prüfen. Bei 7 % oder weniger sofort stoppen und übergeben.
 
-## Endstand Checks
-- vue-tsc grün, eslint leer, `Harness aktuell.`
-- 111 Dateien, 1122 Tests grün
-- Coverage 91,94 / 87,98 / 76,05 / 91,94 (Start: 91,84 / 87,6 / 75,67 / 91,84)
-- Keine Hex-Treffer außerhalb von `tokens.css`, keine Inline-Styles in `components/app/`
-- Online-IDE-Suche: nur alte Kommentare (Breadcrumb) und Test-Fixtures
+## Messwerte
+| Stand | Dateien | Tests | Coverage (St/Br/Fn/Li) |
+|---|---|---|---|
+| Start | 116 | 1183 | 92,16 / 88,08 / 77 / 92,16 |
+| nach a | 120 | 1207 | 92,3 / 88,21 / 77,95 / 92,3 |

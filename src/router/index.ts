@@ -21,6 +21,8 @@ import NewDeploymentSummaryView from '@/views/NewDeploymentSummaryView.vue';
 import NewDeploymentVariableView from '@/views/NewDeploymentVariableView.vue';
 import AppsDetailView from "@/views/AppsDetailView.vue";
 import NewDeploymentGroupsAssignmentView from '@/views/NewDeploymentGroupsAssignmentView.vue'
+import NewDeploymentView from '@/views/NewDeploymentView.vue'
+import { wizardGuard } from '@/router/wizard-guard'
 
 
 /**
@@ -71,6 +73,7 @@ const requireWizardBasics = requireWizardStep(['appId', 'name', 'studentIds'])
 // deep-linked student out of a wizard that could never finish; it is not
 // the protection itself.
 const wizardMeta = () => ({ requiresAuth: true, layout: 'app', requiresRole: STAFF_ROLES })
+
 
 
 // Route table — the single place that defines paths, names, layouts, role
@@ -232,6 +235,13 @@ export const routes: RouteRecordRaw[] = [
     name: ROUTE_NAMES.user,
     component: UserView,
     meta: { layout: "app", requiresAuth: true },
+  },
+  {
+    path: '/deployment/new/:step(app|target|start)?',
+    name: ROUTE_NAMES.deploymentNew,
+    component: NewDeploymentView,
+    meta: wizardMeta(),
+    beforeEnter: wizardGuard,
   },
   {
     path: '/deployment/new/config',

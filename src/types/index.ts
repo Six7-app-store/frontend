@@ -472,7 +472,15 @@ export interface AppDefinition extends App {
 // Wizard state (the "cart" before submission).
 export type GroupMode = 'one' | 'eachUser' | 'custom'
 
+/**
+ * Where the wizard was opened: ``catalog`` ("Neues Deployment", starts with
+ * the app step) or ``app`` (an app page, app and version already chosen).
+ */
+export type WizardEntry = 'catalog' | 'app'
+
 export interface DeploymentDraft {
+  entry: WizardEntry
+
   // Step 1: app selection
   appId: string | null
 
@@ -499,6 +507,9 @@ export interface DeploymentDraft {
   // team name, or ``Team-User`` composite). Flushed verbatim into
   // ``DeploymentCreate.files`` on submit.
   fileUploads?: Record<string, Record<string, DeploymentFile>>
+  // Set when a reload restored the draft without its files because they did
+  // not fit into sessionStorage; the start step asks for them again.
+  filesLost?: boolean
 }
 
 // Helper type for the final summary.
