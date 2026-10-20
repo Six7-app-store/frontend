@@ -48,10 +48,6 @@ export function buildBreadcrumbs({ routeName, entityLabel, isStudent, t }: Bread
     case ROUTE_NAMES.deploymentsDetail:
       return [deployments, { label: entity }]
     case ROUTE_NAMES.deploymentNew:
-    case ROUTE_NAMES.deploymentConfig:
-    case ROUTE_NAMES.deploymentTeams:
-    case ROUTE_NAMES.deploymentVariables:
-    case ROUTE_NAMES.deploymentSummary:
       return [deployments, { label: t('deployment.title') }]
 
     case ROUTE_NAMES.adminApps:

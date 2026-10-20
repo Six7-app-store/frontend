@@ -45,6 +45,8 @@ const greeting = computed(() => (firstName.value ? `${timeGreeting.value}, ${fir
 
 // Without credentials no deployment can be created, so the main action waits for them.
 const credentialsMissing = computed(() => credStore.isResolved && !credStore.hasCredential)
+// Students never create deployments: the action is hidden instead of leading to /forbidden.
+const canDeploy = computed(() => canAccess({ name: ROUTE_NAMES.deploymentNew }))
 
 const statItems = computed<Stat[]>(() => [
   { id: 'deployments', label: t('DashboardView.deployments'), value: stats.value.deployments, to: { name: ROUTE_NAMES.deploymentsList } },
@@ -74,11 +76,11 @@ onMounted(() => {
 <template>
   <div class="max-w-page">
     <PageHeader size="greeting" :title="greeting">
-      <template #actions>
+      <template v-if="canDeploy" #actions>
         <BaseButton v-if="credentialsMissing" disabled :disabled-reason="t('DashboardView.deploymentNeedsCredentials')">
           {{ $t('DashboardView.deploymentNew') }}
         </BaseButton>
-        <RouterLink v-else :to="{ name: ROUTE_NAMES.apps }" class="btn btn-primary">
+        <RouterLink v-else :to="{ name: ROUTE_NAMES.deploymentNew }" class="btn btn-primary" data-testid="btn-new-deployment">
           <Plus :size="16" :stroke-width="2.2" aria-hidden="true" />
           {{ $t('DashboardView.deploymentNew') }}
         </RouterLink>

@@ -50,13 +50,8 @@ describe('buildBreadcrumbs', () => {
     ])
   })
 
-  it.each([
-    ROUTE_NAMES.deploymentConfig,
-    ROUTE_NAMES.deploymentTeams,
-    ROUTE_NAMES.deploymentVariables,
-    ROUTE_NAMES.deploymentSummary,
-  ])('ordnet den Wizard-Schritt %s unter Deployments ein', (name) => {
-    expect(crumbs(name)).toEqual([
+  it('ordnet den Wizard unter Deployments ein', () => {
+    expect(crumbs(ROUTE_NAMES.deploymentNew)).toEqual([
       { label: 'Deployments', to: { name: ROUTE_NAMES.deploymentsList } },
       { label: 'Neues Deployment' },
     ])

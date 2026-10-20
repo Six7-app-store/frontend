@@ -21,7 +21,6 @@ const draft = (over: Partial<DeploymentDraft> = {}): DeploymentDraft => ({
   assignments: [],
   userInputVar: {},
   variables: {},
-  version: '',
   groupNames: [],
   ...over,
 })

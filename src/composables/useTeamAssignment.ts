@@ -5,7 +5,6 @@ import { distributeEvenly } from '@/services/deployment-draft.service'
 import {
   moveStudent,
   shuffled,
-  splitProblem,
   unassignedIds,
 } from '@/services/team-assignment.service'
 import type { GroupMode } from '@/types'
@@ -35,12 +34,8 @@ export function useTeamAssignment() {
     set: (count) => { store.draft.groupCount = count },
   })
   const totalStudents = computed(() => store.draft.studentIds.length)
-  const mode = computed(() => store.draft.groupMode)
   const unassigned = computed(() => unassignedIds(store.draft.studentIds, assignments() ?? []))
   const teams = computed(() => assignments().slice(0, groupCount.value))
-  /** Why the split cannot be deployed yet (i18n key), or ``null``. */
-  const problem = computed(() => splitProblem(store.draft))
-  const complete = computed(() => problem.value === null)
 
   /** Keeps every name the user typed (default names too) and fills the empty ones. */
   function ensureDefaultGroupNames() {
@@ -159,11 +154,8 @@ export function useTeamAssignment() {
     groupNames,
     groupCount,
     totalStudents,
-    mode,
     unassigned,
     teams,
-    problem,
-    complete,
     prepare,
     selectMode,
     setOneGroup,

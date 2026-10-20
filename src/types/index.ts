@@ -511,7 +511,6 @@ export interface DeploymentDraft {
   assignments: Record<number, string[]>
   releaseTag: string
   variables: Record<string, any> // parsed/merged variables
-  version: string
   groupNames: string[]
   variableDefinitions?: AppVariable[] // API definitions for the variables
   // Wizard-side state for ``@openstack:file:<scope>``-marked variables.
@@ -524,14 +523,6 @@ export interface DeploymentDraft {
   filesLost?: boolean
 }
 
-// Helper type for the final summary.
-export interface WizardSummary {
-  appName: string
-  deploymentName: string
-  totalStudents: number
-  totalGroups: number
-  config: AppUIConfig | undefined
-}
 
 export interface AppVariable {
   name: string

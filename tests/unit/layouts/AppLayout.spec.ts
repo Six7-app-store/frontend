@@ -32,7 +32,7 @@ import en from '@/i18n/locales/en'
 
 const PATHS = [
   '/', '/dashboard', '/deployments', '/deployments/dep-1', '/apps', '/apps/create', '/apps/app-1',
-  '/courses', '/courses/c-1', '/help', '/admin/apps', '/deployment/new/config', '/forbidden',
+  '/courses', '/courses/c-1', '/help', '/admin/apps', '/deployment/new/app', '/forbidden',
   '/user', '/does-not-exist', '/apps/app-1/unknown',
 ]
 
@@ -92,7 +92,7 @@ describe('AppLayout routing-derived UI', () => {
     expect(links.filter((link) => link.active).map((link) => link.text)).toEqual([label])
   })
 
-  it.each(['/does-not-exist', '/deployment/new/config', '/forbidden'])(
+  it.each(['/does-not-exist', '/deployment/new/app', '/forbidden'])(
     'markiert unter %s keinen Menüpunkt als aktiv',
     async (path) => {
       const { links } = await render(path, 'admin')

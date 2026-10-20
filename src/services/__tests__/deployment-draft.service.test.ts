@@ -70,7 +70,7 @@ describe('distributeEvenly', () => {
 describe('buildDeploymentPayload', () => {
   const draft = (over: Partial<DeploymentDraft>): DeploymentDraft => ({
     appId: 'app-1', name: 'Lab', releaseTag: 'v1', courseIds: [], studentIds: [], groupMode: 'one',
-    groupCount: 1, assignments: [], version: 'latest', variables: {}, userInputVar: {}, groupNames: [],
+    groupCount: 1, assignments: [], variables: {}, userInputVar: {}, groupNames: [],
     variableDefinitions: [], fileUploads: {}, ...over,
   }) as DeploymentDraft
 

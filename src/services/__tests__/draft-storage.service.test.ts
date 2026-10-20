@@ -20,7 +20,6 @@ const fresh = (): DeploymentDraft => ({
   assignments: [],
   userInputVar: {},
   variables: {},
-  version: '',
   groupNames: [],
   fileUploads: {},
 })

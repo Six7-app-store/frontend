@@ -945,104 +945,32 @@ export default {
       },
     },
     title: 'Neues Deployment',
-    subtitle: 'Wählen Sie eine App',
 
     actions: {
       back: 'Zurück',
       next: 'Weiter',
-      deploy: 'Deployen'
-    },
-    apps: {
-      nodejs: {
-        title: 'NodeJS VM',
-        description: 'Eine vorkonfigurierte NodeJS-Entwicklungsumgebung für Kurse und Übungen. Enthält NodeJS 20, NPM und Standard-Portfreigaben. Ideal für Webentwicklung im Unterricht.'
-      },
-      jupyter: {
-        title: 'Jupyter Notebook',
-        description: 'Server für Jupyter Notebooks mit Python, Pandas, NumPy und GPU-Unterstützung. Perfekt für KI-/Datenanalyse-Kurse.'
-      },
-      pentest: {
-        title: 'Pentesting Lab',
-        description: 'VMs für Penetration Testing. Enthält Angriffs- und Zielsysteme in isoliertem Netzwerk.'
-      },
-      gitlab: {
-        title: 'GitLab Server',
-        description: 'Vollständiger GitLab Server für Kursprojekte. Nutzer werden automatisch mit Gruppen-Accounts erstellt.'
-      },
     },
     config: {
-      nameLabel: 'Name des Deployments',
-      namePlaceholder: 'Pentesting-2025-bester-Kurs',
-      courseLabel: 'Kurs auswählen',
-      studentsLabel: 'Studenten auswählen',
-      searchPlaceholder: 'Suche...',
-      selectedCount: '{count} gewählt',
-      infoTitle: 'Hinweis:',
-      targetGroupTitle: 'Zielgruppe definieren',
-      infoText: 'Die Gesamtmenge der Studenten ergibt sich aus der Kombination der ausgewählten Kurse und einzeln hinzugefügten Studenten. Duplikate werden automatisch entfernt.'
+      studentsLabel: 'Studierende suchen',
+      searchPlaceholder: 'Name oder E-Mail …',
     },
     groups: {
-      label: 'Gruppenmodus',
-      title: 'Legen Sie die Anzahl der Gruppen fest',
-      one: 'Eine Gruppe',
-      eachUser: 'Jeder Nutzer einzeln',
-      custom: 'Individuell',
-      autoAssigned: 'Automatisch zugewiesen',
-      autoDistributed: 'Automatisch verteilt',
-      studentsSelected: '{count} Studenten ausgewählt'
+      studentsSelected: '{count} ausgewählt'
     },
     assignment: {
-      title: 'Teilen Sie Nutzer zu',
-      groupPrefix: 'Gruppe', // Wird zu "Gruppe 1", "Gruppe 2" etc.
-      unassigned: 'Nicht zugewiesen', // Optional
-      removeAll: 'Alle entfernen',
-      moveAllHere: 'Alle hierhin verschieben',
-      removeAllTooltip: 'Alle aus dieser Gruppe entfernen',
-      moveAllTooltip: 'Verschiebt alle Studenten in diese Gruppe',
-      vmNamePlaceholder: 'Team Name...',
       vmDefaultName: 'Team #{index}',
-      defaultSingleName: 'Einzelteam', // Name für den Ein-Gruppen-Modus
-      userCount: '{count} User',
-      noStudents: 'Keine Studenten verfügbar.',
-      alreadyAssigned: 'Bereits zugewiesen',
-      inOtherGroup: 'In anderer Gruppe',
-      teamsLabel: 'Teams',
-      shuffleTooltip: 'Zufällig verteilen',
-      shuffle: 'Zufall',
-      resetTooltip: 'Alle Zuweisungen löschen',
-      reset: 'Zurücksetzen',
-      removeTeam: 'Team entfernen',
-      addTeam: 'Team hinzufügen',
-      resetConfirmTitle: 'Alle Zuweisungen löschen?',
-      resetConfirmText: 'Alle Studierenden kommen zurück in „Nicht zugewiesen“. Teamnamen und Teamanzahl bleiben.',
-      dragDropTitle: 'Drag & Drop aktiviert',
-      dragDropText: 'Ziehen Sie Studenten per Drag & Drop zwischen den Teams und dem Nicht-zugewiesenen Bereich hin und her.',
-      allAssigned: 'Alle Studenten sind Teams zugewiesen',
-      dropZone: 'Studenten hier ablegen',
-      progress: 'Fortschritt',
-      assignedCount: '{assigned} / {total} zugewiesen',
+      noStudents: 'Noch niemand ausgewählt.',
+      dropZone: 'Personen hierher ziehen',
     },
 
     variables: {
       slotTeam: 'Team „{team}"',
       slotTeamMember: 'Team „{team}" → {member}',
-      title: 'Nutzerspezifische Variablen',
-      description: 'Optionale Parameter für das Deployment.',
-      label: 'USER INPUT VAR', // Oder 'BENUTZER VARIABLEN', falls gewünscht
-      unnamed: 'Unbenannt',
-      loading: 'Lade Variablen...',
-      noVariables: 'Diese App benötigt keine speziellen Variablen.',
-      tofuDesc: 'Infrastruktur-Konfiguration',
       showInfo: 'Info anzeigen',
       markerErrorTitle: '⚠ @openstack-Marker fehlerhaft',
       markerErrorToast: '{count} fehlerhafte(r) @openstack-Marker — die betroffenen Variablen werden als Free-Text gerendert:\n{lines}',
       commaSeparated: 'Mehrere Werte mit Komma trennen',
       required: 'Pflichtfeld',
-      activated: 'Aktiviert',
-      deactivated: 'Deaktiviert',
-      enterValue: 'Wert eingeben...',
-      defaultValue: 'Standard: {default}',
-      placeholderList: 'Wert 1, Wert 2',
       saveError: 'Fehler beim Speichern.',
       scopeBadgeTeam: 'Pro Team',
       scopeBadgeUser: 'Pro User',
@@ -1052,39 +980,12 @@ export default {
       scopeDescUser: 'Du gibst unten <strong>eine Eingabe pro Mitglied</strong> ein. Beim Deploy bekommt jedes Mitglied genau seinen eigenen Wert.',
       noTeamsConfigured: 'Noch keine Teams konfiguriert — bitte den vorigen Schritt zuerst durchlaufen.',
       noMembers: 'Keine Mitglieder',
-      missingRequiredTitle: 'Es fehlen noch Pflichteingaben:',
-      outOfRangeTitle: 'Außerhalb des erlaubten Bereichs:',
       teamRenameToast: 'Team-/User-Änderung erkannt — {count} verwaiste Eingabe(n) entfernt:\n{lines}'
     },
     summary: {
-      title: 'Empfohlene Konfiguration',
-      subtitle: 'Überprüfen Sie alle Einstellungen vor dem Start',
-      loadingConfig: 'Lade Konfiguration...',
-      baseConfigTitle: 'Basis-Konfiguration',
-      deploymentNameLabel: 'Deployment Name',
-      appLabel: 'App',
-      appNotFound: 'App nicht gefunden',
-      versionLabel: 'Version',
-      selectedStudents: 'Ausgewählte Studenten ({count})',
-      teamAssignmentTitle: 'Team-Zuweisung',
-      teamCountLabel: 'Anzahl Teams',
-      modeLabel: 'Modus',
-      noUsersAssigned: 'Keine User zugewiesen',
-      variablesConfigTitle: 'Variablen-Konfiguration',
-      editBtn: 'Bearbeiten',
-      tofuVars: 'OpenTofu-Variablen',
-      noTofuVars: 'Keine OpenTofu-Variablen',
-      uploadedFiles: 'Hochgeladene Dateien',
-      fileScope: 'Scope: {scope}',
-      noFileUploaded: 'Keine Datei hochgeladen',
-      submittedValue: 'Wird übermittelt: {value}',
-      creating: 'Wird erstellt...',
       invalidJson: 'Eigene Variablenwerte konnten nicht gelesen werden (ungültiges JSON). Standardwerte werden verwendet.',
       fetchVarsError: 'Variablen konnten nicht geladen werden.',
-      fetchVarsError500: 'Server Fehler (500). variables.tf nicht gefunden?',
-      fetchUsersError: 'Benutzerliste konnte nicht geladen werden.',
       submitError: 'Deployment konnte nicht erstellt werden.',
-      submitSuccess: 'Deployment gestartet',
       // Strukturierte Fehler-Toasts für HTTP 413/422-Antworten vom
       // Backend. Der Submit-Handler übersetzt das {reason}-Feld
       // aus dem detail-JSON in einen dieser Keys und ersetzt
@@ -1100,31 +1001,7 @@ export default {
         versionNotApproved: 'Diese Version ist nicht freigegeben. Wähle eine freigegebene Version.',
         requiredMissing: 'Es fehlen noch Pflichtangaben: {items}',
       },
-      yes: 'Ja',
-      no: 'Nein',
-      labels: {
-        flavor: 'Flavor',
-        vms: 'VMs',
-        image: 'Image',
-        ports: 'Ports',
-        network: 'Netzwerk',
-        secGroup: 'Security Group',
-        accounts: 'Accounts',
-        storage: 'Storage',
-        software: 'Software'
-      },
-      customize: 'Anpassen'
     },
-    steps: {
-      config: 'Auswahl',
-      assignment: 'Verteilung',
-      vars: 'Variablen',
-      summary: 'Übersicht'
-    },
-    errors: {
-      missingName: 'Bitte geben Sie einen Namen für das Deployment ein.',
-      missingStudents: 'Bitte wählen Sie mindestens einen Studenten aus.'
-    }
   },
 
   roleLabels: {

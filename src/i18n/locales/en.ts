@@ -941,104 +941,32 @@ export default {
       },
     },
     title: 'New Deployment',
-    subtitle: 'Choose an app to deploy',
 
     actions: {
       back: 'Back',
       next: 'Next',
-      deploy: 'Deploy'
-    },
-    apps: {
-      nodejs: {
-        title: 'NodeJS VM',
-        description: 'A preconfigured NodeJS development environment for courses and exercises. Contains NodeJS 20, NPM and standard port mappings. Ideal for web development in the classroom.'
-      },
-      jupyter: {
-        title: 'Jupyter Notebook',
-        description: 'Server for Jupyter Notebooks with Python, Pandas, NumPy and GPU support. Perfect for AI/Data analysis courses.'
-      },
-      pentest: {
-        title: 'Pentesting Lab',
-        description: 'VMs for Penetration Testing. Contains attack and target systems in an isolated network.'
-      },
-      gitlab: {
-        title: 'GitLab Server',
-        description: 'Complete GitLab Server for course projects. Users are automatically created with group accounts.'
-      }
     },
     config: {
-      nameLabel: 'Deployment name',
-      namePlaceholder: 'Pentesting-2025-best-course',
-      courseLabel: 'Select a course',
-      studentsLabel: 'Select students',
-      searchPlaceholder: 'Search...',
-      selectedCount: '{count} selected',
-      infoTitle: 'Note:',
-      targetGroupTitle: 'Define target audience',
-      infoText: 'The total number of students is the combination of the selected courses and individually added students. Duplicates are removed automatically.'
+      studentsLabel: 'Search students',
+      searchPlaceholder: 'Name or e-mail …',
     },
     groups: {
-      label: 'Group mode',
-      title: 'Set the number of groups',
-      one: 'One group',
-      eachUser: 'Each user individually', // <--- WICHTIG: "eachUser" statt "each"
-      custom: 'Custom',
-      autoAssigned: 'Assigned automatically',
-      autoDistributed: 'Distributed automatically',
-      studentsSelected: '{count} students selected'
+      studentsSelected: '{count} selected'
     },
     assignment: {
-      title: 'Assign users to groups',
-      groupPrefix: 'Group', // Wird zu "Group 1", "Group 2" etc.
-      unassigned: 'Unassigned', // Optional
-      removeAll: 'Remove all',
-      moveAllHere: 'Move all here',
-      removeAllTooltip: 'Remove all students from this group',
-      moveAllTooltip: 'Moves all students to this group',
-      vmNamePlaceholder: 'Team Name...',
       vmDefaultName: 'Team #{index}',
-      defaultSingleName: 'Single Team',
-      userCount: '{count} Users',
-      noStudents: 'No students available.',
-      alreadyAssigned: 'Already assigned',
-      inOtherGroup: 'In another group',
-      teamsLabel: 'Teams',
-      shuffleTooltip: 'Distribute randomly',
-      shuffle: 'Shuffle',
-      resetTooltip: 'Clear all assignments',
-      reset: 'Reset',
-      removeTeam: 'Remove team',
-      addTeam: 'Add team',
-      resetConfirmTitle: 'Clear all assignments?',
-      resetConfirmText: 'All students move back to “Unassigned”. Team names and the number of teams stay.',
-      dragDropTitle: 'Drag & Drop enabled',
-      dragDropText: 'Drag and drop students between teams and the unassigned area.',
-      allAssigned: 'All students are assigned to teams.',
-      dropZone: 'Drop students here',
-      progress: 'Progress',
-      assignedCount: '{assigned} / {total} assigned',
+      noStudents: 'Nobody selected yet.',
+      dropZone: 'Drag people here',
     },
 
     variables: {
       slotTeam: 'Team "{team}"',
       slotTeamMember: 'Team "{team}" → {member}',
-      title: 'User-specific Variables',
-      description: 'Optional parameters for the deployment.',
-      label: 'USER INPUT VAR',
-      unnamed: 'Unnamed',
-      loading: 'Loading variables...',
-      noVariables: 'This app requires no special variables.',
-      tofuDesc: 'Infrastructure Configuration',
       showInfo: 'Show info',
       markerErrorTitle: '⚠ @openstack marker faulty',
       markerErrorToast: '{count} faulty @openstack marker(s) — the affected variables will be rendered as free-text:\n{lines}',
       commaSeparated: 'Separate multiple values with commas',
       required: 'Required',
-      activated: 'Activated',
-      deactivated: 'Deactivated',
-      enterValue: 'Enter value...',
-      defaultValue: 'Default: {default}',
-      placeholderList: 'Value 1, Value 2',
       saveError: 'Error while saving.',
       scopeBadgeTeam: 'Per team',
       scopeBadgeUser: 'Per user',
@@ -1048,39 +976,12 @@ export default {
       scopeDescUser: 'You provide <strong>one input per member</strong> below. On deploy, each member receives exactly its own value.',
       noTeamsConfigured: 'No teams configured yet — please complete the previous step first.',
       noMembers: 'No members',
-      missingRequiredTitle: 'Missing required inputs:',
-      outOfRangeTitle: 'Outside the allowed range:',
       teamRenameToast: 'Team/User change detected — {count} orphaned input(s) removed:\n{lines}'
     },
     summary: {
-      title: 'Recommended Configuration',
-      subtitle: 'Review all settings before starting',
-      loadingConfig: 'Loading configuration...',
-      baseConfigTitle: 'Base Configuration',
-      deploymentNameLabel: 'Deployment Name',
-      appLabel: 'App',
-      appNotFound: 'App not found',
-      versionLabel: 'Version',
-      selectedStudents: 'Selected students ({count})',
-      teamAssignmentTitle: 'Team Assignment',
-      teamCountLabel: 'Number of teams',
-      modeLabel: 'Mode',
-      noUsersAssigned: 'No users assigned',
-      variablesConfigTitle: 'Variables Configuration',
-      editBtn: 'Edit',
-      tofuVars: 'OpenTofu Variables',
-      noTofuVars: 'No OpenTofu variables',
-      uploadedFiles: 'Uploaded files',
-      fileScope: 'Scope: {scope}',
-      noFileUploaded: 'No file uploaded',
-      submittedValue: 'Submitted value: {value}',
-      creating: 'Creating...',
       invalidJson: 'Custom variable values could not be read (invalid JSON). Default values will be used.',
       fetchVarsError: 'Could not load variables.',
-      fetchVarsError500: 'Server Error (500). variables.tf not found?',
-      fetchUsersError: 'Could not load user list.',
       submitError: 'Could not create deployment.',
-      submitSuccess: 'Deployment started',
       // Structured-error toasts for HTTP 413/422 responses from the
       // backend. The submit handler maps the {reason} field of the
       // detail JSON to one of these keys and substitutes any size
@@ -1096,32 +997,8 @@ export default {
         versionNotApproved: 'This version is not approved. Choose an approved version.',
         requiredMissing: 'Required settings are still missing: {items}',
       },
-      yes: 'Yes',
-      no: 'No',
-      labels: {
-        flavor: 'Flavor',
-        vms: 'VMs',
-        image: 'Image',
-        ports: 'Ports',
-        network: 'Network',
-        secGroup: 'Security Group',
-        accounts: 'Accounts',
-        storage: 'Storage',
-        software: 'Software'
-      },
-      customize: 'Customize'
-    },
-    steps: {
-      config: 'Selection',
-      assignment: 'Distribution',
-      vars: 'Variables',
-      summary: 'Overview'
     },
 
-    errors: {
-      missingName: 'Please enter a name for the deployment.',
-      missingStudents: 'Please select at least one student.'
-    }
   },
 
   roleLabels: {

@@ -27,7 +27,6 @@ const defaultDraft: DeploymentDraft = {
   assignments: [],
 
   // --- These must match the interface ---
-  version: 'latest',
   variables: {},
   userInputVar: {},
   groupNames: [],

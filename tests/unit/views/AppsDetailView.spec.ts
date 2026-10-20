@@ -54,14 +54,16 @@ vi.mock('@/api/app.api', () => ({
 import { appApi } from '@/api/app.api'
 
 // Stores (Pinia) simulieren
-const mockDeploymentReset = vi.fn()
-const mockDeploymentDraft = { appId: '', releaseTag: '' }
+const mockStartDraft = vi.fn()
 
 vi.mock('@/stores/deployment.store', () => ({
-    useDeploymentStore: () => ({
-        resetDraft: mockDeploymentReset,
-        draft: mockDeploymentDraft
-    })
+    useDeploymentStore: () => ({ startDraft: mockStartDraft })
+}))
+
+// Whether the user may open the wizard (students may not).
+const access = { canDeploy: true }
+vi.mock('@/composables/useRouteAccess', () => ({
+    useRouteAccess: () => ({ canAccess: () => access.canDeploy })
 }))
 
 vi.mock('@/stores/openstack-credentials.store', () => ({
@@ -87,6 +89,7 @@ describe('AppsDetailView.vue', () => {
 
     beforeEach(() => {
         vi.clearAllMocks()
+        access.canDeploy = true
         mockRoute.params = { id: 'app-123' }
         ;(appApi.listVersionApprovals as any).mockResolvedValue({ data: [] })
         ;(appApi.getVariables as any).mockResolvedValue({ data: [] })
@@ -164,17 +167,33 @@ describe('AppsDetailView.vue', () => {
 
     // --- 2. Deployment (Bereitstellung) ---
 
-    it('speichert die Auswahl im Deployment-Store und navigiert zur Config', async () => {
+    it('startet den Wizard mit App und Version direkt bei „Für wen?“', async () => {
         const wrapper = mountComponent()
         await flushPromises()
 
         const deployButton = wrapper.findAll('button').find(b => b.text().includes('AppsDetailView.deployButton'))!
         await deployButton.trigger('click')
 
-        expect(mockDeploymentReset).toHaveBeenCalled()
-        expect(mockDeploymentDraft.appId).toBe('app-123')
-        expect(mockDeploymentDraft.releaseTag).toBe('v1.0')
-        expect(mockPush).toHaveBeenCalledWith({ name: 'deployment.config' })
+        expect(mockStartDraft).toHaveBeenCalledWith({ appId: 'app-123', appName: 'Test App', releaseTag: 'v1.0' })
+        expect(mockPush).toHaveBeenCalledWith({ name: ROUTE_NAMES.deploymentNew, params: { step: 'target' } })
+    })
+
+    it('belegt die neueste freigegebene Version vor, nicht den neuesten Tag', async () => {
+        ;(appApi.getById as any).mockResolvedValue({
+            data: { appId: 'app-123', name: 'Test App', latestApprovedVersion: 'v0.9', versions: [{ version: 'v1.0' }, { version: 'v0.9' }] }
+        })
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        expect(wrapper.find('select').element.value).toBe('v0.9')
+    })
+
+    it('zeigt Studierenden keinen Deploy-Bereich', async () => {
+        access.canDeploy = false
+        const wrapper = mountComponent()
+        await flushPromises()
+
+        expect(wrapper.findAll('button').some(b => b.text().includes('AppsDetailView.deployButton'))).toBe(false)
     })
 
     it('deaktiviert den Deploy-Button und warnt (Fallback), wenn keine Version ausgewählt ist', async () => {
