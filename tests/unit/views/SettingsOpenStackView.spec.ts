@@ -26,7 +26,7 @@ const { createRouter, createMemoryHistory } = await vi.importActual<typeof impor
 const realRouter = createRouter({
     history: createMemoryHistory(),
     routes: [
-        { path: '/deployment/new/config', name: 'deployment.config', component: { template: '<div />' } },
+        { path: '/deployment/new/start', name: 'deployment.new', component: { template: '<div />' } },
         { path: '/dashboard', name: 'dashboard', component: { template: '<div />' } },
         // Wie in der echten Routentabelle: Catch-all für unbekannte URLs.
         { path: '/:pathMatch(.*)*', name: 'not-found', component: { template: '<div />' } },
@@ -358,9 +358,9 @@ describe('SettingsOpenStackView.vue — Rücksprung über next', () => {
     }
 
     it('springt zu einem internen Pfad der App zurück', async () => {
-        routeState.query = { next: '/deployment/new/config' }
+        routeState.query = { next: '/deployment/new/start' }
         await saveValidAppCredentials()
-        expect(mockPush).toHaveBeenCalledWith('/deployment/new/config')
+        expect(mockPush).toHaveBeenCalledWith('/deployment/new/start')
     })
 
     it.each([
@@ -369,7 +369,7 @@ describe('SettingsOpenStackView.vue — Rücksprung über next', () => {
         ['Backslash-Trick', '/\\evil.example'],
         ['javascript-URL', 'javascript:alert(1)'],
         ['unbekannte Route', '/gibts-nicht'],
-        ['mehrfacher Parameter', ['/deployment/new/config', '//evil.example']],
+        ['mehrfacher Parameter', ['/deployment/new/start', '//evil.example']],
     ])('ignoriert next bei %s und bleibt auf der Seite', async (_label, next) => {
         routeState.query = { next }
         await saveValidAppCredentials()
