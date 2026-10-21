@@ -226,6 +226,15 @@ export const routes: RouteRecordRaw[] = [
       }
     ],
   },
+  {
+    // The caller's own credentials of all their deployments. No role
+    // requirement: everyone signed in sees only their own entries —
+    // ``/my-access`` filters to them server-side.
+    path: '/my-access',
+    name: ROUTE_NAMES.myAccess,
+    component: () => import('@/views/MyAccessView.vue'),
+    meta: { layout: 'app', requiresAuth: true, titleKey: 'nav.myAccess' },
+  },
   // User Profile
   {
     path: "/user",

@@ -53,6 +53,7 @@ export default {
     // dem, was sie dort finden, nicht nach dem Vorgang, der ihn
     // erzeugt hat.
     environments: "Umgebungen",
+    myAccess: "My Access",
     courses: "Kurse",
     apps: "Apps",
     help: "Hilfe",
@@ -305,6 +306,15 @@ export default {
       item1: "Prüfe, ob du dein Quota-Limit erreicht hast.",
       item2: "Sieh dir die Deployment-Details und Logs an, um den Fehler einzugrenzen.",
     },
+  },
+
+  MyAccessView: {
+    title: "My Access",
+    subtitle: "Die Zugangsdaten deiner Umgebungen an einem Ort",
+    openEnvironment: "Zur Umgebung",
+    empty: "Noch keine Zugangsdaten vorhanden.",
+    emptyHint: "Sobald eine Umgebung für dich fertig deployt ist, stehen ihre Zugangsdaten hier.",
+    loadFailed: "Die Zugangsdaten konnten nicht geladen werden.",
   },
 
   DeploymentsView: {

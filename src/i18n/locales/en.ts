@@ -52,6 +52,7 @@ export default {
     // Students never create one — for them the section is named
     // after what they find there, not the act that produced it.
     environments: "Environments",
+    myAccess: "My Access",
     courses: "Courses",
     apps: "Apps",
     help: "Help",
@@ -304,6 +305,15 @@ export default {
       item1: "Check whether you have reached your quota limit.",
       item2: "Look at deployment details and logs to narrow down the issue.",
     },
+  },
+
+  MyAccessView: {
+    title: "My Access",
+    subtitle: "The credentials of your environments in one place",
+    openEnvironment: "Open environment",
+    empty: "No credentials yet.",
+    emptyHint: "As soon as an environment has been deployed for you, its credentials show up here.",
+    loadFailed: "The credentials could not be loaded.",
   },
 
   DeploymentsView: {
