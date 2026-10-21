@@ -23,6 +23,7 @@ export const ROUTE_NAMES = {
   help: 'help',
   deploymentsList: 'deployments.list',
   deploymentsDetail: 'deployments.detail',
+  myAccess: 'my-access',
   user: 'user',
   userOpenStack: 'user.openstack',
   deploymentConfig: 'deployment.config',
