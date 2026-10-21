@@ -832,7 +832,6 @@ export default {
         version: 'Version',
         newestApproved: 'newest approved version',
         otherChosen: 'version you chose',
-        otherVersion: 'Other version',
         versionLabel: 'Choose version',
         versionsLoading: 'Loading versions …',
         versionsError: 'The versions could not be loaded.',

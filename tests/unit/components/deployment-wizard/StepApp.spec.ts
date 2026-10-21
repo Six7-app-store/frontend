@@ -32,6 +32,7 @@ describe('StepApp', () => {
   beforeEach(() => {
     sessionStorage.clear()
     setActivePinia(createPinia())
+    vi.mocked(appApi.getById).mockClear()
     vi.mocked(appApi.list).mockResolvedValue({ data: apps } as never)
     vi.mocked(appApi.getById).mockResolvedValue({ data: { versions: [{ version: 'v1.2.0' }, { version: 'v1.1.0' }] } } as never)
   })
@@ -64,29 +65,45 @@ describe('StepApp', () => {
     expect([draft.appId, draft.appName, draft.releaseTag]).toEqual(['ide', 'Online-IDE', 'v1.2.0'])
     expect(wrapper.get('[data-testid="chosen-version"]').text()).toBe('v1.2.0')
     expect(wrapper.get('[data-testid="version-panel"]').text()).toContain('neueste freigegebene Version')
-    expect(appApi.getById).not.toHaveBeenCalled()
   })
 
-  it('lädt unter „Andere Version“ die Versionen und übernimmt eine andere', async () => {
+  it('zeigt nach der App-Wahl sofort alle Versionen und übernimmt eine andere', async () => {
     const wrapper = await mountStep()
+    expect(appApi.getById).not.toHaveBeenCalled()
     await wrapper.get('[data-testid="radio-card-ide"]').trigger('click')
-    const toggle = wrapper.get('[data-testid="btn-other-version"]')
-
-    await toggle.trigger('click')
     await flushPromises()
-    expect(toggle.attributes('aria-expanded')).toBe('true')
-    expect(appApi.getById).toHaveBeenCalledWith('ide')
 
-    await wrapper.get('[data-testid="version-select"]').setValue('v1.1.0')
+    expect(appApi.getById).toHaveBeenCalledWith('ide')
+    const select = wrapper.get('[data-testid="version-select"]')
+    expect(select.findAll('option').map((o) => o.text())).toEqual(['v1.2.0', 'v1.1.0'])
+
+    await select.setValue('v1.1.0')
     expect(useDeploymentStore().draft.releaseTag).toBe('v1.1.0')
     expect(wrapper.get('[data-testid="version-panel"]').text()).toContain('von dir gewählte Version')
+  })
+
+  it('lädt die Versionen einer wiederhergestellten App ohne neue Wahl', async () => {
+    setActivePinia(createPinia())
+    useDeploymentStore().chooseRelease({ appId: 'ide', appName: 'Online-IDE', releaseTag: 'v1.2.0' })
+    const wrapper = await mountStep()
+
+    expect(appApi.getById).toHaveBeenCalledWith('ide')
+    expect(wrapper.findAll('[data-testid="version-select"] option')).toHaveLength(2)
+  })
+
+  it('bietet ohne Versionsliste die vorgewählte Version an', async () => {
+    vi.mocked(appApi.getById).mockResolvedValueOnce({ data: { versions: [] } } as never)
+    const wrapper = await mountStep()
+    await wrapper.get('[data-testid="radio-card-ide"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.findAll('[data-testid="version-select"] option').map((o) => o.text())).toEqual(['v1.2.0'])
   })
 
   it('meldet einen Fehler beim Laden der Versionen als Text', async () => {
     vi.mocked(appApi.getById).mockRejectedValueOnce(new Error('git'))
     const wrapper = await mountStep()
     await wrapper.get('[data-testid="radio-card-ide"]').trigger('click')
-    await wrapper.get('[data-testid="btn-other-version"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Die Versionen konnten nicht geladen werden.')

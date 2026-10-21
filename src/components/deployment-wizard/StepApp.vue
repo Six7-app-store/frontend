@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
  * Wizard step "App": the approved apps as radio cards with a search, and
- * the version — the newest approved one, changeable under "Andere Version".
+ * the version — the newest approved one preselected, every other one in a select.
  */
-import { computed, onMounted, ref, useId } from 'vue'
+import { computed, onMounted, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertCircle, ChevronDown } from 'lucide-vue-next'
+import { AlertCircle } from 'lucide-vue-next'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useWizardApp } from '@/composables/useWizardApp'
 import { appTagline } from '@/services/wizard-app.service'
@@ -33,27 +33,24 @@ const chosenId = computed<string | null>({
   get: () => store.draft.appId,
   set: (id) => {
     const app = apps.value.find((a) => a.appId === id)
-    if (app) {
-      choose(app)
-      showVersions.value = false
-    }
+    if (app) choose(app)
   },
 })
 
 const isNewest = computed(() => !!chosen.value && store.draft.releaseTag === chosen.value.latestApprovedVersion)
 
-const showVersions = ref(false)
-function toggleVersions() {
-  showVersions.value = !showVersions.value
-  if (showVersions.value) loadVersions()
-}
-
 const version = computed({
   get: () => store.draft.releaseTag,
   set: (tag: string) => chooseVersion(tag),
 })
-const versionChoices = computed(() => versions.value.map((tag) => ({ value: tag, label: tag })))
+// Without a list (the app reports none) the preselected version is still offered.
+const versionChoices = computed(() => {
+  const tags = versions.value.length ? versions.value : [store.draft.releaseTag].filter(Boolean)
+  return tags.map((tag) => ({ value: tag, label: tag }))
+})
 
+// Also covers a draft restored with its app already chosen.
+watch(() => store.draft.appId, (id) => { if (id) loadVersions() }, { immediate: true })
 onMounted(loadApps)
 </script>
 
@@ -91,36 +88,22 @@ onMounted(loadApps)
     </EntityListState>
 
     <div v-if="chosen" class="surface-panel flex flex-col gap-3 px-4 py-3.5" data-testid="version-panel">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <span class="text-base">
-          {{ t('deployment.wizard.app.version') }}
-          <span class="font-mono text-fg" data-testid="chosen-version">{{ store.draft.releaseTag }}</span>
-          <span class="text-sm text-fg-muted">
-            · {{ isNewest ? t('deployment.wizard.app.newestApproved') : t('deployment.wizard.app.otherChosen') }}
-          </span>
+      <p class="text-base">
+        {{ t('deployment.wizard.app.version') }}
+        <span class="font-mono text-fg" data-testid="chosen-version">{{ store.draft.releaseTag }}</span>
+        <span class="text-sm text-fg-muted">
+          · {{ isNewest ? t('deployment.wizard.app.newestApproved') : t('deployment.wizard.app.otherChosen') }}
         </span>
-        <BaseButton
-          variant="secondary"
-          size="sm"
-          :aria-expanded="showVersions"
-          data-testid="btn-other-version"
-          @click="toggleVersions"
-        >
-          {{ t('deployment.wizard.app.otherVersion') }}
-          <ChevronDown :size="16" class="text-icon" aria-hidden="true" />
-        </BaseButton>
-      </div>
+      </p>
 
-      <template v-if="showVersions">
-        <p v-if="versionsState === 'loading'" class="text-sm text-fg-muted">{{ t('deployment.wizard.app.versionsLoading') }}</p>
-        <p v-else-if="versionsState === 'error'" class="flex items-center gap-1.5 text-sm text-danger" role="alert">
-          <AlertCircle :size="15" class="shrink-0" aria-hidden="true" />
-          {{ t('deployment.wizard.app.versionsError') }}
-        </p>
-        <FormField v-else v-slot="{ id }" :label="t('deployment.wizard.app.versionLabel')" class="max-w-xs">
-          <BaseSelect :id="id" v-model="version" :options="versionChoices" data-testid="version-select" />
-        </FormField>
-      </template>
+      <p v-if="versionsState === 'loading'" class="text-sm text-fg-muted">{{ t('deployment.wizard.app.versionsLoading') }}</p>
+      <p v-else-if="versionsState === 'error'" class="flex items-center gap-1.5 text-sm text-danger" role="alert">
+        <AlertCircle :size="15" class="shrink-0" aria-hidden="true" />
+        {{ t('deployment.wizard.app.versionsError') }}
+      </p>
+      <FormField v-else v-slot="{ id }" :label="t('deployment.wizard.app.versionLabel')" class="max-w-xs">
+        <BaseSelect :id="id" v-model="version" :options="versionChoices" data-testid="version-select" />
+      </FormField>
     </div>
   </section>
 </template>

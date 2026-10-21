@@ -10,8 +10,9 @@ export type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
 /**
  * State of the wizard's app step: the deployable apps with a search, the
- * chosen app with its newest approved version preselected, and — only on
- * request, because it asks Git — the other versions to choose from.
+ * chosen app with its newest approved version preselected, and the chosen
+ * app's versions to choose from (``loadVersions``, which asks Git, so it runs
+ * for the chosen app only).
  */
 export function useWizardApp() {
   const store = useDeploymentStore()

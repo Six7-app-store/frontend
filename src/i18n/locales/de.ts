@@ -836,7 +836,6 @@ export default {
         version: 'Version',
         newestApproved: 'neueste freigegebene Version',
         otherChosen: 'von dir gewählte Version',
-        otherVersion: 'Andere Version',
         versionLabel: 'Version wählen',
         versionsLoading: 'Versionen werden geladen …',
         versionsError: 'Die Versionen konnten nicht geladen werden.',
