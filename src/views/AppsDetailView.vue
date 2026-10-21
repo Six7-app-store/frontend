@@ -11,6 +11,7 @@ import { useDeploymentStore } from '@/stores/deployment.store'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRole } from '@/composables/useRole'
+import { useRouteAccess } from '@/composables/useRouteAccess'
 import {
   appBannerStatus,
   appDetailLocation,
@@ -40,6 +41,9 @@ const deploymentStore = useDeploymentStore()
 const credStore = useOpenStackCredentialsStore()
 const authStore = useAuthStore()
 const { isAdmin } = useRole()
+const { canAccess } = useRouteAccess()
+// Students never create deployments: no deploy panel instead of a route to /forbidden.
+const canDeploy = computed(() => canAccess({ name: ROUTE_NAMES.deploymentNew }))
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -146,8 +150,10 @@ watch([app, activeTab, requestedTab], () => {
 const fetchAppDetails = async () => {
   try {
     await load()
-    if (versionOptions.value.length > 0 && !selectedVersion.value) {
-      selectedVersion.value = versionOptions.value[0]!
+    // The newest approved version first, as the wizard would choose it;
+    // an owner's app without approval falls back to the newest tag.
+    if (!selectedVersion.value) {
+      selectedVersion.value = app.value?.latestApprovedVersion || versionOptions.value[0] || ''
     }
   } catch {
     toast.error(t('AppsDetailView.toasts.loadError'))
@@ -160,11 +166,8 @@ const handleDeploy = () => {
     toast.warning(t('AppsDetailView.toasts.selectVersionFirst'))
     return
   }
-  deploymentStore.resetDraft()
-  deploymentStore.draft.appId = app.value.appId
-  deploymentStore.draft.releaseTag = selectedVersion.value
-  toast.success(t('AppsDetailView.toasts.preparingConfig', { name: app.value.name }))
-  router.push({ name: ROUTE_NAMES.deploymentConfig })
+  deploymentStore.startDraft({ appId: app.value.appId, appName: app.value.name, releaseTag: selectedVersion.value })
+  router.push({ name: ROUTE_NAMES.deploymentNew, params: { step: 'target' } })
 }
 
 const openSubmitModal = (versionTag: string) => {
@@ -308,7 +311,7 @@ onMounted(async () => {
           :docs-to="tabLink('docs')"
           :config-to="tabLink('config')"
         >
-          <template #deploy>
+          <template v-if="canDeploy" #deploy>
             <AppDeploySidebar
               v-model:selected-version="selectedVersion"
               :version-options="versionOptions"

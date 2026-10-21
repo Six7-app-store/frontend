@@ -3,11 +3,11 @@ import { useI18n } from 'vue-i18n'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { distributeEvenly } from '@/services/deployment-draft.service'
 import {
-  canProceed,
   moveStudent,
   shuffled,
   unassignedIds,
 } from '@/services/team-assignment.service'
+import type { GroupMode } from '@/types'
 
 /**
  * State of the wizard's team-assignment step on top of the deployment
@@ -34,12 +34,8 @@ export function useTeamAssignment() {
     set: (count) => { store.draft.groupCount = count },
   })
   const totalStudents = computed(() => store.draft.studentIds.length)
-  const mode = computed(() => store.draft.groupMode)
   const unassigned = computed(() => unassignedIds(store.draft.studentIds, assignments() ?? []))
   const teams = computed(() => assignments().slice(0, groupCount.value))
-  const complete = computed(() =>
-    canProceed(assignments(), groupNames.value, groupCount.value, unassigned.value.length),
-  )
 
   /** Keeps every name the user typed (default names too) and fills the empty ones. */
   function ensureDefaultGroupNames() {
@@ -109,10 +105,25 @@ export function useTeamAssignment() {
     })
   }
 
+  /**
+   * Switches to self-formed teams. The first time, the students start split
+   * evenly into two teams, so there is something to rearrange instead of an
+   * empty board.
+   */
   function setCustom() {
     store.draft.groupMode = 'custom'
     if (store.draft.groupCount === 1 && totalStudents.value > 1) store.draft.groupCount = 2
+    ensureAssignmentArrays()
     ensureDefaultGroupNames()
+    const current = assignments()
+    const formed = current.slice(0, store.draft.groupCount).some((team) => team?.length)
+    if (!formed) {
+      distributeEvenly([...store.draft.studentIds], store.draft.groupCount).forEach((team, i) => { current[i] = team })
+    }
+  }
+
+  function selectMode(next: GroupMode) {
+    ({ one: setOneGroup, eachUser: setEachUser, custom: setCustom })[next]()
   }
 
   function increment() {
@@ -143,11 +154,10 @@ export function useTeamAssignment() {
     groupNames,
     groupCount,
     totalStudents,
-    mode,
     unassigned,
     teams,
-    complete,
     prepare,
+    selectMode,
     setOneGroup,
     setEachUser,
     setCustom,
@@ -158,3 +168,5 @@ export function useTeamAssignment() {
     clearAll,
   }
 }
+
+export type TeamAssignment = ReturnType<typeof useTeamAssignment>

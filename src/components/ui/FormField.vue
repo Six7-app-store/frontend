@@ -9,6 +9,7 @@
  *   </FormField>
  */
 import { computed, useId } from 'vue'
+import { AlertCircle } from 'lucide-vue-next'
 
 const props = defineProps<{
   label: string
@@ -34,6 +35,9 @@ const describedBy = computed(() => {
     </label>
     <slot :id="id" :described-by="describedBy" :invalid="!!error" />
     <p v-if="hint" :id="hintId" class="text-sm text-fg-muted">{{ hint }}</p>
-    <p v-if="error" :id="errorId" class="text-sm text-danger" role="alert">{{ error }}</p>
+    <p v-if="error" :id="errorId" class="flex items-start gap-1.5 text-sm text-danger" role="alert">
+      <AlertCircle :size="15" class="mt-0.5 shrink-0" aria-hidden="true" />
+      <span>{{ error }}</span>
+    </p>
   </div>
 </template>

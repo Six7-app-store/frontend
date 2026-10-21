@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { deploymentApi } from '@/api/deployment.api'
 import { requestContext, runRequest } from './_request'
 import { getErrorDetailMessage, getErrorStatus } from '@/utils/http-error'
-import { buildDeploymentPayload } from '@/services/deployment-draft.service'
+import { buildDeploymentPayload, releaseVersion, withRelease, type ChosenRelease } from '@/services/deployment-draft.service'
+import { clearDraft, loadDraft, saveDraft, sessionStore } from '@/services/draft-storage.service'
 
 import type {
   Deployment,
@@ -14,7 +15,9 @@ import type {
 } from '@/types'
 
 const defaultDraft: DeploymentDraft = {
+  entry: 'catalog',
   appId: null,
+  appName: '',
   name: '',
   releaseTag: '',
   courseIds: [],
@@ -24,7 +27,6 @@ const defaultDraft: DeploymentDraft = {
   assignments: [],
 
   // --- These must match the interface ---
-  version: 'latest',
   variables: {},
   userInputVar: {},
   groupNames: [],
@@ -36,6 +38,8 @@ const defaultDraft: DeploymentDraft = {
   fileUploads: {}
 }
 
+const freshDraft = (): DeploymentDraft => JSON.parse(JSON.stringify(defaultDraft))
+
 export const useDeploymentStore = defineStore('deployment', {
   state: () => ({
     deployments: [] as Deployment[],
@@ -44,8 +48,8 @@ export const useDeploymentStore = defineStore('deployment', {
     isLoading: false,
     error: null as string | null,
 
-    // The wizard state (draft).
-    draft: JSON.parse(JSON.stringify(defaultDraft)) as DeploymentDraft,
+    // The wizard state (draft). A reload picks it up from sessionStorage.
+    draft: loadDraft(sessionStore(), freshDraft()) ?? freshDraft(),
 
     // Global cache for students (userId → object).
     studentCache: new Map<string, any>(),
@@ -132,7 +136,30 @@ export const useDeploymentStore = defineStore('deployment', {
     },
 
     resetDraft() {
-      this.draft = JSON.parse(JSON.stringify(defaultDraft))
+      this.draft = freshDraft()
+      clearDraft(sessionStore())
+    },
+
+    /**
+     * Starts a new wizard run. From an app page ``app`` carries the chosen
+     * app and version, and the wizard skips its app step.
+     */
+    startDraft(app: ChosenRelease | null = null) {
+      this.resetDraft()
+      if (app) {
+        this.draft.entry = 'app'
+        Object.assign(this.draft, withRelease(this.draft, app))
+      }
+    },
+
+    /** Picks app and version; a different one drops what belonged to the old one. */
+    chooseRelease(release: ChosenRelease) {
+      Object.assign(this.draft, withRelease(this.draft, release))
+    },
+
+    /** Writes the draft to sessionStorage (see ``saveDraft``). */
+    persistDraft() {
+      return saveDraft(sessionStore(), this.draft)
     },
 
     /**
@@ -140,8 +167,8 @@ export const useDeploymentStore = defineStore('deployment', {
      * the created deployment.
      */
     async submitDraft() {
-      if (!this.draft.appId || !this.draft.name) {
-        throw new Error("App und Name sind Pflichtfelder")
+      if (!this.draft.appId || !this.draft.name || !releaseVersion(this.draft.releaseTag)) {
+        throw new Error("App, Version und Name sind Pflichtfelder")
       }
       return this.createDeployment(buildDeploymentPayload(this.draft))
     }

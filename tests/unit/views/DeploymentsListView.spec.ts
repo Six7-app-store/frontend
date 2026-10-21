@@ -124,6 +124,17 @@ describe('DeploymentsListView.vue', () => {
     })).toBe(true)
   })
 
+  it('öffnet mit „Neues Deployment“ den Wizard, mit und ohne Einträge', () => {
+    const target = (wrapper: ReturnType<typeof mountComponent>, testid: string) =>
+      (wrapper.findAllComponents(RouterLinkStub).find((l) => l.attributes('data-testid') === testid)?.props('to') as any)?.name
+
+    mockDeployments = [makeDeployment({})]
+    expect(target(mountComponent(), 'btn-new-deployment')).toBe('deployment.new')
+
+    mockDeployments = []
+    expect(target(mountComponent(), 'btn-new-deployment-empty')).toBe('deployment.new')
+  })
+
   it('sortiert die Deployments mit dem neuesten zuerst', () => {
     mockDeployments = [
       makeDeployment({ deploymentId: 'alt', name: 'Alt', created_at: '2026-06-01T10:00:00Z' }),

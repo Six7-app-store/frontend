@@ -27,6 +27,7 @@ let mockNeedsCredentials = false
 let mockQuotas: any[] = []
 
 let mockCanAccessCourses = true
+let mockCanDeploy = true
 
 const mockFetchStats = vi.fn()
 const mockFetchQuotas = vi.fn()
@@ -66,7 +67,9 @@ vi.mock('@/composables/useQuotas', () => ({
 }))
 
 vi.mock('@/composables/useRouteAccess', () => ({
-  useRouteAccess: () => ({ canAccess: () => mockCanAccessCourses })
+  useRouteAccess: () => ({
+    canAccess: (to: { name: string }) => (to.name === 'courses' ? mockCanAccessCourses : mockCanDeploy),
+  })
 }))
 
 const quota = (overrides: Record<string, any> = {}) => ({
@@ -100,6 +103,7 @@ describe('DashboardView.vue', () => {
     mockQuotas = [quota()]
 
     mockCanAccessCourses = true
+    mockCanDeploy = true
 
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2026, 5, 7, 14, 0, 0))
@@ -162,12 +166,19 @@ describe('DashboardView.vue', () => {
 
   // --- Hauptaktion ---
 
-  it('verlinkt "Neues Deployment" auf die Apps, wenn Credentials hinterlegt sind', () => {
+  it('öffnet mit "Neues Deployment" den Wizard, wenn Credentials hinterlegt sind', () => {
     const wrapper = mountComponent()
 
     const link = wrapper.findAllComponents(RouterLinkStub).find((l) => l.text().includes('DashboardView.deploymentNew'))
-    expect((link?.props('to') as any)?.name).toBe('apps')
+    expect((link?.props('to') as any)?.name).toBe('deployment.new')
     expect(wrapper.find('button[disabled]').exists()).toBe(false)
+  })
+
+  it('zeigt Studierenden kein "Neues Deployment"', () => {
+    mockCanDeploy = false
+    const wrapper = mountComponent()
+
+    expect(wrapper.text()).not.toContain('DashboardView.deploymentNew')
   })
 
   it('sperrt "Neues Deployment" ohne Credentials und nennt den Grund', () => {

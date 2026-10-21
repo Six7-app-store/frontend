@@ -3,6 +3,10 @@ import type { AppVariable } from '@/types'
 import {
   dedupeDefinitions,
   dropStaleSlots,
+  fileSlotsFor,
+  missingFiles,
+  startSections,
+  withoutStaleFileSlots,
   hydrateFromDraft,
   hydrateFromInput,
   missingRequired,
@@ -128,5 +132,45 @@ describe('outOfRange', () => {
 
   it('ignores variables without bounds', () => {
     expect(outOfRange([v({ name: 'n', type: 'number' })], { n: 1e9 }, teams)).toEqual([])
+  })
+})
+
+describe('file slots', () => {
+  const file = (osScope?: 'all' | 'team' | 'user', required = true) =>
+    v({ name: 'task', osType: 'file', osScope, required })
+  const doc = { name: 'a.txt', content_b64: 'YQ==', size: 1, content_type: 'text/plain' }
+
+  it('hat einen Slot für alle, je Team oder je Person', () => {
+    expect(fileSlotsFor(file(), teams)).toEqual(['all'])
+    expect(fileSlotsFor(file('team'), teams)).toEqual(['Rot', 'Blau'])
+    expect(fileSlotsFor(file('user'), teams)).toEqual(['Rot-anna', 'Blau-ben', 'Blau-cem'])
+  })
+
+  it('nennt fehlende Pflichtdateien je Slot und übergeht optionale', () => {
+    const uploads = { task: { 'Rot-anna': doc } }
+    expect(missingFiles([file('user')], uploads, teams)).toEqual([
+      { variable: 'task', slot: 'Blau-ben' }, { variable: 'task', slot: 'Blau-cem' },
+    ])
+    expect(missingFiles([file('user', false)], {}, teams)).toEqual([])
+    expect(missingFiles([v({ name: 'plain', required: true })], {}, teams)).toEqual([])
+  })
+
+  it('verwirft Dateien von Teams und Personen, die es nicht mehr gibt', () => {
+    const uploads = { task: { 'Rot-anna': doc, 'Gelb-dora': doc }, gone: { all: doc } }
+    expect(withoutStaleFileSlots([file('user')], uploads, teams)).toEqual({ task: { 'Rot-anna': doc } })
+    expect(withoutStaleFileSlots([file('team')], { task: { Lila: doc } }, teams)).toEqual({})
+    expect(withoutStaleFileSlots([file()], undefined, teams)).toEqual({})
+  })
+})
+
+describe('startSections', () => {
+  it('trennt Pflichtangaben, Dateien und alles mit Default', () => {
+    const defs = [
+      v({ name: 'login', required: true }),
+      v({ name: 'task', osType: 'file', required: true }),
+      v({ name: 'flavor', default: 'm1.small' }),
+    ]
+    const { required, files, advanced } = startSections(defs)
+    expect([required, files, advanced].map((list) => list.map((d) => d.name))).toEqual([['login'], ['task'], ['flavor']])
   })
 })

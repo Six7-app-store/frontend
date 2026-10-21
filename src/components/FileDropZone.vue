@@ -1,109 +1,91 @@
 <script lang="ts" setup>
 /**
- * FileDropZone — drop-or-click upload widget for one file.
+ * FileDropZone — drop-or-click upload widget.
  *
- * Used by the deployment wizard to gather files for
- * ``@openstack:file:<scope>``-marked variables. Callers receive a
- * ready-to-ship ``DeploymentFile`` payload (name, content_b64, size,
- * content_type) via the ``change`` event so they don't have to know
- * how to base64-encode a File themselves.
+ * Single mode (default): one file bound with ``v-model`` as a ready-to-ship
+ * ``DeploymentFile``; once set it shows name, size and a remove button.
  *
- * Pattern is lifted from ``AddAppsView.vue``'s logo upload — same
- * drag-drop, same FileReader trick, but generalised so the deploy
- * wizard can render N of these for per-team / per-user scopes.
+ * ``multiple``: takes any number of files at once and emits them as
+ * ``files``; it stays a drop zone, the caller shows where they went (the
+ * wizard matches them to people or teams by file name).
+ *
+ * Files over ``maxBytes`` are refused with an inline error (and ``error``).
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Upload, FileText, X } from 'lucide-vue-next'
+import { AlertCircle, Upload, FileText, X } from 'lucide-vue-next'
 import type { DeploymentFile } from '@/types'
 import { formatBytes } from '@/utils/format'
+import { MAX_DEPLOYMENT_FILE_BYTES, readDeploymentFile } from '@/utils/deployment-file'
 
 const props = withDefaults(defineProps<{
-  /** Optional MIME-filter for the native file picker (e.g. ``"application/pdf"``). */
+  /** ``accept`` filter for the native file picker (e.g. ``".java,.txt"``). */
   accept?: string
-  /** Per-file cap in bytes. Mirrors the backend's per-file limit so the
-   *  user gets a clean error before the request even leaves the browser. */
+  /** Per-file cap in bytes. */
   maxBytes?: number
-  /** Existing payload — when the wizard is re-entered (back-button) we
-   *  re-render the previous selection without forcing a fresh upload. */
+  /** The chosen file in single mode; re-shown when the wizard is re-entered. */
   modelValue?: DeploymentFile | null
-  /** Label for the empty state, e.g. "Aufgabenstellung" or "Team-1 Datensatz". */
+  /** Label for the empty state, e.g. "Aufgabenstellung". */
   label?: string
-  /** Stops the user from changing the file once set (read-only display). */
+  /** A second line under the label, e.g. how files are matched. */
+  hint?: string
   disabled?: boolean
+  multiple?: boolean
 }>(), {
   accept: '*',
-  maxBytes: 2 * 1024 * 1024,
+  maxBytes: MAX_DEPLOYMENT_FILE_BYTES,
   modelValue: null,
   label: '',
+  hint: '',
   disabled: false,
+  multiple: false,
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: DeploymentFile | null): void
   (e: 'change', value: DeploymentFile | null): void
+  (e: 'files', value: DeploymentFile[]): void
   (e: 'error', message: string): void
 }>()
 
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const isDragging = ref(false)
 const { t } = useI18n()
-// Local error string so the component can render its own validation
-// feedback inline; the parent gets the same message via the ``error``
-// event in case it wants to toast it.
+// Shown inline; the parent gets the same text through ``error``.
 const localError = ref<string>('')
 
-const hasValue = computed(() => !!props.modelValue)
+const hasValue = computed(() => !props.multiple && !!props.modelValue)
+const maxMb = computed(() => Math.round(props.maxBytes / 1024 / 1024))
 
-/**
- * Read a File into a base64 string (without the ``data:...,`` prefix
- * that ``readAsDataURL`` adds). The backend stores ``content_b64`` as
- * the bare base64 payload so cloud-init's ``encoding: b64`` can decode
- * it directly without the wrapper.
- */
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const out = typeof reader.result === 'string' ? reader.result : ''
-      // ``result`` is a data URL like ``data:application/pdf;base64,JVB...``.
-      // Strip the prefix so we ship the raw base64 — the backend
-      // expects ``validate=True``-friendly bytes (no wrapper).
-      const idx = out.indexOf('base64,')
-      if (idx < 0) {
-        reject(new Error('Failed to encode file'))
-        return
-      }
-      resolve(out.slice(idx + 'base64,'.length))
-    }
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
+function fail(message: string) {
+  localError.value = message
+  emit('error', message)
 }
 
-const processFile = async (file: File) => {
-  if (props.disabled) return
+async function processFiles(list: FileList | File[] | null | undefined) {
+  if (props.disabled || !list) return
   localError.value = ''
-  if (file.size > props.maxBytes) {
-    const msg = t('fileDropZone.tooLarge', { mb: Math.round(props.maxBytes / 1024 / 1024) })
-    localError.value = msg
-    emit('error', msg)
+  const files = Array.from(list)
+  if (files.length === 0) return
+  const tooLarge = files.filter((f) => f.size > props.maxBytes)
+  const fitting = files.filter((f) => f.size <= props.maxBytes)
+  try {
+    if (props.multiple) {
+      const payloads = await Promise.all(fitting.map(readDeploymentFile))
+      if (payloads.length > 0) emit('files', payloads)
+    } else if (fitting[0]) {
+      const payload = await readDeploymentFile(fitting[0])
+      emit('update:modelValue', payload)
+      emit('change', payload)
+    }
+  } catch (e: any) {
+    fail(e?.message || t('fileDropZone.readError'))
     return
   }
-  try {
-    const b64 = await fileToBase64(file)
-    const payload: DeploymentFile = {
-      name: file.name,
-      content_b64: b64,
-      size: file.size,
-      content_type: file.type || 'application/octet-stream',
-    }
-    emit('update:modelValue', payload)
-    emit('change', payload)
-  } catch (e: any) {
-    const msg = e?.message || t('fileDropZone.readError')
-    localError.value = msg
-    emit('error', msg)
+  if (tooLarge.length > 0) {
+    fail(props.multiple
+      ? t('fileDropZone.someTooLarge', { mb: maxMb.value, names: tooLarge.map((f) => f.name).join(', ') })
+      : t('fileDropZone.tooLarge', { mb: maxMb.value }))
   }
 }
 
@@ -114,18 +96,17 @@ const triggerInput = () => {
 
 const onFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (file) processFile(file)
+  processFiles(target.files)
   // Allow re-selecting the same file later — without this the change
   // event wouldn't fire on identical re-pick.
-  if (target) target.value = ''
+  target.value = ''
 }
 
 const onDrop = (event: DragEvent) => {
   isDragging.value = false
   if (props.disabled) return
-  const file = event.dataTransfer?.files?.[0]
-  if (file) processFile(file)
+  const files = event.dataTransfer?.files
+  processFiles(props.multiple ? files : files ? [files[0]!].filter(Boolean) : null)
 }
 
 const clearFile = () => {
@@ -137,48 +118,55 @@ const clearFile = () => {
 
 <template>
   <div class="space-y-1">
+    <input
+      ref="fileInputRef"
+      type="file"
+      :accept="accept"
+      :multiple="multiple"
+      :disabled="disabled"
+      class="hidden"
+      data-testid="file-input"
+      @change="onFileChange"
+    />
+
     <!-- Empty state: drop zone + click to pick. -->
-    <div
+    <button
       v-if="!hasValue"
-      class="drop-zone flex cursor-pointer items-center gap-3 px-4 py-3"
+      type="button"
+      class="drop-zone flex w-full items-center gap-3 text-left"
       :class="[
+        multiple ? 'gap-4 p-5' : 'px-4 py-3',
         isDragging ? 'drop-zone-active' : '',
-        disabled ? 'opacity-50 cursor-not-allowed' : '',
+        disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
       ]"
+      :disabled="disabled"
+      data-testid="drop-zone"
       @dragover.prevent="!disabled && (isDragging = true)"
       @dragleave.prevent="isDragging = false"
       @drop.prevent="onDrop"
       @click="triggerInput"
     >
-      <Upload :size="20" class="text-icon shrink-0" />
-      <div class="flex-1 min-w-0">
-        <div class="text-sm text-fg truncate">
-          <span v-if="label" class="font-medium">{{ label }}: </span>
-          <span class="text-fg-muted">{{ t('fileDropZone.pick') }}</span>
-        </div>
-        <div class="text-xs text-fg-muted mt-0.5">
-          max. {{ Math.round(maxBytes / 1024 / 1024) }} MB
-        </div>
-      </div>
-      <input
-        ref="fileInputRef"
-        type="file"
-        :accept="accept"
-        :disabled="disabled"
-        class="hidden"
-        @change="onFileChange"
-      />
-    </div>
+      <Upload :size="20" class="shrink-0 text-icon" aria-hidden="true" />
+      <span class="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span class="truncate text-sm text-fg">
+          <span v-if="label" class="font-medium" :class="{ 'font-semibold text-base': multiple }">{{ label }}<template v-if="!multiple">: </template></span>
+          <span v-if="!multiple" class="text-fg-muted">{{ t('fileDropZone.pick') }}</span>
+        </span>
+        <span class="text-xs text-fg-muted">
+          <template v-if="hint">{{ hint }} </template>{{ t('fileDropZone.maxSize', { mb: maxMb }) }}
+        </span>
+      </span>
+    </button>
 
-    <!-- Filled state: show name + size + remove button. -->
+    <!-- Filled state (single mode): show name + size + remove button. -->
     <div
       v-else
-      class="border rounded-md px-4 py-3 bg-line/[.04] flex items-center gap-3"
+      class="flex items-center gap-3 rounded-md border bg-line/[.04] px-4 py-3"
     >
-      <FileText :size="20" class="text-icon shrink-0" />
-      <div class="flex-1 min-w-0">
-        <div v-if="label" class="text-xs text-fg-muted mb-0.5">{{ label }}</div>
-        <div class="text-sm font-medium text-fg truncate">{{ modelValue!.name }}</div>
+      <FileText :size="20" class="shrink-0 text-icon" aria-hidden="true" />
+      <div class="min-w-0 flex-1">
+        <div v-if="label" class="mb-0.5 text-xs text-fg-muted">{{ label }}</div>
+        <div class="truncate text-sm font-medium text-fg">{{ modelValue!.name }}</div>
         <div class="text-xs text-fg-muted">
           {{ formatBytes(modelValue!.size) }}
         </div>
@@ -186,15 +174,18 @@ const clearFile = () => {
       <button
         v-if="!disabled"
         type="button"
-        class="p-1 rounded hover:bg-line/[.12] text-fg-muted hover:text-danger"
+        class="rounded p-1 text-fg-muted hover:bg-line/[.12] hover:text-danger"
         :title="t('fileDropZone.remove')"
+        :aria-label="t('fileDropZone.remove')"
         @click.stop="clearFile"
       >
-        <X :size="16" />
+        <X :size="16" aria-hidden="true" />
       </button>
     </div>
 
-    <!-- Inline error if validation rejected the pick. -->
-    <div v-if="localError" class="text-xs text-danger">{{ localError }}</div>
+    <p v-if="localError" class="flex items-center gap-1.5 text-xs text-danger" role="alert">
+      <AlertCircle :size="14" class="shrink-0" aria-hidden="true" />
+      {{ localError }}
+    </p>
   </div>
 </template>

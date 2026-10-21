@@ -429,7 +429,7 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
     ],
   },
-  "/deployment/new/config": {
+  "/deployment/new/app": {
     "breadcrumb": [
       "Deployments",
       "/Neues Deployment",
@@ -1057,7 +1057,7 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
     ],
   },
-  "/deployment/new/config": {
+  "/deployment/new/app": {
     "breadcrumb": [
       "Umgebungen",
       "/Neues Deployment",
@@ -1625,7 +1625,7 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
     ],
   },
-  "/deployment/new/config": {
+  "/deployment/new/app": {
     "breadcrumb": [
       "Deployments",
       "/Neues Deployment",

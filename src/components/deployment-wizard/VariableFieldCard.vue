@@ -6,6 +6,10 @@
  * slots. Values are read and written through the step's form
  * (``useVariableForm``); only one tooltip of the step is open at a
  * time, so the parent owns which.
+ *
+ * ``plain`` is the wizard's view for people who do not know OpenTofu:
+ * ``label`` instead of the variable name, no type, required or scope
+ * badges and no scope explanation.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -23,6 +27,8 @@ const props = defineProps<{
   variable: AppVariable
   form: VariableForm
   tooltipOpen: boolean
+  label?: string
+  plain?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -74,7 +80,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
         @click.prevent="focusInput(variable.name)"
         class="text-base font-semibold text-fg cursor-pointer hover:text-fg transition-colors flex-1"
       >
-        {{ variable.name }}
+        {{ label || variable.name }}
       </label>
 
       <button
@@ -83,6 +89,8 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
         class="text-fg-muted hover:text-fg-muted transition-colors"
         :class="tooltipOpen ? 'text-fg-muted' : ''"
         :title="t('deployment.variables.showInfo')"
+        :aria-label="t('deployment.variables.showInfo')"
+        :aria-expanded="tooltipOpen"
       >
         <Info :size="16" />
       </button>
@@ -110,7 +118,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
       </div>
     </div>
 
-    <div class="flex flex-wrap items-center gap-2 mb-3">
+    <div v-if="!plain" class="flex flex-wrap items-center gap-2 mb-3">
       <span class="text-xs font-semibold bg-line/[.07] text-fg px-2 py-0.5 rounded border border-subtle">
         {{ variable.type }}
       </span>
@@ -123,7 +131,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
     </div>
 
     <div
-      v-if="isScoped(variable)"
+      v-if="isScoped(variable) && !plain"
       class="mb-3 text-xs text-fg bg-line/[.04] border border-subtle rounded px-3 py-2"
     >
       <p class="font-semibold mb-0.5">

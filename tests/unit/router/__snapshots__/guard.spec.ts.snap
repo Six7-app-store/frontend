@@ -221,20 +221,6 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
   },
   {
     "children": undefined,
-    "guarded": false,
-    "meta": {
-      "layout": "app",
-      "requiresAuth": true,
-      "requiresRole": [
-        "teacher",
-        "admin",
-      ],
-    },
-    "name": "deployment.config",
-    "path": "/deployment/new/config",
-  },
-  {
-    "children": undefined,
     "guarded": true,
     "meta": {
       "layout": "app",
@@ -244,36 +230,8 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
         "admin",
       ],
     },
-    "name": "deployment.teams",
-    "path": "/deployment/new/teams",
-  },
-  {
-    "children": undefined,
-    "guarded": true,
-    "meta": {
-      "layout": "app",
-      "requiresAuth": true,
-      "requiresRole": [
-        "teacher",
-        "admin",
-      ],
-    },
-    "name": "deployment.variables",
-    "path": "/deployment/new/variables",
-  },
-  {
-    "children": undefined,
-    "guarded": true,
-    "meta": {
-      "layout": "app",
-      "requiresAuth": true,
-      "requiresRole": [
-        "teacher",
-        "admin",
-      ],
-    },
-    "name": "deployment.summary",
-    "path": "/deployment/new/summary",
+    "name": "deployment.new",
+    "path": "/deployment/new/:step(app|target|start)?",
   },
   {
     "children": undefined,

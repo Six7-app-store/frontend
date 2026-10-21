@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { buildDeploymentPayload, distributeEvenly, fallbackTeamName, releaseVersion } from '@/services/deployment-draft.service'
+import {
+  buildDeploymentPayload, distributeEvenly, fallbackTeamName, releaseVersion, suggestedName, teamLists, wizardTeams, withRelease,
+} from '@/services/deployment-draft.service'
 import type { DeploymentDraft } from '@/types'
 
 describe('releaseVersion', () => {
@@ -7,17 +9,37 @@ describe('releaseVersion', () => {
     expect(releaseVersion('v1.2.0')).toBe('v1.2.0')
   })
 
-  it('means latest when nothing is set', () => {
-    expect(releaseVersion('')).toBe('latest')
-    expect(releaseVersion('  ')).toBe('latest')
-    expect(releaseVersion(null)).toBe('latest')
-    expect(releaseVersion(undefined)).toBe('latest')
+  it('guesses no version when nothing is set', () => {
+    expect(releaseVersion('')).toBe('')
+    expect(releaseVersion('  ')).toBe('')
+    expect(releaseVersion(null)).toBe('')
+    expect(releaseVersion(undefined)).toBe('')
   })
 
   it('reads version, then name, from a release object', () => {
     expect(releaseVersion({ version: 'v2', name: 'Second' })).toBe('v2')
     expect(releaseVersion({ name: 'v3' })).toBe('v3')
-    expect(releaseVersion({})).toBe('latest')
+    expect(releaseVersion({})).toBe('')
+  })
+})
+
+describe('withRelease', () => {
+  const draft = {
+    appId: 'app-1', appName: 'IDE', releaseTag: 'v1',
+    variableDefinitions: [{ name: 'x', type: 'string' }], variables: { x: 'a' },
+    userInputVar: '{"x":"a"}', fileUploads: { task: {} }, filesLost: true,
+  } as unknown as DeploymentDraft
+
+  it('keeps what was entered for the same release', () => {
+    expect(withRelease(draft, { appId: 'app-1', appName: 'IDE', releaseTag: 'v1' }))
+      .toEqual({ appId: 'app-1', appName: 'IDE', releaseTag: 'v1' })
+  })
+
+  it('drops variables and files of another app or version', () => {
+    expect(withRelease(draft, { appId: 'app-1', appName: 'IDE', releaseTag: 'v2' })).toEqual({
+      appId: 'app-1', appName: 'IDE', releaseTag: 'v2',
+      variableDefinitions: [], variables: {}, userInputVar: {}, fileUploads: {}, filesLost: false,
+    })
   })
 })
 
@@ -48,7 +70,7 @@ describe('distributeEvenly', () => {
 describe('buildDeploymentPayload', () => {
   const draft = (over: Partial<DeploymentDraft>): DeploymentDraft => ({
     appId: 'app-1', name: 'Lab', releaseTag: 'v1', courseIds: [], studentIds: [], groupMode: 'one',
-    groupCount: 1, assignments: [], version: 'latest', variables: {}, userInputVar: {}, groupNames: [],
+    groupCount: 1, assignments: [], variables: {}, userInputVar: {}, groupNames: [],
     variableDefinitions: [], fileUploads: {}, ...over,
   }) as DeploymentDraft
 
@@ -68,5 +90,54 @@ describe('buildDeploymentPayload', () => {
   it('omits files when no slot holds content', () => {
     const payload = buildDeploymentPayload(draft({ fileUploads: { cert: { all: { name: 'a', size: 1 } as never } } }))
     expect(payload).not.toHaveProperty('files')
+  })
+})
+
+describe('suggestedName', () => {
+  it('verbindet App, Ziel und Datum und lässt Unbekanntes weg', () => {
+    expect(suggestedName('Online-IDE', 'WI SE B 23', '20.10.2026')).toBe('Online-IDE – WI SE B 23 – 20.10.2026')
+    expect(suggestedName('Online-IDE', '', '20.10.2026')).toBe('Online-IDE – 20.10.2026')
+  })
+})
+
+describe('teamLists', () => {
+  it('liest Arrays und index-geschlüsselte Objekte und füllt fehlende Teams auf', () => {
+    expect(teamLists([['a'], ['b']], 3)).toEqual([['a'], ['b'], []])
+    expect(teamLists({ 0: ['a'], 2: ['c'] }, 3)).toEqual([['a'], [], ['c']])
+    expect(teamLists(null, 1)).toEqual([[]])
+  })
+})
+
+describe('wizardTeams', () => {
+  const base = {
+    studentIds: ['u1', 'u2', 'u3'], groupNames: [], assignments: [], groupCount: 1,
+  } as unknown as DeploymentDraft
+  const teams = (over: Partial<DeploymentDraft>) => wizardTeams({ ...base, ...over })
+
+  it('setzt bei „Alle zusammen“ alle in ein Team, auch ohne Zuordnung', () => {
+    expect(teams({ groupMode: 'one' })).toEqual([{ name: 'Team-1', userIds: ['u1', 'u2', 'u3'] }])
+    expect(teams({ groupMode: 'one', groupNames: ['Kurs'] })[0]!.name).toBe('Kurs')
+  })
+
+  it('gibt bei „Jeder einzeln“ jeder Person ein Team', () => {
+    expect(teams({ groupMode: 'eachUser' }).map((t) => t.userIds)).toEqual([['u1'], ['u2'], ['u3']])
+  })
+
+  it('nimmt bei „Gruppen selbst bilden“ die gebildeten Teams ohne Abgewählte', () => {
+    expect(teams({
+      groupMode: 'custom', groupCount: 2, groupNames: ['Rot', ' '],
+      assignments: [['u1', 'weg'], ['u2', 'u3']] as never,
+    })).toEqual([
+      { name: 'Rot', userIds: ['u1'] },
+      { name: 'Team-2', userIds: ['u2', 'u3'] },
+    ])
+  })
+
+  it('teilt bei „Gruppen selbst bilden“ ohne gebildete Teams gleichmäßig auf', () => {
+    expect(teams({ groupMode: 'custom', groupCount: 2 }).map((t) => t.userIds)).toEqual([['u1', 'u2'], ['u3']])
+  })
+
+  it('hat ohne Studierende keine Teams', () => {
+    expect(teams({ groupMode: 'one', studentIds: [] })).toEqual([])
   })
 })
