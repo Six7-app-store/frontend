@@ -6,7 +6,7 @@
  *
  * Pure presentation — state and actions live in
  * ``useDeploymentResources``; the section only emits ``refresh``,
- * ``open-details`` and ``redeploy``.
+ * ``open-details``, ``redeploy`` and ``reboot``.
  */
 import { RefreshCw } from 'lucide-vue-next'
 import InfrastructureVmCard from '@/components/InfrastructureVmCard.vue'
@@ -24,9 +24,11 @@ defineProps<{
   securityResources: DeploymentResource[]
   /** Addresses with a redeploy task in flight. */
   redeployInFlight: Set<string>
+  /** Addresses with a reboot task in flight. */
+  rebootInFlight: Set<string>
   /** Address of the VM whose detail panel is open, if any. */
   openDrawerAddress: string | null
-  /** Owner or admin — only they may redeploy a VM. */
+  /** Owner or admin — only they may restart or reset a VM. */
   canRedeploy: boolean
 }>()
 
@@ -34,6 +36,7 @@ defineEmits<{
   (e: 'refresh'): void
   (e: 'open-details', address: string): void
   (e: 'redeploy', address: string): void
+  (e: 'reboot', address: string): void
 }>()
 </script>
 
@@ -79,10 +82,12 @@ defineEmits<{
             :key="vm.address"
             :resource="vm"
             :redeploying="redeployInFlight.has(vm.address)"
+            :rebooting="rebootInFlight.has(vm.address)"
             :can-redeploy="canRedeploy"
             :is-expanded="openDrawerAddress === vm.address"
             @open-details="$emit('open-details', $event)"
             @redeploy="$emit('redeploy', $event)"
+            @reboot="$emit('reboot', $event)"
           />
         </div>
       </section>

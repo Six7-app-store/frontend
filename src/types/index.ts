@@ -9,7 +9,7 @@ export type UserRole = 'student' | 'teacher' | 'admin'
 
 export type DeploymentStatus = 'pending' | 'running' | 'success' | 'failed' | 'destroying' | 'destroyed' | 'cancelled' | 'pausing' | 'paused' | 'resuming' | 'pause_failed' | 'resume_failed'
 
-export type TaskType = 'deploy' | 'destroy' | 'update' | 'pause' | 'resume' | 'redeploy'
+export type TaskType = 'deploy' | 'destroy' | 'update' | 'pause' | 'resume' | 'redeploy' | 'reboot'
 
 export type TaskStatus = 'pending' | 'running' | 'success' | 'failed' | 'cancelled'
 

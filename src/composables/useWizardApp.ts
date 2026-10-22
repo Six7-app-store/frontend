@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { appApi } from '@/api/app.api'
 import { useAppCatalog } from '@/composables/useAppCatalog'
+import { useAuthStore } from '@/stores/auth.store'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { versionOptions } from '@/services/app-presentation.service'
 import { deployableApps } from '@/services/wizard-app.service'
@@ -9,18 +10,20 @@ import type { App } from '@/types'
 export type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
 /**
- * State of the wizard's app step: the deployable apps with a search, the
- * chosen app with its newest approved version preselected, and the chosen
- * app's versions to choose from (``loadVersions``, which asks Git, so it runs
- * for the chosen app only).
+ * State of the wizard's app step: the deployable apps with a search (the
+ * approved ones plus the user's own), the chosen app with its newest approved
+ * version preselected — for an own app without approval its newest Git tag —
+ * and the chosen app's versions to choose from (``loadVersions``, which asks
+ * Git, so it runs for the chosen app only).
  */
 export function useWizardApp() {
   const store = useDeploymentStore()
+  const auth = useAuthStore()
   const catalog = useAppCatalog()
 
   const query = ref('')
   const appsState = ref<LoadState>('idle')
-  const apps = computed(() => deployableApps(catalog.apps.value, query.value))
+  const apps = computed(() => deployableApps(catalog.apps.value, query.value, auth.userId))
   const chosen = computed<App | null>(() =>
     catalog.apps.value.find((app) => app.appId === store.draft.appId) ?? null)
 
@@ -59,6 +62,10 @@ export function useWizardApp() {
       if (versionsOf !== appId) return
       versions.value = versionOptions(data.versions)
       versionsState.value = 'ready'
+      // An own app without an approved version has nothing preselected; the
+      // newest tag (the backend sorts newest first) is the obvious choice.
+      const newest = versions.value[0]
+      if (store.draft.appId === appId && !store.draft.releaseTag && newest) chooseVersion(newest)
     } catch {
       if (versionsOf === appId) versionsState.value = 'error'
     }

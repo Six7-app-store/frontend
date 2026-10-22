@@ -5,9 +5,10 @@
  * Renders the Stage-1 data the list endpoint ships: lifecycle state
  * (status + task_state combined into a single pill, fault message as
  * a red banner), hardware compact (flavor + RAM/vCPU/disk + AZ +
- * uptime), IPs per network. Two CTAs at the bottom — "Details"
- * opens the drawer for Stage-2, "Redeploy" prompts for confirmation
- * and dispatches the per-VM redeploy task.
+ * uptime), IPs per network. Three CTAs at the bottom — "Details"
+ * opens the drawer for Stage-2, "Neustart" (hard reboot, keeps disk
+ * and IPs) and "Zurücksetzen" (redeploy, recreates the VM) prompt for
+ * confirmation and dispatch the per-VM task.
  *
  * Visual posture:
  *   * ``drift === 'in_sync'`` → neutral grey border
@@ -22,7 +23,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import type { DeploymentResource } from '@/types'
 import { formatUptime, lifecyclePillClass } from '@/composables/useVmPresentation'
 import { formatMegabytes } from '@/utils/format'
-import { RefreshCcw, AlertTriangle, Cpu, Network } from 'lucide-vue-next'
+import { RefreshCcw, RotateCw, AlertTriangle, Cpu, Network } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -32,7 +33,9 @@ const props = defineProps<{
    *  button shows a spinner and is disabled. Identified by address
    *  because the parent owns the redeploy state, not the card. */
   redeploying?: boolean
-  /** Hides the redeploy button for users who may only inspect. */
+  /** Same for a reboot in flight. Either one disables both actions. */
+  rebooting?: boolean
+  /** Hides the redeploy and reboot buttons for users who may only inspect. */
   canRedeploy?: boolean
   /** Whether the inline detail panel under this card is currently
    *  expanded. Drives the Details button label (``Details`` vs.
@@ -44,7 +47,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'open-details', address: string): void
   (e: 'redeploy', address: string): void
+  (e: 'reboot', address: string): void
 }>()
+
+const busy = computed(() => props.redeploying || props.rebooting)
 
 // --- Lifecycle pill ---
 // Combine ``status`` + ``task_state`` so ``ACTIVE · networking`` (a
@@ -197,7 +203,7 @@ const cardBorderClass = computed(() => {
     </div>
 
     <!-- Footer: actions -->
-    <div class="flex gap-2 mt-1 pt-2 border-t border-subtle">
+    <div class="flex flex-wrap gap-2 mt-1 pt-2 border-t border-subtle">
       <BaseButton
         variant="secondary"
         size="sm"
@@ -207,6 +213,20 @@ const cardBorderClass = computed(() => {
       >
         {{ isExpanded ? t('vm.actions.hideDetails') : t('vm.actions.showDetails') }}
       </BaseButton>
+      <!-- Restarting keeps disk and IPs: the gentle fix for a hung VM. A VM
+           gone from OpenStack has nothing to restart. -->
+      <BaseButton
+        v-if="canRedeploy && resource.drift !== 'missing'"
+        variant="secondary"
+        size="sm"
+        class="flex-1"
+        data-testid="vm-reboot"
+        :disabled="busy"
+        @click="emit('reboot', resource.address)"
+      >
+        <RotateCw :size="12" :class="rebooting ? 'animate-spin' : ''" aria-hidden="true" />
+        {{ rebooting ? t('vm.actions.rebooting') : t('vm.actions.reboot') }}
+      </BaseButton>
       <!-- Recreating a VM is destructive: grey until hovered. Only for a VM
            that is gone from OpenStack is it the one thing to do, so red. -->
       <BaseButton
@@ -214,7 +234,8 @@ const cardBorderClass = computed(() => {
         :variant="resource.drift === 'missing' ? 'primary' : 'danger'"
         size="sm"
         class="flex-1"
-        :disabled="redeploying"
+        data-testid="vm-redeploy"
+        :disabled="busy"
         @click="emit('redeploy', resource.address)"
       >
         <RefreshCcw :size="12" :class="redeploying ? 'animate-spin' : ''" aria-hidden="true" />

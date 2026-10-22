@@ -174,4 +174,20 @@ export const deploymentApi = {
       `/deployments/${deploymentId}/resources/${encodeURIComponent(address)}/redeploy`,
     )
   },
+
+  /**
+   * Hard-reboot a single compute instance (``openstack server reboot
+   * --hard``). Unlike redeploy the VM keeps its disk and IPs; the other
+   * VMs of the deployment are untouched. Spawns a dedicated ``REBOOT``
+   * Celery task the SSE stream picks up like the others.
+   *
+   * Same address whitelist as redeploy (422 / 404); additionally 422
+   * ``resource_without_server_id`` for an instance that never reached
+   * OpenStack. Returns 202 with ``{task_id, status: 'rebooting'}``.
+   */
+  rebootResource: (deploymentId: string, address: string) => {
+    return api.post<{ task_id: string; status: 'rebooting' }>(
+      `/deployments/${deploymentId}/resources/${encodeURIComponent(address)}/reboot`,
+    )
+  },
 }

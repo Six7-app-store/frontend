@@ -56,6 +56,12 @@ describe('resolvePhaseStepLabel', () => {
     expect(resolvePhaseStepLabel(5, { phaseNames: [], activeTaskType: type, totalPhases: 7 })).toBe(fifth)
   })
 
+  it('picks the short reboot table (no clone, no tofu)', () => {
+    expect(labels(5, { phaseNames: [], activeTaskType: 'reboot', totalPhases: 5 })).toEqual([
+      'Starting', 'Openstack Setup', 'Creds Materialise', 'Server Reboot', 'Cleanup',
+    ])
+  })
+
   it('picks the deploy table matching the live total', () => {
     expect(labels(9, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 9 })[4]).toBe('OpenTofu Init')
     expect(labels(9, { phaseNames: [], activeTaskType: 'deploy', totalPhases: 9 })[6]).toBe('OpenTofu Apply')
