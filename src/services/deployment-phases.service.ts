@@ -186,7 +186,8 @@ export interface CurrentPhaseIndexSource {
 
 // 0-based index of the active dot. Prefer the worker's authoritative
 // ``phase_index`` (1-based) from the SSE payload — only fall back to
-// rounding ``progress_pct`` if no progress event has arrived yet.
+// rounding ``progress_pct`` if no progress event has arrived yet. The
+// percent counts finished phases, which is the 0-based index of the active one.
 export function resolveCurrentPhaseIndex(source: CurrentPhaseIndexSource): number {
   if (source.phaseIndex !== null && source.phaseIndex > 0) {
     return source.phaseIndex - 1
@@ -194,17 +195,18 @@ export function resolveCurrentPhaseIndex(source: CurrentPhaseIndexSource): numbe
   if (source.progress === null) return -1
   const total = source.stepCount
   const pct = Math.max(0, Math.min(100, source.progress))
-  return Math.max(0, Math.min(total - 1, Math.round((pct / 100) * total) - 1))
+  return Math.max(0, Math.min(total - 1, Math.round((pct / 100) * total)))
 }
 
 // Approximate the phase index from the persisted percent so the
 // stepper renders meaningfully before the first SSE progress event
-// lands, mirroring the worker's own round(idx/total*100) math.
-// Returns the 1-based index the stream would report.
+// lands, mirroring the worker's own round((idx-1)/total*100) math (the
+// percent counts finished phases). Returns the 1-based index the stream
+// would report.
 export function estimatePhaseIndexFromPercent(progressPct: number, totalPhases: number): number {
   const total = totalPhases || DEFAULT_PHASE_COUNT
   return Math.max(
     1,
-    Math.min(total, Math.round((progressPct / 100) * total)),
+    Math.min(total, Math.round((progressPct / 100) * total) + 1),
   )
 }
