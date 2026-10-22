@@ -94,7 +94,7 @@ describe('resolveCurrentPhaseIndex', () => {
   })
 
   it('derives the index from the clamped percentage', () => {
-    expect(resolveCurrentPhaseIndex({ phaseIndex: null, progress: 45, stepCount: 11 })).toBe(4)
+    expect(resolveCurrentPhaseIndex({ phaseIndex: null, progress: 45, stepCount: 11 })).toBe(5)
     expect(resolveCurrentPhaseIndex({ phaseIndex: null, progress: 0, stepCount: 11 })).toBe(0)
     expect(resolveCurrentPhaseIndex({ phaseIndex: null, progress: 150, stepCount: 11 })).toBe(10)
   })
@@ -102,9 +102,11 @@ describe('resolveCurrentPhaseIndex', () => {
 
 describe('estimatePhaseIndexFromPercent', () => {
   it('rounds the percentage onto a 1-based index within the total', () => {
-    expect(estimatePhaseIndexFromPercent(45, 11)).toBe(5)
+    expect(estimatePhaseIndexFromPercent(45, 11)).toBe(6)
     expect(estimatePhaseIndexFromPercent(0, 11)).toBe(1)
     expect(estimatePhaseIndexFromPercent(100, 7)).toBe(7)
+    // Last of 9 phases running: 8 finished → 89 %, still phase 9.
+    expect(estimatePhaseIndexFromPercent(89, 9)).toBe(9)
   })
 
   it('uses the default total when none is known', () => {

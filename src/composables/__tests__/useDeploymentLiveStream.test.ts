@@ -63,14 +63,15 @@ describe('useDeploymentLiveStream', () => {
   })
 
   it('starts immediately for a live active task and seeds progress from the DB', () => {
-    const { api } = setup({ task: task({ progress_pct: 45, current_phase: 'TOFU_PLAN' }) })
+    // TOFU_PLAN is phase 6 of 9 → 5 finished → 56 %.
+    const { api } = setup({ task: task({ progress_pct: 56, current_phase: 'TOFU_PLAN' }) })
 
     expect(api.isStreamRelevant.value).toBe(true)
     expect(stream.start).toHaveBeenCalledTimes(1)
-    expect(api.progress.value).toBe(45)
+    expect(api.progress.value).toBe(56)
     expect(api.currentPhase.value).toBe('TOFU_PLAN')
-    expect(api.currentPhaseIndex.value).toBe(4)
-    expect(api.activeStepIndex.value).toBe(3)
+    expect(api.currentPhaseIndex.value).toBe(6)
+    expect(api.activeStepIndex.value).toBe(5)
     expect(api.phaseStepCount.value).toBe(9)
     expect(api.phaseStepLabel(5)).toBe('OpenTofu Plan')
   })
