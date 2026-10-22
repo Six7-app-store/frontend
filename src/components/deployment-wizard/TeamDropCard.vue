@@ -39,6 +39,7 @@ const { t } = useI18n()
       <input
         type="text"
         v-model="name"
+        :aria-label="t('deployment.wizard.teams.nameLabel', { index: index + 1 })"
         :placeholder="t('deployment.assignment.vmDefaultName', { index: index + 1 })"
         class="field w-full px-3 py-2 text-center font-semibold"
       />

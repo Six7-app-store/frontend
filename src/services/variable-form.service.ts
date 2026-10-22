@@ -294,3 +294,70 @@ export function dropStaleSlots(
   }
   return dropped
 }
+
+/** A file variable's scope, from its ``@openstack:file:<scope>`` marker. */
+export const fileScope = (v: AppVariable): 'all' | 'team' | 'user' => v.osScope || 'all'
+
+/** The slots of a file variable: ``all``, one per team, or one per person. */
+export function fileSlotsFor(v: AppVariable, teams: WizardTeam[]): string[] {
+  const scope = fileScope(v)
+  if (scope === 'team') return teams.map((t) => t.name)
+  if (scope === 'user') return teams.flatMap((t) => t.members.map((m) => userSlotKey(t.name, m.username)))
+  return ['all']
+}
+
+type Uploads = Record<string, Record<string, unknown>> | undefined
+
+/** Slots of required file variables that hold no file yet, as ``{ variable, slot }``. */
+export function missingFiles(
+  definitions: AppVariable[],
+  uploads: Uploads,
+  teams: WizardTeam[],
+): Array<{ variable: string; slot: string }> {
+  const missing: Array<{ variable: string; slot: string }> = []
+  for (const v of definitions) {
+    if (!isFileVariable(v) || !v.required) continue
+    for (const slot of fileSlotsFor(v, teams)) {
+      if (!uploads?.[v.name]?.[slot]) missing.push({ variable: v.name, slot })
+    }
+  }
+  return missing
+}
+
+/**
+ * ``uploads`` without slots whose team or person is gone (the split or the
+ * people changed after the files were chosen) — the backend would reject
+ * them as unknown targets. Returns a new map.
+ */
+export function withoutStaleFileSlots<T>(
+  definitions: AppVariable[],
+  uploads: Record<string, Record<string, T>> | undefined,
+  teams: WizardTeam[],
+): Record<string, Record<string, T>> {
+  const out: Record<string, Record<string, T>> = {}
+  for (const v of definitions) {
+    if (!isFileVariable(v)) continue
+    const slots = uploads?.[v.name]
+    if (!slots) continue
+    const valid = new Set(fileSlotsFor(v, teams))
+    const kept = Object.fromEntries(Object.entries(slots).filter(([slot]) => valid.has(slot)))
+    if (Object.keys(kept).length > 0) out[v.name] = kept
+  }
+  return out
+}
+
+/**
+ * The start step's three groups of variables: what has no default and must
+ * be filled in, the files, and everything with a default (under "Erweitert").
+ */
+export function startSections(definitions: AppVariable[]): {
+  required: AppVariable[]
+  files: AppVariable[]
+  advanced: AppVariable[]
+} {
+  return {
+    required: definitions.filter((v) => !isFileVariable(v) && v.required),
+    files: definitions.filter(isFileVariable),
+    advanced: definitions.filter((v) => !isFileVariable(v) && !v.required),
+  }
+}

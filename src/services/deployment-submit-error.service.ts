@@ -6,6 +6,15 @@ import { getErrorDetail } from '@/utils/http-error'
 
 export type Translate = (key: string, params?: Record<string, unknown>) => string
 
+/** ``[{variable, slot?}]`` from the backend as ``task (Team-1-mika), login``. */
+function missingItems(missing: unknown): string {
+  if (!Array.isArray(missing)) return ''
+  return missing
+    .map((m: { variable?: string; slot?: string }) => (m?.slot ? `${m.variable} (${m.slot})` : String(m?.variable ?? '')))
+    .filter(Boolean)
+    .join(', ')
+}
+
 /**
  * The backend reports file problems with 413/422 and a structured detail:
  * ``{ reason, variable, slot, filename?, limit_bytes?, actual_bytes?, allowed? }``.
@@ -19,6 +28,9 @@ export function formatSubmitError(err: unknown, t: Translate): string {
     ?? (err as { message?: string } | null)?.message
     ?? t('deployment.summary.submitError')
 
+  if (detail && typeof detail === 'object' && detail.code === 'version_not_approved') {
+    return t('deployment.summary.errors.versionNotApproved')
+  }
   if (!detail || typeof detail !== 'object' || !detail.reason) return fallback
 
   // Prefer the file name; older backends only send "<variable>/<slot>".
@@ -43,6 +55,14 @@ export function formatSubmitError(err: unknown, t: Translate): string {
       return t('deployment.summary.errors.fileB64Invalid', { filename })
     case 'file_size_mismatch':
       return t('deployment.summary.errors.fileSizeMismatch', { filename })
+    case 'version_required':
+      return t('deployment.summary.errors.versionRequired')
+    case 'required_missing':
+      return t('deployment.summary.errors.requiredMissing', { items: missingItems(detail.missing) })
+    case 'required_slot_empty':
+      return t('deployment.summary.errors.requiredMissing', {
+        items: missingItems((detail.missing_slots ?? []).map((slot: string) => ({ variable: detail.variable, slot }))),
+      })
     default:
       return fallback
   }

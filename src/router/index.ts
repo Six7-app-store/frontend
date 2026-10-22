@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router";
-import { useDeploymentStore } from '@/stores/deployment.store'
 import { useToast } from '@/composables/useToast'
 import i18n from '@/i18n'
 import CoursesView from "@/views/CoursesView.vue";
@@ -16,62 +15,19 @@ import AddAppsView from "@/views/AddAppsView.vue";
 import { useAuthStore } from '@/stores/auth.store'
 import type { UserRole } from '@/types'
 import { ROUTE_NAMES } from '@/router/route-names'
-import NewDeploymentConfigView from '@/views/NewDeploymentConfigView.vue';
-import NewDeploymentSummaryView from '@/views/NewDeploymentSummaryView.vue';
-import NewDeploymentVariableView from '@/views/NewDeploymentVariableView.vue';
 import AppsDetailView from "@/views/AppsDetailView.vue";
-import NewDeploymentGroupsAssignmentView from '@/views/NewDeploymentGroupsAssignmentView.vue'
-
-
-/**
- * Guard for the wizard steps. Prevents deep-links that skip the wizard state
- * model (e.g. ``/deployment/new/summary`` without an app selected). When fields
- * are missing, the guard redirects to the matching earlier step.
- *
- * Accepted fields:
- *  - ``appId``      → present = string, otherwise back to the apps overview
- *  - ``name``       → non-empty string
- *  - ``studentIds`` → at least 1 entry
- */
-type WizardField = 'appId' | 'name' | 'studentIds'
+import NewDeploymentView from '@/views/NewDeploymentView.vue'
+import { wizardGuard } from '@/router/wizard-guard'
 
 // Who may open staff pages (courses, the deployment wizard, LTI mapping).
 const STAFF_ROLES: UserRole[] = ['teacher', 'admin']
 const ADMIN_ROLES: UserRole[] = ['admin']
-
-function requireWizardStep(required: WizardField[]) {
-  return () => {
-    const draft = useDeploymentStore().draft
-    for (const field of required) {
-      const val = (draft as any)[field]
-      if (field === 'studentIds') {
-        if (!Array.isArray(val) || val.length === 0) {
-          // No students, nothing to do → step 1.
-          return { name: ROUTE_NAMES.deploymentConfig }
-        }
-      } else if (field === 'appId') {
-        if (!val) {
-          // No app, no wizard entry point → back to the apps list.
-          return { name: ROUTE_NAMES.apps }
-        }
-      } else if (typeof val !== 'string' || val.trim() === '') {
-        return { name: ROUTE_NAMES.deploymentConfig }
-      }
-    }
-    return true
-  }
-}
-
-// Steps 2–4 of the deployment wizard need step 1 (app + name + at least one
-// student); deep-links into a later step redirect to the matching earlier one.
-const requireWizardBasics = requireWizardStep(['appId', 'name', 'studentIds'])
 
 // Creating a deployment is staff work — the backend rejects a student on
 // POST /deployments with ``role_required``. The role gate only keeps a
 // deep-linked student out of a wizard that could never finish; it is not
 // the protection itself.
 const wizardMeta = () => ({ requiresAuth: true, layout: 'app', requiresRole: STAFF_ROLES })
-
 
 // Route table — the single place that defines paths, names, layouts, role
 // requirements and the nav section of a route (``meta.titleKey``). Exported so layouts and tests can rely
@@ -243,31 +199,11 @@ export const routes: RouteRecordRaw[] = [
     meta: { layout: "app", requiresAuth: true },
   },
   {
-    path: '/deployment/new/config',
-    name: ROUTE_NAMES.deploymentConfig,
-    component: NewDeploymentConfigView,
+    path: '/deployment/new/:step(app|target|start)?',
+    name: ROUTE_NAMES.deploymentNew,
+    component: NewDeploymentView,
     meta: wizardMeta(),
-  },
-  {
-    path: '/deployment/new/teams',
-    name: ROUTE_NAMES.deploymentTeams,
-    component: NewDeploymentGroupsAssignmentView,
-    meta: wizardMeta(),
-    beforeEnter: requireWizardBasics,
-  },
-  {
-    path: '/deployment/new/variables',
-    name: ROUTE_NAMES.deploymentVariables,
-    component: NewDeploymentVariableView,
-    meta: wizardMeta(),
-    beforeEnter: requireWizardBasics,
-  },
-  {
-    path: '/deployment/new/summary',
-    name: ROUTE_NAMES.deploymentSummary,
-    component: NewDeploymentSummaryView,
-    meta: wizardMeta(),
-    beforeEnter: requireWizardBasics,
+    beforeEnter: wizardGuard,
   },
   {
     path: '/admin/apps',

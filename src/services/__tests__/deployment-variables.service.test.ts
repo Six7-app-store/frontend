@@ -4,6 +4,7 @@ import {
   effectiveVariableScope,
   variableScopeLabelKey,
   variableDisplayDescription,
+  variableLabel,
 } from '@/services/deployment-variables.service'
 import type { AppVariable } from '@/types'
 
@@ -40,5 +41,23 @@ describe('variableScopeLabelKey', () => {
     [undefined, null],
   ] as const)('liefert für %s den Badge-Text %s', (scope, key) => {
     expect(variableScopeLabelKey(scope)).toBe(key)
+  })
+})
+
+describe('variableLabel', () => {
+  const v = (over: Partial<AppVariable>) => ({ name: 'vm_flavor', type: 'string', ...over }) as AppVariable
+
+  it('nennt OpenStack-Ressourcen beim Klartext-Namen', () => {
+    expect(variableLabel(v({ osType: 'flavor' }))).toEqual({ key: 'deployment.wizard.labels.flavor' })
+  })
+
+  it('nimmt sonst den ersten Satz der Beschreibung ohne Marker', () => {
+    expect(variableLabel(v({ description: 'Anzahl der Kerne. Mehr kostet mehr. @openstack:scope:team' })))
+      .toEqual({ text: 'Anzahl der Kerne' })
+  })
+
+  it('fällt bei langer oder fehlender Beschreibung auf den Namen mit Leerzeichen zurück', () => {
+    expect(variableLabel(v({ description: 'x'.repeat(80) }))).toEqual({ text: 'Vm flavor' })
+    expect(variableLabel(v({}))).toEqual({ text: 'Vm flavor' })
   })
 })

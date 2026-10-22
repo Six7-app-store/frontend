@@ -132,10 +132,9 @@ const studentStateTone = (status: string | null | undefined): StatusTone =>
       :subtitle="isStudent ? $t('DeploymentsView.subtitleStudent') : $t('DeploymentsView.subtitle')"
     >
       <template #actions>
-        <!-- Staff only. A student clicking this would walk into the wizard
-             and hit a 403 on the final POST. Hidden on an empty list, where
-             the empty state already carries the same button. -->
-        <RouterLink v-if="isStaff && !isEmpty" :to="{ name: ROUTE_NAMES.apps }" class="btn btn-primary">
+        <!-- Staff only; a student may not create deployments. Hidden on an
+             empty list, where the empty state already carries the same button. -->
+        <RouterLink v-if="isStaff && !isEmpty" :to="{ name: ROUTE_NAMES.deploymentNew }" class="btn btn-primary" data-testid="btn-new-deployment">
           <Plus :size="16" :stroke-width="2.2" aria-hidden="true" />
           {{ $t('DeploymentsView.newDeployment') }}
         </RouterLink>
@@ -151,7 +150,7 @@ const studentStateTone = (status: string | null | undefined): StatusTone =>
         : $t('DeploymentsView.deploymentsMissingMessage')"
     >
       <template #empty-action>
-        <RouterLink v-if="isStaff" :to="{ name: ROUTE_NAMES.apps }" class="btn btn-primary">
+        <RouterLink v-if="isStaff" :to="{ name: ROUTE_NAMES.deploymentNew }" class="btn btn-primary" data-testid="btn-new-deployment-empty">
           <Plus :size="16" :stroke-width="2.2" aria-hidden="true" />
           {{ $t('DeploymentsView.newDeployment') }}
         </RouterLink>

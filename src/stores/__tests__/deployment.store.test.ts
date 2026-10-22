@@ -75,7 +75,7 @@ describe('DeploymentStore request actions', () => {
   describe('submitDraft payload', () => {
     const submit = async (draft: Record<string, unknown>) => {
       const store = useDeploymentStore()
-      Object.assign(store.draft, { appId: 'app-1', name: 'Lab', ...draft })
+      Object.assign(store.draft, { appId: 'app-1', name: 'Lab', releaseTag: 'v1', ...draft })
       deploymentApi.create.mockResolvedValueOnce({ data: { deploymentId: 'd-new' } })
       await store.submitDraft()
       return deploymentApi.create.mock.calls[0]![0]
@@ -87,9 +87,15 @@ describe('DeploymentStore request actions', () => {
       expect(deploymentApi.create).not.toHaveBeenCalled()
     })
 
+    it('refuses a draft without a version instead of guessing one', async () => {
+      const store = useDeploymentStore()
+      Object.assign(store.draft, { appId: 'app-1', name: 'Lab', releaseTag: '' })
+      await expect(store.submitDraft()).rejects.toThrow()
+      expect(deploymentApi.create).not.toHaveBeenCalled()
+    })
+
     it.each([
       ['v1.2.0', 'v1.2.0'],
-      ['', 'latest'],
       [{ version: 'v2', name: 'x' }, 'v2'],
       [{ name: 'v3' }, 'v3'],
     ])('sends release tag %j as %s', async (releaseTag, expected) => {
@@ -100,6 +106,8 @@ describe('DeploymentStore request actions', () => {
     it('sends the named teams with their assignments', async () => {
       const payload = await submit({
         studentIds: ['u1', 'u2', 'u3'],
+        groupMode: 'custom',
+        groupCount: 2,
         groupNames: ['Rot', 'Blau'],
         assignments: [['u1', 'u3'], ['u2']],
       })
@@ -112,6 +120,7 @@ describe('DeploymentStore request actions', () => {
     it('splits the students evenly into Team-n when no teams are named', async () => {
       const payload = await submit({
         studentIds: ['u1', 'u2', 'u3', 'u4', 'u5'],
+        groupMode: 'custom',
         groupNames: [],
         groupCount: 2,
       })

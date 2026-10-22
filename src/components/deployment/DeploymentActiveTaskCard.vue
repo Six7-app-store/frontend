@@ -2,12 +2,15 @@
 /**
  * Live card for the currently running task on the deployment detail page:
  * task type, start time and stream connection badge, progress headline,
- * phase stepper and the live log tail.
+ * phase stepper, a note that the page may be closed, and the live log
+ * tail — collapsed, because most people only need the progress.
  *
  * Pure presentation — all values come from ``useDeploymentLiveStream``,
  * whose ``live`` object is passed in as one prop.
  */
-import { Loader2 } from 'lucide-vue-next'
+import { ref, useId } from 'vue'
+import { ChevronDown, Loader2 } from 'lucide-vue-next'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import { formatDateTime } from '@/utils/format'
 import { phaseLabel } from '@/services/deployment-phases.service'
 import type { LiveTaskView } from '@/composables/useDeploymentLiveStream'
@@ -17,6 +20,9 @@ defineProps<{
   activeTask: Task
   live: LiveTaskView
 }>()
+
+const showLog = ref(false)
+const logId = useId()
 </script>
 
 <template>
@@ -110,11 +116,29 @@ defineProps<{
         </div>
       </template>
 
+      <p class="rounded-md border border-subtle bg-line/[.04] px-3.5 py-3 text-base text-fg-body" data-testid="close-note">
+        {{ $t('DeploymentDetailView.closeNote') }}
+        <template v-if="activeTask.type === 'deploy'"> {{ $t('DeploymentDetailView.closeNoteMail') }}</template>
+      </p>
+
+      <BaseButton
+        variant="secondary"
+        size="sm"
+        :aria-expanded="showLog"
+        :aria-controls="logId"
+        data-testid="btn-live-log"
+        @click="showLog = !showLog"
+      >
+        {{ showLog ? $t('DeploymentDetailView.hideLiveLog') : $t('DeploymentDetailView.showLiveLog') }}
+        <ChevronDown :size="16" class="text-icon transition-transform" :class="{ 'rotate-180': showLog }" aria-hidden="true" />
+      </BaseButton>
+
       <!-- Live log tail. ``live.totalLogCount`` keeps
                      growing past the visible buffer (capped at 100
                      lines via the ring buffer in the composable),
                      so the user sees that the worker is still
                      producing output even after the box is full. -->
+      <div v-show="showLog" :id="logId" data-testid="live-log">
       <div v-if="live.logs.length > 0" class="space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold text-fg-muted">{{ $t('DeploymentDetailView.liveOutput') }}</span>
@@ -141,6 +165,7 @@ defineProps<{
       </div>
       <div v-else class="bg-line/[.04] border border-subtle rounded-md p-4 text-center text-xs text-fg-muted">
         {{ $t('DeploymentDetailView.waitingForLogs') }}
+      </div>
       </div>
     </div>
   </div>

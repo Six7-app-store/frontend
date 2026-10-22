@@ -92,10 +92,15 @@ export interface App {
   // Data-URL ("data:image/png;base64,...") or null when the app
   // has no logo. Goes straight into ``<img :src=...>``.
   image?: string | null
+  // Newest approved version tag, null while none is approved. Lets the
+  // wizard preselect a version without asking Git.
+  latestApprovedVersion?: string | null
 }
 
 export interface AppWithUser extends App {
   user: User
+  // Git tags, newest first; non-owners only get the approved ones.
+  versions?: Array<string | Record<string, any>>
 }
 
 export interface AppCreate {
@@ -472,12 +477,27 @@ export interface AppDefinition extends App {
 // Wizard state (the "cart" before submission).
 export type GroupMode = 'one' | 'eachUser' | 'custom'
 
+/**
+ * Where the wizard was opened: ``catalog`` ("Neues Deployment", starts with
+ * the app step) or ``app`` (an app page, app and version already chosen).
+ */
+export type WizardEntry = 'catalog' | 'app'
+
 export interface DeploymentDraft {
+  entry: WizardEntry
+
   // Step 1: app selection
   appId: string | null
+  // The app's name, kept so the later steps and a reload need no lookup.
+  appName: string
 
   // Step 2: base configuration
   name: string
+  // True once the user typed a name; until then the wizard keeps
+  // suggesting "<App> – <Kurs> – <Datum>".
+  nameEdited?: boolean
+  // Who it is for, as the summary shows it: the course name or "3 Personen".
+  targetLabel?: string
   courseIds: string[]    // multiple courses possible
   studentIds: string[]   // selected student IDs
 
@@ -491,7 +511,6 @@ export interface DeploymentDraft {
   assignments: Record<number, string[]>
   releaseTag: string
   variables: Record<string, any> // parsed/merged variables
-  version: string
   groupNames: string[]
   variableDefinitions?: AppVariable[] // API definitions for the variables
   // Wizard-side state for ``@openstack:file:<scope>``-marked variables.
@@ -499,16 +518,11 @@ export interface DeploymentDraft {
   // team name, or ``Team-User`` composite). Flushed verbatim into
   // ``DeploymentCreate.files`` on submit.
   fileUploads?: Record<string, Record<string, DeploymentFile>>
+  // Set when a reload restored the draft without its files because they did
+  // not fit into sessionStorage; the start step asks for them again.
+  filesLost?: boolean
 }
 
-// Helper type for the final summary.
-export interface WizardSummary {
-  appName: string
-  deploymentName: string
-  totalStudents: number
-  totalGroups: number
-  config: AppUIConfig | undefined
-}
 
 export interface AppVariable {
   name: string

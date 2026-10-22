@@ -68,7 +68,7 @@ src/
 | `composables/useRouteAccess.ts` | Prüft anhand der Routentabelle, ob die aktuelle Rolle eine Seite öffnen darf (z.B. um Menüpunkte auszublenden) |
 | `utils/http-error.ts` | Einzige Stelle, an der fehlgeschlagene Backend-Aufrufe ausgelesen werden (siehe [Fehlerbehandlung](#fehlerbehandlung)) |
 
-**views/** — Kern ist der mehrstufige Deployment-Wizard (`NewDeploymentConfigView` → `…GroupsAssignmentView` → `…VariableView` → `…SummaryView`), dazu App-Katalog (`AppsView`/`AppsDetailView`), Deployments (`DeploymentsView`/`DeploymentDetailView`), Kurse, Dashboard und Settings.
+**views/** — Kern ist der Deployment-Wizard `NewDeploymentView` (`/deployment/new/:step`, Schritte App → Für wen? → Aufgabe & Start; von der App-Seite aus nur die letzten beiden). Die Schritte liegen in `components/deployment-wizard/`, Navigation und Draft in `composables/useDeploymentWizard.ts`. Dazu App-Katalog (`AppsView`/`AppsDetailView`), Deployments (`DeploymentsView`/`DeploymentDetailView`), Kurse, Dashboard und Settings.
 
 **Deployment-Detailseite** — `DeploymentDetailView` setzt die Seite nur noch zusammen: Die Bereiche sind Komponenten in `components/deployment/` (Header, Karten, Live-Task, Teams, Infrastruktur, Task-Historie, Dialoge), der Zustand liegt in `composables/useDeployment*` (Tasks, Live-Stream, Zugangsdaten, Ressourcen, Lifecycle) und die reine Fachlogik in `services/deployment-*.service.ts`. Das Verhalten der Seite ist durch `tests/unit/views/DeploymentDetailView.characterization.spec.ts` (inkl. DOM-Snapshots) abgesichert.
 

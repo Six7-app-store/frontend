@@ -105,6 +105,7 @@ export default {
         reading: 'var(--reading-max)',
         lead: 'var(--lead-max)',
         content: 'var(--content-max)',
+        wizard: 'var(--wizard-max)',
       },
       width: {
         sidebar: 'var(--sidebar-w)',

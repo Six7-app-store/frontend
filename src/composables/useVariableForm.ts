@@ -33,6 +33,7 @@ export function useVariableForm() {
   const teams = useWizardTeams()
 
   const isLoading = ref(false)
+  const loadFailed = ref(false)
   const variables = ref<AppVariable[]>([])
   const values = ref<FormValues>({})
 
@@ -62,10 +63,14 @@ export function useVariableForm() {
    */
   const load = async () => {
     const draft = deploymentStore.draft
+    loadFailed.value = false
     if (draft.variableDefinitions && draft.variableDefinitions.length > 0) {
       variables.value = draft.variableDefinitions
       values.value = hydrateFromDraft(variables.value, (draft.variables || {}) as Record<string, any>,
         teams.value)
+      // Teams may have changed since the values were entered; their old
+      // slots would be rejected as unknown targets.
+      dropStaleSlots(variables.value, values.value, teams.value)
       return
     }
 
@@ -92,6 +97,7 @@ export function useVariableForm() {
       values.value = hydrateFromInput(variables.value, saved, teams.value)
     } catch (error) {
       console.error(error)
+      loadFailed.value = true
       toast.error(t('deployment.summary.fetchVarsError'))
     } finally {
       isLoading.value = false
@@ -132,7 +138,10 @@ export function useVariableForm() {
     const uploads = (draft.fileUploads ??= {})
     const slots = (uploads[varName] ??= {})
     if (file === null) delete slots[slot]
-    else slots[slot] = file
+    else {
+      slots[slot] = file
+      draft.filesLost = false
+    }
   }
 
   /** The chosen network (id mode) that limits a subnet picker, if any. */
@@ -154,6 +163,7 @@ export function useVariableForm() {
   return {
     teams,
     isLoading,
+    loadFailed,
     variables,
     values,
     slotKeysFor,
