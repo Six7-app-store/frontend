@@ -1192,7 +1192,7 @@ describe('DeploymentDetailView — Live-Stream', () => {
       tf_state: null,
       outputs: null,
       current_phase: 'TOFU_PLAN',
-      progress_pct: 45,
+      progress_pct: 56, // TOFU_PLAN = phase 6 of 9, 5 finished
       created_at: '2026-06-08T12:59:00Z',
       ...overrides,
     })
@@ -1210,16 +1210,16 @@ describe('DeploymentDetailView — Live-Stream', () => {
     const wrapper = await mountLoaded()
 
     expect(h.startStream).toHaveBeenCalledTimes(1)
-    expect(stream.progress.value).toBe(45)
+    expect(stream.progress.value).toBe(56)
     expect(stream.currentPhase.value).toBe('TOFU_PLAN')
-    expect(stream.currentPhaseIndex.value).toBe(4)
+    expect(stream.currentPhaseIndex.value).toBe(6)
 
     const text = wrapper.text()
     expect(text).toContain(t('DeploymentDetailView.runningSince', { time: '08.06.2026, 13:00:00' }))
     expect(text).toContain('task-run')
     expect(text).toContain(t('DeploymentDetailView.streamState.idle'))
     expect(text).toContain('OpenTofu Plan')
-    expect(text).toMatch(/45\s*%/)
+    expect(text).toMatch(/56\s*%/)
     expect(stepLabels(wrapper)).toEqual([
       'Starting', 'Openstack Setup', 'Git Clone', 'Creds Materialise',
       'OpenTofu Init', 'OpenTofu Plan', 'OpenTofu Apply', 'Outputs And Cleanup', 'VM Setup',
