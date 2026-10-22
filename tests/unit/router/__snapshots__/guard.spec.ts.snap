@@ -204,17 +204,6 @@ exports[`Routentabelle (Charakterisierung) > bleibt in Name, Pfad, Meta und Guar
     "meta": {
       "layout": "app",
       "requiresAuth": true,
-      "titleKey": "nav.myAccess",
-    },
-    "name": "my-access",
-    "path": "/my-access",
-  },
-  {
-    "children": undefined,
-    "guarded": false,
-    "meta": {
-      "layout": "app",
-      "requiresAuth": true,
     },
     "name": "user",
     "path": "/user",

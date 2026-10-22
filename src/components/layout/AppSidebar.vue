@@ -9,7 +9,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { BarChart3, GraduationCap, HelpCircle, KeyRound, Layers, LayoutDashboard, Palette, ShieldCheck } from 'lucide-vue-next'
+import { BarChart3, GraduationCap, HelpCircle, Layers, LayoutDashboard, Palette, ShieldCheck } from 'lucide-vue-next'
 import { useRole } from '@/composables/useRole'
 import { useRouteAccess } from '@/composables/useRouteAccess'
 import { useBranding } from '@/composables/useBranding'
@@ -39,7 +39,6 @@ const mainItems = computed(() =>
       labelKey: isStudent.value ? 'nav.environments' : 'nav.deployments',
       icon: BarChart3,
     },
-    { to: { name: ROUTE_NAMES.myAccess }, labelKey: 'nav.myAccess', icon: KeyRound },
     { to: { name: ROUTE_NAMES.apps }, labelKey: 'nav.apps', icon: Layers },
     { to: { name: ROUTE_NAMES.courses }, labelKey: 'nav.courses', icon: GraduationCap },
   ]),

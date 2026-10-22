@@ -34,7 +34,6 @@ describe('Routentabelle', () => {
     ['/apps/app-1/versions', ROUTE_NAMES.appsDetail],
     ['/apps/app-1/settings', ROUTE_NAMES.appsDetail],
     ['/deployments/dep-1', ROUTE_NAMES.deploymentsDetail],
-    ['/my-access', ROUTE_NAMES.myAccess],
     ['/forbidden', ROUTE_NAMES.forbidden],
   ])('lässt die bekannte URL %s unverändert', (path, name) => {
     expect(router().resolve(path).name).toBe(name)
