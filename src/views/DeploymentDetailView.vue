@@ -17,6 +17,7 @@ import DeploymentInfrastructureSection from '@/components/deployment/DeploymentI
 import DeploymentTaskHistory from '@/components/deployment/DeploymentTaskHistory.vue'
 import DeploymentDeleteModal from '@/components/deployment/DeploymentDeleteModal.vue'
 import DeploymentRedeployModal from '@/components/deployment/DeploymentRedeployModal.vue'
+import DeploymentRebootModal from '@/components/deployment/DeploymentRebootModal.vue'
 import DeploymentPauseResumeModal from '@/components/deployment/DeploymentPauseResumeModal.vue'
 import { provideCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useDeploymentOwnerView } from '@/composables/useDeploymentOwnerView'
@@ -75,10 +76,10 @@ const {
 const { enrichedTeams, loadMyAccess } = useDeploymentCredentials(deploymentId, deployment, latestTaskOutputs)
 
 // ----------------------------------------------------------------
-// INFRASTRUCTURE TAB — Stage-1 list + Stage-2 drawer + redeploy
+// INFRASTRUCTURE TAB — Stage-1 list + Stage-2 drawer + redeploy/reboot
 // ----------------------------------------------------------------
 //
-// Resource list, VM drawer and the per-VM redeploy flow live in
+// Resource list, VM drawer and the per-VM redeploy/reboot flows live in
 // ``useDeploymentResources``.
 const {
     resourcesLoading,
@@ -99,6 +100,11 @@ const {
     closeVmDrawer,
     redeployVm,
     confirmRedeploy,
+    rebootInFlight,
+    showRebootModal,
+    rebootTargetAddress,
+    rebootVm,
+    confirmReboot,
 } = useDeploymentResources({
     deploymentId,
     isOwnerView,
@@ -151,11 +157,12 @@ const {
         // logs/outputs land in the static rendering below.
         loadTasks()
         // A redeploy task that just finished produces a new TF
-        // state — reload the resource list so the redrawn card
-        // reflects post-apply lifecycle. We also clear the
-        // in-flight set; whichever address was waiting on this
+        // state, a reboot a new power state — reload the resource
+        // list so the redrawn card reflects it. We also clear the
+        // in-flight sets; whichever address was waiting on this
         // task is now in the freshly-fetched list.
         redeployInFlight.value.clear()
+        rebootInFlight.value.clear()
         loadResources()
     },
 })
@@ -287,11 +294,13 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             :network-resources="networkResources"
             :security-resources="securityResources"
             :redeploy-in-flight="redeployInFlight"
+            :reboot-in-flight="rebootInFlight"
             :open-drawer-address="openDrawerAddress"
             :can-redeploy="canOperate"
             @refresh="loadResources()"
             @open-details="openVmDrawer"
             @redeploy="redeployVm"
+            @reboot="rebootVm"
         />
 
         <!-- Tasks / Logs Section — history of finished tasks. The active
@@ -356,6 +365,14 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
             :address="redeployTargetAddress"
             @close="showRedeployModal = false"
             @confirm="confirmRedeploy"
+        />
+
+        <!-- Reboot Confirmation Modal — same shape as Redeploy. -->
+        <DeploymentRebootModal
+            :show="showRebootModal"
+            :address="rebootTargetAddress"
+            @close="showRebootModal = false"
+            @confirm="confirmReboot"
         />
 
         <!-- Pause / Resume confirm. Same pattern as Delete: a tiny

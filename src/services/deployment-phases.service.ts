@@ -84,6 +84,16 @@ const PHASE_LABELS_REDEPLOY = [
   'CLEANUP',
 ] as const
 
+// Per-VM reboot needs no repo and no tofu — the backend hands over the
+// server id. Mirrors ``worker/app/tasks.py:_PHASES_REBOOT``.
+const PHASE_LABELS_REBOOT = [
+  'STARTING',
+  'OPENSTACK_SETUP',
+  'CREDS_MATERIALISE',
+  'SERVER_REBOOT',
+  'CLEANUP',
+] as const
+
 // Stepper labels: the worker sends the full phase sequence as ``phase_names``
 // with every progress event — the authoritative source. Before the first
 // progress event, we fall back to the static tables above.
@@ -121,7 +131,7 @@ export interface PhaseStepLabelSource {
 // Return the label for a given 0-based index. Order of precedence:
 //   1. ``phaseNames`` (stream) — authoritative, ships from the worker on
 //      every progress event for every real task (deploy / destroy /
-//      pause / resume / redeploy).
+//      pause / resume / redeploy / reboot).
 //   2. Static table picked by ``activeTask.type`` — used in the brief
 //      window between page-load and the first progress event.
 //   3. Numeric slot index — empty-slot guard so the stepper height
@@ -145,6 +155,8 @@ export function resolvePhaseStepLabel(idx: number, source: PhaseStepLabelSource)
     table = PHASE_LABELS_DESTROY
   } else if (activeType === 'redeploy') {
     table = PHASE_LABELS_REDEPLOY
+  } else if (activeType === 'reboot') {
+    table = PHASE_LABELS_REBOOT
   } else if (activeType === 'deploy' && source.totalPhases === PHASE_LABELS_DEPLOY.length) {
     // Only when the live total fits; otherwise length matching below or
     // numbered slots, until ``phase_names`` arrives.

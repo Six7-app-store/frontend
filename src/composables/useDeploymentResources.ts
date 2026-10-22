@@ -9,15 +9,19 @@ export interface DeploymentResourcesOptions {
   deploymentId: string
   isOwnerView: Ref<boolean>
   /**
-   * Called once a redeploy task was dispatched — the place to refresh the
-   * task list so the new task drives the live-progress card.
+   * Called once a redeploy or reboot task was dispatched — the place to
+   * refresh the task list so the new task drives the live-progress card.
    */
   onRedeployStarted: () => Promise<unknown> | void
 }
 
+/** Per-VM action: ``redeploy`` recreates the VM (UI: "Zurücksetzen"),
+ *  ``reboot`` hard-reboots it and keeps disk and IPs (UI: "Neustart"). */
+export type VmAction = 'redeploy' | 'reboot'
+
 /**
  * INFRASTRUCTURE TAB of the deployment detail page — Stage-1 list +
- * Stage-2 drawer + per-VM redeploy.
+ * Stage-2 drawer + per-VM redeploy and reboot.
  *
  * State for the resource panel sits on the page (not in a Pinia
  * store) because it's strictly per-deployment and we want it to
@@ -52,6 +56,30 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
   // modal is open.
   const showRedeployModal = ref(false)
   const redeployTargetAddress = ref<string | null>(null)
+  // Same pair for the per-VM reboot.
+  const rebootInFlight = ref<Set<string>>(new Set())
+  const showRebootModal = ref(false)
+  const rebootTargetAddress = ref<string | null>(null)
+
+  // Per-action wiring of the shared confirm → dispatch flow below.
+  const vmActions = {
+    redeploy: {
+      inFlight: redeployInFlight,
+      showModal: showRedeployModal,
+      target: redeployTargetAddress,
+      dispatch: (address: string) => deploymentApi.redeployResource(deploymentId, address),
+      startedKey: 'DeploymentDetailView.redeployStarted',
+      errorKey: 'DeploymentDetailView.redeployError',
+    },
+    reboot: {
+      inFlight: rebootInFlight,
+      showModal: showRebootModal,
+      target: rebootTargetAddress,
+      dispatch: (address: string) => deploymentApi.rebootResource(deploymentId, address),
+      startedKey: 'DeploymentDetailView.rebootStarted',
+      errorKey: 'DeploymentDetailView.rebootError',
+    },
+  } as const
 
   const loadResources = async (refresh = true) => {
     if (!isOwnerView.value) return
@@ -141,24 +169,29 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
     openDrawerAddress.value = null
   }
 
-  // Redeploy is a two-step UX: the VmCard's "Redeploy" button emits
-  // ``@redeploy`` with an address, which opens a confirmation Modal
-  // (same pattern as Delete). The actual API call lives in
-  // ``executeRedeploy`` so the Modal's confirm button can call it
-  // without re-doing the address-extraction.
-  const redeployVm = (address: string) => {
-    if (redeployInFlight.value.has(address)) return
-    redeployTargetAddress.value = address
-    showRedeployModal.value = true
+  // Redeploy and reboot are a two-step UX: the VmCard's button emits
+  // ``@redeploy`` / ``@reboot`` with an address, which opens a
+  // confirmation Modal (same pattern as Delete). The actual API call
+  // lives in ``executeVmAction`` so the Modal's confirm button can call
+  // it without re-doing the address-extraction. While either action
+  // runs for a VM, neither can be started again for it.
+  const isVmBusy = (address: string) =>
+    redeployInFlight.value.has(address) || rebootInFlight.value.has(address)
+
+  const requestVmAction = (action: VmAction, address: string) => {
+    if (isVmBusy(address)) return
+    vmActions[action].target.value = address
+    vmActions[action].showModal.value = true
   }
 
-  const executeRedeploy = async (address: string) => {
-    redeployInFlight.value.add(address)
+  const executeVmAction = async (action: VmAction, address: string) => {
+    const cfg = vmActions[action]
+    cfg.inFlight.value.add(address)
     try {
-      await deploymentApi.redeployResource(deploymentId, address)
-      toast.success(t('DeploymentDetailView.redeployStarted', { address }))
+      await cfg.dispatch(address)
+      toast.success(t(cfg.startedKey, { address }))
       // Refresh the task list right away so the freshly-dispatched
-      // REDEPLOY row shows up as the new ``activeTask``. That in
+      // REDEPLOY/REBOOT row shows up as the new ``activeTask``. That in
       // turn flips ``isStreamRelevant`` to true → the SSE stream
       // attaches → live progress + logs render under the page's
       // existing active-task card, identical to deploy/destroy.
@@ -166,34 +199,42 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
       // the next manual page reload.
       await onRedeployStarted()
     } catch (err) {
-      redeployInFlight.value.delete(address)
+      cfg.inFlight.value.delete(address)
       const reason = getErrorReason(err)
       if (reason === 'non_redeployable_resource_type') {
         toast.error(t('DeploymentDetailView.redeployNotRedeployable'))
       } else if (reason === 'resource_not_in_state') {
         toast.error(t('DeploymentDetailView.redeployNotInState'))
+      } else if (reason === 'resource_without_server_id') {
+        toast.error(t('DeploymentDetailView.rebootNoServer'))
       } else if (getErrorStatus(err) === 409) {
         toast.error(t('DeploymentDetailView.lifecycleBusy'))
       } else {
-        toast.error(getErrorDetailMessage(err) ?? t('DeploymentDetailView.redeployError'))
+        toast.error(getErrorDetailMessage(err) ?? t(cfg.errorKey))
       }
     }
   }
 
-  // Redeploy confirmation handler — close the modal first (so the user
-  // gets immediate visual feedback that their click registered) and
-  // then dispatch the actual API call. ``executeRedeploy`` owns its
-  // own toast handling and adds/removes the in-flight marker.
-  const confirmRedeploy = async () => {
-    const address = redeployTargetAddress.value
-    showRedeployModal.value = false
+  // Confirmation handler — close the modal first (so the user gets
+  // immediate visual feedback that their click registered) and then
+  // dispatch the actual API call. ``executeVmAction`` owns its own
+  // toast handling and adds/removes the in-flight marker.
+  const confirmVmAction = async (action: VmAction) => {
+    const cfg = vmActions[action]
+    const address = cfg.target.value
+    cfg.showModal.value = false
     if (!address) return
     try {
-      await executeRedeploy(address)
+      await executeVmAction(action, address)
     } finally {
-      redeployTargetAddress.value = null
+      cfg.target.value = null
     }
   }
+
+  const redeployVm = (address: string) => requestVmAction('redeploy', address)
+  const confirmRedeploy = () => confirmVmAction('redeploy')
+  const rebootVm = (address: string) => requestVmAction('reboot', address)
+  const confirmReboot = () => confirmVmAction('reboot')
 
   return {
     resources,
@@ -215,5 +256,10 @@ export function useDeploymentResources(options: DeploymentResourcesOptions) {
     closeVmDrawer,
     redeployVm,
     confirmRedeploy,
+    rebootInFlight,
+    showRebootModal,
+    rebootTargetAddress,
+    rebootVm,
+    confirmReboot,
   }
 }

@@ -19,11 +19,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -67,11 +62,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -111,11 +101,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": true,
@@ -161,11 +146,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "text": "Deployments",
       },
       {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
         "active": true,
         "href": "/apps",
         "text": "Apps",
@@ -206,11 +186,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -256,11 +231,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "text": "Deployments",
       },
       {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
         "active": true,
         "href": "/apps",
         "text": "Apps",
@@ -301,11 +271,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -352,11 +317,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -396,11 +356,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -447,11 +402,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -491,11 +441,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": true,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -542,11 +487,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -586,11 +526,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -636,11 +571,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -683,11 +613,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -727,11 +652,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -782,11 +702,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -815,11 +730,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -844,11 +754,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Umgebungen",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": true,
@@ -879,11 +784,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "text": "Umgebungen",
       },
       {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
         "active": true,
         "href": "/apps",
         "text": "Apps",
@@ -909,11 +809,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Umgebungen",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -944,11 +839,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "text": "Umgebungen",
       },
       {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
         "active": true,
         "href": "/apps",
         "text": "Apps",
@@ -974,11 +864,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Umgebungen",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1010,11 +895,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1039,11 +919,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Umgebungen",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1075,11 +950,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1104,11 +974,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Umgebungen",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1140,11 +1005,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1169,11 +1029,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Umgebungen",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1204,11 +1059,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1236,11 +1086,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1265,11 +1110,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Umgebungen",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1305,11 +1145,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1343,11 +1178,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1377,11 +1207,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": true,
@@ -1417,11 +1242,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "text": "Deployments",
       },
       {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
         "active": true,
         "href": "/apps",
         "text": "Apps",
@@ -1452,11 +1272,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1492,11 +1307,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "text": "Deployments",
       },
       {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
         "active": true,
         "href": "/apps",
         "text": "Apps",
@@ -1527,11 +1337,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1568,11 +1373,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1602,11 +1402,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1643,11 +1438,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1677,11 +1467,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": true,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1718,11 +1503,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1752,11 +1532,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,
@@ -1792,11 +1567,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1829,11 +1599,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
       },
       {
         "active": false,
-        "href": "/my-access",
-        "text": "My Access",
-      },
-      {
-        "active": false,
         "href": "/apps",
         "text": "Apps",
       },
@@ -1863,11 +1628,6 @@ exports[`AppLayout routing-derived UI > matches the recorded breadcrumb and navi
         "active": false,
         "href": "/deployments",
         "text": "Deployments",
-      },
-      {
-        "active": false,
-        "href": "/my-access",
-        "text": "My Access",
       },
       {
         "active": false,

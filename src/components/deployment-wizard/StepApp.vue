@@ -1,14 +1,15 @@
 <script setup lang="ts">
 /**
- * Wizard step "App": the approved apps as radio cards with a search, and
- * the version — the newest approved one preselected, every other one in a select.
+ * Wizard step "App": the approved apps — plus the user's own, not yet
+ * approved ones, marked as such — as radio cards with a search, and the
+ * version — the newest approved one preselected, every other one in a select.
  */
 import { computed, onMounted, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertCircle } from 'lucide-vue-next'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { useWizardApp } from '@/composables/useWizardApp'
-import { appTagline } from '@/services/wizard-app.service'
+import { appTagline, isUnapproved } from '@/services/wizard-app.service'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseSelect from '@/components/ui/BaseSelect.vue'
 import EntityListState from '@/components/ui/EntityListState.vue'
@@ -26,7 +27,10 @@ const searchId = useId()
 const options = computed<RadioCardOption[]>(() => apps.value.map((app) => ({
   value: app.appId,
   label: app.name,
-  description: appTagline(app) || t('deployment.wizard.app.noDescription'),
+  description: [
+    appTagline(app) || t('deployment.wizard.app.noDescription'),
+    isUnapproved(app) ? t('deployment.wizard.app.notApproved') : '',
+  ].filter(Boolean).join(' · '),
 })))
 
 const chosenId = computed<string | null>({
@@ -101,9 +105,16 @@ onMounted(loadApps)
         <AlertCircle :size="15" class="shrink-0" aria-hidden="true" />
         {{ t('deployment.wizard.app.versionsError') }}
       </p>
+      <p v-else-if="versionChoices.length === 0" class="flex items-center gap-1.5 text-sm text-danger" role="alert" data-testid="no-versions">
+        <AlertCircle :size="15" class="shrink-0" aria-hidden="true" />
+        {{ t('deployment.wizard.app.noVersions') }}
+      </p>
       <FormField v-else v-slot="{ id }" :label="t('deployment.wizard.app.versionLabel')" class="max-w-xs">
         <BaseSelect :id="id" v-model="version" :options="versionChoices" data-testid="version-select" />
       </FormField>
+      <p v-if="isUnapproved(chosen)" class="text-sm text-fg-muted" data-testid="unapproved-hint">
+        {{ t('deployment.wizard.app.unapprovedHint') }}
+      </p>
     </div>
   </section>
 </template>

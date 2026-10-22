@@ -46,6 +46,7 @@ const h = vi.hoisted(() => ({
     listResources: vi.fn(),
     getResourceDetail: vi.fn(),
     redeployResource: vi.fn(),
+    rebootResource: vi.fn(),
   },
   taskApi: {
     listByDeployment: vi.fn(),
@@ -346,6 +347,7 @@ beforeEach(() => {
   h.deploymentApi.listResources.mockResolvedValue({ data: { resources, live: true } })
   h.deploymentApi.getResourceDetail.mockResolvedValue({ data: makeResource() })
   h.deploymentApi.redeployResource.mockResolvedValue({ status: 202, data: { task_id: 't', status: 'redeploying' } })
+  h.deploymentApi.rebootResource.mockResolvedValue({ status: 202, data: { task_id: 't', status: 'rebooting' } })
 
   const tasks = [olderFailedTask, makeTask()]
   h.taskApi.listByDeployment.mockResolvedValue({ data: tasks })
@@ -872,6 +874,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
     expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentDelete'))).toBeUndefined()
     expect(buttonWithText(wrapper, t('DeploymentDetailView.deploymentPause'))).toBeUndefined()
     expect(buttonWithText(wrapper, de.vm.actions.redeploy)).toBeUndefined()
+    expect(buttonWithText(wrapper, de.vm.actions.reboot)).toBeUndefined()
     expect(h.taskApi.listByDeployment).toHaveBeenCalled()
   })
 
@@ -1020,7 +1023,7 @@ describe('DeploymentDetailView — Redeploy', () => {
   const openAndConfirm = async (wrapper: VueWrapper) => {
     await buttonWithText(wrapper, de.vm.actions.redeploy)!.trigger('click')
     await nextTick()
-    const confirm = wrapper.findAll('.fixed button').find((b) => b.text() === 'Redeploy')!
+    const confirm = wrapper.findAll('.fixed button').find((b) => b.text() === de.DeploymentDetailView.redeployModal.confirm)!
     await confirm.trigger('click')
     await settle()
   }
@@ -1030,10 +1033,10 @@ describe('DeploymentDetailView — Redeploy', () => {
 
     await buttonWithText(wrapper, de.vm.actions.redeploy)!.trigger('click')
     await nextTick()
-    expect(wrapper.text()).toContain('VM neu erstellen?')
+    expect(wrapper.text()).toContain('VM zurücksetzen?')
     expect(wrapper.find('[data-testid="redeploy-address"]').text()).toBe(ADDRESS_VM)
 
-    const confirm = wrapper.findAll('.fixed button').find((b) => b.text() === 'Redeploy')!
+    const confirm = wrapper.findAll('.fixed button').find((b) => b.text() === de.DeploymentDetailView.redeployModal.confirm)!
     await confirm.trigger('click')
     await settle()
 
@@ -1059,6 +1062,57 @@ describe('DeploymentDetailView — Redeploy', () => {
 
     expect(toasts()).toEqual([{ type: 'error', message }])
     expect(buttonWithText(wrapper, de.vm.actions.redeploy)!.attributes('disabled')).toBeUndefined()
+  })
+})
+
+// =========================================================
+// Per-VM reboot
+// =========================================================
+
+describe('DeploymentDetailView — Neustart', () => {
+  const openAndConfirm = async (wrapper: VueWrapper) => {
+    await buttonWithText(wrapper, de.vm.actions.reboot)!.trigger('click')
+    await nextTick()
+    const confirm = wrapper.findAll('.fixed button').find((b) => b.text() === de.DeploymentDetailView.rebootModal.confirm)!
+    await confirm.trigger('click')
+    await settle()
+  }
+
+  it('bestätigt per Dialog, startet den Neustart nur dieser VM und lädt die Tasks neu', async () => {
+    const wrapper = await mountLoaded()
+
+    await buttonWithText(wrapper, de.vm.actions.reboot)!.trigger('click')
+    await nextTick()
+    expect(wrapper.text()).toContain(de.DeploymentDetailView.rebootModal.title)
+    expect(wrapper.find('[data-testid="reboot-address"]').text()).toBe(ADDRESS_VM)
+
+    const confirm = wrapper.findAll('.fixed button').find((b) => b.text() === de.DeploymentDetailView.rebootModal.confirm)!
+    await confirm.trigger('click')
+    await settle()
+
+    expect(h.deploymentApi.rebootResource).toHaveBeenCalledWith('dep-1', ADDRESS_VM)
+    expect(h.deploymentApi.redeployResource).not.toHaveBeenCalled()
+    expect(toasts()).toEqual([{ type: 'success', message: t('DeploymentDetailView.rebootStarted', { address: ADDRESS_VM }) }])
+    expect(h.taskApi.listByDeployment).toHaveBeenCalledTimes(2)
+    expect(wrapper.find('.fixed').exists()).toBe(false)
+    // While the reboot runs, neither action can be started again for this VM.
+    expect(buttonWithText(wrapper, de.vm.actions.rebooting)!.attributes('disabled')).toBeDefined()
+    expect(buttonWithText(wrapper, de.vm.actions.redeploy)!.attributes('disabled')).toBeDefined()
+  })
+
+  it.each([
+    [httpError(422, { reason: 'resource_without_server_id' }), t('DeploymentDetailView.rebootNoServer')],
+    [httpError(422, { reason: 'resource_not_in_state' }), t('DeploymentDetailView.redeployNotInState')],
+    [httpError(409, 'busy'), t('DeploymentDetailView.lifecycleBusy')],
+    [httpError(500, undefined, ''), t('DeploymentDetailView.rebootError')],
+  ])('meldet Neustart-Fehler verständlich (%#)', async (err, message) => {
+    h.deploymentApi.rebootResource.mockRejectedValue(err)
+    const wrapper = await mountLoaded()
+
+    await openAndConfirm(wrapper)
+
+    expect(toasts()).toEqual([{ type: 'error', message }])
+    expect(buttonWithText(wrapper, de.vm.actions.reboot)!.attributes('disabled')).toBeUndefined()
   })
 })
 

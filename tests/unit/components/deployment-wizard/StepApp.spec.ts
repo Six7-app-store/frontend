@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 
 import StepApp from '@/components/deployment-wizard/StepApp.vue'
+import { useAuthStore } from '@/stores/auth.store'
 import { useDeploymentStore } from '@/stores/deployment.store'
 import { appApi } from '@/api/app.api'
 import de from '@/i18n/locales/de'
@@ -107,6 +108,43 @@ describe('StepApp', () => {
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toBe('Die Versionen konnten nicht geladen werden.')
+  })
+
+  it('zeigt eigene, noch nicht freigegebene Apps und wählt ihre neueste Git-Version vor', async () => {
+    useAuthStore().user = { userId: 'me' } as never
+    vi.mocked(appApi.list).mockResolvedValue({
+      data: [...apps, { appId: 'kuber', name: 'Kuber', description: null, latestApprovedVersion: null, userId: 'me' }],
+    } as never)
+    vi.mocked(appApi.getById).mockResolvedValue({ data: { versions: [{ version: 'v1.0.1' }, { version: 'v1.0.0' }] } } as never)
+    const wrapper = await mountStep()
+
+    // Own draft listed and marked; someone else's draft stays hidden.
+    expect(wrapper.findAll('[role="radio"]').map((r) => r.text())).toEqual([
+      'KuberKeine Beschreibung verfügbar. · noch nicht freigegeben',
+      'Online-IDEJava im Browser',
+      'Web-LaTeXKeine Beschreibung verfügbar.',
+    ])
+
+    await wrapper.get('[data-testid="radio-card-kuber"]').trigger('click')
+    await flushPromises()
+
+    expect(useDeploymentStore().draft.releaseTag).toBe('v1.0.1')
+    expect(wrapper.get('[data-testid="chosen-version"]').text()).toBe('v1.0.1')
+    expect(wrapper.find('[data-testid="unapproved-hint"]').exists()).toBe(true)
+  })
+
+  it('meldet eine eigene App ohne jede Version', async () => {
+    useAuthStore().user = { userId: 'me' } as never
+    vi.mocked(appApi.list).mockResolvedValue({
+      data: [{ appId: 'neu', name: 'Neu', description: null, latestApprovedVersion: null, userId: 'me' }],
+    } as never)
+    vi.mocked(appApi.getById).mockResolvedValue({ data: { versions: [] } } as never)
+    const wrapper = await mountStep()
+    await wrapper.get('[data-testid="radio-card-neu"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="no-versions"]').text()).toContain('Diese App hat noch keine Version.')
+    expect(useDeploymentStore().draft.releaseTag).toBe('')
   })
 
   it('bietet bei einem Ladefehler der Apps „Erneut versuchen“ an', async () => {

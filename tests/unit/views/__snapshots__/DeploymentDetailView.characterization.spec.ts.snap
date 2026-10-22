@@ -213,7 +213,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
               </div>
               <!--v-if-->
             </div>
-            <p class="rounded-md border border-subtle bg-line/[.04] px-3.5 py-3 text-base text-fg-body" data-testid="close-note">Du kannst diese Seite schließen, die Einrichtung läuft weiter. Sie kann bis zu 90 Minuten dauern. Wenn alles fertig ist, bekommen du und alle Teilnehmenden eine E-Mail mit den Zugangsdaten.</p><button class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="v-5" data-testid="btn-live-log">Live-Log anzeigen <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon transition-transform lucide-chevron-down-icon lucide-chevron-down text-icon transition-transform" aria-hidden="true">
+            <p class="rounded-md border border-subtle bg-line/[.04] px-3.5 py-3 text-base text-fg-body" data-testid="close-note">Du kannst diese Seite schließen, die Einrichtung läuft weiter. Sie kann bis zu 90 Minuten dauern. Wenn alles fertig ist, bekommen du und alle Teilnehmenden eine E-Mail mit den Zugangsdaten.</p><button class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="v-6" data-testid="btn-live-log">Live-Log anzeigen <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide text-icon transition-transform lucide-chevron-down-icon lucide-chevron-down text-icon transition-transform" aria-hidden="true">
                 <path d="m6 9 6 6 6-6"></path>
               </svg>
               <!--v-if-->
@@ -223,7 +223,7 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
                      lines via the ring buffer in the composable),
                      so the user sees that the worker is still
                      producing output even after the box is full. -->
-            <div id="v-5" data-testid="live-log" style="display: none;">
+            <div id="v-6" data-testid="live-log" style="display: none;">
               <div class="bg-line/[.04] border border-subtle rounded-md p-4 text-center text-xs text-fg-muted">Warte auf die erste Logzeile …</div>
             </div>
           </div>
@@ -521,16 +521,23 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
                         <div class="flex flex-wrap items-baseline gap-1"><span class="text-fg-muted">NAT:</span><span class="font-mono">10.0.0.5</span><span class="font-mono text-fg"> → 1.2.3.4</span></div>
                       </div>
                     </div><!-- Footer: actions -->
-                    <div class="flex gap-2 mt-1 pt-2 border-t border-subtle"><button class="btn btn-secondary btn-sm flex-1" aria-expanded="false">Details
+                    <div class="flex flex-wrap gap-2 mt-1 pt-2 border-t border-subtle"><button class="btn btn-secondary btn-sm flex-1" aria-expanded="false">Details
+                        <!--v-if-->
+                      </button>
+                      <!-- Restarting keeps disk and IPs: the gentle fix for a hung VM. A VM
+           gone from OpenStack has nothing to restart. --><button class="btn btn-secondary btn-sm flex-1" data-testid="vm-reboot"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw-icon lucide-rotate-cw" aria-hidden="true">
+                          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                          <path d="M21 3v5h-5"></path>
+                        </svg> Neustart
                         <!--v-if-->
                       </button>
                       <!-- Recreating a VM is destructive: grey until hovered. Only for a VM
-           that is gone from OpenStack is it the one thing to do, so red. --><button class="btn btn-danger btn-sm flex-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw" aria-hidden="true">
+           that is gone from OpenStack is it the one thing to do, so red. --><button class="btn btn-danger btn-sm flex-1" data-testid="vm-redeploy"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw" aria-hidden="true">
                           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                           <path d="M3 3v5h5"></path>
                           <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
                           <path d="M16 16h5v5"></path>
-                        </svg> Redeploy
+                        </svg> Zurücksetzen
                         <!--v-if-->
                       </button>
                     </div>
@@ -610,6 +617,8 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
              instance they're about to recreate. The Modal is the
              single source of truth; we never fall back to
              \`\`window.confirm\`\`. -->
+  <!--v-if-->
+  <!-- Reboot Confirmation Modal — same shape as Redeploy. -->
   <!--v-if-->
   <!-- Pause / Resume confirm. Same pattern as Delete: a tiny
              modal that asks the user to confirm before we POST. The
@@ -933,6 +942,8 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
              instance they're about to recreate. The Modal is the
              single source of truth; we never fall back to
              \`\`window.confirm\`\`. -->
+  <!--v-if-->
+  <!-- Reboot Confirmation Modal — same shape as Redeploy. -->
   <!--v-if-->
   <!-- Pause / Resume confirm. Same pattern as Delete: a tiny
              modal that asks the user to confirm before we POST. The
@@ -1380,16 +1391,23 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
                         <div class="flex flex-wrap items-baseline gap-1"><span class="text-fg-muted">NAT:</span><span class="font-mono">10.0.0.5</span><span class="font-mono text-fg"> → 1.2.3.4</span></div>
                       </div>
                     </div><!-- Footer: actions -->
-                    <div class="flex gap-2 mt-1 pt-2 border-t border-subtle"><button class="btn btn-secondary btn-sm flex-1" aria-expanded="false">Details
+                    <div class="flex flex-wrap gap-2 mt-1 pt-2 border-t border-subtle"><button class="btn btn-secondary btn-sm flex-1" aria-expanded="false">Details
+                        <!--v-if-->
+                      </button>
+                      <!-- Restarting keeps disk and IPs: the gentle fix for a hung VM. A VM
+           gone from OpenStack has nothing to restart. --><button class="btn btn-secondary btn-sm flex-1" data-testid="vm-reboot"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw-icon lucide-rotate-cw" aria-hidden="true">
+                          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                          <path d="M21 3v5h-5"></path>
+                        </svg> Neustart
                         <!--v-if-->
                       </button>
                       <!-- Recreating a VM is destructive: grey until hovered. Only for a VM
-           that is gone from OpenStack is it the one thing to do, so red. --><button class="btn btn-danger btn-sm flex-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw" aria-hidden="true">
+           that is gone from OpenStack is it the one thing to do, so red. --><button class="btn btn-danger btn-sm flex-1" data-testid="vm-redeploy"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw" aria-hidden="true">
                           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                           <path d="M3 3v5h5"></path>
                           <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
                           <path d="M16 16h5v5"></path>
-                        </svg> Redeploy
+                        </svg> Zurücksetzen
                         <!--v-if-->
                       </button>
                     </div>
@@ -1469,6 +1487,8 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
              instance they're about to recreate. The Modal is the
              single source of truth; we never fall back to
              \`\`window.confirm\`\`. -->
+  <!--v-if-->
+  <!-- Reboot Confirmation Modal — same shape as Redeploy. -->
   <!--v-if-->
   <!-- Pause / Resume confirm. Same pattern as Delete: a tiny
              modal that asks the user to confirm before we POST. The
@@ -1916,16 +1936,23 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
                         <div class="flex flex-wrap items-baseline gap-1"><span class="text-fg-muted">NAT:</span><span class="font-mono">10.0.0.5</span><span class="font-mono text-fg"> → 1.2.3.4</span></div>
                       </div>
                     </div><!-- Footer: actions -->
-                    <div class="flex gap-2 mt-1 pt-2 border-t border-subtle"><button class="btn btn-secondary btn-sm flex-1" aria-expanded="false">Details
+                    <div class="flex flex-wrap gap-2 mt-1 pt-2 border-t border-subtle"><button class="btn btn-secondary btn-sm flex-1" aria-expanded="false">Details
+                        <!--v-if-->
+                      </button>
+                      <!-- Restarting keeps disk and IPs: the gentle fix for a hung VM. A VM
+           gone from OpenStack has nothing to restart. --><button class="btn btn-secondary btn-sm flex-1" data-testid="vm-reboot"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw-icon lucide-rotate-cw" aria-hidden="true">
+                          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                          <path d="M21 3v5h-5"></path>
+                        </svg> Neustart
                         <!--v-if-->
                       </button>
                       <!-- Recreating a VM is destructive: grey until hovered. Only for a VM
-           that is gone from OpenStack is it the one thing to do, so red. --><button class="btn btn-danger btn-sm flex-1"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw" aria-hidden="true">
+           that is gone from OpenStack is it the one thing to do, so red. --><button class="btn btn-danger btn-sm flex-1" data-testid="vm-redeploy"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw-icon lucide-refresh-ccw" aria-hidden="true">
                           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
                           <path d="M3 3v5h5"></path>
                           <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
                           <path d="M16 16h5v5"></path>
-                        </svg> Redeploy
+                        </svg> Zurücksetzen
                         <!--v-if-->
                       </button>
                     </div>
@@ -2112,6 +2139,8 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
              instance they're about to recreate. The Modal is the
              single source of truth; we never fall back to
              \`\`window.confirm\`\`. -->
+  <!--v-if-->
+  <!-- Reboot Confirmation Modal — same shape as Redeploy. -->
   <!--v-if-->
   <!-- Pause / Resume confirm. Same pattern as Delete: a tiny
              modal that asks the user to confirm before we POST. The
