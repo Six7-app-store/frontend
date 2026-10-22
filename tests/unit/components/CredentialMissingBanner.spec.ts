@@ -9,7 +9,7 @@ const router = createRouter({
   history: createMemoryHistory(),
   routes: [
     { path: '/', name: 'home', component: { template: '<div />' } },
-    { path: '/deployment/new/config', name: 'deployment.config', component: { template: '<div />' } },
+    { path: '/deployment/new/start', name: 'deployment.new', component: { template: '<div />' } },
     { path: '/user/openstack', name: 'user.openstack', component: { template: '<div />' } },
   ],
 })
@@ -38,11 +38,11 @@ describe('CredentialMissingBanner', () => {
   })
 
   it('schickt nach dem Einrichten über next zurück', () => {
-    const wrapper = mountBanner({ cta: 'Jetzt einrichten', ctaTo: { name: 'user.openstack' }, next: { name: 'deployment.config' } })
+    const wrapper = mountBanner({ cta: 'Jetzt einrichten', ctaTo: { name: 'user.openstack' }, next: { name: 'deployment.new' } })
 
     expect(wrapper.getComponent(RouterLinkStub).props('to')).toEqual({
       name: 'user.openstack',
-      query: { next: '/deployment/new/config' },
+      query: { next: '/deployment/new/start' },
     })
   })
 
