@@ -4,7 +4,9 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 
-const deploymentApi = vi.hoisted(() => ({ listResources: vi.fn(), redeployResource: vi.fn(), getResourceDetail: vi.fn() }))
+const deploymentApi = vi.hoisted(() => ({
+  listResources: vi.fn(), redeployResource: vi.fn(), rebootResource: vi.fn(), getResourceDetail: vi.fn(),
+}))
 vi.mock('@/api/deployment.api', () => ({ deploymentApi }))
 
 import { useDeploymentResources } from '@/composables/useDeploymentResources'
@@ -39,6 +41,7 @@ describe('useDeploymentResources', () => {
   beforeEach(() => {
     deploymentApi.listResources.mockReset()
     deploymentApi.redeployResource.mockReset()
+    deploymentApi.rebootResource.mockReset()
   })
 
   it('loads and groups resources for owners', async () => {
@@ -114,7 +117,7 @@ describe('useDeploymentResources', () => {
     expect(deploymentApi.redeployResource).toHaveBeenCalledWith('dep-1', 'vm-1')
     expect(api.redeployInFlight.value.has('vm-1')).toBe(true)
     expect(onRedeployStarted).toHaveBeenCalledTimes(1)
-    expect(toasts()).toEqual([{ type: 'success', message: 'Redeploy gestartet für vm-1' }])
+    expect(toasts()).toEqual([{ type: 'success', message: 'Zurücksetzen gestartet für vm-1' }])
 
     // Already in flight → no second confirmation.
     api.showRedeployModal.value = false
@@ -123,12 +126,12 @@ describe('useDeploymentResources', () => {
   })
 
   it.each([
-    [httpError(422, { reason: 'non_redeployable_resource_type' }), 'Nur Compute-Instanzen können einzeln redeployed werden.'],
+    [httpError(422, { reason: 'non_redeployable_resource_type' }), 'Nur einzelne VMs können neu gestartet oder zurückgesetzt werden.'],
     [httpError(422, { reason: 'resource_not_in_state' }), 'Diese Resource ist nicht mehr im aktuellen State.'],
     [httpError(409, 'busy'), 'Es läuft bereits eine Lifecycle-Aktion für dieses Deployment.'],
-    [httpError(500, undefined, 'Boom'), 'Redeploy fehlgeschlagen.'],
+    [httpError(500, undefined, 'Boom'), 'Zurücksetzen fehlgeschlagen.'],
     [httpError(500, 'Kontingent erschöpft'), 'Kontingent erschöpft'],
-    [httpError(500), 'Redeploy fehlgeschlagen.'],
+    [httpError(500), 'Zurücksetzen fehlgeschlagen.'],
   ])('reports redeploy errors and releases the address (%#)', async (err, message) => {
     deploymentApi.redeployResource.mockRejectedValue(err)
     const { api, onRedeployStarted, toasts } = setup()
@@ -139,6 +142,51 @@ describe('useDeploymentResources', () => {
 
     expect(toasts()).toEqual([{ type: 'error', message }])
     expect(api.redeployInFlight.value.has('vm-1')).toBe(false)
+    expect(onRedeployStarted).not.toHaveBeenCalled()
+  })
+
+  it('confirms a reboot for just that VM and blocks both actions while it runs', async () => {
+    deploymentApi.rebootResource.mockResolvedValue({})
+    const { api, onRedeployStarted, toasts } = setup()
+
+    api.rebootVm('vm-1')
+    expect(api.showRebootModal.value).toBe(true)
+    expect(api.showRedeployModal.value).toBe(false)
+    expect(api.rebootTargetAddress.value).toBe('vm-1')
+
+    await api.confirmReboot()
+
+    expect(api.showRebootModal.value).toBe(false)
+    expect(api.rebootTargetAddress.value).toBeNull()
+    expect(deploymentApi.rebootResource).toHaveBeenCalledWith('dep-1', 'vm-1')
+    expect(deploymentApi.redeployResource).not.toHaveBeenCalled()
+    expect(api.rebootInFlight.value.has('vm-1')).toBe(true)
+    expect(onRedeployStarted).toHaveBeenCalledTimes(1)
+    expect(toasts()).toEqual([{ type: 'success', message: 'Neustart gestartet für vm-1' }])
+
+    // Same VM busy → neither a second reboot nor a reset can be requested.
+    api.rebootVm('vm-1')
+    api.redeployVm('vm-1')
+    expect(api.showRebootModal.value).toBe(false)
+    expect(api.showRedeployModal.value).toBe(false)
+    // Another VM stays untouched and can still be restarted.
+    api.rebootVm('vm-2')
+    expect(api.rebootTargetAddress.value).toBe('vm-2')
+  })
+
+  it.each([
+    [httpError(422, { reason: 'resource_without_server_id' }), de.DeploymentDetailView.rebootNoServer],
+    [httpError(500), 'Neustart fehlgeschlagen.'],
+  ])('reports reboot errors and releases the address (%#)', async (err, message) => {
+    deploymentApi.rebootResource.mockRejectedValue(err)
+    const { api, onRedeployStarted, toasts } = setup()
+
+    api.rebootVm('vm-1')
+    await api.confirmReboot()
+    await flushPromises()
+
+    expect(toasts()).toEqual([{ type: 'error', message }])
+    expect(api.rebootInFlight.value.has('vm-1')).toBe(false)
     expect(onRedeployStarted).not.toHaveBeenCalled()
   })
 
