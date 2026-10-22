@@ -1,7 +1,8 @@
 # HANDOVER – Deployment-Wizard in 3 Schritten
 
-Stand wird nach jedem Commit überschrieben (kein Tagebuch). Branches von `main`: `frontend/` auf `feat/deploy-wizard`,
-`backend/` auf `feat/deployment_wizard` (Wunsch der Nutzerin). Nichts gepusht.
+Stand wird nach jedem Commit überschrieben (kein Tagebuch). Branches von `main`: `frontend/` auf `feat/deployment-wizard`,
+`backend/` auf `feat/deployment_wizard` (Wunsch der Nutzerin). Beide Branches liegen auf `origin`; pushen tut die
+Nutzerin selbst.
 
 ## Ziel
 „Neues Deployment“ als **ein** Wizard mit höchstens 3 Schritten, ohne Einweisung lösbar (User Story).
@@ -23,14 +24,12 @@ Ein Commit pro Etappe (Wunsch der Nutzerin), bei e einer je Repo.
   Frontend-Fehlertexte → backend `d931c11` „Validate version and required inputs on deployment create“,
   frontend `be9a945`
 - [x] f) Nach dem Start auf die Detailseite, Hinweis „kann geschlossen werden“, Live-Log eingeklappt
-  → „Let people close the page while a deployment runs“ (`git log -1`)
-- [ ] g) Alte Screens löschen, Einstiege für Studierende ausblenden, Tests
+  → `3100434`
+- [x] g) Alte Screens löschen, Einstiege für Studierende ausblenden, Tests → `6b77b6c` („zwischenstand“) und
+  „Finish removing the old deployment wizard“ (`git log -1`)
 
-**Nächster Schritt:** Etappe g (Aufräumen): Einstiege (Dashboard, Deployment-Liste, App-Seitenleiste) auf den neuen Wizard
-umstellen und für Studierende ausblenden; alte Views `NewDeployment{Config,GroupsAssignment,Variable,Summary}View` samt
-Specs, Routen, Route-Namen, Breadcrumb-Fälle, `WizardStepLayout`, `DeploymentProgressBar`, `GroupModeSelector`,
-`SummaryVariableCard`, `CoursePickerList`, `deployment-summary.service` und unbenutzte i18n-Keys löschen (jeden Key per
-grep prüfen); Draft-Feld `version` entfernen; danach Browserprüfung des ganzen Flows.
+**Nächster Schritt:** Browserprüfung des ganzen Flows (steht noch aus, siehe „Stand nach g“). Danach ist der Wizard fertig;
+die Folgepunkte unten sind bewusst nicht Teil davon.
 
 ## Stand nach a
 - Route `deploymentNew` = `/deployment/new/:step(app|target|start)?`, Guard in `router/wizard-guard.ts`:
@@ -117,8 +116,30 @@ grep prüfen); Draft-Feld `version` entfernen; danach Browserprüfung des ganzen
   (`aria-expanded`/`aria-controls`, `v-show`). Phasen/Fortschritt unverändert. Snapshot `running` nach Diff-Prüfung
   aktualisiert (nur Hinweis, Button, eingeklappter Log).
 
-- Der **alte** 4-Schritt-Wizard (`/deployment/new/config` …) läuft unverändert weiter, bis g ihn löscht. Die Einstiege
-  zeigen noch auf ihn bzw. auf `/apps`.
+## Stand nach g
+- Der alte 4-Schritt-Wizard ist weg: Views `NewDeployment{Config,GroupsAssignment,Variable,Summary}View` samt Specs,
+  die Routen `/deployment/new/{config,teams,variables,summary}`, ihre Route-Namen, Breadcrumb-Fälle und
+  `requireWizardStep` im Router, `WizardStepLayout`, `DeploymentProgressBar`, `GroupModeSelector`,
+  `SummaryVariableCard`, `CoursePickerList`, `deployment-summary.service`, Typ `WizardSummary`, Draft-Feld `version`.
+  `useTeamAssignment` verliert `mode`, `problem`, `complete` (nur die alte View las sie).
+- Einstiege: Dashboard und Deployment-Liste (auch der Leerzustand) öffnen `deploymentNew`; die App-Seite startet den
+  Lauf mit `store.startDraft` direkt bei `target` und belegt die neueste **freigegebene** Version vor (sonst den neuesten
+  Tag, für Owner). Für Studierende sind die Aktion im Dashboard und der Deploy-Bereich der App-Seite ausgeblendet
+  (`useRouteAccess().canAccess({ name: deploymentNew })`), die Liste prüfte `isStaff` schon vorher.
+- i18n: die Keys der alten Screens gelöscht, dazu `AppsDetailView.toasts.preparingConfig`. Im Namespace `deployment.*`
+  ist jeder Key benutzt (Skript-Check, inkl. dynamischer `${mode}`-Keys). Außerhalb davon gibt es ältere ungenutzte Keys
+  (`auth.login.*`, `DeploymentDetailView.*` u. a.), die nicht zu g gehören.
+- README beschreibt den neuen Wizard. Die Specs `CredentialMissingBanner` und `SettingsOpenStackView` nehmen als
+  `next`-Ziel jetzt `/deployment/new/start`. `docs/review/frontend-review.md` nennt die alten Views weiter — das ist ein
+  historischer Bericht und bleibt so.
+- **Browserprüfung offen:** braucht einen Keycloak-Login unter `localhost:5173` und `GIT_ACCESS_TOKEN` (sonst bleibt
+  Schritt 1 leer). Durchklicken: Dashboard → Wizard (3 Schritte) → Detailseite; App-Seite → „Jetzt deployen“ (2 Schritte);
+  als Studierende/r: keine Einstiege, Direktlink `/deployment/new` landet auf `/forbidden`.
+- ESLint ist im `node_modules` des Containers nicht installiert (`npx eslint` lädt sonst eslint 10 ohne Plugins). Geprüft
+  in einer Wegwerf-Kopie: `tar` von `/app` ohne `node_modules` nach `/tmp/lint`, dort `npm ci && npx eslint .` → grün.
+- `make harness-check`/`harness-test` brauchen Python; am Host gibt es nur den Store-Platzhalter. Läuft im Backend-Image:
+  `docker run --rm --entrypoint sh -v <AppStore>:/w -w /w/deployment deployment-backend -c 'python harness/sync.py --check && python harness/test_agent_guard.py'`
+  (unter Git Bash mit `MSYS_NO_PATHCONV=1`).
 
 ## Entscheidungen
 - Vom App-Einstieg nummeriert der Stepper „1 von 2“ (Vorlage zeigt „3 von 3“ mit zwei Einträgen; AC verlangt 2 Schritte).
@@ -176,3 +197,6 @@ cd ../backend && make test-backend-isolated                # bei Backend-Änderu
 | nach d | 128 | 1269 | 92,79 / 88,58 / 78,77 / 92,79 |
 | nach e | 129 | 1271 | 92,8 / 88,55 / 78,79 / 92,8 |
 | nach f | 130 | 1273 | 92,84 / 88,62 / 78,91 / 92,84 |
+| nach g | 125 | 1190 | 92,15 / 88,35 / 77,43 / 92,15 |
+
+Nach g weniger Dateien und Tests, weil die Specs der vier alten Views mit ihnen gegangen sind.

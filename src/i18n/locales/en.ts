@@ -648,7 +648,6 @@ export default {
     toasts: {
       loadError: "Failed to load app details.",
       selectVersionFirst: "Please select a version first.",
-      preparingConfig: "Preparing configuration for {name}.",
       submitSuccess: "Version submitted successfully.",
       submitError: "Submission failed.",
       submitDuplicate: "This version has already been submitted.",
