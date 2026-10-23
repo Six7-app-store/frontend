@@ -69,6 +69,9 @@ Neue Tests folgen dieser Aufteilung; bestehende werden nicht verschoben.
 - Coverage nicht unter die Schwelle in `vitest.config.ts` gefallen
 - Neue Route? Gegen `router/index.ts` geprüft, ob sie hinter
   `requiresAuth` gehört — die drei `/lti/*`-Routen gehören bewusst nicht dahin
+- Doku und Diagramme in `deployment/docs/` nachgezogen, wo `deployment/harness/doc-map.json` sie diesem Code zuordnet (Skill
+  `doku-nachziehen`). Das Commit-Gate fährt davor Doku-Zuordnung, Lint und
+  Tests im Container — der Stack muss laufen (ADR 0017)
 
 ## Nicht anfassen
 
