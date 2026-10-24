@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect } from 'vitest'
-import { formatBytes, formatDate, formatDateTime, formatMegabytes } from '@/utils/format'
+import { formatBytes, formatDate, formatDateTime, formatMegabytes, formatTime } from '@/utils/format'
 import { LOCALE_STORAGE_KEY } from '@/utils/storage-keys'
 
 describe('formatBytes', () => {
@@ -30,6 +30,19 @@ describe('date locale', () => {
     localStorage.setItem(LOCALE_STORAGE_KEY, 'en')
     expect(formatDate(at)).toBe('08/06/2026')
     expect(formatDateTime(at)).toBe('08/06/2026, 13:00:00')
+  })
+})
+
+describe('formatTime', () => {
+  it('converts the instant instead of cutting the time out of the string', () => {
+    // Same instant, two offsets: cutting would give 17:03:01 and 19:03:01.
+    expect(formatTime('2026-10-24T17:03:01Z')).toBe(formatTime('2026-10-24T19:03:01+02:00'))
+    expect(formatTime('2026-10-24T17:03:01Z')).toMatch(/^\d{2}:\d{2}:\d{2}$/)
+  })
+
+  it('is empty without a timestamp', () => {
+    expect(formatTime('')).toBe('')
+    expect(formatTime(null)).toBe('')
   })
 })
 

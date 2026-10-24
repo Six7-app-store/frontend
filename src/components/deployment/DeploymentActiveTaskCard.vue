@@ -11,7 +11,7 @@
 import { ref, useId } from 'vue'
 import { ChevronDown, Loader2 } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
-import { formatDateTime } from '@/utils/format'
+import { formatDateTime, formatTime } from '@/utils/format'
 import { phaseLabel } from '@/services/deployment-phases.service'
 import type { LiveTaskView } from '@/composables/useDeploymentLiveStream'
 import type { Task } from '@/types'
@@ -158,7 +158,7 @@ const logId = useId()
               'text-success': log.level === 'SUCCESS',
               'text-fg-muted': log.streaming,
             }">
-            <span class="text-fg-muted mr-2">{{ log.timestamp.split('T')[1]?.slice(0, 8) || '' }}</span>
+            <span class="text-fg-muted mr-2">{{ formatTime(log.timestamp) }}</span>
             <span v-if="log.tool" class="text-fg-muted mr-1">[{{ log.tool }}]</span>{{ log.message }}
           </div>
         </div>

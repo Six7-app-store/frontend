@@ -2,10 +2,11 @@
  * Shared date formatting helpers.
  *
  * Dates follow the UI language the user picked (German ``dd.mm.yyyy``,
- * English ``dd/mm/yyyy``). Two shapes are exposed:
+ * English ``dd/mm/yyyy``). Three shapes are exposed:
  *
  * - :func:`formatDate` — date only (``dd.mm.yyyy``), for list/detail views.
  * - :func:`formatDateTime` — date + time, where the exact timestamp matters.
+ * - :func:`formatTime` — time only, for log lines.
  *
  * Both tolerate ``null``/empty input and unparseable strings. :func:`formatDate`
  * returns the input verbatim when it can't be parsed; :func:`formatDateTime`
@@ -61,6 +62,16 @@ export function formatDateTime(
 ): string {
   if (value === null || value === undefined || value === '') return '-'
   return new Date(value).toLocaleString(dateLocale(), options)
+}
+
+/**
+ * Time of day (``hh:mm:ss``) in the browser's time zone. Empty → ``''``.
+ * Log timestamps arrive as UTC (``…Z``); cutting the time out of the ISO
+ * string would show UTC, two hours early in CEST.
+ */
+export function formatTime(value?: string | number | Date | null): string {
+  if (value === null || value === undefined || value === '') return ''
+  return formatDateTime(value, { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 /**
