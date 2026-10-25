@@ -2,13 +2,14 @@
 /**
  * What the picker's trigger shows: the placeholder, the selected value as a
  * pill (single) or removable chips (multi). A value missing from the loaded
- * list is marked as external.
+ * list is marked as external; a single value's ``detail`` (a flavor's specs)
+ * stands next to the pill.
  */
 import { useI18n } from 'vue-i18n'
 import { Check, X } from 'lucide-vue-next'
 
 defineProps<{
-  selected: { value: string; displayName: string; known: boolean }[]
+  selected: { value: string; displayName: string; known: boolean; detail?: string }[]
   multi?: boolean
   placeholder: string
 }>()
@@ -36,6 +37,9 @@ const { t } = useI18n()
           <span class="font-medium text-sm truncate">
             {{ selected[0]?.displayName }}
           </span>
+        </span>
+        <span v-if="selected[0]?.detail" class="min-w-0 truncate text-xs text-fg-muted" data-testid="selection-detail">
+          {{ selected[0].detail }}
         </span>
         <!-- Subtle hint when the value isn't in the currently loaded
              list (e.g. a default UUID of a deleted resource or not-yet

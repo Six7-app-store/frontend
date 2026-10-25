@@ -346,18 +346,25 @@ export function withoutStaleFileSlots<T>(
   return out
 }
 
+/** The VM's size (CPU, RAM, disk) — shown openly, not under "Erweitert". */
+const isResourceVariable = (v: AppVariable) => v.osType === 'flavor'
+
 /**
- * The start step's three groups of variables: what has no default and must
- * be filled in, the files, and everything with a default (under "Erweitert").
+ * The start step's four groups of variables: the VM's resources, what has
+ * no default and must be filled in, the files, and everything else with a
+ * default (under "Erweiterte Einstellungen").
  */
 export function startSections(definitions: AppVariable[]): {
+  resources: AppVariable[]
   required: AppVariable[]
   files: AppVariable[]
   advanced: AppVariable[]
 } {
+  const rest = definitions.filter((v) => !isFileVariable(v) && !isResourceVariable(v))
   return {
-    required: definitions.filter((v) => !isFileVariable(v) && v.required),
+    resources: definitions.filter((v) => !isFileVariable(v) && isResourceVariable(v)),
+    required: rest.filter((v) => v.required),
     files: definitions.filter(isFileVariable),
-    advanced: definitions.filter((v) => !isFileVariable(v) && !v.required),
+    advanced: rest.filter((v) => !v.required),
   }
 }

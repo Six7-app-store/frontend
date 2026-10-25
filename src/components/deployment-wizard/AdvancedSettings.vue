@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * "Erweitert": every variable that has a default, collapsed so nobody has
- * to look at it, with plain labels ("Größe der VM") instead of OpenTofu
- * names when opened.
+ * "Erweiterte Einstellungen": every variable that has a default, collapsed
+ * so nobody has to look at it, with plain labels ("Netzwerk") instead of
+ * OpenTofu names when opened, laid out as a grid.
  */
 import { ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -38,13 +38,10 @@ const toggleTooltip = (name: string) => {
       data-testid="btn-advanced"
       @click="open = !open"
     >
-      <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span class="text-base font-semibold">{{ t('deployment.wizard.advanced.title') }}</span>
-        <span class="text-sm text-fg-muted">{{ t('deployment.wizard.advanced.hint') }}</span>
-      </span>
+      <span class="min-w-0 flex-1 text-base font-semibold">{{ t('deployment.wizard.advanced.title') }}</span>
       <ChevronDown :size="18" class="shrink-0 text-icon transition-transform" :class="{ 'rotate-180': open }" aria-hidden="true" />
     </button>
-    <div v-show="open" :id="panelId" class="flex flex-col gap-3" data-testid="advanced-panel">
+    <div v-show="open" :id="panelId" class="wizard-variable-grid" data-testid="advanced-panel">
       <VariableFieldCard
         v-for="variable in variables"
         :key="variable.name"
