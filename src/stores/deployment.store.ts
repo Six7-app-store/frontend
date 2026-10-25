@@ -104,9 +104,9 @@ export const useDeploymentStore = defineStore('deployment', {
      * sidebar list while it's running would only confuse the user;
      * the live progress lives in the detail view that issued the call.
      */
-    async deleteDeployment(id: string) {
+    async deleteDeployment(id: string, options: { entryOnly?: boolean } = {}) {
       return runRequest(requestContext(this), async () => {
-        const response = await deploymentApi.delete(id)
+        const response = await deploymentApi.delete(id, options)
         this.deployments = this.deployments.filter((d: any) => d.deploymentId !== id)
         return response
       }, 'Failed to delete deployment')

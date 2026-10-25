@@ -9,6 +9,7 @@ import {
   DELETE_DISABLED_REASON,
   canDeleteDeployment,
   canPauseDeployment,
+  canRemoveMissingEntry,
   canResumeDeployment,
   isDeploymentGone,
   pauseResumeActionFor,
@@ -60,8 +61,15 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
   const canPauseOrResume = computed(() => canPause.value || canResume.value)
   const pauseResumeAction = computed<PauseResumeAction | null>(() => pauseResumeActionFor(deployment.value?.status))
 
+  // VMs deleted outside the App Store — offer to drop the stale entry.
+  const vmMissing = computed(() => !!deployment.value?.vm_missing_since)
+  const canRemoveEntry = computed(() =>
+    canOperate.value && canRemoveMissingEntry(deployment.value?.vm_missing_since, deployment.value?.status))
+
   const showDeleteModal = ref(false)
   const deleteBusy = ref(false)
+  const showRemoveEntryModal = ref(false)
+  const removeEntryBusy = ref(false)
   const showPauseResumeModal = ref(false)
   const pauseResumeBusy = ref(false)
 
@@ -164,6 +172,23 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     }
   }
 
+  // Entry-only delete for a deployment whose VMs are gone. Always a 204
+  // (no destroy task), so it ends like the soft-delete branch above.
+  const confirmRemoveEntry = async () => {
+    if (!deploymentId || removeEntryBusy.value) return
+    removeEntryBusy.value = true
+    try {
+      await deploymentStore.deleteDeployment(deploymentId, { entryOnly: true })
+      toast.success(t('DeploymentDetailView.removeEntrySuccessToast'))
+      router.push({ name: ROUTE_NAMES.deploymentsList })
+    } catch (err) {
+      toast.error(failureMessage(t('DeploymentDetailView.removeEntryErrorToast'), err))
+    } finally {
+      removeEntryBusy.value = false
+      showRemoveEntryModal.value = false
+    }
+  }
+
   // Pause / resume handler — same wiring as ``confirmDelete``: the
   // backend returns 202 with a ``task_id`` when it dispatched the
   // worker, so we just reload the deployment + tasks and the existing
@@ -207,5 +232,10 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     pauseResumeBusy,
     confirmDelete,
     confirmPauseResume,
+    vmMissing,
+    canRemoveEntry,
+    showRemoveEntryModal,
+    removeEntryBusy,
+    confirmRemoveEntry,
   }
 }

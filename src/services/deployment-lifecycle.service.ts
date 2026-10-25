@@ -58,6 +58,21 @@ export function pauseResumeActionFor(status: string | undefined): PauseResumeAct
   return null
 }
 
+// Statuses with a worker task in flight. Mirrors IN_FLIGHT_STATUSES in
+// backend/app/services/lifecycle.py — the backend answers 409 there.
+const IN_FLIGHT_STATUSES = ['pending', 'running', 'destroying', 'pausing', 'resuming']
+
+// "Remove entry" is offered once the backend has flagged that every VM
+// of the deployment is gone from OpenStack (``vm_missing_since``), and
+// only while no task is running. It soft-deletes the row without a
+// tofu destroy.
+export function canRemoveMissingEntry(
+  vmMissingSince: string | null | undefined,
+  status: string | undefined,
+): boolean {
+  return !!vmMissingSince && !IN_FLIGHT_STATUSES.includes(status ?? '')
+}
+
 export interface DeploymentBusySource {
   deploymentStatus: string | undefined
   activeTaskStatus: string | undefined

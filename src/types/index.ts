@@ -162,6 +162,8 @@ export interface Deployment {
   userInputVar: string | null
   releaseTag: string
   created_at: string
+  /** Set by the backend when every VM of the deployment is gone from OpenStack. */
+  vm_missing_since?: string | null
 }
 
 export interface DeploymentTeamMember {
