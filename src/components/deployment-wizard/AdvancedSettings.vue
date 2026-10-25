@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * "Erweiterte Einstellungen": every variable that has a default, collapsed
- * so nobody has to look at it, with plain labels ("Netzwerk") instead of
+ * so nobody has to look at it, with plain labels ("Größe der VM") instead of
  * OpenTofu names when opened, laid out as a grid.
  */
 import { ref, useId } from 'vue'

@@ -69,11 +69,10 @@ describe('StepStart', () => {
     vi.mocked(quotasApi.getOverview).mockResolvedValue({ data: { compute: { instances: { used: 12, limit: 30, available: 18 } } } } as never)
   })
 
-  it('zeigt Ressourcen, Pflichtangaben und Dateien offen, alles andere mit Default unter „Erweiterte Einstellungen“', async () => {
-    const wrapper = await mountStep([login, taskFile, flavor, network])
+  it('zeigt nur Pflichtangaben und Dateien offen, alles mit Default unter „Erweiterte Einstellungen“, die Größe der VM zuerst', async () => {
+    const wrapper = await mountStep([login, taskFile, network, flavor])
 
-    expect(wrapper.get('[data-testid="resource-inputs"]').text()).toContain('Größe der VM')
-    expect(wrapper.get('[data-testid="resource-inputs"]').text()).not.toContain('flavor_name')
+    expect(wrapper.find('[data-testid="resource-inputs"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="required-inputs"]').text()).toContain('Kürzel des Kurses')
     expect(wrapper.get('[data-testid="file-variable-task_files"]').text()).toContain('Aufgabe je Person')
     const toggle = wrapper.get('[data-testid="btn-advanced"]')
@@ -83,9 +82,10 @@ describe('StepStart', () => {
 
     await toggle.trigger('click')
     expect(toggle.attributes('aria-expanded')).toBe('true')
-    const panel = wrapper.get('[data-testid="advanced-panel"]')
-    expect(panel.text()).toContain('Netzwerk')
-    expect(panel.text()).not.toContain('Größe der VM')
+    const panel = wrapper.get('[data-testid="advanced-panel"]').text()
+    expect(panel).not.toContain('flavor_name')
+    expect(panel.indexOf('Größe der VM')).toBeGreaterThanOrEqual(0)
+    expect(panel.indexOf('Größe der VM')).toBeLessThan(panel.indexOf('Netzwerk'))
   })
 
   it('meldet fehlende Angaben, dann fehlende Dateien, als Grund nach oben', async () => {
