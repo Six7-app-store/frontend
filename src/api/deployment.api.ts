@@ -52,11 +52,16 @@ export const deploymentApi = {
    *     clean up).
    *   * anything in flight → 409.
    *
+   * ``entryOnly`` skips the destroy and soft-deletes straight away (204).
+   * Only accepted while ``vm_missing_since`` is set, otherwise 409.
+   *
    * Callers should branch on ``response.status``: 202 means "watch the
    * live stream, eventually we get redirected", 204 means "done".
    */
-  delete: (deploymentId: string) => {
-    return api.delete(`/deployments/${deploymentId}`)
+  delete: (deploymentId: string, options: { entryOnly?: boolean } = {}) => {
+    return api.delete(`/deployments/${deploymentId}`, {
+      params: options.entryOnly ? { entry_only: true } : undefined,
+    })
   },
 
   /**

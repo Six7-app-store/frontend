@@ -93,8 +93,11 @@ const sortedDeployments = computed(() =>
  *   unavailable → everything else, staff has to look at it
  */
 type StudentState = 'ready' | 'preparing' | 'unavailable'
+type StudentStateSource = Pick<Deployment, 'status' | 'vm_missing_since'>
 
-const studentState = (status: string | null | undefined): StudentState => {
+const studentState = ({ status, vm_missing_since }: StudentStateSource): StudentState => {
+  // VMs deleted outside the App Store — nothing the student can fix.
+  if (vm_missing_since) return 'unavailable'
   if (status === 'success') return 'ready'
   // ``null`` means the deployment row exists but no task has been
   // recorded yet — dispatch in flight, which is "preparing", not broken.
@@ -104,21 +107,21 @@ const studentState = (status: string | null | undefined): StudentState => {
   return 'unavailable'
 }
 
-const studentStateLabel = (status: string | null | undefined) =>
+const studentStateLabel = (row: StudentStateSource) =>
   ({
     ready: 'DeploymentsView.studentReady',
     preparing: 'DeploymentsView.studentPreparing',
     unavailable: 'DeploymentsView.studentUnavailable',
-  })[studentState(status)]
+  })[studentState(row)]
 
 // Deliberately no red. A student did not break anything, so an alarm
 // colour would only make them think they did.
-const studentStateTone = (status: string | null | undefined): StatusTone =>
+const studentStateTone = (row: StudentStateSource): StatusTone =>
   ({
     ready: 'success',
     preparing: 'warning',
     unavailable: 'neutral',
-  } as const)[studentState(status)]
+  } as const)[studentState(row)]
 
 </script>
 
@@ -183,18 +186,23 @@ const studentStateTone = (status: string | null | undefined): StatusTone =>
             <!-- Students get three states, staff get the raw lifecycle. -->
             <StatusBadge
               v-if="isStudent"
-              :tone="studentStateTone(row.status)"
-              :title="studentState(row.status) === 'unavailable' ? $t('DeploymentsView.studentUnavailableHint') : undefined"
+              :tone="studentStateTone(row)"
+              :title="studentState(row) === 'unavailable' ? $t('DeploymentsView.studentUnavailableHint') : undefined"
             >
-              {{ $t(studentStateLabel(row.status)) }}
+              {{ $t(studentStateLabel(row)) }}
             </StatusBadge>
-            <DeploymentStatusBadge v-else :status="row.status" />
+            <span v-else class="inline-flex flex-wrap items-center gap-1">
+              <DeploymentStatusBadge :status="row.status" />
+              <StatusBadge v-if="row.vm_missing_since" tone="warning" :title="$t('DeploymentsView.vmMissingHint')">
+                {{ $t('DeploymentsView.vmMissing') }}
+              </StatusBadge>
+            </span>
           </template>
           <template #cell-created="{ row }">
             <span class="tabular-nums text-fg-muted">{{ formatCreatedAt(row.created_at) }}</span>
           </template>
           <template #cell-hint="{ row }">
-            <span v-if="studentState(row.status) === 'unavailable'" class="text-sm text-fg-muted">
+            <span v-if="studentState(row) === 'unavailable'" class="text-sm text-fg-muted">
               {{ $t('DeploymentsView.studentUnavailableHint') }}
             </span>
             <span v-else class="text-sm text-nav">{{ $t('DeploymentsView.studentOpenAccess') }}</span>

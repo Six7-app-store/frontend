@@ -358,6 +358,8 @@ export default {
     studentUnavailable: "Nicht verfügbar",
     studentUnavailableHint: "Wende dich an deine Dozentin oder deinen Dozenten.",
     studentOpenAccess: "Zugangsdaten ansehen",
+    vmMissing: "VM fehlt",
+    vmMissingHint: "Die VMs dieses Deployments sind in OpenStack nicht mehr vorhanden.",
   },
   DeploymentDetailView: {
     redeployModal: {
@@ -472,6 +474,13 @@ export default {
     deleteSuccessToast: "Deployment erfolgreich gelöscht.",
     deleteErrorToast: "Fehler beim Löschen des Deployments",
     deleteFailedAsyncToast: "Löschen fehlgeschlagen — das Deployment existiert weiterhin. Details siehe Logs unten; bitte erneut versuchen.",
+    vmMissingTitle: "VMs in OpenStack nicht mehr vorhanden",
+    vmMissingMessage: "Keine VM dieses Deployments ist in OpenStack noch zu finden — sie wurden vermutlich außerhalb des App Stores gelöscht. Zeigen deine OpenStack-Zugangsdaten inzwischen auf ein anderes Projekt, kann das ebenfalls der Grund sein.",
+    removeEntry: "Eintrag entfernen",
+    confirmRemoveEntryTitle: "Eintrag entfernen",
+    confirmRemoveEntryMessage: "Den Eintrag {name} aus dem App Store entfernen? Es läuft kein OpenTofu-Abbau: übrig gebliebene Netzwerke oder Volumes bleiben in deinem OpenStack-Projekt und müssen dort von Hand entfernt werden. Wer stattdessen aufräumen lassen will, nutzt „Löschen“.",
+    removeEntrySuccessToast: "Eintrag entfernt.",
+    removeEntryErrorToast: "Eintrag konnte nicht entfernt werden",
     deploymentGroups: "Gruppen & VMs",
     deploymentNoGroups: "Keine Gruppen konfiguriert",
     deploymentStudentCount: "{n} Student | {n} Studenten",

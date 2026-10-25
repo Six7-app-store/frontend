@@ -4,6 +4,7 @@ import {
   DELETE_DISABLED_REASON,
   canDeleteDeployment,
   canPauseDeployment,
+  canRemoveMissingEntry,
   canResumeDeployment,
   pauseResumeActionFor,
   isDeploymentBusy,
@@ -38,6 +39,24 @@ describe('lifecycle matrix', () => {
     expect(DELETE_DISABLED_REASON).toBe(
       'Delete available when status is success, failed, cancelled, paused, pause_failed, resume_failed',
     )
+  })
+})
+
+describe('canRemoveMissingEntry', () => {
+  const since = '2026-10-25T10:00:00Z'
+
+  it.each(['success', 'paused', 'failed', 'pause_failed', 'resume_failed'])(
+    'allowed when VMs are missing and status is %s', (status) => {
+      expect(canRemoveMissingEntry(since, status)).toBe(true)
+    })
+
+  it.each(['pending', 'running', 'destroying', 'pausing', 'resuming'])(
+    'blocked while a task is in flight (%s)', (status) => {
+      expect(canRemoveMissingEntry(since, status)).toBe(false)
+    })
+
+  it.each([null, undefined, ''])('blocked without the backend flag (%s)', (flag) => {
+    expect(canRemoveMissingEntry(flag, 'success')).toBe(false)
   })
 })
 
