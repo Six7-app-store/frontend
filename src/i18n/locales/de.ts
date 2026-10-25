@@ -945,8 +945,6 @@ export default {
         filesLost: 'Nach dem Neuladen sind die gewählten Dateien nicht mehr da. Bitte wähle sie erneut.',
         requiredTitle: 'Was die App von dir braucht',
         requiredHint: 'Diese Angaben haben keinen Standardwert.',
-        resourcesTitle: 'Ressourcen der VM',
-        resourcesHint: 'Wie viel CPU, Arbeitsspeicher und Speicherplatz jede VM bekommt.',
         nothingNeeded: 'Diese App braucht keine weiteren Angaben. Prüfe die Zusammenfassung und starte.',
       },
       block: {

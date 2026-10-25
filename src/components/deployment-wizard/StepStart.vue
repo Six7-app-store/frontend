@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * Wizard step "Aufgabe & Start": the VM's resources (its size) in the open,
- * then what the app cannot do without — the variables without a default and
- * the files — with everything else collapsed under "Erweiterte
- * Einstellungen", and the summary beside it. Variables sit in a grid. An app that needs
+ * Wizard step "Aufgabe & Start": only what the app cannot do without — the
+ * variables without a default and the files — with everything else, the
+ * VM's size first, collapsed under "Erweiterte Einstellungen", and the
+ * summary beside it. Variables sit in a grid. An app that needs
  * nothing shows just the summary; the step is still the last one.
  *
  * Why the start is blocked is reported up through ``reason``.
@@ -63,25 +63,6 @@ onMounted(load)
           {{ t('deployment.wizard.startStep.filesLost') }}
         </AlertBox>
 
-        <section v-if="sections.resources.length" class="flex flex-col gap-3" data-testid="resource-inputs">
-          <div class="flex flex-col gap-1">
-            <h2 class="text-xl font-semibold text-heading">{{ t('deployment.wizard.startStep.resourcesTitle') }}</h2>
-            <p class="text-sm text-fg-muted">{{ t('deployment.wizard.startStep.resourcesHint') }}</p>
-          </div>
-          <div class="wizard-variable-grid">
-            <VariableFieldCard
-              v-for="variable in sections.resources"
-              :key="variable.name"
-              :variable="variable"
-              :form="form"
-              :label="labelOf(variable)"
-              plain
-              :tooltip-open="activeTooltip === variable.name"
-              @toggle-tooltip="toggleTooltip(variable.name)"
-            />
-          </div>
-        </section>
-
         <section v-if="sections.required.length" class="flex flex-col gap-3" data-testid="required-inputs">
           <div class="flex flex-col gap-1">
             <h2 class="text-xl font-semibold text-heading">{{ t('deployment.wizard.startStep.requiredTitle') }}</h2>
@@ -110,7 +91,7 @@ onMounted(load)
         />
 
         <p
-          v-if="!sections.resources.length && !sections.required.length && !sections.files.length && !form.loadFailed.value"
+          v-if="!sections.required.length && !sections.files.length && !form.loadFailed.value"
           class="text-base text-fg-body"
           data-testid="nothing-needed"
         >
