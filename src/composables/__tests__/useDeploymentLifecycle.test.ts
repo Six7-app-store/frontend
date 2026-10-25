@@ -81,21 +81,30 @@ describe('useDeploymentLifecycle', () => {
     expect(api.showDeleteModal.value).toBe(false)
   })
 
-  it('offers "remove entry" only when the backend flagged missing VMs', () => {
+  it('offers "remove entry" for missing VMs or a failed destroy, owners only', () => {
     const { api, deployment } = setup('success')
-    expect(api.vmMissing.value).toBe(false)
+    expect(api.entryRemovalReason.value).toBeNull()
     expect(api.canRemoveEntry.value).toBe(false)
 
     deployment.value = { ...deployment.value, vm_missing_since: '2026-10-25T10:00:00Z' }
-    expect(api.vmMissing.value).toBe(true)
+    expect(api.entryRemovalReason.value).toBe('vm_missing')
     expect(api.canRemoveEntry.value).toBe(true)
 
     deployment.value = { ...deployment.value, status: 'destroying' }
     expect(api.canRemoveEntry.value).toBe(false)
 
+    deployment.value = {
+      ...deployment.value,
+      vm_missing_since: null,
+      status: 'failed',
+      latest_task: { taskId: 't1', type: 'destroy', status: 'failed', started_at: null, finished_at: null, created_at: '' },
+    }
+    expect(api.entryRemovalReason.value).toBe('destroy_failed')
+    expect(api.canRemoveEntry.value).toBe(true)
+
     const member = setup('success', false)
     member.deployment.value = { ...member.deployment.value, vm_missing_since: '2026-10-25T10:00:00Z' }
-    expect(member.api.vmMissing.value).toBe(true)
+    expect(member.api.entryRemovalReason.value).toBe('vm_missing')
     expect(member.api.canRemoveEntry.value).toBe(false)
   })
 
