@@ -173,4 +173,16 @@ describe('startSections', () => {
     const { required, files, advanced } = startSections(defs)
     expect([required, files, advanced].map((list) => list.map((d) => d.name))).toEqual([['login'], ['task'], ['flavor']])
   })
+
+  it('zieht die Größe der VM aus "Erweitert" in die Ressourcen, auch ohne Default', () => {
+    const defs = [
+      v({ name: 'size', osType: 'flavor', default: 'm1.small' }),
+      v({ name: 'size_required', osType: 'flavor', required: true }),
+      v({ name: 'net', osType: 'network', default: 'n1' }),
+    ]
+    const { resources, required, advanced } = startSections(defs)
+    expect(resources.map((d) => d.name)).toEqual(['size', 'size_required'])
+    expect(required).toEqual([])
+    expect(advanced.map((d) => d.name)).toEqual(['net'])
+  })
 })

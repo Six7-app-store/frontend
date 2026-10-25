@@ -106,13 +106,17 @@ const isSelected = (item: ResourceItem): boolean =>
 /**
  * Display list of the current selection. Two sources: this picker's ``items``
  * if loaded, otherwise the shared display cache. Falls back to the raw value
- * marked ``known: false`` when neither has it.
+ * marked ``known: false`` when neither has it. A flavor also carries its
+ * specs (vCPU · RAM · disk), so the chosen VM size is readable closed.
  */
 const selectedDisplay = computed(() => {
   const mode: Mode = props.osMode || 'name'
   return [...selectedKeys.value].map((key) => {
     const local = items.value.find((it) => valueOf(it) === key)
-    if (local) return { value: key, displayName: local.name, known: true }
+    if (local) {
+      const detail = props.osType === 'flavor' ? local.secondary : undefined
+      return { value: key, displayName: local.name, known: true, detail }
+    }
     const cached = getDisplayName(props.osType, mode, key)
     if (cached) return { value: key, displayName: cached.name, known: cached.known }
     return { value: key, displayName: key, known: false }

@@ -910,8 +910,7 @@ export default {
         remove: 'Remove file of {name}',
       },
       advanced: {
-        title: 'Advanced',
-        hint: 'VM size, network and more. Defaults are set.',
+        title: 'Advanced settings',
       },
       summary: {
         title: 'Summary',
@@ -942,6 +941,8 @@ export default {
         filesLost: 'After the reload the chosen files are gone. Please choose them again.',
         requiredTitle: 'What the app needs from you',
         requiredHint: 'These settings have no default.',
+        resourcesTitle: 'VM resources',
+        resourcesHint: 'How much CPU, memory and disk each VM gets.',
         nothingNeeded: 'This app needs nothing else. Check the summary and start.',
       },
       block: {

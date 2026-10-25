@@ -9,7 +9,7 @@
  *
  * ``plain`` is the wizard's view for people who do not know OpenTofu:
  * ``label`` instead of the variable name, no type, required or scope
- * badges and no scope explanation.
+ * badges, no scope explanation and no ``@openstack`` markers in the info.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -17,7 +17,11 @@ import { AlertTriangle, Info } from 'lucide-vue-next'
 import VariableInput from '@/components/VariableInput.vue'
 import FileDropZone from '@/components/FileDropZone.vue'
 import Badge from '@/components/ui/Badge.vue'
-import { effectiveVariableScope as effectiveScope, variableScopeLabelKey } from '@/services/deployment-variables.service'
+import {
+  effectiveVariableScope as effectiveScope,
+  variableDisplayDescription,
+  variableScopeLabelKey,
+} from '@/services/deployment-variables.service'
 import { isList } from '@/services/variable-types'
 import { isFileVariable as isFileVar, isScoped, userSlotKey } from '@/services/variable-form.service'
 import type { VariableForm } from '@/composables/useVariableForm'
@@ -111,7 +115,7 @@ const formatSlotLabel = (variable: AppVariable, slotKey: string): string => {
     </div>
 
     <div v-if="tooltipOpen" class="mb-3 bg-line/[.04] p-3 rounded-lg border border-subtle text-sm text-fg">
-      <p v-if="variable.description" class="mb-2">{{ variable.description }}</p>
+      <p v-if="variable.description" class="mb-2">{{ plain ? variableDisplayDescription(variable.description) : variable.description }}</p>
       <div v-if="isList(variable.type)" class="flex gap-2 items-start text-xs text-fg">
         <Info :size="12" class="mt-0.5 shrink-0" />
         <span>{{ t('deployment.variables.commaSeparated') }}</span>
