@@ -4,7 +4,7 @@ import {
   DELETE_DISABLED_REASON,
   canDeleteDeployment,
   canPauseDeployment,
-  canRemoveMissingEntry,
+  entryRemovalReason,
   canResumeDeployment,
   pauseResumeActionFor,
   isDeploymentBusy,
@@ -42,21 +42,30 @@ describe('lifecycle matrix', () => {
   })
 })
 
-describe('canRemoveMissingEntry', () => {
+describe('entryRemovalReason', () => {
   const since = '2026-10-25T10:00:00Z'
+  const failedDestroy = { type: 'destroy', status: 'failed' }
 
   it.each(['success', 'paused', 'failed', 'pause_failed', 'resume_failed'])(
-    'allowed when VMs are missing and status is %s', (status) => {
-      expect(canRemoveMissingEntry(since, status)).toBe(true)
+    'offers it when VMs are missing and status is %s', (status) => {
+      expect(entryRemovalReason(since, status, null)).toBe('vm_missing')
     })
+
+  it('offers it after a failed destroy', () => {
+    expect(entryRemovalReason(null, 'failed', failedDestroy)).toBe('destroy_failed')
+  })
+
+  it('does not offer it after a failed deploy — "Delete" still destroys that', () => {
+    expect(entryRemovalReason(null, 'failed', { type: 'deploy', status: 'failed' })).toBeNull()
+  })
 
   it.each(['pending', 'running', 'destroying', 'pausing', 'resuming'])(
-    'blocked while a task is in flight (%s)', (status) => {
-      expect(canRemoveMissingEntry(since, status)).toBe(false)
+    'blocks it while a task is in flight (%s)', (status) => {
+      expect(entryRemovalReason(since, status, failedDestroy)).toBeNull()
     })
 
-  it.each([null, undefined, ''])('blocked without the backend flag (%s)', (flag) => {
-    expect(canRemoveMissingEntry(flag, 'success')).toBe(false)
+  it.each([null, undefined, ''])('needs the backend flag or a failed destroy (%s)', (flag) => {
+    expect(entryRemovalReason(flag, 'success', null)).toBeNull()
   })
 })
 

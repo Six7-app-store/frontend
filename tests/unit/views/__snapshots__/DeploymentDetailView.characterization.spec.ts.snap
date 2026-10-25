@@ -31,7 +31,8 @@ exports[`DeploymentDetailView — Live-Stream > startet den Stream für einen la
         </div>
       </div>
       <div class="flex flex-col gap-section">
-        <!-- VMs deleted outside the App Store — offer to drop the entry. -->
+        <!-- VMs deleted outside the App Store, or a destroy that cannot
+             get through — offer to drop the entry. -->
         <!--v-if-->
         <!-- Main info grid with 3 cards -->
         <div class="grid grid-cols-1 gap-card lg:grid-cols-3">
@@ -649,7 +650,8 @@ exports[`DeploymentDetailView — Member-Ansicht > lädt nur die eigenen Zugangs
         <!--v-if-->
       </div>
       <div class="flex flex-col gap-section">
-        <!-- VMs deleted outside the App Store — offer to drop the entry. -->
+        <!-- VMs deleted outside the App Store, or a destroy that cannot
+             get through — offer to drop the entry. -->
         <!--v-if-->
         <!-- Main info grid with 3 cards -->
         <div class="grid grid-cols-1 gap-card lg:grid-cols-3">
@@ -995,7 +997,8 @@ exports[`DeploymentDetailView — Owner-Ansicht > lädt Deployment, Tasks, Outpu
         </div>
       </div>
       <div class="flex flex-col gap-section">
-        <!-- VMs deleted outside the App Store — offer to drop the entry. -->
+        <!-- VMs deleted outside the App Store, or a destroy that cannot
+             get through — offer to drop the entry. -->
         <!--v-if-->
         <!-- Main info grid with 3 cards -->
         <div class="grid grid-cols-1 gap-card lg:grid-cols-3">
@@ -1542,7 +1545,8 @@ exports[`DeploymentDetailView — Tasks & Logs > öffnet ein Task-Detail mit Log
         </div>
       </div>
       <div class="flex flex-col gap-section">
-        <!-- VMs deleted outside the App Store — offer to drop the entry. -->
+        <!-- VMs deleted outside the App Store, or a destroy that cannot
+             get through — offer to drop the entry. -->
         <!--v-if-->
         <!-- Main info grid with 3 cards -->
         <div class="grid grid-cols-1 gap-card lg:grid-cols-3">

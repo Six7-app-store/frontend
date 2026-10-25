@@ -9,7 +9,7 @@ import {
   DELETE_DISABLED_REASON,
   canDeleteDeployment,
   canPauseDeployment,
-  canRemoveMissingEntry,
+  entryRemovalReason as entryRemovalReasonFor,
   canResumeDeployment,
   isDeploymentGone,
   pauseResumeActionFor,
@@ -61,10 +61,11 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
   const canPauseOrResume = computed(() => canPause.value || canResume.value)
   const pauseResumeAction = computed<PauseResumeAction | null>(() => pauseResumeActionFor(deployment.value?.status))
 
-  // VMs deleted outside the App Store — offer to drop the stale entry.
-  const vmMissing = computed(() => !!deployment.value?.vm_missing_since)
-  const canRemoveEntry = computed(() =>
-    canOperate.value && canRemoveMissingEntry(deployment.value?.vm_missing_since, deployment.value?.status))
+  // VMs deleted outside the App Store, or a destroy that cannot get
+  // through — offer to drop the entry without one.
+  const entryRemovalReason = computed(() => entryRemovalReasonFor(
+    deployment.value?.vm_missing_since, deployment.value?.status, deployment.value?.latest_task))
+  const canRemoveEntry = computed(() => canOperate.value && entryRemovalReason.value !== null)
 
   const showDeleteModal = ref(false)
   const deleteBusy = ref(false)
@@ -232,7 +233,7 @@ export function useDeploymentLifecycle(options: DeploymentLifecycleOptions) {
     pauseResumeBusy,
     confirmDelete,
     confirmPauseResume,
-    vmMissing,
+    entryRemovalReason,
     canRemoveEntry,
     showRemoveEntryModal,
     removeEntryBusy,

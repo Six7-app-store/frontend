@@ -19,7 +19,7 @@ import DeploymentDeleteModal from '@/components/deployment/DeploymentDeleteModal
 import DeploymentRedeployModal from '@/components/deployment/DeploymentRedeployModal.vue'
 import DeploymentRebootModal from '@/components/deployment/DeploymentRebootModal.vue'
 import DeploymentPauseResumeModal from '@/components/deployment/DeploymentPauseResumeModal.vue'
-import DeploymentVmMissingNotice from '@/components/deployment/DeploymentVmMissingNotice.vue'
+import DeploymentRemoveEntryNotice from '@/components/deployment/DeploymentRemoveEntryNotice.vue'
 import { provideCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useDeploymentOwnerView } from '@/composables/useDeploymentOwnerView'
 import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
@@ -190,7 +190,7 @@ const {
     pauseResumeBusy,
     confirmDelete,
     confirmPauseResume,
-    vmMissing,
+    entryRemovalReason,
     canRemoveEntry,
     showRemoveEntryModal,
     removeEntryBusy,
@@ -250,9 +250,11 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
 
         <div class="flex flex-col gap-section">
 
-        <!-- VMs deleted outside the App Store — offer to drop the entry. -->
-        <DeploymentVmMissingNotice
-            v-if="vmMissing"
+        <!-- VMs deleted outside the App Store, or a destroy that cannot
+             get through — offer to drop the entry. -->
+        <DeploymentRemoveEntryNotice
+            v-if="entryRemovalReason"
+            :reason="entryRemovalReason"
             :deployment-name="deployment.name"
             :can-remove="canRemoveEntry"
             :show="showRemoveEntryModal"

@@ -62,15 +62,24 @@ export function pauseResumeActionFor(status: string | undefined): PauseResumeAct
 // backend/app/services/lifecycle.py — the backend answers 409 there.
 const IN_FLIGHT_STATUSES = ['pending', 'running', 'destroying', 'pausing', 'resuming']
 
-// "Remove entry" is offered once the backend has flagged that every VM
-// of the deployment is gone from OpenStack (``vm_missing_since``), and
-// only while no task is running. It soft-deletes the row without a
-// tofu destroy.
-export function canRemoveMissingEntry(
+/** Why "Remove entry" is offered: the VMs are gone, or a destroy cannot get through. */
+export type EntryRemovalReason = 'vm_missing' | 'destroy_failed'
+
+// "Remove entry" soft-deletes the row without a tofu destroy. Mirrors the
+// ``entry_only`` gate of DELETE in backend/app/routers/deployments.py:
+// offered once the backend flagged that every VM is gone from OpenStack
+// (``vm_missing_since``), or when the last destroy itself failed — e.g.
+// the app repo was deleted, so "Delete" would only fail again. Never
+// while a task is running.
+export function entryRemovalReason(
   vmMissingSince: string | null | undefined,
   status: string | undefined,
-): boolean {
-  return !!vmMissingSince && !IN_FLIGHT_STATUSES.includes(status ?? '')
+  latestTask: { type: string; status: string } | null | undefined,
+): EntryRemovalReason | null {
+  if (IN_FLIGHT_STATUSES.includes(status ?? '')) return null
+  if (vmMissingSince) return 'vm_missing'
+  if (latestTask?.type === 'destroy' && latestTask.status === 'failed') return 'destroy_failed'
+  return null
 }
 
 export interface DeploymentBusySource {
