@@ -267,6 +267,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
+          # Rebuild the runtime stage every time: its `apk upgrade` layer
+          # would otherwise come from cache and never pick up Alpine fixes
+          # until the base-image digest changes (Trivy gate, CVE-2026-92392).
+          no-cache-filters: runtime
           cache-to: type=gha,mode=max
 
   # ================================================================
@@ -302,6 +306,10 @@ jobs:
           platforms: linux/amd64
           tags: frontend:scan
           cache-from: type=gha
+          # Rebuild the runtime stage every time: its `apk upgrade` layer
+          # would otherwise come from cache and never pick up Alpine fixes
+          # until the base-image digest changes (Trivy gate, CVE-2026-92392).
+          no-cache-filters: runtime
 
       - name: Trivy image scan (gate)
         uses: aquasecurity/trivy-action@v0.36.0
@@ -392,6 +400,10 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
+          # Rebuild the runtime stage every time: its `apk upgrade` layer
+          # would otherwise come from cache and never pick up Alpine fixes
+          # until the base-image digest changes (Trivy gate, CVE-2026-92392).
+          no-cache-filters: runtime
           cache-to: type=gha,mode=max
 
 # Hier endet diese Datei, aber nicht die Pipeline.
