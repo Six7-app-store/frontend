@@ -24,14 +24,15 @@ RUN npm run build
 # on 8080 instead of 80, which removes the need for root privileges to
 # bind a privileged port. Trivy's DS-0002 (no USER instruction) is
 # satisfied because the base image already sets USER nginx.
-FROM nginxinc/nginx-unprivileged:alpine
+FROM nginxinc/nginx-unprivileged:alpine AS runtime
 
 # Run apk operations as root, then drop back to nginx for the runtime.
 USER root
 
 # Apply outstanding base-image security patches that the upstream tag
 # hasn't picked up yet (Trivy scans the runtime image — anything
-# HIGH/CRITICAL here blocks the push).
+# HIGH/CRITICAL here blocks the push). CI builds this stage with
+# `no-cache-filters: runtime`, so the upgrade is never served from cache.
 RUN apk upgrade --no-cache && \
     apk add --no-cache "libcrypto3>=3.5.7-r0" "libssl3>=3.5.7-r0" || \
     apk upgrade --no-cache libcrypto3 libssl3
