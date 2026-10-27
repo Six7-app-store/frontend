@@ -31,6 +31,7 @@ const people: Record<string, object> = {
 const taskFile: AppVariable = { name: 'task_files', type: 'map(string)', osType: 'file', osScope: 'user', required: true, description: 'Aufgabe je Person. Liegt im Home.' } as AppVariable
 const login: AppVariable = { name: 'course_code', type: 'string', required: true, description: 'Kürzel des Kurses.' } as AppVariable
 const flavor: AppVariable = { name: 'flavor_name', type: 'string', osType: 'flavor', default: 'm1.small' } as AppVariable
+const network: AppVariable = { name: 'network_uuid', type: 'string', osType: 'network', default: 'net-1' } as AppVariable
 
 async function mountStep(definitions: AppVariable[], { fail = false } = {}) {
   if (fail) vi.mocked(appApi.getVariables).mockRejectedValue(new Error('git'))
@@ -68,19 +69,23 @@ describe('StepStart', () => {
     vi.mocked(quotasApi.getOverview).mockResolvedValue({ data: { compute: { instances: { used: 12, limit: 30, available: 18 } } } } as never)
   })
 
-  it('zeigt nur Pflichtangaben und Dateien offen, alles mit Default unter „Erweitert“', async () => {
-    const wrapper = await mountStep([login, taskFile, flavor])
+  it('zeigt nur Pflichtangaben und Dateien offen, alles mit Default unter „Erweiterte Einstellungen“, die Größe der VM zuerst', async () => {
+    const wrapper = await mountStep([login, taskFile, network, flavor])
 
+    expect(wrapper.find('[data-testid="resource-inputs"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="required-inputs"]').text()).toContain('Kürzel des Kurses')
     expect(wrapper.get('[data-testid="file-variable-task_files"]').text()).toContain('Aufgabe je Person')
     const toggle = wrapper.get('[data-testid="btn-advanced"]')
+    expect(toggle.text()).toBe('Erweiterte Einstellungen')
     expect(toggle.attributes('aria-expanded')).toBe('false')
     expect(wrapper.get('[data-testid="advanced-panel"]').attributes('style')).toContain('display: none')
 
     await toggle.trigger('click')
     expect(toggle.attributes('aria-expanded')).toBe('true')
-    expect(wrapper.get('[data-testid="advanced-panel"]').text()).toContain('Größe der VM')
-    expect(wrapper.get('[data-testid="advanced-panel"]').text()).not.toContain('flavor_name')
+    const panel = wrapper.get('[data-testid="advanced-panel"]').text()
+    expect(panel).not.toContain('flavor_name')
+    expect(panel.indexOf('Größe der VM')).toBeGreaterThanOrEqual(0)
+    expect(panel.indexOf('Größe der VM')).toBeLessThan(panel.indexOf('Netzwerk'))
   })
 
   it('meldet fehlende Angaben, dann fehlende Dateien, als Grund nach oben', async () => {

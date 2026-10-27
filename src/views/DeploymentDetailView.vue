@@ -19,6 +19,7 @@ import DeploymentDeleteModal from '@/components/deployment/DeploymentDeleteModal
 import DeploymentRedeployModal from '@/components/deployment/DeploymentRedeployModal.vue'
 import DeploymentRebootModal from '@/components/deployment/DeploymentRebootModal.vue'
 import DeploymentPauseResumeModal from '@/components/deployment/DeploymentPauseResumeModal.vue'
+import DeploymentRemoveEntryNotice from '@/components/deployment/DeploymentRemoveEntryNotice.vue'
 import { provideCopyToClipboard } from '@/composables/useCopyToClipboard'
 import { useDeploymentOwnerView } from '@/composables/useDeploymentOwnerView'
 import { useBreadcrumbEntity } from '@/composables/useBreadcrumbs'
@@ -189,6 +190,11 @@ const {
     pauseResumeBusy,
     confirmDelete,
     confirmPauseResume,
+    entryRemovalReason,
+    canRemoveEntry,
+    showRemoveEntryModal,
+    removeEntryBusy,
+    confirmRemoveEntry,
 } = useDeploymentLifecycle({
     deploymentId,
     deployment,
@@ -243,6 +249,20 @@ const { isDeploymentBusy, resendState, resendAccess } = useResendAccess({
         />
 
         <div class="flex flex-col gap-section">
+
+        <!-- VMs deleted outside the App Store, or a destroy that cannot
+             get through — offer to drop the entry. -->
+        <DeploymentRemoveEntryNotice
+            v-if="entryRemovalReason"
+            :reason="entryRemovalReason"
+            :deployment-name="deployment.name"
+            :can-remove="canRemoveEntry"
+            :show="showRemoveEntryModal"
+            :busy="removeEntryBusy"
+            @open="showRemoveEntryModal = true"
+            @close="showRemoveEntryModal = false"
+            @confirm="confirmRemoveEntry"
+        />
 
         <!-- Main info grid with 3 cards -->
         <DeploymentOverviewCards :deployment="deployment" />

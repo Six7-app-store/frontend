@@ -11,6 +11,8 @@
  *     a path that ends in a 403)
  *   * students get "Meine Umgebungen", staff get "Deployments"
  *   * the twelve lifecycle states collapse to three for students
+ *   * VMs gone from OpenStack read as "unavailable" for students and get
+ *     an extra "VM missing" badge for staff
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
@@ -145,5 +147,21 @@ describe('DeploymentsListView — role split', () => {
     const html = render().html()
     expect(html).toContain('DeploymentsView.deploymentPauseFailed')
     expect(html).not.toContain('DeploymentsView.studentUnavailable')
+  })
+
+  it('shows students a deployment with missing VMs as unavailable, not ready', () => {
+    mockRole = 'student'
+    mockDeployments = [{ ...deployment('success'), vm_missing_since: '2026-10-25T10:00:00Z' }]
+    const html = render().html()
+    expect(html).toContain('DeploymentsView.studentUnavailable')
+    expect(html).not.toContain('DeploymentsView.studentReady')
+  })
+
+  it('adds a "VM missing" badge next to the lifecycle status for staff', () => {
+    mockDeployments = [{ ...deployment('success'), vm_missing_since: '2026-10-25T10:00:00Z' }]
+    expect(render().html()).toContain('DeploymentsView.vmMissing')
+
+    mockDeployments = [deployment('success')]
+    expect(render().html()).not.toContain('DeploymentsView.vmMissing')
   })
 })

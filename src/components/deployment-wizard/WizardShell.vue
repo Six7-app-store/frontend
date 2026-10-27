@@ -37,7 +37,7 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <div class="flex max-w-wizard flex-col gap-7">
+  <div class="flex w-full flex-col gap-7">
     <PageHeader :title="t('deployment.title')" />
 
     <WizardStepper :labels="labels" :current="current" />

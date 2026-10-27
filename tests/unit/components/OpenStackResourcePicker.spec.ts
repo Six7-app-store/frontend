@@ -165,6 +165,21 @@ describe('OpenStackResourcePicker', () => {
     })
   })
 
+  it('shows the chosen flavor with its specs while closed', async () => {
+    const wrapper = mountPicker({ modelValue: 'm1.small' })
+    await flushPromises()
+    expect(wrapper.get('[data-testid="selection-detail"]').text()).toBe('1 vCPU · 2 GB RAM · 20 GB Disk')
+  })
+
+  it('shows no spec line next to a chosen value of another type', async () => {
+    vi.mocked(openstackResourcesApi.listNetworks).mockResolvedValue({
+      data: [{ id: 'n-1', name: 'net', description: 'Uni-Netz', subnets: [], shared: true, external: false }],
+    } as any)
+    const wrapper = mountPicker({ osType: 'network', modelValue: 'net' })
+    await flushPromises()
+    expect(wrapper.find('[data-testid="selection-detail"]').exists()).toBe(false)
+  })
+
   it('shows a value it does not know with the external badge', async () => {
     const wrapper = mountPicker({ modelValue: 'gone-flavor' })
     await flushPromises()

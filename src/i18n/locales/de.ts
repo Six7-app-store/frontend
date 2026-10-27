@@ -358,6 +358,8 @@ export default {
     studentUnavailable: "Nicht verfügbar",
     studentUnavailableHint: "Wende dich an deine Dozentin oder deinen Dozenten.",
     studentOpenAccess: "Zugangsdaten ansehen",
+    vmMissing: "VM fehlt",
+    vmMissingHint: "Die VMs dieses Deployments sind in OpenStack nicht mehr vorhanden.",
   },
   DeploymentDetailView: {
     redeployModal: {
@@ -472,6 +474,15 @@ export default {
     deleteSuccessToast: "Deployment erfolgreich gelöscht.",
     deleteErrorToast: "Fehler beim Löschen des Deployments",
     deleteFailedAsyncToast: "Löschen fehlgeschlagen — das Deployment existiert weiterhin. Details siehe Logs unten; bitte erneut versuchen.",
+    vmMissingTitle: "VMs in OpenStack nicht mehr vorhanden",
+    vmMissingMessage: "Keine VM dieses Deployments ist in OpenStack noch zu finden — sie wurden vermutlich außerhalb des App Stores gelöscht. Zeigen deine OpenStack-Zugangsdaten inzwischen auf ein anderes Projekt, kann das ebenfalls der Grund sein.",
+    destroyFailedTitle: "Abbau gescheitert",
+    destroyFailedMessage: "Der letzte Abbau über OpenTofu ist fehlgeschlagen (Details in den Logs unten). Ist das App-Repository nicht mehr erreichbar, wird auch jeder weitere Versuch scheitern. Du kannst den Eintrag trotzdem entfernen — noch vorhandene VMs, Netzwerke oder Volumes musst du dann selbst in OpenStack löschen.",
+    removeEntry: "Eintrag entfernen",
+    confirmRemoveEntryTitle: "Eintrag entfernen",
+    confirmRemoveEntryMessage: "Den Eintrag {name} aus dem App Store entfernen? Es läuft kein OpenTofu-Abbau: übrig gebliebene VMs, Netzwerke oder Volumes bleiben in deinem OpenStack-Projekt und müssen dort von Hand entfernt werden.",
+    removeEntrySuccessToast: "Eintrag entfernt.",
+    removeEntryErrorToast: "Eintrag konnte nicht entfernt werden",
     deploymentGroups: "Gruppen & VMs",
     deploymentNoGroups: "Keine Gruppen konfiguriert",
     deploymentStudentCount: "{n} Student | {n} Studenten",
@@ -905,8 +916,7 @@ export default {
         remove: 'Datei von {name} entfernen',
       },
       advanced: {
-        title: 'Erweitert',
-        hint: 'Größe der VM, Netzwerk und weitere Einstellungen. Standardwerte sind gesetzt.',
+        title: 'Erweiterte Einstellungen',
       },
       summary: {
         title: 'Zusammenfassung',

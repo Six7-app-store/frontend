@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * Wizard step "Aufgabe & Start": only what the app cannot do without — the
- * variables without a default and the files — with everything else
- * collapsed under "Erweitert", and the summary beside it. An app that needs
+ * variables without a default and the files — with everything else, the
+ * VM's size first, collapsed under "Erweiterte Einstellungen", and the
+ * summary beside it. Variables sit in a grid. An app that needs
  * nothing shows just the summary; the step is still the last one.
  *
  * Why the start is blocked is reported up through ``reason``.
@@ -67,16 +68,18 @@ onMounted(load)
             <h2 class="text-xl font-semibold text-heading">{{ t('deployment.wizard.startStep.requiredTitle') }}</h2>
             <p class="text-sm text-fg-muted">{{ t('deployment.wizard.startStep.requiredHint') }}</p>
           </div>
-          <VariableFieldCard
-            v-for="variable in sections.required"
-            :key="variable.name"
-            :variable="variable"
-            :form="form"
-            :label="labelOf(variable)"
-            plain
-            :tooltip-open="activeTooltip === variable.name"
-            @toggle-tooltip="toggleTooltip(variable.name)"
-          />
+          <div class="wizard-variable-grid">
+            <VariableFieldCard
+              v-for="variable in sections.required"
+              :key="variable.name"
+              :variable="variable"
+              :form="form"
+              :label="labelOf(variable)"
+              plain
+              :tooltip-open="activeTooltip === variable.name"
+              @toggle-tooltip="toggleTooltip(variable.name)"
+            />
+          </div>
         </section>
 
         <FileAssignment

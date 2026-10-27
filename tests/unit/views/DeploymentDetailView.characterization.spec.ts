@@ -933,7 +933,7 @@ describe('DeploymentDetailView — Lifecycle-Aktionen', () => {
     await confirm.trigger('click')
     await settle()
 
-    expect(h.deploymentApi.delete).toHaveBeenCalledWith('dep-1')
+    expect(h.deploymentApi.delete).toHaveBeenCalledWith('dep-1', {})
     expect(toasts()).toEqual([{ type: 'success', message: t('DeploymentDetailView.deleteSuccessToast') }])
     expect(h.push).toHaveBeenCalledWith({ name: 'deployments.list' })
     expect(wrapper.text()).not.toContain(t('DeploymentDetailView.confirmDeleteTitle'))

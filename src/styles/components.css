@@ -479,6 +479,15 @@
     background: rgb(var(--color-neutral-dot));
   }
 
+  /* Variable cards of the deployment wizard: as many columns as fit, each at
+     least wide enough for a picker; cards in a row share their height. */
+  .wizard-variable-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
   /* Notice boxes: warning uses the notice tokens, the other tones tint the status colour */
   .alert {
     display: flex;
