@@ -3,6 +3,7 @@ import { AuthService } from '@/services/auth.service'
 import { useKeycloak } from '@/composables/useKeycloak'
 import { useLtiSession } from '@/composables/useLtiSession'
 import { useOpenStackCredentialsStore } from '@/stores/openstack-credentials.store'
+import { useDeploymentStore } from '@/stores/deployment.store'
 import { invalidateAll as invalidateOpenStackCache } from '@/composables/useOpenStackResourceCache'
 import type { User, UserRole } from '@/types'
 
@@ -153,6 +154,9 @@ export const useAuthStore = defineStore('auth', {
       initializePromise = null
       fetchMePromise = null
       useOpenStackCredentialsStore().reset()
+      const deployments = useDeploymentStore()
+      deployments.resetDraft()
+      deployments.$reset()
       // Clear the OpenStack resource display cache — the next user has their own
       // credentials and a different project, so old resource lists must not persist.
       invalidateOpenStackCache()

@@ -100,7 +100,7 @@ describe('AppsDetailView.vue', () => {
                 name: 'Test App',
                 description: 'Detail Beschreibung',
                 userId: 'user-1',
-                versions: ['v1.0', 'v2.0']
+                versions: ['v1.0', 'v2.0'], approvedVersions: ['v1.0', 'v2.0']
             }
         })
     })
@@ -180,7 +180,7 @@ describe('AppsDetailView.vue', () => {
 
     it('belegt die neueste freigegebene Version vor, nicht den neuesten Tag', async () => {
         ;(appApi.getById as any).mockResolvedValue({
-            data: { appId: 'app-123', name: 'Test App', latestApprovedVersion: 'v0.9', versions: [{ version: 'v1.0' }, { version: 'v0.9' }] }
+            data: { appId: 'app-123', name: 'Test App', latestApprovedVersion: 'v0.9', approvedVersions: ['v0.9'], versions: [{ version: 'v1.0' }, { version: 'v0.9' }] }
         })
         const wrapper = mountComponent()
         await flushPromises()

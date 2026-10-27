@@ -95,6 +95,7 @@ export interface App {
   // Newest approved version tag, null while none is approved. Lets the
   // wizard preselect a version without asking Git.
   latestApprovedVersion?: string | null
+  approvedVersions?: string[]
 }
 
 export interface AppWithUser extends App {
@@ -135,6 +136,7 @@ export interface AppVersionApproval {
   approvalId: string
   appId: string
   version_tag: string
+  commit_sha?: string | null
   status: AppVersionApprovalStatus
   diff_url: string | null
   notes: string | null
