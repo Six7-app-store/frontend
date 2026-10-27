@@ -11,21 +11,20 @@ export function appTagline(app: Pick<App, 'description'>): string {
   return heading || text
 }
 
-/** An app none of whose versions is approved yet — only its owner may deploy it. */
+/** An app none of whose versions is approved yet. */
 export function isUnapproved(app: Pick<App, 'latestApprovedVersion'>): boolean {
   return !app.latestApprovedVersion
 }
 
 /**
  * The apps the wizard offers: those with an approved version plus the
- * caller's own apps (``ownerId``), which the backend lets their owner deploy
- * before any approval — so a freshly added app shows up right away. Matching
- * ``query`` in name or tagline (case-insensitive), sorted by name.
+ * all apps for admins. Matching ``query`` in name or tagline
+ * (case-insensitive), sorted by name.
  */
-export function deployableApps(apps: readonly App[], query: string, ownerId: string | null = null): App[] {
+export function deployableApps(apps: readonly App[], query: string, _ownerId: string | null = null, isAdmin = false): App[] {
   const needle = query.trim().toLocaleLowerCase('de')
   return apps
-    .filter((app) => !isUnapproved(app) || (!!ownerId && app.userId === ownerId))
+    .filter((app) => isAdmin || !isUnapproved(app))
     .filter((app) => !needle
       || app.name.toLocaleLowerCase('de').includes(needle)
       || appTagline(app).toLocaleLowerCase('de').includes(needle))

@@ -119,6 +119,9 @@ const busy = (versionTag: string) => props.actingOn === `${props.app.appId}:${ve
           >
             <td class="px-2 py-3">
               <span class="font-mono text-heading">{{ approval.version_tag }}</span>
+              <span v-if="approval.commit_sha" class="block font-mono text-xs text-fg-muted" :title="approval.commit_sha">
+                {{ approval.commit_sha }}
+              </span>
             </td>
             <td class="py-3 px-4">
               <div class="space-y-1.5">

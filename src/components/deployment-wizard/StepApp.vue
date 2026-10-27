@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
- * Wizard step "App": the approved apps — plus the user's own, not yet
- * approved ones, marked as such — as radio cards with a search, and the
+ * Wizard step "App": approved apps as radio cards with a search, and the
  * version — the newest approved one preselected, every other one in a select.
  */
 import { computed, onMounted, useId, watch } from 'vue'
@@ -49,7 +48,7 @@ const version = computed({
 })
 // Without a list (the app reports none) the preselected version is still offered.
 const versionChoices = computed(() => {
-  const tags = versions.value.length ? versions.value : [store.draft.releaseTag].filter(Boolean)
+  const tags = versionsState.value === 'ready' ? versions.value : [store.draft.releaseTag].filter(Boolean)
   return tags.map((tag) => ({ value: tag, label: tag }))
 })
 

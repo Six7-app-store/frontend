@@ -11,8 +11,7 @@ export type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
 /**
  * State of the wizard's app step: the deployable apps with a search (the
- * approved ones plus the user's own), the chosen app with its newest approved
- * version preselected — for an own app without approval its newest Git tag —
+ * approved ones), the chosen app with its newest approved version preselected,
  * and the chosen app's versions to choose from (``loadVersions``, which asks
  * Git, so it runs for the chosen app only).
  */
@@ -23,7 +22,7 @@ export function useWizardApp() {
 
   const query = ref('')
   const appsState = ref<LoadState>('idle')
-  const apps = computed(() => deployableApps(catalog.apps.value, query.value, auth.userId))
+  const apps = computed(() => deployableApps(catalog.apps.value, query.value, auth.userId, auth.user?.role === 'admin'))
   const chosen = computed<App | null>(() =>
     catalog.apps.value.find((app) => app.appId === store.draft.appId) ?? null)
 
@@ -51,21 +50,26 @@ export function useWizardApp() {
     store.chooseRelease({ appId: store.draft.appId, appName: store.draft.appName, releaseTag: tag })
   }
 
-  /** The chosen app's versions — approved ones only, unless it is the user's own. */
+  /** The chosen app's versions — approved ones only, unless the caller is an admin. */
   async function loadVersions() {
     const appId = store.draft.appId
     if (!appId || (versionsOf === appId && versionsState.value === 'ready')) return
     versionsOf = appId
+    versions.value = []
     versionsState.value = 'loading'
     try {
       const { data } = await appApi.getById(appId)
       if (versionsOf !== appId) return
-      versions.value = versionOptions(data.versions)
+      const allVersions = versionOptions(data.versions)
+      versions.value = auth.user?.role === 'admin'
+        ? [...new Set([...allVersions, ...(data.approvedVersions ?? [])])]
+        : (data.approvedVersions ?? [])
       versionsState.value = 'ready'
-      // An own app without an approved version has nothing preselected; the
-      // newest tag (the backend sorts newest first) is the obvious choice.
+      // Admins may test unapproved versions; everyone else sees only approvals.
       const newest = versions.value[0]
-      if (store.draft.appId === appId && !store.draft.releaseTag && newest) chooseVersion(newest)
+      if (store.draft.appId === appId && !versions.value.includes(store.draft.releaseTag)) {
+        chooseVersion(newest ?? '')
+      }
     } catch {
       if (versionsOf === appId) versionsState.value = 'error'
     }

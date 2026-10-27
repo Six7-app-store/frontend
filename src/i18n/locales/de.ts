@@ -833,9 +833,9 @@ export default {
       start: 'Deployment starten',
       app: {
         question: 'Welche App möchtest du bereitstellen?',
-        onlyApproved: 'Es werden freigegebene Apps und deine eigenen Apps angezeigt.',
+        onlyApproved: 'Es werden freigegebene Apps angezeigt.',
         notApproved: 'noch nicht freigegeben',
-        unapprovedHint: 'Diese App ist noch nicht freigegeben. Als Besitzer kannst du sie trotzdem schon deployen.',
+        unapprovedHint: 'Diese App ist noch nicht freigegeben. Ein Administrator muss sie zuerst prüfen.',
         noVersions: 'Diese App hat noch keine Version. Lege im Git-Repository einen Tag an (z. B. v1.0.0).',
         search: 'App suchen',
         searchPlaceholder: 'App suchen …',
