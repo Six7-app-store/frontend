@@ -696,7 +696,7 @@ export default {
       removeConfirmTitle: "Remove logo?",
       removeConfirmText: "The app is shown without a logo afterwards. This only takes effect when you save.",
       title: "Edit app",
-      description: "Update name, description and logo. The repository is immutable after creation.",
+      description: "Update name, description and logo.",
       nameLabel: "Name",
       descLabel: "Description",
       imageLabel: "Logo",

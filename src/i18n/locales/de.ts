@@ -699,7 +699,7 @@ export default {
       removeConfirmTitle: "Logo entfernen?",
       removeConfirmText: "Die App wird danach ohne Logo angezeigt. Wirksam wird das erst beim Speichern.",
       title: "App bearbeiten",
-      description: "Aktualisiere Name, Beschreibung und Logo. Das Repository ist nach der Erstellung nicht mehr änderbar.",
+      description: "Aktualisiere Name, Beschreibung und Logo.",
       nameLabel: "Name",
       descLabel: "Beschreibung",
       imageLabel: "Logo",
