@@ -22,7 +22,9 @@ async function mountLayout() {
   return { wrapper, i18n }
 }
 
-describe('AuthLayout', () => {
+// The first test pays for the cold import of the whole layout after
+// resetModules; in a full coverage run that sits right at the 5 s default.
+describe('AuthLayout', { timeout: 15_000 }, () => {
   beforeEach(() => {
     document.documentElement.removeAttribute('data-theme')
     localStorage.clear()
