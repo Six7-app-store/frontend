@@ -40,9 +40,10 @@ describe('deployableApps', () => {
     expect(deployableApps(apps, 'entwurf')).toEqual([])
   })
 
-  it('bietet zusätzlich die eigenen, noch nicht freigegebenen Apps an', () => {
+  it('hides unapproved apps for owners and allows administrators to review them', () => {
     const mine = [...apps, app('Kuber', { latestApprovedVersion: null, userId: 'me' })]
-    expect(deployableApps(mine, '', 'me').map((a) => a.name)).toEqual(['Kuber', 'Online-IDE', 'Web-LaTeX'])
+    expect(deployableApps(mine, '', 'me').map((a) => a.name)).toEqual(['Online-IDE', 'Web-LaTeX'])
+    expect(deployableApps(mine, '', 'me', true).map((a) => a.name)).toEqual(['Entwurf', 'Kuber', 'Online-IDE', 'Web-LaTeX'])
     // Someone else's draft stays hidden, as does every draft without a user.
     expect(deployableApps(mine, '', 'other').map((a) => a.name)).toEqual(['Online-IDE', 'Web-LaTeX'])
     expect(deployableApps(mine, '').map((a) => a.name)).toEqual(['Online-IDE', 'Web-LaTeX'])

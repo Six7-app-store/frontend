@@ -35,7 +35,7 @@ describe('StepApp', () => {
     setActivePinia(createPinia())
     vi.mocked(appApi.getById).mockClear()
     vi.mocked(appApi.list).mockResolvedValue({ data: apps } as never)
-    vi.mocked(appApi.getById).mockResolvedValue({ data: { versions: [{ version: 'v1.2.0' }, { version: 'v1.1.0' }] } } as never)
+    vi.mocked(appApi.getById).mockResolvedValue({ data: { versions: [{ version: 'v1.2.0' }, { version: 'v1.1.0' }], approvedVersions: ['v1.2.0', 'v1.1.0'] } } as never)
   })
 
   it('listet nur freigegebene Apps als Radiogruppe mit Kurzbeschreibung', async () => {
@@ -83,6 +83,16 @@ describe('StepApp', () => {
     expect(wrapper.get('[data-testid="version-panel"]').text()).toContain('von dir gewählte Version')
   })
 
+  it('bietet Dozenten keine nicht freigegebenen Versionen an', async () => {
+    vi.mocked(appApi.getById).mockResolvedValueOnce({ data: {
+      versions: [{ version: 'v1.2.0' }, { version: 'v2.0.0' }], approvedVersions: ['v1.2.0'],
+    } } as never)
+    const wrapper = await mountStep()
+    await wrapper.get('[data-testid="radio-card-ide"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.get('[data-testid="version-select"]').findAll('option').map((o) => o.text())).toEqual(['v1.2.0'])
+  })
+
   it('lädt die Versionen einer wiederhergestellten App ohne neue Wahl', async () => {
     setActivePinia(createPinia())
     useDeploymentStore().chooseRelease({ appId: 'ide', appName: 'Online-IDE', releaseTag: 'v1.2.0' })
@@ -98,7 +108,7 @@ describe('StepApp', () => {
     await wrapper.get('[data-testid="radio-card-ide"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.findAll('[data-testid="version-select"] option').map((o) => o.text())).toEqual(['v1.2.0'])
+    expect(useDeploymentStore().draft.releaseTag).toBe('')
   })
 
   it('meldet einen Fehler beim Laden der Versionen als Text', async () => {
@@ -110,7 +120,7 @@ describe('StepApp', () => {
     expect(wrapper.get('[role="alert"]').text()).toBe('Die Versionen konnten nicht geladen werden.')
   })
 
-  it('zeigt eigene, noch nicht freigegebene Apps und wählt ihre neueste Git-Version vor', async () => {
+  it('zeigt eigene, noch nicht freigegebene Apps nicht im Deployment-Wizard', async () => {
     useAuthStore().user = { userId: 'me' } as never
     vi.mocked(appApi.list).mockResolvedValue({
       data: [...apps, { appId: 'kuber', name: 'Kuber', description: null, latestApprovedVersion: null, userId: 'me' }],
@@ -120,17 +130,11 @@ describe('StepApp', () => {
 
     // Own draft listed and marked; someone else's draft stays hidden.
     expect(wrapper.findAll('[role="radio"]').map((r) => r.text())).toEqual([
-      'KuberKeine Beschreibung verfügbar. · noch nicht freigegeben',
       'Online-IDEJava im Browser',
       'Web-LaTeXKeine Beschreibung verfügbar.',
     ])
 
-    await wrapper.get('[data-testid="radio-card-kuber"]').trigger('click')
-    await flushPromises()
-
-    expect(useDeploymentStore().draft.releaseTag).toBe('v1.0.1')
-    expect(wrapper.get('[data-testid="chosen-version"]').text()).toBe('v1.0.1')
-    expect(wrapper.find('[data-testid="unapproved-hint"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="radio-card-kuber"]').exists()).toBe(false)
   })
 
   it('meldet eine eigene App ohne jede Version', async () => {
@@ -140,10 +144,7 @@ describe('StepApp', () => {
     } as never)
     vi.mocked(appApi.getById).mockResolvedValue({ data: { versions: [] } } as never)
     const wrapper = await mountStep()
-    await wrapper.get('[data-testid="radio-card-neu"]').trigger('click')
-    await flushPromises()
-
-    expect(wrapper.get('[data-testid="no-versions"]').text()).toContain('Diese App hat noch keine Version.')
+    expect(wrapper.find('[data-testid="radio-card-neu"]').exists()).toBe(false)
     expect(useDeploymentStore().draft.releaseTag).toBe('')
   })
 

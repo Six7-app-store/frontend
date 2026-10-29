@@ -94,6 +94,9 @@ const canEditApp = computed(() =>
 const bannerStatus = computed(() => appBannerStatus(app.value, approvals.value))
 const status = computed(() => appStatus(app.value, approvals.value, canEditApp.value))
 const versionOptions = computed(() => versionTags(app.value?.versions))
+const deployVersions = computed(() => isAdmin.value
+  ? [...new Set([...versionOptions.value, ...(app.value?.approvedVersions ?? [])])]
+  : (app.value?.approvedVersions ?? []))
 // The configuration shows the variables of the newest version.
 const currentVersion = computed(() => versionOptions.value[0] ?? '')
 const approvalByVersion = computed(() => {
@@ -150,10 +153,9 @@ watch([app, activeTab, requestedTab], () => {
 const fetchAppDetails = async () => {
   try {
     await load()
-    // The newest approved version first, as the wizard would choose it;
-    // an owner's app without approval falls back to the newest tag.
+    // Preselect the newest approved version; admins can also test other tags.
     if (!selectedVersion.value) {
-      selectedVersion.value = app.value?.latestApprovedVersion || versionOptions.value[0] || ''
+      selectedVersion.value = app.value?.latestApprovedVersion || deployVersions.value[0] || ''
     }
   } catch {
     toast.error(t('AppsDetailView.toasts.loadError'))
@@ -314,7 +316,7 @@ onMounted(async () => {
           <template v-if="canDeploy" #deploy>
             <AppDeploySidebar
               v-model:selected-version="selectedVersion"
-              :version-options="versionOptions"
+              :version-options="deployVersions"
               :credentials-missing="credStore.isResolved && !credStore.hasCredential"
               @deploy="handleDeploy" />
           </template>
